@@ -1,0 +1,22 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>en_flag.ico</file>
+        <file>en_flag.png</file>
+        <file>rs_flag.ico</file>
+        <file>rs_flag.png</file>
+        <file>user.png</file>
+        <file>green_checked.png</file>
+        <file>grey_minus.png</file>
+        <file>grey_question_mark.png</file>
+        <file>red_exclamation.png</file>
+        <file>printer-1414.png</file>
+        <file>transparent_1x20.png</file>
+        <file>line.png</file>
+        <file>LibreSCCelikLogo.png</file>
+    </qresource>
+    <qresource prefix="/html">
+        <file>idcard.html</file>
+        <file>idcardIF2020.html</file>
+        <file>idcard.css</file>
+    </qresource>
+</RCC>

@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# Make
+CmakeLists.txt.user
+
+# MacOS
+.DS_Store

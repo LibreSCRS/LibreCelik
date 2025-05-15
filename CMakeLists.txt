@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright hirashix0@proton.me
+
+cmake_minimum_required(VERSION 3.24.0 FATAL_ERROR)
+
+set(CMAKE_OSX_DEPLOYMENT_TARGET 15.0)
+set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "")
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+message("CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+
+include(GitVersion)
+
+set(PROJECT_VERSION_MAJOR ${GIT_VERSION_MAJOR})
+set(PROJECT_VERSION_MINOR ${GIT_VERSION_MINOR})
+set(PROJECT_VERSION_PATCH ${GIT_VERSION_PATCH})
+
+if(DEFINED ENV{CI_PIPELINE_IID})
+    set(PROJECT_VERSION_TWEAK $ENV{CI_PIPELINE_IID})
+else()
+    set(PROJECT_VERSION_TWEAK 0)
+endif()
+
+set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK})
+
+project(LibreCelik VERSION ${PROJECT_VERSION} LANGUAGES CXX)
+
+add_subdirectory(thirdparty)
+add_subdirectory(resources)
+add_subdirectory(src)
+add_subdirectory(test)

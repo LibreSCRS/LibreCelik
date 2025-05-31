@@ -5,7 +5,6 @@
 #include "utils/libreceliklog.h"
 #include "smartcard/smartcardreaderlistener.h"
 #include "ui_librecelik.h"
-#include "document/eid/eid.h"
 
 LibreCelik::LibreCelik(QWidget *parent)
     : QMainWindow(parent)
@@ -26,6 +25,7 @@ LibreCelik::LibreCelik(QWidget *parent)
     ui->menubar->hide();
 
     connect(&SmartCardReaderListener::instance(), &SmartCardReaderListener::smartCardReaderEventOccured, this, &LibreCelik::onCardEventReceived);
+    connect(&SmartCardReaderListener::instance(), &SmartCardReaderListener::smartCardReaderEnumerationChanged, this, &LibreCelik::onSmartCardReaderEnumerationChanged);
 }
 
 void LibreCelik::onCardEventReceived(const SmartCardEvent& sce)
@@ -38,6 +38,21 @@ void LibreCelik::onCardEventReceived(const SmartCardEvent& sce)
     if (sce.eventType == SmartCardEvent::CardRemoved)
     {
         removeReader(sce.readerName);
+    }
+}
+
+void LibreCelik::onSmartCardReaderEnumerationChanged(const QStringList& scrNames)
+{
+    std::vector<std::string> readers;
+    for(auto const& reader: documentReaders)
+        readers.push_back(reader.first);
+
+    // Remove unplugged readers
+    std::vector<std::string> toRemove;
+    std::set_difference(std::begin(readers), std::end(readers), std::begin(scrNames), std::end(scrNames), std::inserter(toRemove, std::begin(toRemove)));
+    for (const auto& scrName : toRemove)
+    {
+        removeReader(scrName);
     }
 }
 
@@ -64,7 +79,6 @@ void LibreCelik::removeReader(std::string reader)
     }
     if (documentReaders.empty())
         ui->stackedWidget->setCurrentIndex(0);
-
 }
 
 LibreCelik::~LibreCelik()

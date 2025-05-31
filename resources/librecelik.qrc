@@ -19,4 +19,8 @@
         <file>idcardIF2020.html</file>
         <file>idcard.css</file>
     </qresource>
+    <qresource prefix="/i18n">
+        <file>i18n/LibreCelik_en.qm</file>
+        <file>i18n/LibreCelik_sr_RS.qm</file>
+    </qresource>
 </RCC>

@@ -24,6 +24,7 @@ public:
 
 private slots:
     void onCardEventReceived(const SmartCardEvent& sce);
+    void onSmartCardReaderEnumerationChanged(const QStringList& scrNames);
 
 private:
     // void addNewEIdReader(std::string reader);

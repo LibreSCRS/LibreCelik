@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#include <CelikApi.h>
+#include <celikapi.h>
 #include <QString>
 #include <QStringList>
 #include <gtest/gtest.h>

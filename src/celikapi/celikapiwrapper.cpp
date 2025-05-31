@@ -2,6 +2,7 @@
 // Copyright hirashix0@proton.me
 
 #include "celikapiwrapper.h"
+#include <mutex>
 
 CelikAPIWrapper::CelikAPIWrapper() {}
 

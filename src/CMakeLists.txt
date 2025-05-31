@@ -20,9 +20,6 @@ configure_file (
     "${PROJECT_BINARY_DIR}/src/config.h"
 )
 
-include_directories(${PROJECT_NAME} PUBLIC ${PCSC_INCLUDE_DIR})
-include_directories(${PROJECT_NAME} PUBLIC ${UUID_INCLUDE_DIR})
-
 add_definitions(-DCERT_STORE_PATH="${PROJECT_SOURCE_DIR}/thirdparty/certificates/all")
 
 set(PROJECT_SOURCES
@@ -82,14 +79,14 @@ add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_lupdate)
 add_dependencies(${PROJECT_NAME} update_translations)
 add_dependencies(${PROJECT_NAME}  ${PROJECT_NAME}_lrelease)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::PrintSupport PCSC::PCSC UUID::UUID BOTAN CelikAPI)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::PrintSupport CelikAPI BOTAN PCSC::PCSC UUID::UUID)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     ${BUNDLE_ID_OPTION}
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
-    MACOSX_BUNDLE_GUI_IDENTIFIER rs.libresc.librecelik
+    MACOSX_BUNDLE_GUI_IDENTIFIER rs.librescrs.librecelik
     WIN32_EXECUTABLE TRUE
 )
 

@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Core Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 find_package(PCSC)
+find_package(UUID)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -70,6 +71,7 @@ target_link_libraries(
     BOTAN
     CelikAPI
     PCSC::PCSC
+    UUID::UUID
     Qt6::Core
     Qt6::Widgets
 )

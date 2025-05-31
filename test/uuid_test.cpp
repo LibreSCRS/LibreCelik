@@ -4,6 +4,10 @@
 #include <gtest/gtest.h>
 #include "uuid/uuid.h"
 
+#ifdef __linux__
+using uuid_string_t = char[UUID_STR_LEN];
+#endif
+
 class UUIDTest : public ::testing::Test
 {
   protected:

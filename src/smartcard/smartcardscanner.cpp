@@ -25,22 +25,33 @@ void SmartCardScanner::requestStop()
     SCardCancel(hContext);
 }
 
+#define test_rv_establish(fct, rv, hContext) \
+do { \
+        if (rv != SCARD_S_SUCCESS) \
+    { \
+            qCDebug(librecSCRSCard) << "FCT: " << fct " RV: " << rv; \
+            (void)SCardReleaseContext(hContext); \
+            throw std::runtime_error("Cannot establish context in SmartCardScanner"); \
+    } \
+} while(0)
+
 #define test_rv(fct, rv, hContext) \
 do { \
         if (rv != SCARD_S_SUCCESS) \
     { \
             qCDebug(librecSCRSCard) << "FCT: " << fct " RV: " << rv; \
             (void)SCardReleaseContext(hContext); \
-            return; \
+            rv = SCardEstablishContext(SCARD_SCOPE_SYSTEM, NULL, NULL, &hContext); \
+            test_rv_establish("SCardEstablishContext", rv, hContext); \
     } \
 } while(0)
 
-    // TODO: This has to block on PCSC and emit appropriate signals.
-    // SCardCancel()
-    // To force SCardGetStatusChange() to return before the end of the timeout you must use SCardCancel() from another thread of the application.
-    // You can use a very long timeout (or even the special value INFINITE) and use SCardCancel() when needed.
-    // TODO: Refactor and get rid of gotos. Investigate potential memory leaks. Code has not been thoroughly tested.
-    void SmartCardScanner::doWork()
+// TODO: This has to block on PCSC and emit appropriate signals.
+// SCardCancel()
+// To force SCardGetStatusChange() to return before the end of the timeout you must use SCardCancel() from another thread of the application.
+// You can use a very long timeout (or even the special value INFINITE) and use SCardCancel() when needed.
+// TODO: Refactor and get rid of gotos. Investigate potential memory leaks. Code has not been thoroughly tested.
+void SmartCardScanner::doWork()
 {
     int current_reader;
 #ifdef __APPLE__
@@ -58,7 +69,7 @@ do { \
     int pnp = true;
 
     rv = SCardEstablishContext(SCARD_SCOPE_SYSTEM, NULL, NULL, &hContext);
-    test_rv("SCardEstablishContext", rv, hContext);
+    test_rv_establish("SCardEstablishContext", rv, hContext);
 
     rgReaderStates[0].szReader = "\\\\?PnP?\\Notification";
     rgReaderStates[0].dwCurrentState = SCARD_STATE_UNAWARE;
@@ -66,12 +77,12 @@ do { \
     SCardGetStatusChange(hContext, 0, rgReaderStates, 1);
     if (rgReaderStates[0].dwEventState & SCARD_STATE_UNKNOWN)
     {
-        qCDebug(librecSCRSCard) << "SmartCardWorker: PNP not available";
+        qCDebug(librecSCRSCard) << "SmartCardScanner: PNP not available";
         pnp = false;
     }
     else
     {
-        qCDebug(librecSCRSCard) << "SmartCardWorker: Using PNP";
+        qCDebug(librecSCRSCard) << "SmartCardScanner: Using PNP";
     }
 
 // Check if interrupt is requested
@@ -97,7 +108,7 @@ get_readers:
          * 2. malloc the necessary storage
          * 3. call with the real allocated buffer
         */
-        qCDebug(librecSCRSCard) << "SmartCardWorker: Scanning present readers...";
+        qCDebug(librecSCRSCard) << "SmartCardScanner: Scanning present readers...";
         rv = SCardListReaders(hContext, NULL, NULL, &dwReaders);
         if (rv != SCARD_E_NO_READERS_AVAILABLE)
             test_rv("SCardListReaders", rv, hContext);
@@ -114,7 +125,7 @@ get_readers:
         mszReaders = static_cast<char*>(malloc(sizeof(char)*dwReaders));
         if (mszReaders == NULL)
         {
-            qCCritical(librecSCRSCard) << "SmartCardWorker: malloc: not enough memory";
+            qCCritical(librecSCRSCard) << "SmartCardScanner: malloc: not enough memory";
             exit(EX_OSERR);
         }
 
@@ -174,7 +185,7 @@ get_readers:
         readers = static_cast<const char**>(calloc(nbReaders+1, sizeof(char *)));
         if (NULL == readers)
         {
-            qCCritical(librecSCRSCard) << "SmartCardWorker: Not enough memory for readers table.";
+            qCCritical(librecSCRSCard) << "SmartCardScanner: Not enough memory for readers table.";
             exit(EX_OSERR);
         }
 
@@ -192,7 +203,7 @@ get_readers:
         rgReaderStates_t = static_cast<SCARD_READERSTATE*>(calloc(nbReaders+1, sizeof(* rgReaderStates_t)));
         if (NULL == rgReaderStates_t)
         {
-            qCCritical(librecSCRSCard) << "SmartCardWorker: Not enough memory for reader states table.";
+            qCCritical(librecSCRSCard) << "SmartCardScanner: Not enough memory for reader states table.";
             (void)SCardReleaseContext(hContext);
             exit(EX_OSERR);
         }
@@ -251,7 +262,7 @@ get_readers:
             {
                 /* Timestamp the event as we get notified */
                 t = time(NULL);
-                qCDebug(librecSCRSCard) << "SmartCardWorker: Event " << rv << "Time: " << ctime(&t);
+                qCDebug(librecSCRSCard) << "SmartCardScanner: Event " << rv << "Time: " << ctime(&t);
             }
 
             /* Now we have an event, check all the readers in the list to see what happened */
@@ -275,30 +286,30 @@ get_readers:
                  * above.
                  */
                 /* Specify the current reader's number and name */
-                qCDebug(librecSCRSCard) << "SmartCardWorker: Reader " << current_reader << " State: " << rgReaderStates_t[current_reader].szReader;
+                qCDebug(librecSCRSCard) << "SmartCardScanner: Reader " << current_reader << " State: " << rgReaderStates_t[current_reader].szReader;
 
                 /* Event number */
-                qCDebug(librecSCRSCard) << "SmartCardWorker: Event number:  " << (rgReaderStates_t[current_reader].dwEventState >> 4);
+                qCDebug(librecSCRSCard) << "SmartCardScanner: Event number:  " << (rgReaderStates_t[current_reader].dwEventState >> 4);
 
                 /* Dump the full current state */
-                qCDebug(librecSCRSCard) << "SmartCardWorker: Card state: ";
+                qCDebug(librecSCRSCard) << "SmartCardScanner: Card state: ";
                 if (rgReaderStates_t[current_reader].dwEventState & SCARD_STATE_IGNORE)
-                    qCDebug(librecSCRSCard) << "SmartCardWorker:     Ignore this reader, ";
+                    qCDebug(librecSCRSCard) << "SmartCardScanner:     Ignore this reader, ";
 
                 if (rgReaderStates_t[current_reader].dwEventState & SCARD_STATE_UNKNOWN)
                 {
-                    qCDebug(librecSCRSCard) << "SmartCardWorker:     Unknown";
+                    qCDebug(librecSCRSCard) << "SmartCardScanner:     Unknown";
                     emit smartCardEventOccured({rgReaderStates_t[current_reader].szReader, SmartCardEvent::EventType::CardRemoved});
                     goto get_readers;
                 }
 
                 SmartCardEvent::EventType eventType = SmartCardEvent::Unknown;
                 if (rgReaderStates_t[current_reader].dwEventState & SCARD_STATE_UNAVAILABLE)
-                    qCDebug(librecSCRSCard) << " SmartCardWorker:    Status unavailable";
+                    qCDebug(librecSCRSCard) << " SmartCardScanner:    Status unavailable";
 
                 if (rgReaderStates_t[current_reader].dwEventState & SCARD_STATE_EMPTY)
                 {
-                    qCDebug(librecSCRSCard) << "SmartCardWorker:     Card removed";
+                    qCDebug(librecSCRSCard) << "SmartCardScanner:     Card removed";
                     eventType = SmartCardEvent::EventType::CardRemoved;
                 }
 
@@ -306,31 +317,31 @@ get_readers:
                 {
                     if (rgReaderStates_t[current_reader].dwEventState & SCARD_STATE_EXCLUSIVE)
                     {
-                        qCDebug(librecSCRSCard) << "SmartCardWorker:     Exclusive Mode";
+                        qCDebug(librecSCRSCard) << "SmartCardScanner:     Exclusive Mode";
                         continue;
                     }
                     else if (rgReaderStates_t[current_reader].dwEventState & SCARD_STATE_INUSE)
                     {
-                        qCDebug(librecSCRSCard) << "SmartCardWorker:     Shared Mode";
+                        qCDebug(librecSCRSCard) << "SmartCardScanner:     Shared Mode";
                         continue;
                     }
                     else if (rgReaderStates_t[current_reader].dwEventState & SCARD_STATE_MUTE)
                     {
-                        qCDebug(librecSCRSCard) << "SmartCardWorker:     Unresponsive card";
+                        qCDebug(librecSCRSCard) << "SmartCardScanner:     Unresponsive card";
                         continue;
                     }
                     else
                     {
-                        qCDebug(librecSCRSCard) << "SmartCardWorker:     Card inserted";
+                        qCDebug(librecSCRSCard) << "SmartCardScanner:     Card inserted";
                         eventType = SmartCardEvent::EventType::CardInserted;
                     }
                 }
 
                 if (rgReaderStates_t[current_reader].dwEventState & SCARD_STATE_ATRMATCH)
-                    qCDebug(librecSCRSCard) << "SmartCardWorker:     ATR matches card";
+                    qCDebug(librecSCRSCard) << "SmartCardScanner:     ATR matches card";
 
                 if (rgReaderStates_t[current_reader].dwEventState & SCARD_STATE_UNPOWERED)
-                    qCDebug(librecSCRSCard) << "SmartCardWorker:     Unpowered card";
+                    qCDebug(librecSCRSCard) << "SmartCardScanner:     Unpowered card";
 
                 emit smartCardEventOccured({rgReaderStates_t[current_reader].szReader, eventType});
             } /* for */
@@ -338,6 +349,19 @@ get_readers:
             rv = SCardGetStatusChange(hContext, TIMEOUT, rgReaderStates_t, nbReaders);
         } /* while */
 
+        /* PCSC became unavailable */
+        if (rv == SCARD_E_NO_SERVICE)
+        {
+            qCDebug(librecSCRSCard) << "SmartCardScanner: SCARD_E_NO_SERVICE";
+
+            /* Cleanup all readers before re-establishing context */
+            for (const auto& reader : scrNames)
+                emit smartCardEventOccured({reader.toStdString(), SmartCardEvent::EventType::CardRemoved});
+
+            /* Try to re-establish context */
+            test_rv("SCardGetStatusChange", rv, hContext);
+            continue;
+        }
 
         /* A reader disappeared */
         if (SCARD_E_UNKNOWN_READER == rv)
@@ -348,10 +372,10 @@ get_readers:
             test_rv("SCardGetStatusChange", rv, hContext);
         else
         {
-            qCDebug(librecSCRSCard) << "SmartCardWorker: SCARD_E_CANCELLED";
+            qCDebug(librecSCRSCard) << "SmartCardScanner: SCARD_E_CANCELLED";
         }
     } // while not interrupted
-    qCDebug(librecSCRSCard) << "SmartCardWorker: QThread::currentThread interrupted!";
+    qCDebug(librecSCRSCard) << "SmartCardScanner: QThread::currentThread interrupted!";
 
     /* We try to leave things as clean as possible */
     rv = SCardReleaseContext(hContext);

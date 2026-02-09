@@ -20,8 +20,6 @@ configure_file (
     "${PROJECT_BINARY_DIR}/src/config.h"
 )
 
-add_definitions(-DCERT_STORE_PATH="${PROJECT_SOURCE_DIR}/thirdparty/certificates/all")
-
 set(PROJECT_SOURCES
         main.cpp
         librecelik.cpp
@@ -38,12 +36,6 @@ set(PROJECT_SOURCES
         smartcard/smartcardreaderlistener.h
         smartcard/smartcardreaderlistener.cpp
         celikapi/celikapiplus.h
-        celikapi/celikapiwrapper.h
-        celikapi/celikapiwrapper.cpp
-        celikapi/celikapisession.h
-        celikapi/celikapisession.cpp
-        celikapi/celikapisessionfactory.h
-        celikapi/celikapisessionfactory.cpp
         document/document.h
         document/document.cpp
         document/eid/eidreader.h
@@ -79,7 +71,7 @@ add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_lupdate)
 add_dependencies(${PROJECT_NAME} update_translations)
 add_dependencies(${PROJECT_NAME}  ${PROJECT_NAME}_lrelease)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::PrintSupport CelikAPI BOTAN PCSC::PCSC UUID::UUID)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::PrintSupport EIdCard PCSC::PCSC UUID::UUID)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     ${BUNDLE_ID_OPTION}

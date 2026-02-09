@@ -10,7 +10,9 @@
 #include <QObject>
 #include "celikapi/celikapiplus.h"
 
-class CelikAPISession;
+namespace eidcard {
+class EIdCard;
+}
 
 class EIdReader : public QObject
 {
@@ -35,17 +37,17 @@ signals:
     void readingFinished();
 
 protected:
-    void requestEIdData(std::shared_ptr<CelikAPISession> celikAPISession);
-    void requestPhoto(std::shared_ptr<CelikAPISession> celikAPISession);
-    void requestVerification(std::shared_ptr<CelikAPISession> celikAPISession, CelikAPI::VerificationOptions options);
+    void requestEIdData(std::unique_ptr<eidcard::EIdCard>& eidCard);
+    void requestPhoto(std::unique_ptr<eidcard::EIdCard>& eidCard);
+    void requestVerification(std::unique_ptr<eidcard::EIdCard>& eidCard, CelikAPI::VerificationOptions options);
 
-    std::shared_ptr<CelikAPISession> initCelikAPISession();
-    CelikAPI::CardVersion readCardVersion(std::shared_ptr<CelikAPISession>);
-    CelikAPI::FixedPersonalData readFixedPersonalData(std::shared_ptr<CelikAPISession> celikAPISession);
-    CelikAPI::VariablePersonalData readVariablePersonalData(std::shared_ptr<CelikAPISession> celikAPISession);
-    CelikAPI::DocumentData readDocumentData(std::shared_ptr<CelikAPISession> celikAPISession);
-    CelikAPI::PhotoData readPhotoData(std::shared_ptr<CelikAPISession> celikAPISession);
-    CelikAPI::VerificationResult verifyData(std::shared_ptr<CelikAPISession> celikAPISession, int option);
+    std::unique_ptr<eidcard::EIdCard> initEIdCard();
+    CelikAPI::CardVersion readCardVersion(std::unique_ptr<eidcard::EIdCard>& eidCard);
+    CelikAPI::FixedPersonalData readFixedPersonalData(std::unique_ptr<eidcard::EIdCard>& eidCard);
+    CelikAPI::VariablePersonalData readVariablePersonalData(std::unique_ptr<eidcard::EIdCard>& eidCard);
+    CelikAPI::DocumentData readDocumentData(std::unique_ptr<eidcard::EIdCard>& eidCard);
+    CelikAPI::PhotoData readPhotoData(std::unique_ptr<eidcard::EIdCard>& eidCard);
+    CelikAPI::VerificationResult verifyData(std::unique_ptr<eidcard::EIdCard>& eidCard, int option);
 
 private:
     std::string cardReader;

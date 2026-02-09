@@ -132,7 +132,8 @@ void EId::documentDataReceived(const CelikAPI::DocumentData& data)
     QPalette palette = ui->validToLineEdit_3->palette();
     if (receivedDate.isValid() && receivedDate < currentDate)
     {
-        palette.setColor(QPalette::Text, QColor("#e6873c"));
+        //palette.setColor(QPalette::Text, QColor("#e6873c"));
+        palette.setColor(QPalette::Text, QColor(0xe6, 0x87, 0x3c));
     }
     ui->validToLineEdit_3->setPalette(palette);
 

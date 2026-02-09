@@ -27,6 +27,8 @@ set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_
 project(LibreCelik VERSION ${PROJECT_VERSION} LANGUAGES CXX)
 
 add_subdirectory(thirdparty)
+add_subdirectory(lib/smartcard)
+add_subdirectory(lib/eidcard)
 add_subdirectory(resources)
 add_subdirectory(src)
 add_subdirectory(test)

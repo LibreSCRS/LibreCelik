@@ -25,32 +25,12 @@ include_directories(${PARENT_DIR})
 include_directories(${PARENT_DIR}/src)
 include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}/../src")
 
-add_definitions(-DCERT_STORE_PATH="${PARENT_DIR}/thirdparty/certificates/all")
-
 set(SOURCE_FILES
     ../src/utils/libreceliklog.h
     ../src/utils/libreceliklog.cpp
     ../src/celikapi/celikapiplus.h
-    ../src/celikapi/celikapisession.h
-    ../src/celikapi/celikapisession.cpp
-    ../src/celikapi/celikapisessionfactory.h
-    ../src/celikapi/celikapisessionfactory.cpp
-    ../src/celikapi/celikapiwrapper.h
-    ../src/celikapi/celikapiwrapper.cpp
     ../src/document/eid/eidreader.h
     ../src/document/eid/eidreader.cpp
-    # ../src/smartcard/apducommand.h
-    # ../src/smartcard/apducommand.cpp
-    # ../src/smartcard/apduresponse.h
-    # ../src/smartcard/apduresponse.cpp
-    # ../src/smartcard/smartcard.h
-    # ../src/smartcard/smartcard.cpp
-    # ../src/smartcard/smartcardcontext.h
-    # ../src/smartcard/smartcardcontext.cpp
-    # ../src/smartcard/smartcardimpl.h
-    # ../src/smartcard/smartcardimpl.cpp
-    # ../src/smartcard/smartcardsession.h
-    # ../src/smartcard/smartcardsession.cpp
 )
 
 add_executable(
@@ -58,18 +38,14 @@ add_executable(
     ${SOURCE_FILES}
     hello_test.cpp
     configuration_test.cpp
-    botan_test.cpp
     uuid_test.cpp
-    celikapi_test.cpp
     eidreader_test.cpp
     eidreader_test.h
-
 )
 target_link_libraries(
     ${PROJECT_NAME}
     GTest::gtest_main
-    BOTAN
-    CelikAPI
+    EIdCard
     PCSC::PCSC
     UUID::UUID
     Qt6::Core

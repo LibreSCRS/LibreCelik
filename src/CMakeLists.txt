@@ -49,6 +49,13 @@ set(PROJECT_SOURCES
         document/eid/eid.h
         document/eid/eid.cpp
         document/eid/eid.ui
+        document/vehicle/vehiclereader.h
+        document/vehicle/vehiclereader.cpp
+        document/vehicle/vehicletextdocument.h
+        document/vehicle/vehicletextdocument.cpp
+        document/vehicle/vehicle.h
+        document/vehicle/vehicle.cpp
+        document/vehicle/vehicle.ui
 )
 
 set(RESOURSE_SOURCES
@@ -75,7 +82,7 @@ add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_lupdate)
 add_dependencies(${PROJECT_NAME} update_translations)
 add_dependencies(${PROJECT_NAME}  ${PROJECT_NAME}_lrelease)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::PrintSupport EIdCard PCSC::PCSC UUID::UUID)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::PrintSupport EIdCard VehicleCard PCSC::PCSC UUID::UUID)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     ${BUNDLE_ID_OPTION}

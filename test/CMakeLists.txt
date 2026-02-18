@@ -46,6 +46,7 @@ target_link_libraries(
     ${PROJECT_NAME}
     GTest::gtest_main
     EIdCard
+    VehicleCard
     PCSC::PCSC
     UUID::UUID
     Qt6::Core

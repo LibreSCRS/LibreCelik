@@ -1,14 +1,18 @@
 h1 {
-  font-size: large ;
-  font-weight: normal;
+  font-size: 24pt;
+  font-weight: bold;
   vertical-align: middle;
   margin-top: 1px;
+  border-bottom: 2px solid black;
+  padding-bottom: 4px;
 }
 h2 {
-  font-size: medium ;
-  font-weight: normal;
+  font-size: 18pt;
+  font-weight: bold;
   vertical-align: middle;
   margin-top: 1px;
+  border-bottom: 1px solid black;
+  padding-bottom: 2px;
 }
 p {
   vertical-align: middle;

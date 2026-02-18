@@ -5,244 +5,165 @@
     <link rel="stylesheet" type="text/css" href=":/html/vehiclecard.css" title="Style"/>
 </head>
 <body>
-    <p>
-    <img src=":/images/line.png" width="600" height="1" />
-    </p>
     <h1>${title}</h1>
-    <img src=":/images/line.png" width="600" height="1" />
 
-    <h2>${vehicle_data}</h2>
-    <img src=":/images/line.png" width="600" height="1" />
+    <h2>${registration_number}: ${registration_number_value}</h2>
+
     <table>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td width="25%">${registration_number}:</td>
-            <td>${registration_number_value}</td>
+            <td width="25%"><b>${issuance_date}:</b></td>
+            <td width="25%">${issuance_date_value}</td>
+            <td width="25%"><b>${validity_date}:</b></td>
+            <td width="25%">${validity_date_value}</td>
         </tr>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${date_of_first_registration}:</td>
-            <td>${date_of_first_registration_value}</td>
+            <td><b>${state_issuing}:</b></td>
+            <td colspan="3">${state_issuing_value}</td>
         </tr>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${vin}:</td>
-            <td>${vin_value}</td>
+            <td colspan="4">${competent_authority_value},<br/>${authority_issuing_value}</td>
         </tr>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${category}:</td>
-            <td>${category_value}</td>
+            <td><b>${unambiguous_number}:</b></td>
+            <td colspan="3">${unambiguous_number_value}</td>
         </tr>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${make}:</td>
-            <td>${make_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${type}:</td>
-            <td>${type_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${commercial_description}:</td>
-            <td>${commercial_description_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${colour}:</td>
-            <td>${colour_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${year_of_production}:</td>
-            <td>${year_of_production_value}</td>
+            <td><b>${serial_number}:</b></td>
+            <td colspan="3">${serial_number_value}</td>
         </tr>
     </table>
 
-    <p>
-    <img src=":/images/line.png" width="600" height="1" />
-    </p>
-    <h2>${engine}</h2>
-    <img src=":/images/line.png" width="600" height="1" />
+    <h2>${owner_data}</h2>
     <table>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td width="25%">${engine_number}:</td>
-            <td>${engine_number_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${capacity}:</td>
-            <td>${capacity_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${power}:</td>
-            <td>${power_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${fuel_type}:</td>
-            <td>${fuel_type_value}</td>
-        </tr>
-    </table>
-
-    <p>
-    <img src=":/images/line.png" width="600" height="1" />
-    </p>
-    <h2>${mass_and_load}</h2>
-    <img src=":/images/line.png" width="600" height="1" />
-    <table>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td width="25%">${mass}:</td>
-            <td>${mass_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${max_laden_mass}:</td>
-            <td>${max_laden_mass_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${load}:</td>
-            <td>${load_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${power_weight_ratio}:</td>
-            <td>${power_weight_ratio_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${number_of_axles}:</td>
-            <td>${number_of_axles_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${seats}:</td>
-            <td>${seats_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${standing_places}:</td>
-            <td>${standing_places_value}</td>
-        </tr>
-    </table>
-
-    <p>
-    <img src=":/images/line.png" width="600" height="1" />
-    </p>
-    <h2>${owner}</h2>
-    <img src=":/images/line.png" width="600" height="1" />
-    <table>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td width="25%">${owner_surname}:</td>
+            <td width="25%"><b>${owner_surname}:</b></td>
             <td>${owner_surname_value}</td>
         </tr>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${owner_name}:</td>
+            <td><b>${owner_name}:</b></td>
             <td>${owner_name_value}</td>
         </tr>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${owner_address}:</td>
+            <td><b>${owner_address}:</b></td>
             <td>${owner_address_value}</td>
         </tr>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${owner_personal_no}:</td>
+            <td><b>${owner_personal_no}:</b></td>
             <td>${owner_personal_no_value}</td>
         </tr>
-    </table>
-
-    <p>
-    <img src=":/images/line.png" width="600" height="1" />
-    </p>
-    <h2>${user}</h2>
-    <img src=":/images/line.png" width="600" height="1" />
-    <table>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td width="25%">${user_surname}:</td>
+            <td><b>${user_surname}:</b></td>
             <td>${user_surname_value}</td>
         </tr>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${user_name}:</td>
+            <td><b>${user_name}:</b></td>
             <td>${user_name_value}</td>
         </tr>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${user_address}:</td>
+            <td><b>${user_address}:</b></td>
             <td>${user_address_value}</td>
         </tr>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${user_personal_no}:</td>
+            <td><b>${user_personal_no}:</b></td>
             <td>${user_personal_no_value}</td>
         </tr>
     </table>
 
-    <p>
-    <img src=":/images/line.png" width="600" height="1" />
-    </p>
-    <h2>${document_data}</h2>
-    <img src=":/images/line.png" width="600" height="1" />
+    <h2>${vehicle_data}</h2>
     <table>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td width="25%">${state_issuing}:</td>
-            <td>${state_issuing_value}</td>
+            <td width="20%"><b>${date_of_first_registration}:</b></td>
+            <td width="30%">${date_of_first_registration_value}</td>
+            <td width="20%"><b>${year_of_production}:</b></td>
+            <td width="30%">${year_of_production_value}</td>
         </tr>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${competent_authority}:</td>
-            <td>${competent_authority_value}</td>
+            <td><b>${make}:</b></td>
+            <td>${make_value}</td>
+            <td><b>${type}:</b></td>
+            <td>${type_value}</td>
         </tr>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${authority_issuing}:</td>
-            <td>${authority_issuing_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${unambiguous_number}:</td>
-            <td>${unambiguous_number_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${serial_number}:</td>
-            <td>${serial_number_value}</td>
-        </tr>
-        <tr>
-            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${type_approval_number}:</td>
+            <td><b>${commercial_description}:</b></td>
+            <td>${commercial_description_value}</td>
+            <td><b>${type_approval_number}:</b></td>
             <td>${type_approval_number_value}</td>
         </tr>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${issuance_date}:</td>
-            <td>${issuance_date_value}</td>
+            <td><b>${colour}:</b></td>
+            <td>${colour_value}</td>
+            <td><b>${number_of_axles}:</b></td>
+            <td>${number_of_axles_value}</td>
         </tr>
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
-            <td>${validity_date}:</td>
-            <td>${validity_date_value}</td>
+            <td><b>${vin}:</b></td>
+            <td>${vin_value}</td>
+            <td><b>${capacity}:</b></td>
+            <td>${capacity_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${engine_number}:</b></td>
+            <td>${engine_number_value}</td>
+            <td><b>${mass}:</b></td>
+            <td>${mass_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${power}:</b></td>
+            <td>${power_value}</td>
+            <td><b>${load}:</b></td>
+            <td>${load_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${power_weight_ratio}:</b></td>
+            <td>${power_weight_ratio_value}</td>
+            <td><b>${max_laden_mass}:</b></td>
+            <td>${max_laden_mass_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${category}:</b></td>
+            <td>${category_value}</td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${fuel_type}:</b></td>
+            <td>${fuel_type_value}</td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${seats}:</b></td>
+            <td>${seats_value}</td>
+            <td><b>${standing_places}:</b></td>
+            <td>${standing_places_value}</td>
         </tr>
     </table>
 
-    <p>
-    <img src=":/images/line.png" width="600" height="1" />
-    </p>
-    <p>
-    <img src=":/images/line.png" width="600" height="1" />
-    </p>
-    <table style="margin-bottom:1%;">
+    <table style="margin-top:20px;">
         <tr>
             <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
             <td width="25%">${printing_date}:</td>

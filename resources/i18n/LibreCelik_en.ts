@@ -261,243 +261,238 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="157"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="26"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="163"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="49"/>
         <source>Vehicle data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="167"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="27"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="173"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="26"/>
         <source>Registration number</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="185"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="28"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="191"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="50"/>
         <source>Date of first registration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="207"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="29"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="213"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="58"/>
         <source>VIN</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="225"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="30"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="231"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="66"/>
         <source>Category</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="247"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="31"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="253"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="52"/>
         <source>Make</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="265"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="32"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="271"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="53"/>
         <source>Type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="285"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="33"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="291"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="54"/>
         <source>Commercial description</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="305"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="34"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="311"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="56"/>
         <source>Colour</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="323"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="35"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="329"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="51"/>
         <source>Year of production</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="345"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="38"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="357"/>
         <source>Engine</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="353"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="39"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="365"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="60"/>
         <source>Engine number</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="373"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="40"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="385"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="59"/>
         <source>Capacity (cm3)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="391"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="41"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="403"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="62"/>
         <source>Power (kW)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="409"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="42"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="421"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="67"/>
         <source>Fuel type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="431"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="45"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="449"/>
         <source>Mass and load</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="441"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="46"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="459"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="61"/>
         <source>Mass (kg)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="459"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="47"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="477"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="65"/>
         <source>Max laden mass (kg)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="477"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="48"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="495"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="63"/>
         <source>Load (kg)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="499"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="49"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="517"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="64"/>
         <source>Power/weight ratio</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="517"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="50"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="535"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="57"/>
         <source>Number of axles</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="535"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="51"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="553"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="68"/>
         <source>Seats</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="553"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="52"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="571"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="69"/>
         <source>Standing places</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="575"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="55"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="599"/>
         <source>Owner</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="585"/>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="671"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="56"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="63"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="609"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="701"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="39"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="43"/>
         <source>Surname / Business name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="603"/>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="689"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="57"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="64"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="627"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="719"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="40"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="44"/>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="623"/>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="709"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="58"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="65"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="647"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="739"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="41"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="45"/>
         <source>Address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="641"/>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="727"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="59"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="66"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="665"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="757"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="42"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="46"/>
         <source>Personal number</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="661"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="62"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="691"/>
         <source>User</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="747"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="69"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="783"/>
         <source>Document data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="757"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="70"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="793"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="31"/>
         <source>State issuing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="775"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="71"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="811"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="32"/>
         <source>Competent authority</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="795"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="72"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="831"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="33"/>
         <source>Authority issuing</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="815"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="73"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="851"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="34"/>
         <source>Unambiguous number</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="833"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="74"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="869"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="35"/>
         <source>Serial number</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="855"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="75"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="891"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="55"/>
         <source>Type approval number</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="877"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="76"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="913"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="29"/>
         <source>Date of issuance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.ui" line="895"/>
-        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="77"/>
+        <location filename="../../src/document/vehicle/vehicle.ui" line="931"/>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="30"/>
         <source>Valid to</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/vehicle/vehicle.cpp" line="107"/>
+        <location filename="../../src/document/vehicle/vehicle.cpp" line="129"/>
         <source>Print Document</source>
         <translation type="unfinished"></translation>
     </message>
@@ -506,12 +501,17 @@
     <name>VehicleTextDocument</name>
     <message>
         <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="21"/>
-        <source>VEHICLE REGISTRATION CARD: DATA PRINTING</source>
+        <source>Vehicle registration card reader</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="22"/>
         <source>Printing date</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../src/document/vehicle/vehicletextdocument.cpp" line="38"/>
+        <source>Owner data</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

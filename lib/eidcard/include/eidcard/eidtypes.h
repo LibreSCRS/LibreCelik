@@ -57,6 +57,12 @@ struct VariablePersonalData {
 
 using PhotoData = std::vector<uint8_t>;
 
+enum class VerificationResult {
+    Unknown,  // verification could not be performed
+    Valid,    // signature verified successfully
+    Invalid   // signature verification failed
+};
+
 } // namespace eidcard
 
 #endif // EIDCARD_EIDTYPES_H

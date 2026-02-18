@@ -22,10 +22,10 @@ namespace smartcard {
 class PCSCError : public std::runtime_error {
 public:
     PCSCError(const std::string& msg, LONG code)
-        : std::runtime_error(msg), code_(code) {}
-    LONG code() const { return code_; }
+        : std::runtime_error(msg), errorCode(code) {}
+    LONG code() const { return errorCode; }
 private:
-    LONG code_;
+    LONG errorCode;
 };
 
 class PCSCConnection {
@@ -37,12 +37,13 @@ public:
     PCSCConnection& operator=(const PCSCConnection&) = delete;
 
     APDUResponse transmit(const APDUCommand& cmd);
+    void reconnect();
     std::vector<uint8_t> getATR() const;
 
 private:
-    SCARDCONTEXT context_ = 0;
-    SCARDHANDLE card_ = 0;
-    DWORD activeProtocol_ = 0;
+    SCARDCONTEXT context = 0;
+    SCARDHANDLE card = 0;
+    DWORD activeProtocol = 0;
 };
 
 } // namespace smartcard

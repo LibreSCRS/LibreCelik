@@ -25,7 +25,7 @@ inline const std::vector<uint8_t> AID_SERRP = {
     0xF3, 0x81, 0x00, 0x00, 0x02, 0x53, 0x45, 0x52, 0x52, 0x50, 0x01
 };
 
-// File IDs (2 bytes each)
+// File IDs (2 bytes each) - Data files
 constexpr uint8_t FILE_DOCUMENT_DATA_H  = 0x0F;
 constexpr uint8_t FILE_DOCUMENT_DATA_L  = 0x02;
 constexpr uint8_t FILE_PERSONAL_DATA_H  = 0x0F;
@@ -34,6 +34,28 @@ constexpr uint8_t FILE_VARIABLE_DATA_H  = 0x0F;
 constexpr uint8_t FILE_VARIABLE_DATA_L  = 0x04;
 constexpr uint8_t FILE_PORTRAIT_H       = 0x0F;
 constexpr uint8_t FILE_PORTRAIT_L       = 0x06;
+
+// File IDs - Apollo 2008 certificate and signature files
+constexpr uint8_t FILE_USER_CERT1_H      = 0x0F;  // User Certificate 1
+constexpr uint8_t FILE_USER_CERT1_L      = 0x08;
+constexpr uint8_t FILE_USER_CERT2_H      = 0x0F;  // User Certificate 2
+constexpr uint8_t FILE_USER_CERT2_L      = 0x10;
+constexpr uint8_t FILE_INTERMEDIATE_CA_H = 0x0F;  // MOI Intermediate CA Certificate
+constexpr uint8_t FILE_INTERMEDIATE_CA_L = 0x11;
+constexpr uint8_t FILE_CERT_VX_H         = 0x0F;  // Signing cert for variable data (MOI_CERTo1)
+constexpr uint8_t FILE_CERT_VX_L         = 0x13;
+constexpr uint8_t FILE_SIGN_VX_H         = 0x0F;  // Variable data signature (MOI_SIGN_VX)
+constexpr uint8_t FILE_SIGN_VX_L         = 0x14;
+constexpr uint8_t FILE_CERT_FX_H         = 0x0F;  // Signing cert for fixed data (MOI_CERTm1)
+constexpr uint8_t FILE_CERT_FX_L         = 0x15;
+constexpr uint8_t FILE_SIGN_FX_H         = 0x0F;  // Fixed data signature (MOI_SIGN_FX)
+constexpr uint8_t FILE_SIGN_FX_L         = 0x16;
+
+// File IDs - Gemalto 2014 / IF2020 SOD (Security Object Document) files
+constexpr uint8_t FILE_SOD_FX_H          = 0x0F;  // SOD for fixed data (PKCS#7 SignedData)
+constexpr uint8_t FILE_SOD_FX_L          = 0x1C;
+constexpr uint8_t FILE_SOD_VX_H          = 0x0F;  // SOD for variable data (PKCS#7 SignedData)
+constexpr uint8_t FILE_SOD_VX_L          = 0x1D;
 
 // TLV Tags for Document Data
 constexpr uint16_t TAG_DOC_REG_NO           = 1546;
@@ -55,7 +77,7 @@ constexpr uint16_t TAG_COMMUNITY_OF_BIRTH   = 1564;
 constexpr uint16_t TAG_STATE_OF_BIRTH       = 1565;
 constexpr uint16_t TAG_DATE_OF_BIRTH        = 1566;
 constexpr uint16_t TAG_NATIONALITY_FULL     = 1583;
-constexpr uint16_t TAG_STATUS_OF_FOREIGNER  = 1610;
+constexpr uint16_t TAG_STATUS_OF_FOREIGNER  = 1582;
 
 // TLV Tags for Variable Personal Data
 constexpr uint16_t TAG_STATE                = 1568;

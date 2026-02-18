@@ -8,30 +8,42 @@ namespace smartcard {
 
 PCSCConnection::PCSCConnection(const std::string& readerName)
 {
-    LONG rv = SCardEstablishContext(SCARD_SCOPE_SYSTEM, nullptr, nullptr, &context_);
+    LONG rv = SCardEstablishContext(SCARD_SCOPE_SYSTEM, nullptr, nullptr, &context);
     if (rv != SCARD_S_SUCCESS) {
         throw PCSCError("SCardEstablishContext failed", rv);
     }
 
-    rv = SCardConnect(context_,
+    rv = SCardConnect(context,
                       readerName.c_str(),
                       SCARD_SHARE_SHARED,
                       SCARD_PROTOCOL_T0 | SCARD_PROTOCOL_T1,
-                      &card_,
-                      &activeProtocol_);
+                      &card,
+                      &activeProtocol);
     if (rv != SCARD_S_SUCCESS) {
-        SCardReleaseContext(context_);
+        SCardReleaseContext(context);
         throw PCSCError("SCardConnect failed on reader: " + readerName, rv);
     }
 }
 
 PCSCConnection::~PCSCConnection()
 {
-    if (card_) {
-        SCardDisconnect(card_, SCARD_LEAVE_CARD);
+    if (card) {
+        SCardDisconnect(card, SCARD_RESET_CARD);
     }
-    if (context_) {
-        SCardReleaseContext(context_);
+    if (context) {
+        SCardReleaseContext(context);
+    }
+}
+
+void PCSCConnection::reconnect()
+{
+    LONG rv = SCardReconnect(card,
+                             SCARD_SHARE_SHARED,
+                             SCARD_PROTOCOL_T0 | SCARD_PROTOCOL_T1,
+                             SCARD_RESET_CARD,
+                             &activeProtocol);
+    if (rv != SCARD_S_SUCCESS) {
+        throw PCSCError("SCardReconnect failed", rv);
     }
 }
 
@@ -40,12 +52,12 @@ APDUResponse PCSCConnection::transmit(const APDUCommand& cmd)
     auto cmdBytes = cmd.toBytes();
 
     const SCARD_IO_REQUEST* pioSendPci =
-        (activeProtocol_ == SCARD_PROTOCOL_T0) ? SCARD_PCI_T0 : SCARD_PCI_T1;
+        (activeProtocol == SCARD_PROTOCOL_T0) ? SCARD_PCI_T0 : SCARD_PCI_T1;
 
     uint8_t recvBuffer[258];
     DWORD recvLength = sizeof(recvBuffer);
 
-    LONG rv = SCardTransmit(card_,
+    LONG rv = SCardTransmit(card,
                             pioSendPci,
                             cmdBytes.data(),
                             static_cast<DWORD>(cmdBytes.size()),
@@ -76,7 +88,7 @@ std::vector<uint8_t> PCSCConnection::getATR() const
     BYTE atr[MAX_ATR_SIZE];
     DWORD atrLen = sizeof(atr);
 
-    LONG rv = SCardStatus(card_, nullptr, &readerLen, &state, &protocol, atr, &atrLen);
+    LONG rv = SCardStatus(card, nullptr, &readerLen, &state, &protocol, atr, &atrLen);
     if (rv != SCARD_S_SUCCESS) {
         throw PCSCError("SCardStatus failed", rv);
     }

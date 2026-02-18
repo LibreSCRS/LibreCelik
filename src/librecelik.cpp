@@ -61,6 +61,8 @@ void LibreCelik::addNewReader(std::string reader)
     if (documentReaders.find(reader) == documentReaders.end())
     {
         Document* document = Document::CreateDocument(reader, this);
+        if (!document)
+            return;
         ui->toolBox->insertItem(0, document, QString(reader.c_str()));
         ui->toolBox->setCurrentIndex(0);
         documentReaders[reader] = document;

@@ -31,23 +31,80 @@ std::vector<uint8_t> CardReaderApollo::readFile(smartcard::PCSCConnection& conn,
         return {};
     }
 
-    // Total length from header bytes [2..3] (big-endian) + 2 header bytes
-    uint32_t totalLength = (static_cast<uint32_t>(headerResp.data[2]) << 8) |
-                            static_cast<uint32_t>(headerResp.data[3]);
+    // File data length from header bytes 4-5 in LITTLE-ENDIAN format
+    uint32_t dataLength = static_cast<uint32_t>(headerResp.data[4]) |
+                          (static_cast<uint32_t>(headerResp.data[5]) << 8);
 
-    if (totalLength == 0) {
+    if (dataLength == 0) {
         return {};
     }
 
-    // Read the file content in chunks of 255 bytes
+    // Read file data starting after the 6-byte header
     std::vector<uint8_t> fileData;
-    fileData.reserve(totalLength);
-    uint16_t offset = 0;
+    fileData.reserve(dataLength);
+    uint16_t offset = 6;
 
-    while (offset < totalLength) {
+    while (fileData.size() < dataLength) {
         uint8_t chunkSize = static_cast<uint8_t>(
             std::min(static_cast<uint32_t>(protocol::READ_CHUNK_SIZE),
-                     totalLength - offset));
+                     dataLength - static_cast<uint32_t>(fileData.size())));
+
+        auto readResp = conn.transmit(smartcard::readBinary(offset, chunkSize));
+        if (!readResp.isSuccess()) {
+            throw std::runtime_error("Apollo: READ BINARY failed at offset " +
+                                     std::to_string(offset));
+        }
+
+        fileData.insert(fileData.end(), readResp.data.begin(), readResp.data.end());
+        offset += static_cast<uint16_t>(readResp.data.size());
+
+        if (readResp.data.empty()) {
+            break;
+        }
+    }
+
+    return fileData;
+}
+
+std::vector<uint8_t> CardReaderApollo::readFileRaw(smartcard::PCSCConnection& conn,
+                                                    uint8_t fileId1, uint8_t fileId2)
+{
+    // Apollo cards: SELECT by file ID (P1=0x00)
+    auto selectResp = conn.transmit(smartcard::selectByFileId(fileId1, fileId2));
+    if (selectResp.sw1 != 0x90 && selectResp.sw1 != 0x61) {
+        throw std::runtime_error("Apollo: SELECT file failed, SW=" +
+                                 std::to_string(selectResp.statusWord()));
+    }
+
+    // Read 6-byte header
+    auto headerResp = conn.transmit(smartcard::readBinary(0, 6));
+    if (!headerResp.isSuccess() || headerResp.data.size() < 6) {
+        throw std::runtime_error("Apollo: Cannot read file header");
+    }
+
+    if (headerResp.data[4] == 0xFF) {
+        return {};
+    }
+
+    uint32_t dataLength = static_cast<uint32_t>(headerResp.data[4]) |
+                          (static_cast<uint32_t>(headerResp.data[5]) << 8);
+
+    // Build result starting with the 6-byte header
+    uint32_t totalLength = 6 + dataLength;
+    std::vector<uint8_t> fileData;
+    fileData.reserve(totalLength);
+    fileData.insert(fileData.end(), headerResp.data.begin(), headerResp.data.begin() + 6);
+
+    if (dataLength == 0) {
+        return fileData;
+    }
+
+    uint16_t offset = 6;
+
+    while (fileData.size() < totalLength) {
+        uint8_t chunkSize = static_cast<uint8_t>(
+            std::min(static_cast<uint32_t>(protocol::READ_CHUNK_SIZE),
+                     totalLength - static_cast<uint32_t>(fileData.size())));
 
         auto readResp = conn.transmit(smartcard::readBinary(offset, chunkSize));
         if (!readResp.isSuccess()) {

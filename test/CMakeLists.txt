@@ -28,7 +28,7 @@ include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}/../src")
 set(SOURCE_FILES
     ../src/utils/libreceliklog.h
     ../src/utils/libreceliklog.cpp
-    ../src/celikapi/celikapiplus.h
+    ../src/libreceliktypes.h
     ../src/document/eid/eidreader.h
     ../src/document/eid/eidreader.cpp
 )

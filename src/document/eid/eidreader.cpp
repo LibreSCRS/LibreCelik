@@ -9,6 +9,7 @@
 #include "utils/libreceliklog.h"
 #include <eidcard/eidcard.h>
 #include "eidreader.h"
+#include "config.h"
 
 // Everything in one session (begin-end read)
 // must complete before another session begins
@@ -18,6 +19,12 @@ bool EIdReader::processing = false;
 
 EIdReader::EIdReader(const std::string& cardReader, QObject *parent) : cardReader(cardReader), QObject(parent)
 {
+    qRegisterMetaType<eidcard::CardType>();
+    qRegisterMetaType<eidcard::DocumentData>();
+    qRegisterMetaType<eidcard::FixedPersonalData>();
+    qRegisterMetaType<eidcard::VariablePersonalData>();
+    qRegisterMetaType<eidcard::PhotoData>();
+    qRegisterMetaType<eidcard::VerificationResult>();
 }
 
 EIdReader::~EIdReader()
@@ -45,7 +52,7 @@ void EIdReader::requestData()
         {
             requestEIdData(eidCard);
             requestPhoto(eidCard);
-            requestVerification(eidCard, CelikAPI::VerificationOption::CheckCard | CelikAPI::VerificationOption::CheckSignature);
+            requestVerification(eidCard, LibreSCRS::VerificationOption::CheckCard | LibreSCRS::VerificationOption::CheckSignature);
         }
         else
         {
@@ -62,166 +69,107 @@ void EIdReader::requestData()
 
 std::unique_ptr<eidcard::EIdCard> EIdReader::initEIdCard()
 {
-    std::unique_ptr<eidcard::EIdCard> eidCard = nullptr;
-    try
+    // Retry with delay — the card may not be ready immediately after a swap
+    for (int attempt = 0; attempt < 3; attempt++)
     {
-        eidCard = std::make_unique<eidcard::EIdCard>(cardReader);
+        try
+        {
+            return std::make_unique<eidcard::EIdCard>(cardReader);
+        }
+        catch (std::runtime_error& re)
+        {
+            if (attempt < 2) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            } else {
+                qCWarning(libreCelikAPI) << "Can not init eID card on reader: " << cardReader << ". Exception: " << re.what();
+            }
+        }
     }
-    catch (std::runtime_error& re)
-    {
-        qCWarning(libreCelikAPI) << "Can not init eID card on reader: " << cardReader << ". Exception: " << re.what();
-    }
-    return eidCard;
+    return nullptr;
 }
 
-CelikAPI::CardVersion EIdReader::readCardVersion(std::unique_ptr<eidcard::EIdCard>& eidCard)
+void EIdReader::requestEIdData(std::unique_ptr<eidcard::EIdCard>& eidCard)
 {
     if (!eidCard)
-        return CelikAPI::CardVersion::Unknown;
-    return static_cast<CelikAPI::CardVersion>(static_cast<int>(eidCard->getCardType()));
-}
+        return;
 
-CelikAPI::FixedPersonalData EIdReader::readFixedPersonalData(std::unique_ptr<eidcard::EIdCard>& eidCard)
-{
-    CelikAPI::FixedPersonalData fixedPersonalData;
-    if (!eidCard)
-        return fixedPersonalData;
+    emit cardTypeRead(eidCard->getCardType());
 
     try
     {
-        auto fpd = eidCard->readFixedPersonalData();
-
-        fixedPersonalData.givenName = QString::fromStdString(fpd.givenName);
-        fixedPersonalData.surname = QString::fromStdString(fpd.surname);
-        fixedPersonalData.parentGivenName = QString::fromStdString(fpd.parentGivenName);
-        fixedPersonalData.nationalityFull = QString::fromStdString(fpd.nationalityFull);
-        fixedPersonalData.sex = QString::fromStdString(fpd.sex);
-        fixedPersonalData.personalNumber = QString::fromStdString(fpd.personalNumber);
-        fixedPersonalData.dateOfBirth = QString::fromStdString(fpd.dateOfBirth);
-        fixedPersonalData.statusOfForeigner = QString::fromStdString(fpd.statusOfForeigner);
-        QStringList list;
-        list << QString::fromStdString(fpd.placeOfBirth)
-             << QString::fromStdString(fpd.communityOfBirth)
-             << QString::fromStdString(fpd.stateOfBirth);
-        fixedPersonalData.placeOfBirth = list.join(", ");
+        emit fixedPersonalDataRead(eidCard->readFixedPersonalData());
     }
     catch(std::runtime_error& re)
     {
         qCWarning(libreCelikAPI) << "Can not read fixed personal data on reader: " << cardReader << ". Exception: " << re.what();
     }
-    return fixedPersonalData;
-}
-
-CelikAPI::VariablePersonalData EIdReader::readVariablePersonalData(std::unique_ptr<eidcard::EIdCard>& eidCard)
-{
-    CelikAPI::VariablePersonalData variablePersonalData;
-    if (!eidCard)
-        return variablePersonalData;
 
     try
     {
-        auto vpd = eidCard->readVariablePersonalData();
-
-        variablePersonalData.addressDate = QString::fromStdString(vpd.addressDate);
-        QStringList list;
-        list << QString::fromStdString(vpd.place)
-             << QString::fromStdString(vpd.community)
-             << QString::fromStdString(vpd.street)
-             << QString::fromStdString(vpd.houseNumber);
-        QString apartmentNumber = QString::fromStdString(vpd.apartmentNumber);
-        QString floor = QString::fromStdString(vpd.floor);
-        auto address = floor.isEmpty() ? list.join(", ") : list.join(", ") + "/" + floor;
-        variablePersonalData.address = apartmentNumber.isEmpty() ? address : address + "/" + apartmentNumber;
+        emit variablePersonalDataRead(eidCard->readVariablePersonalData());
     }
     catch(std::runtime_error& re)
     {
         qCWarning(libreCelikAPI) << "Can not read variable personal data on reader: " << cardReader << ". Exception: " << re.what();
     }
-    return variablePersonalData;
-}
-
-CelikAPI::DocumentData EIdReader::readDocumentData(std::unique_ptr<eidcard::EIdCard>& eidCard)
-{
-    CelikAPI::DocumentData documentData;
-    if (!eidCard)
-        return documentData;
 
     try
     {
-        auto doc = eidCard->readDocumentData();
-        documentData.docRegNo = QString::fromStdString(doc.docRegNo);
-        documentData.issuingAuthority = QString::fromStdString(doc.issuingAuthority);
-        documentData.issuingDate = QString::fromStdString(doc.issuingDate);
-        documentData.expiryDate = QString::fromStdString(doc.expiryDate);
+        emit documentDataRead(eidCard->readDocumentData());
     }
     catch(std::runtime_error& re)
     {
         qCWarning(libreCelikAPI) << "Can not read document data on reader: " << cardReader << ". Exception: " << re.what();
     }
-    return documentData;
 }
 
-CelikAPI::PhotoData EIdReader::readPhotoData(std::unique_ptr<eidcard::EIdCard>& eidCard)
+void EIdReader::requestVerification(std::unique_ptr<eidcard::EIdCard>& eidCard, LibreSCRS::VerificationOptions options)
 {
-    CelikAPI::PhotoData photoData;
     if (!eidCard)
-        return photoData;
+        return;
 
-    try
+    eidCard->setCertificateFolderPath(LIBRECELIK_CERTIFICATES_DIR);
+    qDebug(libreCelikAPI) << "Verification certificates path:" << LIBRECELIK_CERTIFICATES_DIR;
+
+    if (options.testFlag(LibreSCRS::VerificationOption::CheckCard))
     {
-        photoData = eidCard->readPortrait();
+        try {
+            emit cardVerificationResultRead(eidCard->verifyCard());
+        } catch (const std::exception& e) {
+            qCWarning(libreCelikAPI) << "Card verification failed:" << e.what();
+            emit cardVerificationResultRead(eidcard::VerificationResult::Unknown);
+        }
     }
-    catch(std::runtime_error& re)
+
+    if (options.testFlag(LibreSCRS::VerificationOption::CheckSignature))
     {
-        qCWarning(libreCelikAPI) << "Can not read photo on reader: " << cardReader << ". Exception: " << re.what();
-    }
-    return photoData;
-}
+        try {
+            emit fixedVerificationResultRead(eidCard->verifyFixedData());
+        } catch (const std::exception& e) {
+            qCWarning(libreCelikAPI) << "Fixed data verification failed:" << e.what();
+            emit fixedVerificationResultRead(eidcard::VerificationResult::Unknown);
+        }
 
-CelikAPI::VerificationResult EIdReader::verifyData(std::unique_ptr<eidcard::EIdCard>& eidCard, int option)
-{
-    // Signature verification is deferred - return Unknown for now
-    Q_UNUSED(eidCard);
-    Q_UNUSED(option);
-    return CelikAPI::VerificationResult::Unknown;
-}
-
-void EIdReader::requestEIdData(std::unique_ptr<eidcard::EIdCard>& eidCard)
-{
-    auto cardVersion = readCardVersion(eidCard);
-    emit cardVersionRead(cardVersion);
-
-    auto fixedPersonalData = readFixedPersonalData(eidCard);
-    emit fixedPersonalDataRead(fixedPersonalData);
-
-    auto variablePersonalData = readVariablePersonalData(eidCard);
-    emit variablePersonalDataRead(variablePersonalData);
-
-    auto documentData = readDocumentData(eidCard);
-    emit documentDataRead(documentData);
-}
-
-void EIdReader::requestVerification(std::unique_ptr<eidcard::EIdCard>& eidCard, CelikAPI::VerificationOptions options)
-{
-    auto checkCard = options.testFlag(CelikAPI::VerificationOption::CheckCard);
-    if (checkCard)
-    {
-        auto cardSignatureCheckResult = verifyData(eidCard, EID_SIG_CARD);
-        emit cardSignatureVerificationResultRead(cardSignatureCheckResult);
-    }
-    auto checkSignature = options.testFlag(CelikAPI::VerificationOption::CheckSignature);
-    if (checkSignature)
-    {
-        auto fixedSignatureCheckResult = verifyData(eidCard, EID_SIG_FIXED);
-        emit fixedSignatureVerificationResultRead(fixedSignatureCheckResult);
-
-        auto variableSignatureCheckResult = verifyData(eidCard, EID_SIG_VARIABLE);
-        emit variableSignatureVerificationResultRead(variableSignatureCheckResult);
+        try {
+            emit variableVerificationResultRead(eidCard->verifyVariableData());
+        } catch (const std::exception& e) {
+            qCWarning(libreCelikAPI) << "Variable data verification failed:" << e.what();
+            emit variableVerificationResultRead(eidcard::VerificationResult::Unknown);
+        }
     }
 }
 
 void EIdReader::requestPhoto(std::unique_ptr<eidcard::EIdCard>& eidCard)
 {
-    auto photoData = readPhotoData(eidCard);
-    emit photoDataRead(photoData);
+    if (!eidCard)
+        return;
+
+    try
+    {
+        emit photoDataRead(eidCard->readPortrait());
+    }
+    catch(std::runtime_error& re)
+    {
+        qCWarning(libreCelikAPI) << "Can not read photo on reader: " << cardReader << ". Exception: " << re.what();
+    }
 }

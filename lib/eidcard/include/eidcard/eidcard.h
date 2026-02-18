@@ -16,8 +16,13 @@ namespace eidcard {
 
 class CardReaderBase;
 
+class CardVerifier;
+
 class EIdCard {
 public:
+    // Check if an eID card is present on the given reader without opening a full session.
+    static bool probe(const std::string& readerName);
+
     explicit EIdCard(const std::string& readerName);
     ~EIdCard();
 
@@ -30,10 +35,20 @@ public:
     VariablePersonalData readVariablePersonalData();
     PhotoData readPortrait();
 
+    // Verification
+    void setCertificateFolderPath(const std::string& path);
+    VerificationResult verifyCard();
+    VerificationResult verifyFixedData();
+    VerificationResult verifyVariableData();
+
 private:
-    std::unique_ptr<smartcard::PCSCConnection> connection_;
-    std::unique_ptr<CardReaderBase> cardReader_;
-    CardType cardType_ = CardType::Unknown;
+    std::unique_ptr<smartcard::PCSCConnection> connection;
+    std::unique_ptr<CardReaderBase> cardReader;
+    std::unique_ptr<CardVerifier> verifier;
+    std::string certFolderPath;
+    CardType cardType = CardType::Unknown;
+
+    void ensureVerifier();
 };
 
 } // namespace eidcard

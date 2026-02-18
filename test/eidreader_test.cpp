@@ -14,68 +14,65 @@ EIdReaderListener::EIdReaderListener(QObject* parent) : QObject(parent)
 {
     eIDReader = std::make_unique<EIdReader>(CARD_READER);
 
-    connect(eIDReader.get(), &EIdReader::cardVersionRead, [](CelikAPI::CardVersion data)
+    connect(eIDReader.get(), &EIdReader::cardTypeRead, [](eidcard::CardType data)
             {
-                EXPECT_NE(data, CelikAPI::CardVersion::Unknown);
+                EXPECT_NE(data, eidcard::CardType::Unknown);
             }
             );
 
-    connect(eIDReader.get(), &EIdReader::fixedPersonalDataRead, [](CelikAPI::FixedPersonalData data)
+    connect(eIDReader.get(), &EIdReader::fixedPersonalDataRead, [](eidcard::FixedPersonalData data)
             {
-                EXPECT_NE(data.givenName.toStdString(), "");
-                EXPECT_NE(data.surname.toStdString(), "");
-                EXPECT_NE(data.parentGivenName.toStdString(), "");
-                EXPECT_NE(data.sex.toStdString(), "");
-                EXPECT_NE(data.personalNumber.toStdString(), "");
-                EXPECT_NE(data.personalNumber.toStdString(), "");
-                EXPECT_NE(data.dateOfBirth.toStdString(), "");
-                EXPECT_NE(data.placeOfBirth.toStdString(), "");
+                EXPECT_NE(data.givenName, "");
+                EXPECT_NE(data.surname, "");
+                EXPECT_NE(data.parentGivenName, "");
+                EXPECT_NE(data.sex, "");
+                EXPECT_NE(data.personalNumber, "");
+                EXPECT_NE(data.personalNumber, "");
+                EXPECT_NE(data.dateOfBirth, "");
+                EXPECT_NE(data.placeOfBirth, "");
             }
             );
 
-    connect(eIDReader.get(), &EIdReader::variablePersonalDataRead, [](CelikAPI::VariablePersonalData data)
+    connect(eIDReader.get(), &EIdReader::variablePersonalDataRead, [](eidcard::VariablePersonalData data)
             {
-                EXPECT_NE(data.address.toStdString(), "");
-                EXPECT_NE(data.addressDate.toStdString(), "");
+                EXPECT_NE(data.place, "");
+                EXPECT_NE(data.addressDate, "");
             }
             );
 
-    connect(eIDReader.get(), &EIdReader::documentDataRead, [](CelikAPI::DocumentData data)
+    connect(eIDReader.get(), &EIdReader::documentDataRead, [](eidcard::DocumentData data)
             {
-                EXPECT_NE(data.docRegNo.toStdString(), "");
-                EXPECT_NE(data.expiryDate.toStdString(), "");
-                EXPECT_NE(data.issuingDate.toStdString(), "");
-                EXPECT_NE(data.issuingAuthority.toStdString(), "");
+                EXPECT_NE(data.docRegNo, "");
+                EXPECT_NE(data.expiryDate, "");
+                EXPECT_NE(data.issuingDate, "");
+                EXPECT_NE(data.issuingAuthority, "");
             }
             );
 
-    connect(eIDReader.get(), &EIdReader::photoDataRead, [](CelikAPI::PhotoData data)
+    connect(eIDReader.get(), &EIdReader::photoDataRead, [](eidcard::PhotoData data)
             {
                 EXPECT_NE(data.size(), 0);
             }
             );
 
-    connect(eIDReader.get(), &EIdReader::cardSignatureVerificationResultRead, [](CelikAPI::VerificationResult data)
+    connect(eIDReader.get(), &EIdReader::cardVerificationResultRead, [](eidcard::VerificationResult data)
             {
-                EXPECT_EQ(data, CelikAPI::VerificationResult::Good);
+                EXPECT_EQ(data, eidcard::VerificationResult::Valid);
             }
             );
 
-    connect(eIDReader.get(), &EIdReader::fixedSignatureVerificationResultRead, [](CelikAPI::VerificationResult data)
+    connect(eIDReader.get(), &EIdReader::fixedVerificationResultRead, [](eidcard::VerificationResult data)
             {
-                EXPECT_EQ(data, CelikAPI::VerificationResult::Good);
+                EXPECT_EQ(data, eidcard::VerificationResult::Valid);
             }
             );
 
-    connect(eIDReader.get(), &EIdReader::variableSignatureVerificationResultRead, [](CelikAPI::VerificationResult data)
+    connect(eIDReader.get(), &EIdReader::variableVerificationResultRead, [](eidcard::VerificationResult data)
             {
-                EXPECT_EQ(data, CelikAPI::VerificationResult::Good);
+                EXPECT_EQ(data, eidcard::VerificationResult::Valid);
             }
             );
 
-    // eIDReader->requestVerification(CelikAPI::VerificationOption::CheckCard);
-    // eIDReader->requestVerification(CelikAPI::VerificationOption::CheckSignature);
-    // eIDReader->requestVerification(CelikAPI::VerificationOption::NoCheck);
     eIDReader->requestData();
 }
 
@@ -92,7 +89,7 @@ class EIdReaderTest : public ::testing::Test
 protected:
     virtual void SetUp()
     {
-        qRegisterMetaType<CelikAPI::FixedPersonalData>();
+        qRegisterMetaType<eidcard::FixedPersonalData>();
         listener = new EIdReaderListener();
     }
 

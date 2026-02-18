@@ -8,7 +8,8 @@
 #include <memory>
 #include <string>
 #include <QObject>
-#include "celikapi/celikapiplus.h"
+#include <eidcard/eidtypes.h>
+#include "libreceliktypes.h"
 
 namespace eidcard {
 class EIdCard;
@@ -24,14 +25,14 @@ public:
     void requestData();
 
 signals:
-    void cardVersionRead(CelikAPI::CardVersion cardVersion);
-    void fixedPersonalDataRead(CelikAPI::FixedPersonalData fixedPersonalData);
-    void variablePersonalDataRead(CelikAPI::VariablePersonalData variablePersonalData);
-    void documentDataRead(CelikAPI::DocumentData documentData);
-    void photoDataRead(CelikAPI::PhotoData photoData);
-    void cardSignatureVerificationResultRead(CelikAPI::VerificationResult verificationResult);
-    void fixedSignatureVerificationResultRead(CelikAPI::VerificationResult verificationResult);
-    void variableSignatureVerificationResultRead(CelikAPI::VerificationResult verificationResult);
+    void cardTypeRead(eidcard::CardType cardType);
+    void fixedPersonalDataRead(eidcard::FixedPersonalData fixedPersonalData);
+    void variablePersonalDataRead(eidcard::VariablePersonalData variablePersonalData);
+    void documentDataRead(eidcard::DocumentData documentData);
+    void photoDataRead(eidcard::PhotoData photoData);
+    void cardVerificationResultRead(eidcard::VerificationResult verificationResult);
+    void fixedVerificationResultRead(eidcard::VerificationResult verificationResult);
+    void variableVerificationResultRead(eidcard::VerificationResult verificationResult);
 
     void readingStarted();
     void readingFinished();
@@ -39,15 +40,9 @@ signals:
 protected:
     void requestEIdData(std::unique_ptr<eidcard::EIdCard>& eidCard);
     void requestPhoto(std::unique_ptr<eidcard::EIdCard>& eidCard);
-    void requestVerification(std::unique_ptr<eidcard::EIdCard>& eidCard, CelikAPI::VerificationOptions options);
+    void requestVerification(std::unique_ptr<eidcard::EIdCard>& eidCard, LibreSCRS::VerificationOptions options);
 
     std::unique_ptr<eidcard::EIdCard> initEIdCard();
-    CelikAPI::CardVersion readCardVersion(std::unique_ptr<eidcard::EIdCard>& eidCard);
-    CelikAPI::FixedPersonalData readFixedPersonalData(std::unique_ptr<eidcard::EIdCard>& eidCard);
-    CelikAPI::VariablePersonalData readVariablePersonalData(std::unique_ptr<eidcard::EIdCard>& eidCard);
-    CelikAPI::DocumentData readDocumentData(std::unique_ptr<eidcard::EIdCard>& eidCard);
-    CelikAPI::PhotoData readPhotoData(std::unique_ptr<eidcard::EIdCard>& eidCard);
-    CelikAPI::VerificationResult verifyData(std::unique_ptr<eidcard::EIdCard>& eidCard, int option);
 
 private:
     std::string cardReader;

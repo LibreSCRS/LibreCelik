@@ -15,6 +15,8 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets LinguistTools PrintSupport)
 find_package(PCSC)
 find_package(UUID)
 
+set(LIBRECELIK_CERTIFICATES_DIR "${PROJECT_SOURCE_DIR}/thirdparty/certificates/all")
+
 configure_file (
     "${PROJECT_SOURCE_DIR}/src/config.h.in"
     "${PROJECT_BINARY_DIR}/src/config.h"
@@ -25,6 +27,7 @@ set(PROJECT_SOURCES
         librecelik.cpp
         librecelik.h
         librecelik.ui
+        libreceliktypes.h
         utils/libreceliklog.h
         utils/libreceliklog.cpp
         utils/printmanager.h
@@ -35,9 +38,10 @@ set(PROJECT_SOURCES
         smartcard/smartcardevent.h
         smartcard/smartcardreaderlistener.h
         smartcard/smartcardreaderlistener.cpp
-        celikapi/celikapiplus.h
         document/document.h
         document/document.cpp
+        document/textdocument.h
+        document/textdocument.cpp
         document/eid/eidreader.h
         document/eid/eidreader.cpp
         document/eid/eidtextdocument.cpp

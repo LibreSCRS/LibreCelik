@@ -18,14 +18,14 @@ EId::EId(std::string reader, QWidget *parent)
 
     eidReader = std::make_unique<EIdReader>(reader);
 
-    connect(eidReader.get(), &EIdReader::cardVersionRead, this, &EId::cardVersionReceived);
+    connect(eidReader.get(), &EIdReader::cardTypeRead, this, &EId::cardTypeReceived);
     connect(eidReader.get(), &EIdReader::fixedPersonalDataRead, this, &EId::fixedPersonalDataReceived);
-    connect(eidReader.get(), &EIdReader::variablePersonalDataRead, this, &EId::varibalePersonalDataReceived);
+    connect(eidReader.get(), &EIdReader::variablePersonalDataRead, this, &EId::variablePersonalDataReceived);
     connect(eidReader.get(), &EIdReader::documentDataRead, this, &EId::documentDataReceived);
     connect(eidReader.get(), &EIdReader::photoDataRead, this, &EId::photoDataReceived);
-    connect(eidReader.get(), &EIdReader::cardSignatureVerificationResultRead, this, &EId::cardSignatureVerificationResultReceived);
-    connect(eidReader.get(), &EIdReader::fixedSignatureVerificationResultRead, this, &EId::fixedSignatureVerificationResultReceived);
-    connect(eidReader.get(), &EIdReader::variableSignatureVerificationResultRead, this, &EId::variableSignatureVerificationResultReceived);
+    connect(eidReader.get(), &EIdReader::cardVerificationResultRead, this, &EId::cardVerificationResultReceived);
+    connect(eidReader.get(), &EIdReader::fixedVerificationResultRead, this, &EId::fixedVerificationResultReceived);
+    connect(eidReader.get(), &EIdReader::variableVerificationResultRead, this, &EId::variableVerificationResultReceived);
 
     connect(eidReader.get(), &EIdReader::readingStarted, [this](){
         ui->toolButton->setEnabled(false);
@@ -57,15 +57,15 @@ void EId::showLabelAndLineEdit(QLabel* label, QLineEdit* lineEdit, bool show)
     }
 }
 
-void EId::cardVersionReceived(const CelikAPI::CardVersion& data)
+void EId::cardTypeReceived(const eidcard::CardType& data)
 {
-    qCDebug(libreSCRSGeneral) << "Card version received" << static_cast<int> (data);
-    cardVersion = data;
-    switch (cardVersion)
+    qCDebug(libreSCRSGeneral) << "Card type received" << static_cast<int>(data);
+    cardType = data;
+    switch (cardType)
     {
-        case CelikAPI::CardVersion::Unknown:
-        case CelikAPI::CardVersion::Card2008:
-        case CelikAPI::CardVersion::Card2014:
+        case eidcard::CardType::Unknown:
+        case eidcard::CardType::Apollo2008:
+        case eidcard::CardType::Gemalto2014:
         {
             ui->citizenGroupBox_3->setTitle(tr("Citizen Data"));
             ui->jmbgLabel_3->setText(tr("JMBG"));
@@ -77,7 +77,7 @@ void EId::cardVersionReceived(const CelikAPI::CardVersion& data)
             showLabelAndLineEdit(ui->statusOfForeignerLabel_3, ui->statusOfForeignerLineEdit_3, false);
             break;
         }
-        case CelikAPI::CardVersion::CardIF2020:
+        case eidcard::CardType::ForeignerIF2020:
         {
             ui->citizenGroupBox_3->setTitle(tr("Foreigner Data"));
             ui->jmbgLabel_3->setText(tr("EBS"));
@@ -92,29 +92,30 @@ void EId::cardVersionReceived(const CelikAPI::CardVersion& data)
     }
 }
 
-void EId::fixedPersonalDataReceived(const CelikAPI::FixedPersonalData& data)
+void EId::fixedPersonalDataReceived(const eidcard::FixedPersonalData& data)
 {
     fixedPersonalData = data;
-    ui->nameLineEdit_3->setText(data.givenName);
-    ui->surnameLineEdit_3->setText(data.surname);
-    ui->parentNameLineEdit_3->setText(data.parentGivenName);
-    ui->genderLineEdit_3->setText(data.sex);
-    ui->jmbgLineEdit_3->setText(data.personalNumber);
-    ui->dateOfBirthLineEdit_3->setText(data.dateOfBirth);
-    ui->statusOfForeignerLineEdit_3->setText(data.statusOfForeigner);
-    ui->placeOfBirthLineEdit_3->setText(data.placeOfBirth);
-    ui->nationalityLineEdit_3->setText(data.nationalityFull);
+    ui->nameLineEdit_3->setText(QString::fromStdString(data.givenName));
+    ui->surnameLineEdit_3->setText(QString::fromStdString(data.surname));
+    ui->parentNameLineEdit_3->setText(QString::fromStdString(data.parentGivenName));
+    ui->genderLineEdit_3->setText(QString::fromStdString(data.sex));
+    ui->jmbgLineEdit_3->setText(QString::fromStdString(data.personalNumber));
+    ui->dateOfBirthLineEdit_3->setText(QString::fromStdString(data.dateOfBirth));
+    ui->statusOfForeignerLineEdit_3->setText(QString::fromStdString(data.statusOfForeigner));
+    ui->placeOfBirthLineEdit_3->setText(assemblePlaceOfBirth(data));
+    ui->nationalityLineEdit_3->setText(QString::fromStdString(data.nationalityFull));
 }
 
-void EId::varibalePersonalDataReceived(const CelikAPI::VariablePersonalData& data)
+void EId::variablePersonalDataReceived(const eidcard::VariablePersonalData& data)
 {
     variablePersonalData = data;
-    ui->addressLineEdit_3->setText(data.address);
+    ui->addressLineEdit_3->setText(assembleAddress(data));
 
-    if (data.addressDate != "01.01.0001")
+    auto addressDate = QString::fromStdString(data.addressDate);
+    if (addressDate != "01.01.0001")
     {
         showLabelAndLineEdit(ui->dateOfAddressChangeLabel_3, ui->dateOfAddressChangeLineEdit_3, true);
-        ui->dateOfAddressChangeLineEdit_3->setText(data.addressDate);
+        ui->dateOfAddressChangeLineEdit_3->setText(addressDate);
     }
     else
     {
@@ -122,27 +123,27 @@ void EId::varibalePersonalDataReceived(const CelikAPI::VariablePersonalData& dat
     }
 }
 
-void EId::documentDataReceived(const CelikAPI::DocumentData& data)
+void EId::documentDataReceived(const eidcard::DocumentData& data)
 {
     documentData = data;
-    ui->documentNumberLineEdit_3->setText(data.docRegNo);
+    ui->documentNumberLineEdit_3->setText(QString::fromStdString(data.docRegNo));
 
-    QDate receivedDate = QDate::fromString(data.expiryDate, "dd.MM.yyyy");
+    auto expiryDate = QString::fromStdString(data.expiryDate);
+    QDate receivedDate = QDate::fromString(expiryDate, "dd.MM.yyyy");
     QDate currentDate = QDate::currentDate();
     QPalette palette = ui->validToLineEdit_3->palette();
     if (receivedDate.isValid() && receivedDate < currentDate)
     {
-        //palette.setColor(QPalette::Text, QColor("#e6873c"));
         palette.setColor(QPalette::Text, QColor(0xe6, 0x87, 0x3c));
     }
     ui->validToLineEdit_3->setPalette(palette);
 
-    ui->validToLineEdit_3->setText(data.expiryDate);
-    ui->dateOfIssuanceLineEdit_3->setText(data.issuingDate);
-    ui->documentIssuerLineEdit_3->setText(data.issuingAuthority);
+    ui->validToLineEdit_3->setText(expiryDate);
+    ui->dateOfIssuanceLineEdit_3->setText(QString::fromStdString(data.issuingDate));
+    ui->documentIssuerLineEdit_3->setText(QString::fromStdString(data.issuingAuthority));
 }
 
-void EId::photoDataReceived(const CelikAPI::PhotoData& data)
+void EId::photoDataReceived(const eidcard::PhotoData& data)
 {
     if (data.size() > 0)
     {
@@ -156,22 +157,21 @@ void EId::photoDataReceived(const CelikAPI::PhotoData& data)
     }
 }
 
-void EId::updateVerificationIcons(const CelikAPI::VerificationResult& data, QLabel* iconLabel)
+void EId::updateVerificationIcons(const eidcard::VerificationResult& data, QLabel* iconLabel)
 {
     switch (data)
     {
-        case CelikAPI::VerificationResult::Unknown:
+        case eidcard::VerificationResult::Unknown:
         {
             iconLabel->setPixmap(QPixmap(":/images/grey_question_mark.png"));
             break;
         }
-        case CelikAPI::VerificationResult::Good:
+        case eidcard::VerificationResult::Valid:
         {
             iconLabel->setPixmap(QPixmap(":/images/green_checked.png"));
             break;
         }
-
-        case CelikAPI::VerificationResult::Bad:
+        case eidcard::VerificationResult::Invalid:
         {
             iconLabel->setPixmap(QPixmap(":/images/red_exclamation.png"));
             break;
@@ -179,24 +179,49 @@ void EId::updateVerificationIcons(const CelikAPI::VerificationResult& data, QLab
     }
 }
 
-void EId::cardSignatureVerificationResultReceived(const CelikAPI::VerificationResult& data)
+void EId::cardVerificationResultReceived(const eidcard::VerificationResult& data)
 {
     updateVerificationIcons(data, ui->group1Label_3);
 }
 
-void EId::fixedSignatureVerificationResultReceived(const CelikAPI::VerificationResult& data)
+void EId::fixedVerificationResultReceived(const eidcard::VerificationResult& data)
 {
     updateVerificationIcons(data, ui->group2Label_3);
 }
 
-void EId::variableSignatureVerificationResultReceived(const CelikAPI::VerificationResult& data)
+void EId::variableVerificationResultReceived(const eidcard::VerificationResult& data)
 {
     updateVerificationIcons(data, ui->group3Label_3);
 }
 
+QString EId::assembleAddress(const eidcard::VariablePersonalData& vpd) const
+{
+    QStringList parts;
+    parts << QString::fromStdString(vpd.place)
+          << QString::fromStdString(vpd.community)
+          << QString::fromStdString(vpd.street)
+          << QString::fromStdString(vpd.houseNumber);
+    auto address = parts.join(", ");
+    auto floor = QString::fromStdString(vpd.floor);
+    auto apartmentNumber = QString::fromStdString(vpd.apartmentNumber);
+    if (!floor.isEmpty())
+        address += "/" + floor;
+    if (!apartmentNumber.isEmpty())
+        address += "/" + apartmentNumber;
+    return address;
+}
+
+QString EId::assemblePlaceOfBirth(const eidcard::FixedPersonalData& fpd) const
+{
+    QStringList parts;
+    parts << QString::fromStdString(fpd.placeOfBirth)
+          << QString::fromStdString(fpd.communityOfBirth)
+          << QString::fromStdString(fpd.stateOfBirth);
+    return parts.join(", ");
+}
+
 QString EId::getBase64Photo()
 {
-    CelikAPI::PhotoData photo;
     QByteArray bytes;
     QBuffer buffer(&bytes);
     buffer.open(QIODevice::WriteOnly);
@@ -208,10 +233,11 @@ QString EId::getBase64Photo()
 void EId::on_toolButton_clicked()
 {
     QString documentTemplate = ":/html/idcard.html";
-    if (cardVersion == CelikAPI::CardVersion::CardIF2020)
+    if (cardType == eidcard::CardType::ForeignerIF2020)
     {
         documentTemplate = ":/html/idcardIF2020.html";
     }
-    PrintManager::printDocument(EIdTextDocument(fixedPersonalData, variablePersonalData, documentData, getBase64Photo(), documentTemplate), tr("Print Document"));
+    auto address = assembleAddress(variablePersonalData);
+    auto placeOfBirth = assemblePlaceOfBirth(fixedPersonalData);
+    PrintManager::printDocument(EIdTextDocument(fixedPersonalData, variablePersonalData, documentData, address, placeOfBirth, getBase64Photo(), documentTemplate), tr("Print Document"));
 }
-

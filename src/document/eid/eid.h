@@ -5,7 +5,7 @@
 #define EID_H
 
 #include <QWidget>
-#include "celikapi/celikapiplus.h"
+#include <eidcard/eidtypes.h>
 #include "document/document.h"
 
 class EIdReader;
@@ -24,29 +24,32 @@ public:
     ~EId();
 
 private slots:
-    void cardVersionReceived(const CelikAPI::CardVersion& data);
-    void fixedPersonalDataReceived(const CelikAPI::FixedPersonalData& data);
-    void varibalePersonalDataReceived(const CelikAPI::VariablePersonalData& data);
-    void documentDataReceived(const CelikAPI::DocumentData& data);
-    void photoDataReceived(const CelikAPI::PhotoData& data);
-    void cardSignatureVerificationResultReceived(const CelikAPI::VerificationResult& data);
-    void fixedSignatureVerificationResultReceived(const CelikAPI::VerificationResult& data);
-    void variableSignatureVerificationResultReceived(const CelikAPI::VerificationResult& data);
+    void cardTypeReceived(const eidcard::CardType& data);
+    void fixedPersonalDataReceived(const eidcard::FixedPersonalData& data);
+    void variablePersonalDataReceived(const eidcard::VariablePersonalData& data);
+    void documentDataReceived(const eidcard::DocumentData& data);
+    void photoDataReceived(const eidcard::PhotoData& data);
+    void cardVerificationResultReceived(const eidcard::VerificationResult& data);
+    void fixedVerificationResultReceived(const eidcard::VerificationResult& data);
+    void variableVerificationResultReceived(const eidcard::VerificationResult& data);
 
     void on_toolButton_clicked();
 
 private:
-    void updateVerificationIcons(const CelikAPI::VerificationResult& data, QLabel* iconLabel);
+    void updateVerificationIcons(const eidcard::VerificationResult& data, QLabel* iconLabel);
     void showLabelAndLineEdit(QLabel* label, QLineEdit* lineEdit, bool show);
     QString getBase64Photo();
+
+    QString assembleAddress(const eidcard::VariablePersonalData& vpd) const;
+    QString assemblePlaceOfBirth(const eidcard::FixedPersonalData& fpd) const;
 
 private:
     Ui::EId *ui;
 
-    CelikAPI::CardVersion cardVersion;
-    CelikAPI::FixedPersonalData fixedPersonalData;
-    CelikAPI::VariablePersonalData variablePersonalData;
-    CelikAPI::DocumentData documentData;
+    eidcard::CardType cardType = eidcard::CardType::Unknown;
+    eidcard::FixedPersonalData fixedPersonalData;
+    eidcard::VariablePersonalData variablePersonalData;
+    eidcard::DocumentData documentData;
 
     using EIdReaderUPtr = std::unique_ptr<EIdReader>;
     EIdReaderUPtr eidReader;

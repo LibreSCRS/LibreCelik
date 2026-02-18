@@ -4,43 +4,34 @@
 #ifndef CELIKTEXTDOCUMENT_H
 #define CELIKTEXTDOCUMENT_H
 
-#include <QPrinter>
-#include <QTextDocument>
 #include <QCoreApplication>
-#include "celikapi/celikapiplus.h"
+#include <eidcard/eidtypes.h>
+#include "document/textdocument.h"
 
-class QTranslator;
-
-class EIdTextDocument
+class EIdTextDocument : public TextDocument
 {
     Q_DECLARE_TR_FUNCTIONS(CelikTextDocument);
 
 public:
-    EIdTextDocument(const CelikAPI::FixedPersonalData& fixedPersonalData,
-                      const CelikAPI::VariablePersonalData& variablePersonalData,
-                      const CelikAPI::DocumentData& documentData,
-                      const QString& photo,
-                      QString documentPath = ":/html/idcard.html",
-                      QString cssPath = ":/html/idcard.css");
-    void print(QPrinter *printer) const;
+    EIdTextDocument(const eidcard::FixedPersonalData& fixedPersonalData,
+                    const eidcard::VariablePersonalData& variablePersonalData,
+                    const eidcard::DocumentData& documentData,
+                    const QString& address,
+                    const QString& placeOfBirth,
+                    const QString& photo,
+                    QString documentPath = ":/html/idcard.html",
+                    QString cssPath = ":/html/idcard.css");
 
-protected:
-    QTextDocument document;
-
-    void prepareDocumentData(QString &data, const CelikAPI::FixedPersonalData& fixedPersonalData,
-                             const CelikAPI::VariablePersonalData& variablePersonalData,
-                             const CelikAPI::DocumentData& documentData,
-                             const QString& photo) const;
-    void translateDocumentData(QString& data) const;
-    QString getPreparedValue(const QString& data) const;
-    
-    bool isMacOS() const;
-    bool isLinux() const;
-    inline static const std::string MACOS = "Darwin";
-    inline static const std::string LINUX = "Linux";
-    inline static const int MACOS_FONTSIZE = 12;
-    inline static const int LINUX_FONTSIZE = 8;
 private:
+    void translateDocumentData(QString& data) const;
+    void prepareDocumentData(QString& data,
+                             const eidcard::FixedPersonalData& fixedPersonalData,
+                             const eidcard::VariablePersonalData& variablePersonalData,
+                             const eidcard::DocumentData& documentData,
+                             const QString& address,
+                             const QString& placeOfBirth,
+                             const QString& photo) const;
+
     bool isForeigner = false;
 };
 

@@ -10,6 +10,11 @@ add_library(SmartCard STATIC
     src/apdu.cpp
     src/pcsc_connection.cpp
     src/tlv.cpp
+    src/ber.cpp
+    include/smartcard/apdu.h
+    include/smartcard/pcsc_connection.h
+    include/smartcard/tlv.h
+    include/smartcard/ber.h
 )
 
 target_include_directories(SmartCard PUBLIC

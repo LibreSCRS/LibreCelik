@@ -31,8 +31,15 @@
 *.out
 *.app
 
-# Make
-CmakeLists.txt.user
+# Build
+build/
+CMakeLists.txt.user
+
+# IDE
+.qtcreator/
+
+# Git
+.gitconfig
 
 # MacOS
 .DS_Store

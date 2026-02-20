@@ -1,0 +1,131 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright hirashix0@proton.me
+
+#include "certificateviewerdlg.h"
+#include "certificateviewerwidget.h"
+
+#include <QComboBox>
+#include <QDialogButtonBox>
+#include <QLabel>
+#include <QStackedWidget>
+#include <QVBoxLayout>
+
+#include <openssl/bio.h>
+#include <openssl/pem.h>
+
+#include <filesystem>
+#include <fstream>
+
+CertificateViewerDlg::CertificateViewerDlg(const eidcard::CertificateList& certs,
+                                             const std::string& certFolderPath,
+                                             QWidget* parent)
+    : QDialog(parent)
+{
+    setWindowTitle(tr("Certificate Viewer"));
+    resize(600, 500);
+
+    buildStore(certFolderPath);
+    buildUI(certs);
+}
+
+CertificateViewerDlg::~CertificateViewerDlg()
+{
+    for (auto& pc : parsedCerts) {
+        if (pc.x509)
+            X509_free(pc.x509);
+    }
+    if (store)
+        X509_STORE_free(store);
+}
+
+void CertificateViewerDlg::buildStore(const std::string& certFolderPath)
+{
+    store = X509_STORE_new();
+    if (!store)
+        return;
+
+    X509_STORE_set_flags(store, X509_V_FLAG_NO_CHECK_TIME);
+
+    if (!std::filesystem::exists(certFolderPath))
+        return;
+
+    for (const auto& entry : std::filesystem::directory_iterator(certFolderPath)) {
+        if (!entry.is_regular_file())
+            continue;
+
+        auto ext = entry.path().extension().string();
+        if (ext != ".cer" && ext != ".crt" && ext != ".pem")
+            continue;
+
+        std::ifstream ifs(entry.path(), std::ios::binary);
+        if (!ifs)
+            continue;
+
+        std::vector<uint8_t> data((std::istreambuf_iterator<char>(ifs)),
+                                   std::istreambuf_iterator<char>());
+        if (data.empty())
+            continue;
+
+        const uint8_t* p = data.data();
+        X509* cert = d2i_X509(nullptr, &p, static_cast<long>(data.size()));
+        if (!cert) {
+            BIO* bio = BIO_new_mem_buf(data.data(), static_cast<int>(data.size()));
+            if (bio) {
+                cert = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
+                BIO_free(bio);
+            }
+        }
+        if (cert) {
+            X509_STORE_add_cert(store, cert);
+            X509_free(cert);
+        }
+    }
+}
+
+void CertificateViewerDlg::buildUI(const eidcard::CertificateList& certs)
+{
+    auto* layout = new QVBoxLayout(this);
+
+    // Parse DER bytes into X509*
+    for (const auto& cd : certs) {
+        const uint8_t* p = cd.derBytes.data();
+        X509* x509 = d2i_X509(nullptr, &p, static_cast<long>(cd.derBytes.size()));
+        if (x509) {
+            parsedCerts.push_back({ x509, QString::fromStdString(cd.label) });
+        }
+    }
+
+    if (parsedCerts.empty()) {
+        layout->addWidget(new QLabel(tr("No certificates available.")));
+        auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
+        connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
+        layout->addWidget(buttons);
+        return;
+    }
+
+    // Certificate selector
+    if (parsedCerts.size() > 1) {
+        certCombo = new QComboBox(this);
+        for (const auto& pc : parsedCerts)
+            certCombo->addItem(pc.label);
+        layout->addWidget(certCombo);
+    }
+
+    // Stacked widget with one viewer per cert
+    stack = new QStackedWidget(this);
+    for (const auto& pc : parsedCerts) {
+        auto* viewer = new CertificateViewerWidget(pc.x509, store, this);
+        stack->addWidget(viewer);
+    }
+    layout->addWidget(stack);
+
+    if (certCombo) {
+        connect(certCombo, &QComboBox::currentIndexChanged,
+                stack, &QStackedWidget::setCurrentIndex);
+    }
+
+    // Close button
+    auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
+    connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
+    layout->addWidget(buttons);
+}

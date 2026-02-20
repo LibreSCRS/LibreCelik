@@ -25,6 +25,7 @@ EIdReader::EIdReader(const std::string& cardReader, QObject *parent) : cardReade
     qRegisterMetaType<eidcard::VariablePersonalData>();
     qRegisterMetaType<eidcard::PhotoData>();
     qRegisterMetaType<eidcard::VerificationResult>();
+    qRegisterMetaType<eidcard::CertificateList>();
 }
 
 EIdReader::~EIdReader()
@@ -120,6 +121,17 @@ void EIdReader::requestEIdData(std::unique_ptr<eidcard::EIdCard>& eidCard)
     catch(std::runtime_error& re)
     {
         qCWarning(libreCelikAPI) << "Can not read document data on reader: " << cardReader << ". Exception: " << re.what();
+    }
+
+    try
+    {
+        auto certs = eidCard->readCertificates();
+        if (!certs.empty())
+            emit certificateDataRead(std::move(certs));
+    }
+    catch(std::runtime_error& re)
+    {
+        qCWarning(libreCelikAPI) << "Can not read certificates on reader: " << cardReader << ". Exception: " << re.what();
     }
 }
 

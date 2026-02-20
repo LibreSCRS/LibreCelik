@@ -12,10 +12,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets LingistTools PrintSupport)
 find_package(Qt6 REQUIRED COMPONENTS Widgets LinguistTools PrintSupport)
-find_package(PCSC)
+# PCSC is found by LibreMiddleware; UUID is used directly by the app
 find_package(UUID)
 
-set(LIBRECELIK_CERTIFICATES_DIR "${PROJECT_SOURCE_DIR}/thirdparty/certificates/all")
+set(LIBRECELIK_CERTIFICATES_DIR "${libremiddleware_SOURCE_DIR}/thirdparty/certificates/all")
 
 configure_file (
     "${PROJECT_SOURCE_DIR}/src/config.h.in"
@@ -49,6 +49,19 @@ set(PROJECT_SOURCES
         document/eid/eid.h
         document/eid/eid.cpp
         document/eid/eid.ui
+        certificate/certificateinfoitem.h
+        certificate/certificateinfoitem.cpp
+        certificate/certificatetreeviewmodel.h
+        certificate/certificatetreeviewmodel.cpp
+        certificate/certificatepropertiesmodel.h
+        certificate/certificatepropertiesmodel.cpp
+        certificate/certificatehierarchymodel.h
+        certificate/certificatehierarchymodel.cpp
+        certificate/certificateviewerwidget.h
+        certificate/certificateviewerwidget.cpp
+        certificate/certificateviewerwidget.ui
+        certificate/certificateviewerdlg.h
+        certificate/certificateviewerdlg.cpp
         document/vehicle/vehiclereader.h
         document/vehicle/vehiclereader.cpp
         document/vehicle/vehicletextdocument.h

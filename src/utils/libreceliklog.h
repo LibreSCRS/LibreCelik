@@ -9,5 +9,6 @@ Q_DECLARE_LOGGING_CATEGORY(libreSCRSGeneral)
 Q_DECLARE_LOGGING_CATEGORY(librecSCRSCard)
 Q_DECLARE_LOGGING_CATEGORY(libreCelikAPI)
 Q_DECLARE_LOGGING_CATEGORY(libreCelikPrinting)
+Q_DECLARE_LOGGING_CATEGORY(libreCelikCertificates)
 
 #endif // libreceliklog_H

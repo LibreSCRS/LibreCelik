@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Core Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
-find_package(PCSC)
+# PCSC is found by LibreMiddleware; UUID is used directly by tests
 find_package(UUID)
 
 set(CMAKE_AUTOMOC ON)

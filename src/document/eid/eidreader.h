@@ -30,6 +30,7 @@ signals:
     void variablePersonalDataRead(eidcard::VariablePersonalData variablePersonalData);
     void documentDataRead(eidcard::DocumentData documentData);
     void photoDataRead(eidcard::PhotoData photoData);
+    void certificateDataRead(eidcard::CertificateList certificateList);
     void cardVerificationResultRead(eidcard::VerificationResult verificationResult);
     void fixedVerificationResultRead(eidcard::VerificationResult verificationResult);
     void variableVerificationResultRead(eidcard::VerificationResult verificationResult);

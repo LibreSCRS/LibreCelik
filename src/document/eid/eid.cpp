@@ -8,6 +8,8 @@
 #include "eid.h"
 #include "eidtextdocument.h"
 #include "eidreader.h"
+#include "certificate/certificateviewerdlg.h"
+#include "config.h"
 #include "ui_eid.h"
 
 EId::EId(std::string reader, QWidget *parent)
@@ -26,6 +28,7 @@ EId::EId(std::string reader, QWidget *parent)
     connect(eidReader.get(), &EIdReader::cardVerificationResultRead, this, &EId::cardVerificationResultReceived);
     connect(eidReader.get(), &EIdReader::fixedVerificationResultRead, this, &EId::fixedVerificationResultReceived);
     connect(eidReader.get(), &EIdReader::variableVerificationResultRead, this, &EId::variableVerificationResultReceived);
+    connect(eidReader.get(), &EIdReader::certificateDataRead, this, &EId::certificateDataReceived);
 
     connect(eidReader.get(), &EIdReader::readingStarted, [this](){
         ui->toolButton->setEnabled(false);
@@ -33,6 +36,8 @@ EId::EId(std::string reader, QWidget *parent)
     connect(eidReader.get(), &EIdReader::readingFinished, [this](){
         ui->toolButton->setEnabled(true);
     });
+
+    certFolderPath = LIBRECELIK_CERTIFICATES_DIR;
 
     eidReader->requestData();
 }
@@ -228,6 +233,21 @@ QString EId::getBase64Photo()
     ui->pictureLabel_3->pixmap(Qt::ReturnByValue).save(&buffer, "PNG");
 
     return bytes.toBase64();
+}
+
+void EId::certificateDataReceived(const eidcard::CertificateList& data)
+{
+    certificateList = data;
+    ui->certificatesButton->setEnabled(!certificateList.empty());
+}
+
+void EId::on_certificatesButton_clicked()
+{
+    if (certificateList.empty())
+        return;
+
+    CertificateViewerDlg dlg(certificateList, certFolderPath, this);
+    dlg.exec();
 }
 
 void EId::on_toolButton_clicked()

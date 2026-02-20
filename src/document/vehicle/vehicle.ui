@@ -153,6 +153,12 @@
          <!-- Vehicle Data Group -->
          <item>
           <widget class="QGroupBox" name="vehicleGroupBox">
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
            <property name="title">
             <string>Vehicle data</string>
            </property>
@@ -341,6 +347,12 @@
          <!-- Engine Group -->
          <item>
           <widget class="QGroupBox" name="engineGroupBox">
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
            <property name="title">
             <string>Engine</string>
            </property>
@@ -427,6 +439,12 @@
          <!-- Mass/Load Group -->
          <item>
           <widget class="QGroupBox" name="massGroupBox">
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
            <property name="title">
             <string>Mass and load</string>
            </property>
@@ -571,6 +589,12 @@
          <!-- Owner Group -->
          <item>
           <widget class="QGroupBox" name="ownerGroupBox">
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
            <property name="title">
             <string>Owner</string>
            </property>
@@ -657,6 +681,12 @@
          <!-- User Group -->
          <item>
           <widget class="QGroupBox" name="userGroupBox">
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
            <property name="title">
             <string>User</string>
            </property>
@@ -743,6 +773,12 @@
          <!-- Document Data Group -->
          <item>
           <widget class="QGroupBox" name="documentGroupBox">
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
            <property name="title">
             <string>Document data</string>
            </property>

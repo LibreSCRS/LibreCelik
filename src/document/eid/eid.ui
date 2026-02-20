@@ -128,6 +128,22 @@
             </spacer>
            </item>
            <item>
+            <widget class="QToolButton" name="certificatesButton">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>Certificates</string>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>48</width>
+               <height>48</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QToolButton" name="toolButton">
              <property name="enabled">
               <bool>false</bool>

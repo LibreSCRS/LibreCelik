@@ -26,10 +26,17 @@ set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_
 
 project(LibreCelik VERSION ${PROJECT_VERSION} LANGUAGES CXX)
 
-add_subdirectory(thirdparty)
-add_subdirectory(lib/smartcard)
-add_subdirectory(lib/eidcard)
-add_subdirectory(lib/vehiclecard)
+# Fetch LibreMiddleware (smartcard, eidcard, vehiclecard libraries)
+include(FetchContent)
+FetchContent_Declare(LibreMiddleware
+    GIT_REPOSITORY git@github-hirashix0:LibreSCRS/LibreMiddleware.git
+    GIT_TAG main
+)
+FetchContent_MakeAvailable(LibreMiddleware)
+
+# Add LibreMiddleware's cmake modules to our path (for FindPCSC, FindUUID)
+list(APPEND CMAKE_MODULE_PATH "${libremiddleware_SOURCE_DIR}/cmake")
+
 add_subdirectory(resources)
 add_subdirectory(src)
 add_subdirectory(test)

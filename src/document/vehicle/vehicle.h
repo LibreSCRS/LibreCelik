@@ -8,6 +8,7 @@
 #include <vehiclecard/vehicletypes.h>
 #include "document/document.h"
 
+class QGroupBox;
 class VehicleReader;
 
 namespace Ui {
@@ -27,6 +28,8 @@ private slots:
     void on_toolButton_clicked();
 
 private:
+    void setupCollapsibleGroup(QGroupBox *group);
+
     Ui::Vehicle *ui;
 
     vehiclecard::VehicleDocumentData vehicleData;

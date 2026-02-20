@@ -7,6 +7,7 @@
 #include <QWidget>
 #include <eidcard/eidtypes.h>
 #include "document/document.h"
+#include <string>
 
 class EIdReader;
 class QLabel;
@@ -32,8 +33,10 @@ private slots:
     void cardVerificationResultReceived(const eidcard::VerificationResult& data);
     void fixedVerificationResultReceived(const eidcard::VerificationResult& data);
     void variableVerificationResultReceived(const eidcard::VerificationResult& data);
+    void certificateDataReceived(const eidcard::CertificateList& data);
 
     void on_toolButton_clicked();
+    void on_certificatesButton_clicked();
 
 private:
     void updateVerificationIcons(const eidcard::VerificationResult& data, QLabel* iconLabel);
@@ -50,6 +53,8 @@ private:
     eidcard::FixedPersonalData fixedPersonalData;
     eidcard::VariablePersonalData variablePersonalData;
     eidcard::DocumentData documentData;
+    eidcard::CertificateList certificateList;
+    std::string certFolderPath;
 
     using EIdReaderUPtr = std::unique_ptr<EIdReader>;
     EIdReaderUPtr eidReader;

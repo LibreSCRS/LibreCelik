@@ -2,6 +2,7 @@
 // Copyright hirashix0@proton.me
 
 #include <QDate>
+#include <QGroupBox>
 #include "utils/libreceliklog.h"
 #include "utils/printmanager.h"
 #include "vehicle.h"
@@ -26,7 +27,22 @@ Vehicle::Vehicle(std::string reader, QWidget *parent)
         ui->toolButton->setEnabled(true);
     });
 
+    setupCollapsibleGroup(ui->vehicleGroupBox);
+    setupCollapsibleGroup(ui->engineGroupBox);
+    setupCollapsibleGroup(ui->massGroupBox);
+    setupCollapsibleGroup(ui->ownerGroupBox);
+    setupCollapsibleGroup(ui->userGroupBox);
+    setupCollapsibleGroup(ui->documentGroupBox);
+
     vehicleReader->requestData();
+}
+
+void Vehicle::setupCollapsibleGroup(QGroupBox *group)
+{
+    connect(group, &QGroupBox::toggled, group, [group](bool checked) {
+        for (auto *child : group->findChildren<QWidget *>(Qt::FindDirectChildrenOnly))
+            child->setVisible(checked);
+    });
 }
 
 Vehicle::~Vehicle()
@@ -100,6 +116,12 @@ void Vehicle::vehicleDataReceived(const vehiclecard::VehicleDocumentData& data)
     ui->usersNameLineEdit->setText(QString::fromStdString(data.usersName));
     ui->usersAddressLineEdit->setText(QString::fromStdString(data.usersAddress));
     ui->usersPersonalNoLineEdit->setText(QString::fromStdString(data.usersPersonalNo));
+
+    // Hide User section when all fields are empty
+    if (data.usersSurnameOrBusinessName.empty() && data.usersName.empty()
+        && data.usersAddress.empty() && data.usersPersonalNo.empty()) {
+        ui->userGroupBox->setVisible(false);
+    }
 }
 
 void Vehicle::on_toolButton_clicked()

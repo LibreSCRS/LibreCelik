@@ -2,6 +2,7 @@
 // Copyright hirashix0@proton.me
 
 #include "librecelik.h"
+#include "config.h"
 #include "utils/libreceliklog.h"
 #include "smartcard/smartcardreaderlistener.h"
 #include "ui_librecelik.h"
@@ -23,6 +24,14 @@ LibreCelik::LibreCelik(QWidget *parent)
 
     ui->statusbar->hide();
     ui->menubar->hide();
+
+    ui->aboutLabel->setText(
+        QString("<br><br>") +
+        tr("<b>LibreCelik</b> :: Version %1 :: <a href=\"https://www.gnu.org/licenses/gpl-3.0.html\">GPL-3.0-or-later</a>"
+           " :: <a href=\"https://github.com/LibreSCRS/LibreCelik\">github.com/LibreSCRS/LibreCelik</a>").arg(LIBRECELIK_VERSION) +
+        QString("<br>") +
+        tr("<b>LibreMiddleware</b> :: Version %1 :: <a href=\"https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html\">LGPL-2.1-or-later</a>"
+           " :: <a href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a>").arg(LIBRECELIK_MIDDLEWARE_VERSION));
 
     connect(&SmartCardReaderListener::instance(), &SmartCardReaderListener::smartCardReaderEventOccured, this, &LibreCelik::onCardEventReceived);
     connect(&SmartCardReaderListener::instance(), &SmartCardReaderListener::smartCardReaderEnumerationChanged, this, &LibreCelik::onSmartCardReaderEnumerationChanged);

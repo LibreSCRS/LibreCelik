@@ -28,88 +28,88 @@
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="85"/>
         <source>Unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Непознато</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="107"/>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="142"/>
         <source>Valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Важећи</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="109"/>
         <source>Unspecified error</source>
-        <translation type="unfinished"></translation>
+        <translation>Неодређена грешка</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="111"/>
         <source>Unable to get issuer certificate</source>
-        <translation type="unfinished"></translation>
+        <translation>Није могуће добити сертификат издавача</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="113"/>
         <source>Unable to get CRL</source>
-        <translation type="unfinished"></translation>
+        <translation>Није могуће добити листу опозваних сертификата</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="115"/>
         <source>Unable to decrypt certificate signature</source>
-        <translation type="unfinished"></translation>
+        <translation>Није могуће дешифровати потпис сертификата</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="117"/>
         <source>Unable to decode issuer public key</source>
-        <translation type="unfinished"></translation>
+        <translation>Није могуће декодирати јавни кључ издавача</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="119"/>
         <source>Certificate not yet valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Сертификат још увек није важећи</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="121"/>
         <source>Certificate has expired</source>
-        <translation type="unfinished"></translation>
+        <translation>Сертификат је истекао</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="123"/>
         <source>Certificate signature failure</source>
-        <translation type="unfinished"></translation>
+        <translation>Грешка у потпису сертификата</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="125"/>
         <source>Error in cert not before field</source>
-        <translation type="unfinished"></translation>
+        <translation>Грешка у пољу &quot;не пре&quot; сертификата</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="127"/>
         <source>Error in cert not after field</source>
-        <translation type="unfinished"></translation>
+        <translation>Грешка у пољу &quot;не после&quot; сертификата</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="129"/>
         <source>Self-signed certificate</source>
-        <translation type="unfinished"></translation>
+        <translation>Самопотписани сертификат</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="131"/>
         <source>Self-signed certificate in chain</source>
-        <translation type="unfinished"></translation>
+        <translation>Самопотписани сертификат у ланцу</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="133"/>
         <source>Unable to get local issuer certificate</source>
-        <translation type="unfinished"></translation>
+        <translation>Није могуће добити локални сертификат издавача</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="135"/>
         <source>Unable to verify leaf signature</source>
-        <translation type="unfinished"></translation>
+        <translation>Није могуће верификовати крајњи потпис</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatehierarchymodel.cpp" line="137"/>
         <source>Certificate revoked</source>
-        <translation type="unfinished"></translation>
+        <translation>Сертификат је опозван</translation>
     </message>
 </context>
 <context>
@@ -117,72 +117,72 @@
     <message>
         <location filename="../../src/certificate/certificatepropertiesmodel.cpp" line="36"/>
         <source>Version</source>
-        <translation type="unfinished"></translation>
+        <translation>Верзија</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatepropertiesmodel.cpp" line="47"/>
         <source>Serial Number</source>
-        <translation type="unfinished"></translation>
+        <translation>Серијски број</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatepropertiesmodel.cpp" line="64"/>
         <source>Signature Algorithm</source>
-        <translation type="unfinished"></translation>
+        <translation>Алгоритам потписа</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatepropertiesmodel.cpp" line="73"/>
         <source>Issuer</source>
-        <translation type="unfinished"></translation>
+        <translation>Издавач</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatepropertiesmodel.cpp" line="79"/>
         <source>Validity</source>
-        <translation type="unfinished"></translation>
+        <translation>Важност</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatepropertiesmodel.cpp" line="83"/>
         <source>Not Before</source>
-        <translation type="unfinished"></translation>
+        <translation>Не пре</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatepropertiesmodel.cpp" line="85"/>
         <source>Not After</source>
-        <translation type="unfinished"></translation>
+        <translation>Не после</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatepropertiesmodel.cpp" line="94"/>
         <source>Subject</source>
-        <translation type="unfinished"></translation>
+        <translation>Субјект</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatepropertiesmodel.cpp" line="104"/>
         <source>Public Key Info</source>
-        <translation type="unfinished"></translation>
+        <translation>Информације о јавном кључу</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatepropertiesmodel.cpp" line="110"/>
         <source>Algorithm</source>
-        <translation type="unfinished"></translation>
+        <translation>Алгоритам</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatepropertiesmodel.cpp" line="110"/>
         <source>Unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Непознато</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatepropertiesmodel.cpp" line="114"/>
         <source>Key Size</source>
-        <translation type="unfinished"></translation>
+        <translation>Величина кључа</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatepropertiesmodel.cpp" line="126"/>
         <source>Extensions</source>
-        <translation type="unfinished"></translation>
+        <translation>Проширења</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatepropertiesmodel.cpp" line="155"/>
         <source> (Critical)</source>
-        <translation type="unfinished"></translation>
+        <translation> (Критично)</translation>
     </message>
 </context>
 <context>
@@ -190,12 +190,12 @@
     <message>
         <location filename="../../src/certificate/certificatetreeviewmodel.cpp" line="52"/>
         <source>Field</source>
-        <translation type="unfinished"></translation>
+        <translation>Поље</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificatetreeviewmodel.cpp" line="53"/>
         <source>Value</source>
-        <translation type="unfinished"></translation>
+        <translation>Вредност</translation>
     </message>
 </context>
 <context>
@@ -203,12 +203,12 @@
     <message>
         <location filename="../../src/certificate/certificateviewerdlg.cpp" line="24"/>
         <source>Certificate Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Преглед сертификата</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerdlg.cpp" line="99"/>
         <source>No certificates available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Нема доступних сертификата.</translation>
     </message>
 </context>
 <context>
@@ -216,90 +216,90 @@
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="21"/>
         <source>General</source>
-        <translation type="unfinished"></translation>
+        <translation>Опште</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="27"/>
         <source>Issued To</source>
-        <translation type="unfinished"></translation>
+        <translation>Издат за</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="39"/>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="122"/>
         <source>Common Name (CN):</source>
-        <translation type="unfinished"></translation>
+        <translation>Уобичајено име (CN):</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="56"/>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="139"/>
         <source>Organization (O):</source>
-        <translation type="unfinished"></translation>
+        <translation>Организација (O):</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="73"/>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="156"/>
         <source>Organizational Unit (OU):</source>
-        <translation type="unfinished"></translation>
+        <translation>Организациона јединица (OU):</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="90"/>
         <source>Serial Number:</source>
-        <translation type="unfinished"></translation>
+        <translation>Серијски број:</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="110"/>
         <source>Issued By</source>
-        <translation type="unfinished"></translation>
+        <translation>Издао</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="176"/>
         <source>Validity</source>
-        <translation type="unfinished"></translation>
+        <translation>Важност</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="188"/>
         <source>Issued On:</source>
-        <translation type="unfinished"></translation>
+        <translation>Издат:</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="205"/>
         <source>Expires On:</source>
-        <translation type="unfinished"></translation>
+        <translation>Истиче:</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="225"/>
         <source>Key Usage</source>
-        <translation type="unfinished"></translation>
+        <translation>Употреба кључа</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="255"/>
         <source>Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Детаљи</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="287"/>
         <source>Certification Path</source>
-        <translation type="unfinished"></translation>
+        <translation>Путања сертификације</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="303"/>
         <source>Certificate Status</source>
-        <translation type="unfinished"></translation>
+        <translation>Статус сертификата</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="312"/>
         <source>Common Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Уобичајено име:</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.ui" line="326"/>
         <source>Status:</source>
-        <translation type="unfinished"></translation>
+        <translation>Статус:</translation>
     </message>
     <message>
         <location filename="../../src/certificate/certificateviewerwidget.cpp" line="204"/>
         <source>Valid</source>
-        <translation type="unfinished"></translation>
+        <translation>Важећи</translation>
     </message>
 </context>
 <context>
@@ -314,143 +314,143 @@
         <translation type="obsolete">Република Србија</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="72"/>
+        <location filename="../../src/document/eid/eid.ui" line="70"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Republic Of&lt;/p&gt;&lt;p&gt;Serbia&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Република&lt;/p&gt;&lt;p&gt;Србија&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="110"/>
+        <location filename="../../src/document/eid/eid.ui" line="106"/>
         <location filename="../../src/document/eid/eid.cpp" line="77"/>
         <source>Identity card</source>
         <translation type="unfinished">Лична карта</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="136"/>
+        <location filename="../../src/document/eid/eid.ui" line="144"/>
         <source>Certificates</source>
-        <translation type="unfinished"></translation>
+        <translation>Сертификати</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="152"/>
+        <location filename="../../src/document/eid/eid.ui" line="179"/>
         <source>Print</source>
         <translation type="unfinished">Штампај</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="240"/>
+        <location filename="../../src/document/eid/eid.ui" line="270"/>
         <source>Signatures of data groups</source>
         <translation type="unfinished">Потписи група података</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="276"/>
-        <location filename="../../src/document/eid/eid.ui" line="656"/>
+        <location filename="../../src/document/eid/eid.ui" line="306"/>
+        <location filename="../../src/document/eid/eid.ui" line="686"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="52"/>
         <source>Document data</source>
         <translation type="unfinished">Подаци о документу</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="303"/>
+        <location filename="../../src/document/eid/eid.ui" line="333"/>
         <source>Personal fixed data</source>
         <translation type="unfinished">Лични непроменљиви подаци</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="330"/>
+        <location filename="../../src/document/eid/eid.ui" line="360"/>
         <source>Personal variable data</source>
         <translation type="unfinished">Лични променљиви подаци</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="367"/>
+        <location filename="../../src/document/eid/eid.ui" line="397"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="34"/>
         <location filename="../../src/document/eid/eid.cpp" line="75"/>
         <source>Citizen Data</source>
         <translation type="unfinished">Подаци о грађанину</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="378"/>
+        <location filename="../../src/document/eid/eid.ui" line="408"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="35"/>
         <source>Surname</source>
         <translation type="unfinished">Презиме</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="399"/>
+        <location filename="../../src/document/eid/eid.ui" line="429"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="36"/>
         <source>Name</source>
         <translation type="unfinished">Име</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="422"/>
+        <location filename="../../src/document/eid/eid.ui" line="452"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="38"/>
         <source>Nationality</source>
         <translation type="unfinished">Држављанство</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="443"/>
+        <location filename="../../src/document/eid/eid.ui" line="473"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="37"/>
         <source>Parent name</source>
         <translation type="unfinished">Име једног родитеља</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="468"/>
+        <location filename="../../src/document/eid/eid.ui" line="498"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="41"/>
         <source>Status of foreigner</source>
         <translation type="unfinished">Основ боравка</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="489"/>
+        <location filename="../../src/document/eid/eid.ui" line="519"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="40"/>
         <source>Place of birth</source>
         <translation type="unfinished">Место рођења</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="520"/>
+        <location filename="../../src/document/eid/eid.ui" line="550"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="48"/>
         <source>Date of address change</source>
         <translation type="unfinished">Датум промене адресе</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="541"/>
+        <location filename="../../src/document/eid/eid.ui" line="571"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="39"/>
         <source>Date of birth</source>
         <translation type="unfinished">Датум рођења</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="564"/>
+        <location filename="../../src/document/eid/eid.ui" line="594"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="46"/>
         <location filename="../../src/document/eid/eid.cpp" line="78"/>
         <source>Address</source>
         <translation type="unfinished">Адреса</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="593"/>
+        <location filename="../../src/document/eid/eid.ui" line="623"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="49"/>
         <location filename="../../src/document/eid/eid.cpp" line="76"/>
         <source>JMBG</source>
         <translation type="unfinished">ЈМБГ</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="620"/>
+        <location filename="../../src/document/eid/eid.ui" line="650"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="50"/>
         <source>Gender</source>
         <translation type="unfinished">Пол</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="672"/>
+        <location filename="../../src/document/eid/eid.ui" line="702"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="53"/>
         <source>Document issuer</source>
         <translation type="unfinished">Издавалац документа</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="693"/>
+        <location filename="../../src/document/eid/eid.ui" line="723"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="54"/>
         <source>Document number</source>
         <translation type="unfinished">Број документа</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="714"/>
+        <location filename="../../src/document/eid/eid.ui" line="744"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="55"/>
         <source>Date of issuance</source>
         <translation type="unfinished">Датум издавања</translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="735"/>
+        <location filename="../../src/document/eid/eid.ui" line="765"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="56"/>
         <source>Valid to</source>
         <translation type="unfinished">Важи до</translation>

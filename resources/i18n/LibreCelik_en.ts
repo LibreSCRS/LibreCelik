@@ -306,143 +306,143 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="72"/>
+        <location filename="../../src/document/eid/eid.ui" line="70"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Republic Of&lt;/p&gt;&lt;p&gt;Serbia&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="110"/>
+        <location filename="../../src/document/eid/eid.ui" line="106"/>
         <location filename="../../src/document/eid/eid.cpp" line="77"/>
         <source>Identity card</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="136"/>
+        <location filename="../../src/document/eid/eid.ui" line="144"/>
         <source>Certificates</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="152"/>
+        <location filename="../../src/document/eid/eid.ui" line="179"/>
         <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="240"/>
+        <location filename="../../src/document/eid/eid.ui" line="270"/>
         <source>Signatures of data groups</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="276"/>
-        <location filename="../../src/document/eid/eid.ui" line="656"/>
+        <location filename="../../src/document/eid/eid.ui" line="306"/>
+        <location filename="../../src/document/eid/eid.ui" line="686"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="52"/>
         <source>Document data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="303"/>
+        <location filename="../../src/document/eid/eid.ui" line="333"/>
         <source>Personal fixed data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="330"/>
+        <location filename="../../src/document/eid/eid.ui" line="360"/>
         <source>Personal variable data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="367"/>
+        <location filename="../../src/document/eid/eid.ui" line="397"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="34"/>
         <location filename="../../src/document/eid/eid.cpp" line="75"/>
         <source>Citizen Data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="378"/>
+        <location filename="../../src/document/eid/eid.ui" line="408"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="35"/>
         <source>Surname</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="399"/>
+        <location filename="../../src/document/eid/eid.ui" line="429"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="36"/>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="422"/>
+        <location filename="../../src/document/eid/eid.ui" line="452"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="38"/>
         <source>Nationality</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="443"/>
+        <location filename="../../src/document/eid/eid.ui" line="473"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="37"/>
         <source>Parent name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="468"/>
+        <location filename="../../src/document/eid/eid.ui" line="498"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="41"/>
         <source>Status of foreigner</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="489"/>
+        <location filename="../../src/document/eid/eid.ui" line="519"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="40"/>
         <source>Place of birth</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="520"/>
+        <location filename="../../src/document/eid/eid.ui" line="550"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="48"/>
         <source>Date of address change</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="541"/>
+        <location filename="../../src/document/eid/eid.ui" line="571"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="39"/>
         <source>Date of birth</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="564"/>
+        <location filename="../../src/document/eid/eid.ui" line="594"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="46"/>
         <location filename="../../src/document/eid/eid.cpp" line="78"/>
         <source>Address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="593"/>
+        <location filename="../../src/document/eid/eid.ui" line="623"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="49"/>
         <location filename="../../src/document/eid/eid.cpp" line="76"/>
         <source>JMBG</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="620"/>
+        <location filename="../../src/document/eid/eid.ui" line="650"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="50"/>
         <source>Gender</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="672"/>
+        <location filename="../../src/document/eid/eid.ui" line="702"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="53"/>
         <source>Document issuer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="693"/>
+        <location filename="../../src/document/eid/eid.ui" line="723"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="54"/>
         <source>Document number</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="714"/>
+        <location filename="../../src/document/eid/eid.ui" line="744"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="55"/>
         <source>Date of issuance</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/eid.ui" line="735"/>
+        <location filename="../../src/document/eid/eid.ui" line="765"/>
         <location filename="../../src/document/eid/eidtextdocument.cpp" line="56"/>
         <source>Valid to</source>
         <translation type="unfinished"></translation>

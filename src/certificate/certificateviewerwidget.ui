@@ -7,14 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>550</width>
-    <height>450</height>
+    <height>550</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="generalTab">
       <attribute name="title">
@@ -31,7 +31,7 @@
            <enum>QFormLayout::FieldGrowthPolicy::ExpandingFieldsGrow</enum>
           </property>
           <property name="labelAlignment">
-           <set>Qt::AlignmentFlag::AlignLeft</set>
+           <set>Qt::AlignmentFlag::AlignLeading</set>
           </property>
           <item row="0" column="0">
            <widget class="QLabel" name="issuedToCNLabel">
@@ -42,11 +42,11 @@
           </item>
           <item row="0" column="1">
            <widget class="QLineEdit" name="issuedToCNEdit">
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignLeading</set>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignLeft</set>
             </property>
            </widget>
           </item>
@@ -59,11 +59,11 @@
           </item>
           <item row="1" column="1">
            <widget class="QLineEdit" name="issuedToOEdit">
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignLeading</set>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignLeft</set>
             </property>
            </widget>
           </item>
@@ -76,11 +76,11 @@
           </item>
           <item row="2" column="1">
            <widget class="QLineEdit" name="issuedToOUEdit">
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignLeading</set>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignLeft</set>
             </property>
            </widget>
           </item>
@@ -93,11 +93,11 @@
           </item>
           <item row="3" column="1">
            <widget class="QLineEdit" name="issuedToSerialEdit">
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignLeading</set>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignLeft</set>
             </property>
            </widget>
           </item>
@@ -114,7 +114,7 @@
            <enum>QFormLayout::FieldGrowthPolicy::ExpandingFieldsGrow</enum>
           </property>
           <property name="labelAlignment">
-           <set>Qt::AlignmentFlag::AlignLeft</set>
+           <set>Qt::AlignmentFlag::AlignLeading</set>
           </property>
           <item row="0" column="0">
            <widget class="QLabel" name="issuedByCNLabel">
@@ -125,11 +125,11 @@
           </item>
           <item row="0" column="1">
            <widget class="QLineEdit" name="issuedByCNEdit">
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignLeading</set>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignLeft</set>
             </property>
            </widget>
           </item>
@@ -142,11 +142,11 @@
           </item>
           <item row="1" column="1">
            <widget class="QLineEdit" name="issuedByOEdit">
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignLeading</set>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignLeft</set>
             </property>
            </widget>
           </item>
@@ -159,11 +159,11 @@
           </item>
           <item row="2" column="1">
            <widget class="QLineEdit" name="issuedByOUEdit">
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignLeading</set>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignLeft</set>
             </property>
            </widget>
           </item>
@@ -180,7 +180,7 @@
            <enum>QFormLayout::FieldGrowthPolicy::ExpandingFieldsGrow</enum>
           </property>
           <property name="labelAlignment">
-           <set>Qt::AlignmentFlag::AlignLeft</set>
+           <set>Qt::AlignmentFlag::AlignLeading</set>
           </property>
           <item row="0" column="0">
            <widget class="QLabel" name="notBeforeLabel">
@@ -191,11 +191,11 @@
           </item>
           <item row="0" column="1">
            <widget class="QLineEdit" name="notBeforeEdit">
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignLeading</set>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignLeft</set>
             </property>
            </widget>
           </item>
@@ -208,11 +208,11 @@
           </item>
           <item row="1" column="1">
            <widget class="QLineEdit" name="notAfterEdit">
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignLeading</set>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignLeft</set>
             </property>
            </widget>
           </item>
@@ -264,9 +264,6 @@
        </item>
        <item>
         <widget class="QTextEdit" name="detailsValueEdit">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
          <property name="maximumSize">
           <size>
            <width>16777215</width>
@@ -277,6 +274,9 @@
           <font>
            <family>Courier</family>
           </font>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -289,11 +289,11 @@
       <layout class="QVBoxLayout" name="certPathLayout">
        <item>
         <widget class="QTreeView" name="certPathTreeView">
-         <property name="headerHidden">
-          <bool>true</bool>
-         </property>
          <property name="textElideMode">
           <enum>Qt::TextElideMode::ElideNone</enum>
+         </property>
+         <property name="headerHidden">
+          <bool>true</bool>
          </property>
         </widget>
        </item>

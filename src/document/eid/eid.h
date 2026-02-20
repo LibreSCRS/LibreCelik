@@ -6,6 +6,7 @@
 
 #include <QWidget>
 #include <eidcard/eidtypes.h>
+#include "certificate/certificateviewerdlg.h"
 #include "document/document.h"
 #include <string>
 
@@ -58,6 +59,9 @@ private:
 
     using EIdReaderUPtr = std::unique_ptr<EIdReader>;
     EIdReaderUPtr eidReader;
+
+    using CertificateViewerDlgUPtr = std::unique_ptr<CertificateViewerDlg>;
+    CertificateViewerDlgUPtr certificateDialog;
 };
 
 #endif // EID_H

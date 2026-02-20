@@ -18,7 +18,7 @@
     <item row="0" column="0">
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="page_1">
        <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -48,14 +48,27 @@
            </widget>
           </item>
           <item>
-           <spacer name="verticalSpacer">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Supported cards: Serbian eID, Vehicle Registration, Residence Permit</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_2">
             <property name="orientation">
              <enum>Qt::Orientation::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Policy::Preferred</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
               <width>20</width>
-              <height>40</height>
+              <height>100</height>
              </size>
             </property>
            </spacer>
@@ -77,6 +90,35 @@
             </property>
             <property name="alignment">
              <set>Qt::AlignmentFlag::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Orientation::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="aboutLabel">
+            <property name="text">
+             <string/>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignCenter</set>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+            <property name="openExternalLinks">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -106,8 +148,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>738</width>
-                 <height>606</height>
+                 <width>60</width>
+                 <height>16</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -137,7 +179,7 @@
      <x>0</x>
      <y>0</y>
      <width>832</width>
-     <height>37</height>
+     <height>33</height>
     </rect>
    </property>
   </widget>

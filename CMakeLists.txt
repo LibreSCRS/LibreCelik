@@ -16,21 +16,17 @@ set(PROJECT_VERSION_MAJOR ${GIT_VERSION_MAJOR})
 set(PROJECT_VERSION_MINOR ${GIT_VERSION_MINOR})
 set(PROJECT_VERSION_PATCH ${GIT_VERSION_PATCH})
 
-if(DEFINED ENV{CI_PIPELINE_IID})
-    set(PROJECT_VERSION_TWEAK $ENV{CI_PIPELINE_IID})
-else()
-    set(PROJECT_VERSION_TWEAK 0)
-endif()
-
-set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK})
+set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH})
 
 project(LibreCelik VERSION ${PROJECT_VERSION} LANGUAGES CXX)
+
+set(MIDDLEWARE_VERSION 1.0.1)
 
 # Fetch LibreMiddleware (smartcard, eidcard, vehiclecard libraries)
 include(FetchContent)
 FetchContent_Declare(LibreMiddleware
-    GIT_REPOSITORY git@github-hirashix0:LibreSCRS/LibreMiddleware.git
-    GIT_TAG main
+    GIT_REPOSITORY git@github.com:LibreSCRS/LibreMiddleware.git
+    GIT_TAG ${MIDDLEWARE_VERSION}
 )
 FetchContent_MakeAvailable(LibreMiddleware)
 

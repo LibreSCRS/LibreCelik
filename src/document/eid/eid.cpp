@@ -246,8 +246,9 @@ void EId::on_certificatesButton_clicked()
     if (certificateList.empty())
         return;
 
-    CertificateViewerDlg dlg(certificateList, certFolderPath, this);
-    dlg.exec();
+    certificateDialog = std::make_unique<CertificateViewerDlg>(certificateList, certFolderPath, this);
+    certificateDialog->deleteLater();
+    certificateDialog->exec();
 }
 
 void EId::on_toolButton_clicked()

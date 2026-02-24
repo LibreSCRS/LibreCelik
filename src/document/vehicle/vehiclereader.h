@@ -36,10 +36,6 @@ protected:
 private:
     std::string cardReader;
     std::future<void> futureData;
-
-    static std::mutex cardAccessMutex;
-    static std::condition_variable cv;
-    static bool processing;
 };
 
 #endif // VEHICLEREADER_H

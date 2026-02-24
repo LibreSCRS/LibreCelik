@@ -18,7 +18,12 @@ int main(int argc, char *argv[])
     
     qSetMessagePattern(LOGPATTERN);
 
-    qCInfo(libreSCRSGeneral) << "Starting LibreCelik. Version: " << LIBRECELIK_VERSION;
+    qCInfo(libreSCRSGeneral) << "Starting LibreCelik - Version: " << LIBRECELIK_VERSION;
+#if defined(LIBRECELIK_LOCAL_MIDDLEWARE_VERSION) && LIBRECELIK_LOCAL_MIDDLEWARE_VERSION
+    qCInfo(libreSCRSGeneral) << "Using LibreMiddleware - Version: LOCAL";
+#else
+    qCInfo(libreSCRSGeneral) << "Using LibreMiddleware - Version: " << LIBRECELIK_MIDDLEWARE_VERSION;
+#endif
 
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();

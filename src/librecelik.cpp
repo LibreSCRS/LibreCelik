@@ -31,7 +31,13 @@ LibreCelik::LibreCelik(QWidget *parent)
            " :: <a href=\"https://github.com/LibreSCRS/LibreCelik\">github.com/LibreSCRS/LibreCelik</a>").arg(LIBRECELIK_VERSION) +
         QString("<br>") +
         tr("<b>LibreMiddleware</b> :: Version %1 :: <a href=\"https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html\">LGPL-2.1-or-later</a>"
-           " :: <a href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a>").arg(LIBRECELIK_MIDDLEWARE_VERSION));
+           " :: <a href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a>").
+#if defined(LIBRECELIK_LOCAL_MIDDLEWARE_VERSION) && LIBRECELIK_LOCAL_MIDDLEWARE_VERSION
+                                arg("LOCAL"));
+#else
+                                arg(LIBRECELIK_MIDDLEWARE_VERSION));
+#endif
+
 
     connect(&SmartCardReaderListener::instance(), &SmartCardReaderListener::smartCardReaderEventOccured, this, &LibreCelik::onCardEventReceived);
     connect(&SmartCardReaderListener::instance(), &SmartCardReaderListener::smartCardReaderEnumerationChanged, this, &LibreCelik::onSmartCardReaderEnumerationChanged);

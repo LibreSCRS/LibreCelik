@@ -10,10 +10,6 @@
 #include <vehiclecard/vehiclecard.h>
 #include "vehiclereader.h"
 
-std::mutex VehicleReader::cardAccessMutex;
-std::condition_variable VehicleReader::cv;
-bool VehicleReader::processing = false;
-
 VehicleReader::VehicleReader(const std::string& cardReader, QObject *parent) : cardReader(cardReader), QObject(parent)
 {
     qRegisterMetaType<vehiclecard::VehicleDocumentData>();
@@ -26,10 +22,6 @@ VehicleReader::~VehicleReader()
 void VehicleReader::requestData()
 {
     futureData = std::async(std::launch::async, [this]() {
-        std::unique_lock<std::mutex> lock (cardAccessMutex);
-        cv.wait(lock, [this](){return processing == false;});
-        processing = true;
-
         emit readingStarted();
 
 #ifndef NDEBUG
@@ -51,10 +43,6 @@ void VehicleReader::requestData()
         }
 
         emit readingFinished();
-
-        processing = false;
-        lock.unlock();
-        cv.notify_one();
     });
 }
 

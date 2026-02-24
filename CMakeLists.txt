@@ -20,7 +20,7 @@ set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_
 
 project(LibreCelik VERSION ${PROJECT_VERSION} LANGUAGES CXX)
 
-set(MIDDLEWARE_VERSION 1.0.1)
+set(MIDDLEWARE_VERSION 1.1.0)
 
 # Fetch LibreMiddleware (smartcard, eidcard, vehiclecard libraries)
 include(FetchContent)
@@ -29,6 +29,17 @@ FetchContent_Declare(LibreMiddleware
     GIT_TAG ${MIDDLEWARE_VERSION}
 )
 FetchContent_MakeAvailable(LibreMiddleware)
+
+option(LOCAL_LIBREMIDDLEWARE "Use local middleware" 0)
+if(DEFINED CACHE{FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE})
+    set(LOCAL_LIBREMIDDLEWARE 1)
+else()
+    # Verify fetched middleware version matches what we requested
+    if(NOT "${LibreMiddleware_VERSION}" VERSION_EQUAL "${MIDDLEWARE_VERSION}")
+        message(WARNING "LibreMiddleware version mismatch: "
+                "requested ${MIDDLEWARE_VERSION}, got ${LibreMiddleware_VERSION}")
+    endif()
+endif()
 
 # Add LibreMiddleware's cmake modules to our path (for FindPCSC, FindUUID)
 list(APPEND CMAKE_MODULE_PATH "${libremiddleware_SOURCE_DIR}/cmake")

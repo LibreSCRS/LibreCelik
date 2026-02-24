@@ -8,6 +8,7 @@
 #include <eidcard/eidtypes.h>
 #include "certificate/certificateviewerdlg.h"
 #include "document/document.h"
+#include "document/eid/changepindlg.h"
 #include <string>
 
 class EIdReader;
@@ -38,6 +39,7 @@ private slots:
 
     void on_toolButton_clicked();
     void on_certificatesButton_clicked();
+    void on_changePinButton_clicked();
 
 private:
     void updateVerificationIcons(const eidcard::VerificationResult& data, QLabel* iconLabel);
@@ -62,6 +64,9 @@ private:
 
     using CertificateViewerDlgUPtr = std::unique_ptr<CertificateViewerDlg>;
     CertificateViewerDlgUPtr certificateDialog;
+
+    using ChangePinDlgUPtr = std::unique_ptr<ChangePinDlg>;
+    ChangePinDlgUPtr changePinDlg;
 };
 
 #endif // EID_H

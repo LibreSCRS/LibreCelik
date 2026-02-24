@@ -8,6 +8,7 @@
 #include "eid.h"
 #include "eidtextdocument.h"
 #include "eidreader.h"
+#include "changepindlg.h"
 #include "certificate/certificateviewerdlg.h"
 #include "config.h"
 #include "ui_eid.h"
@@ -32,9 +33,12 @@ EId::EId(std::string reader, QWidget *parent)
 
     connect(eidReader.get(), &EIdReader::readingStarted, [this](){
         ui->toolButton->setEnabled(false);
+        ui->changePinButton->setEnabled(false);
+        ui->certificatesButton->setEnabled(false);
     });
     connect(eidReader.get(), &EIdReader::readingFinished, [this](){
         ui->toolButton->setEnabled(true);
+        ui->changePinButton->setEnabled(true);
     });
 
     certFolderPath = LIBRECELIK_CERTIFICATES_DIR;
@@ -70,6 +74,17 @@ void EId::cardTypeReceived(const eidcard::CardType& data)
     {
         case eidcard::CardType::Unknown:
         case eidcard::CardType::Apollo2008:
+        {
+            ui->citizenGroupBox_3->setTitle(tr("Citizen Data"));
+            ui->jmbgLabel_3->setText(tr("JMBG"));
+            ui->lkLabel_3->setText(tr("Identity card"));
+            ui->addressLabel_3->setText(tr("Address"));
+            showLabelAndLineEdit(ui->parentNameLabel_3, ui->parentNameLineEdit_3, true);
+            showLabelAndLineEdit(ui->nationalityLabel_3, ui->nationalityLineEdit_3, false);
+            showLabelAndLineEdit(ui->placeOfBirthLabel_3, ui->placeOfBirthLineEdit_3, true);
+            showLabelAndLineEdit(ui->statusOfForeignerLabel_3, ui->statusOfForeignerLineEdit_3, false);
+            break;
+        }
         case eidcard::CardType::Gemalto2014:
         {
             ui->citizenGroupBox_3->setTitle(tr("Citizen Data"));
@@ -247,8 +262,13 @@ void EId::on_certificatesButton_clicked()
         return;
 
     certificateDialog = std::make_unique<CertificateViewerDlg>(certificateList, certFolderPath, this);
-    certificateDialog->deleteLater();
     certificateDialog->exec();
+}
+
+void EId::on_changePinButton_clicked()
+{
+    changePinDlg = std::make_unique<ChangePinDlg>(eidReader->getReaderName(), this);
+    changePinDlg->exec();
 }
 
 void EId::on_toolButton_clicked()

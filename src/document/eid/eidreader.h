@@ -22,7 +22,11 @@ public:
     EIdReader(const std::string& cardReader, QObject *parent = nullptr);
     ~EIdReader();
 
+    const std::string& getReaderName() const { return cardReader; }
+
     void requestData();
+    void requestPINTriesLeft();
+    void requestChangePIN(const QString& oldPin, const QString& newPin);
 
 signals:
     void cardTypeRead(eidcard::CardType cardType);
@@ -34,6 +38,10 @@ signals:
     void cardVerificationResultRead(eidcard::VerificationResult verificationResult);
     void fixedVerificationResultRead(eidcard::VerificationResult verificationResult);
     void variableVerificationResultRead(eidcard::VerificationResult verificationResult);
+
+    void pinTriesLeftRead(int triesLeft, bool blocked);
+    void pinChangeSuccess();
+    void pinChangeFailed(int retriesLeft, bool blocked, const QString& errorMessage);
 
     void readingStarted();
     void readingFinished();
@@ -48,10 +56,10 @@ protected:
 private:
     std::string cardReader;
     std::future<void> futureData;
+    std::future<void> futurePinData;
 
-    static std::mutex cardAccessMutex;
-    static std::condition_variable cv;
-    static bool processing;
+    using EidCardUPtr = std::unique_ptr<eidcard::EIdCard>;
+    EidCardUPtr eidCard;
 };
 
 #endif // EIDREADER_H

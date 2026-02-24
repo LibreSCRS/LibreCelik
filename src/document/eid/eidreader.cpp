@@ -11,12 +11,6 @@
 #include "eidreader.h"
 #include "config.h"
 
-// Everything in one session (begin-end read)
-// must complete before another session begins
-std::mutex EIdReader::cardAccessMutex;
-std::condition_variable EIdReader::cv;
-bool EIdReader::processing = false;
-
 EIdReader::EIdReader(const std::string& cardReader, QObject *parent) : cardReader(cardReader), QObject(parent)
 {
     qRegisterMetaType<eidcard::CardType>();
@@ -26,6 +20,8 @@ EIdReader::EIdReader(const std::string& cardReader, QObject *parent) : cardReade
     qRegisterMetaType<eidcard::PhotoData>();
     qRegisterMetaType<eidcard::VerificationResult>();
     qRegisterMetaType<eidcard::CertificateList>();
+
+    eidCard = initEIdCard();
 }
 
 EIdReader::~EIdReader()
@@ -35,10 +31,6 @@ EIdReader::~EIdReader()
 void EIdReader::requestData()
 {
     futureData = std::async(std::launch::async, [this]() {
-        std::unique_lock<std::mutex> lock (cardAccessMutex);
-        cv.wait(lock, [this](){return processing == false;});
-        processing = true;
-
         emit readingStarted();
 
 #ifndef NDEBUG
@@ -48,7 +40,6 @@ void EIdReader::requestData()
         qDebug(libreCelikAPI) << "EId requestData: " << cardReader << ". Thread: " <<  ss.str();
 #endif
 
-        auto eidCard = initEIdCard();
         if (eidCard != nullptr)
         {
             requestEIdData(eidCard);
@@ -61,10 +52,6 @@ void EIdReader::requestData()
         }
 
         emit readingFinished();
-
-        processing = false;
-        lock.unlock();
-        cv.notify_one();
     });
 }
 
@@ -169,6 +156,52 @@ void EIdReader::requestVerification(std::unique_ptr<eidcard::EIdCard>& eidCard, 
             emit variableVerificationResultRead(eidcard::VerificationResult::Unknown);
         }
     }
+}
+
+void EIdReader::requestPINTriesLeft()
+{
+    futurePinData = std::async(std::launch::async, [this]() {
+        if (!eidCard) {
+            emit pinTriesLeftRead(-1, false);
+            return;
+        }
+        try {
+            auto result = eidCard->getPINTriesLeft();
+            emit pinTriesLeftRead(result.retriesLeft, result.blocked);
+        } catch (const std::exception& e) {
+            qCWarning(libreCelikAPI) << "Failed to get PIN tries left:" << e.what();
+            emit pinTriesLeftRead(-1, false);
+        }
+    });
+}
+
+void EIdReader::requestChangePIN(const QString& oldPin, const QString& newPin)
+{
+    futurePinData = std::async(std::launch::async, [this, oldPin, newPin]() {
+        if (!eidCard) {
+            emit pinChangeFailed(-1, false, tr("Failed to connect to card."));
+            return;
+        }
+        try {
+            auto result = eidCard->changePIN(oldPin.toStdString(), newPin.toStdString());
+            if (result.success) {
+                emit pinChangeSuccess();
+            } else {
+                QString msg;
+                if (result.blocked) {
+                    msg = tr("PIN is blocked!");
+                } else if (result.retriesLeft >= 0) {
+                    msg = tr("Incorrect PIN. Retries remaining: %1").arg(result.retriesLeft);
+                } else {
+                    msg = tr("PIN change failed.");
+                }
+                emit pinChangeFailed(result.retriesLeft, result.blocked, msg);
+            }
+        } catch (const std::exception& e) {
+            qCWarning(libreCelikAPI) << "PIN change failed:" << e.what();
+            emit pinChangeFailed(-1, false, tr("PIN change failed: %1").arg(QString::fromStdString(e.what())));
+        }
+    });
 }
 
 void EIdReader::requestPhoto(std::unique_ptr<eidcard::EIdCard>& eidCard)

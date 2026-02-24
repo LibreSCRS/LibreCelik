@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>708</width>
-    <height>681</height>
+    <height>702</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -43,7 +43,7 @@
               <string/>
              </property>
              <property name="pixmap">
-              <pixmap resource="../../resources/librecelik.qrc">:/images/rs_flag.png</pixmap>
+              <pixmap resource="../../../resources/librecelik.qrc">:/images/rs_flag.png</pixmap>
              </property>
              <property name="scaledContents">
               <bool>true</bool>
@@ -144,8 +144,43 @@
               <string>Certificates</string>
              </property>
              <property name="icon">
-              <iconset resource="../../resources/librecelik.qrc">
+              <iconset resource="../../../resources/librecelik.qrc">
                <normaloff>:/images/certificate-icon.png</normaloff>:/images/certificate-icon.png</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>48</width>
+               <height>48</height>
+              </size>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="changePinButton">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>80</width>
+               <height>70</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>PIN</string>
+             </property>
+             <property name="icon">
+              <iconset resource="../../../resources/librecelik.qrc">
+               <normaloff>:/images/pin-change-icon.png</normaloff>:/images/pin-change-icon.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -179,7 +214,7 @@
               <string>Print</string>
              </property>
              <property name="icon">
-              <iconset resource="../../resources/librecelik.qrc">
+              <iconset resource="../../../resources/librecelik.qrc">
                <normaloff>:/images/printer-1414.png</normaloff>:/images/printer-1414.png</iconset>
              </property>
              <property name="iconSize">
@@ -248,7 +283,7 @@
                <string/>
               </property>
               <property name="pixmap">
-               <pixmap resource="../../resources/librecelik.qrc">:/images/user.png</pixmap>
+               <pixmap resource="../../../resources/librecelik.qrc">:/images/user.png</pixmap>
               </property>
               <property name="scaledContents">
                <bool>true</bool>
@@ -287,7 +322,7 @@
                  <string/>
                 </property>
                 <property name="pixmap">
-                 <pixmap resource="../../resources/librecelik.qrc">:/images/grey_question_mark.png</pixmap>
+                 <pixmap resource="../../../resources/librecelik.qrc">:/images/grey_question_mark.png</pixmap>
                 </property>
                 <property name="scaledContents">
                  <bool>false</bool>
@@ -317,7 +352,7 @@
                  <string/>
                 </property>
                 <property name="pixmap">
-                 <pixmap resource="../../resources/librecelik.qrc">:/images/grey_question_mark.png</pixmap>
+                 <pixmap resource="../../../resources/librecelik.qrc">:/images/grey_question_mark.png</pixmap>
                 </property>
                </widget>
               </item>
@@ -344,7 +379,7 @@
                  <string/>
                 </property>
                 <property name="pixmap">
-                 <pixmap resource="../../resources/librecelik.qrc">:/images/grey_question_mark.png</pixmap>
+                 <pixmap resource="../../../resources/librecelik.qrc">:/images/grey_question_mark.png</pixmap>
                 </property>
                </widget>
               </item>
@@ -790,7 +825,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="../../resources/librecelik.qrc"/>
+  <include location="../../../resources/librecelik.qrc"/>
  </resources>
  <connections/>
 </ui>

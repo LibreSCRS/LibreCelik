@@ -49,6 +49,8 @@ set(PROJECT_SOURCES
         document/eid/eid.h
         document/eid/eid.cpp
         document/eid/eid.ui
+        document/eid/changepindlg.h
+        document/eid/changepindlg.cpp
         certificate/certificateinfoitem.h
         certificate/certificateinfoitem.cpp
         certificate/certificatetreeviewmodel.h

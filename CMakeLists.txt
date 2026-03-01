@@ -20,7 +20,7 @@ set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_
 
 project(LibreCelik VERSION ${PROJECT_VERSION} LANGUAGES CXX)
 
-set(MIDDLEWARE_VERSION 1.1.0)
+set(MIDDLEWARE_VERSION 1.2.0)
 
 # Fetch LibreMiddleware (smartcard, eidcard, vehiclecard libraries)
 include(FetchContent)

@@ -272,6 +272,13 @@ get_readers:
                 if (rgReaderStates_t[current_reader].dwCurrentState == rgReaderStates_t[current_reader].dwEventState)
                     continue;
 #endif
+                /* Save previous state before updating, to distinguish a new card
+                 * insertion from a flag change on an already-present card.
+                 * When Firefox holds a SCARD_SHARE_SHARED connection, the card
+                 * state becomes PRESENT|INUSE. We must still emit CardInserted
+                 * if the card was just inserted; we must NOT re-emit it if the
+                 * card was already present and another process merely connected. */
+                DWORD dwPrevState = rgReaderStates_t[current_reader].dwCurrentState;
                 if (rgReaderStates_t[current_reader].dwEventState & SCARD_STATE_CHANGED)
                 {
                     /* If something has changed the new state is now the current state */
@@ -320,14 +327,17 @@ get_readers:
                         qCDebug(librecSCRSCard) << "SmartCardScanner:     Exclusive Mode";
                         continue;
                     }
-                    else if (rgReaderStates_t[current_reader].dwEventState & SCARD_STATE_INUSE)
-                    {
-                        qCDebug(librecSCRSCard) << "SmartCardScanner:     Shared Mode";
-                        continue;
-                    }
                     else if (rgReaderStates_t[current_reader].dwEventState & SCARD_STATE_MUTE)
                     {
                         qCDebug(librecSCRSCard) << "SmartCardScanner:     Unresponsive card";
+                        continue;
+                    }
+                    else if (dwPrevState & SCARD_STATE_PRESENT)
+                    {
+                        /* Card was already present; another process connected or
+                         * disconnected (SCARD_STATE_INUSE toggled). Don't re-emit
+                         * CardInserted — LibreCelik already has the card displayed. */
+                        qCDebug(librecSCRSCard) << "SmartCardScanner:     Card state updated (already present)";
                         continue;
                     }
                     else

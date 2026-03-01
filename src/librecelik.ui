@@ -50,7 +50,7 @@
           <item>
            <widget class="QLabel" name="label_5">
             <property name="text">
-             <string>Supported cards: Serbian eID, Vehicle Registration, Residence Permit</string>
+             <string>Supported cards: Serbian eID, eID for Foreigners, Vehicle Registration</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignmentFlag::AlignCenter</set>

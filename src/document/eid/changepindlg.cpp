@@ -90,6 +90,9 @@ void ChangePinDlg::onPinTriesLeftRead(int triesLeft, bool blocked)
         retriesLabel->setText(tr("PIN is blocked!"));
         retriesLabel->setStyleSheet("color: red; font-weight: bold;");
         okButton->setEnabled(false);
+        currentPinEdit->setEnabled(false);
+        newPinEdit->setEnabled(false);
+        confirmPinEdit->setEnabled(false);
     } else if (triesLeft >= 0) {
         retriesLabel->setText(tr("PIN retries remaining: %1").arg(triesLeft));
     } else {

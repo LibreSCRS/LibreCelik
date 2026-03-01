@@ -307,8 +307,8 @@
     </message>
     <message>
         <location filename="../../src/document/eid/changepindlg.cpp" line="24"/>
-        <location filename="../../src/document/eid/changepindlg.cpp" line="94"/>
-        <location filename="../../src/document/eid/changepindlg.cpp" line="96"/>
+        <location filename="../../src/document/eid/changepindlg.cpp" line="97"/>
+        <location filename="../../src/document/eid/changepindlg.cpp" line="99"/>
         <source>PIN retries remaining: %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -328,12 +328,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/changepindlg.cpp" line="153"/>
+        <location filename="../../src/document/eid/changepindlg.cpp" line="156"/>
         <source>Show/Hide PIN</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/changepindlg.cpp" line="136"/>
+        <location filename="../../src/document/eid/changepindlg.cpp" line="139"/>
         <source>New PIN and confirmation do not match.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -348,12 +348,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/changepindlg.cpp" line="103"/>
+        <location filename="../../src/document/eid/changepindlg.cpp" line="106"/>
         <source>PIN changed successfully.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../src/document/eid/changepindlg.cpp" line="106"/>
+        <location filename="../../src/document/eid/changepindlg.cpp" line="109"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
@@ -586,6 +586,11 @@
         <translation></translation>
     </message>
     <message>
+        <location filename="../../src/librecelik.ui" line="53"/>
+        <source>Supported cards: Serbian eID, eID for Foreigners, Vehicle Registration</source>
+        <translation></translation>
+    </message>
+    <message>
         <location filename="../../src/librecelik.ui" line="79"/>
         <source>No smart cards are currently detected in any reader</source>
         <translation></translation>
@@ -618,11 +623,6 @@
     <message>
         <location filename="../../src/librecelik.cpp" line="33"/>
         <source>&lt;b&gt;LibreMiddleware&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html&quot;&gt;LGPL-2.1-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt;</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="../../src/librecelik.ui" line="53"/>
-        <source>Supported cards: Serbian eID, Vehicle Registration, Residence Permit</source>
         <translation></translation>
     </message>
 </context>

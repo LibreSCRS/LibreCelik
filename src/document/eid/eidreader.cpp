@@ -26,6 +26,13 @@ EIdReader::EIdReader(const std::string& cardReader, QObject *parent) : cardReade
 
 EIdReader::~EIdReader()
 {
+    // The async lambdas capture 'this' and access eidCard. Wait here, in the
+    // destructor body, before any member is destroyed — otherwise eidCard is
+    // destroyed (last declared → first destroyed) while the task is still running.
+    if (futureData.valid())
+        futureData.wait();
+    if (futurePinData.valid())
+        futurePinData.wait();
 }
 
 void EIdReader::requestData()

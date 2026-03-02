@@ -17,6 +17,10 @@ VehicleReader::VehicleReader(const std::string& cardReader, QObject *parent) : c
 
 VehicleReader::~VehicleReader()
 {
+    // The async lambda captures 'this' (including cardReader string). Wait here,
+    // in the destructor body, before any member is destroyed.
+    if (futureData.valid())
+        futureData.wait();
 }
 
 void VehicleReader::requestData()

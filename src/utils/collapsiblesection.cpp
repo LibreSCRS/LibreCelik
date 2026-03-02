@@ -25,14 +25,14 @@ void CollapsibleSection::init()
 {
     setCheckable(false);
     setMinimumHeight(0);
-    setContentsMargins(2, HEADER_H + 4, 2, 4);
+    setContentsMargins(2, HEADER_HEIGHT + 4, 2, 4);
 
-    m_animation = new QPropertyAnimation(this, "sectionHeight", this);
-    m_animation->setDuration(200);
-    m_animation->setEasingCurve(QEasingCurve::InOutQuad);
+    animation = new QPropertyAnimation(this, "sectionHeight", this);
+    animation->setDuration(200);
+    animation->setEasingCurve(QEasingCurve::InOutQuad);
 
-    connect(m_animation, &QPropertyAnimation::finished, this, [this]() {
-        if (!m_expanded) {
+    connect(animation, &QPropertyAnimation::finished, this, [this]() {
+        if (!expanded) {
             setChildrenVisible(false);
         } else {
             setMaximumHeight(QWIDGETSIZE_MAX);
@@ -42,22 +42,23 @@ void CollapsibleSection::init()
 
 void CollapsibleSection::setChildrenVisible(bool visible)
 {
-    for (auto* child : findChildren<QWidget*>(Qt::FindDirectChildrenOnly))
+    auto children = findChildren<QWidget*>(Qt::FindDirectChildrenOnly);
+    for (auto* child : std::as_const(children))
         child->setVisible(visible);
 }
 
 void CollapsibleSection::applyCollapsed()
 {
-    m_expandedHeight = sizeHint().height();
+    expandedHeight = sizeHint().height();
     setChildrenVisible(false);
-    setMaximumHeight(HEADER_H);
+    setMaximumHeight(HEADER_HEIGHT);
 }
 
-void CollapsibleSection::setExpanded(bool expanded)
+void CollapsibleSection::setExpanded(bool exp)
 {
-    if (m_expanded == expanded)
+    if (expanded == exp)
         return;
-    m_expanded = expanded;
+    expanded = exp;
     update();
 
     if (!isVisible()) {
@@ -72,15 +73,15 @@ void CollapsibleSection::setExpanded(bool expanded)
 
     if (expanded) {
         setChildrenVisible(true);
-        int target = (m_expandedHeight > HEADER_H) ? m_expandedHeight : sizeHint().height();
-        m_animation->setStartValue(HEADER_H);
-        m_animation->setEndValue(target);
+        int target = (expandedHeight > HEADER_HEIGHT) ? expandedHeight : sizeHint().height();
+        animation->setStartValue(HEADER_HEIGHT);
+        animation->setEndValue(target);
     } else {
-        m_expandedHeight = height();
-        m_animation->setStartValue(height());
-        m_animation->setEndValue(HEADER_H);
+        expandedHeight = height();
+        animation->setStartValue(height());
+        animation->setEndValue(HEADER_HEIGHT);
     }
-    m_animation->start();
+    animation->start();
 }
 
 void CollapsibleSection::paintEvent(QPaintEvent*)
@@ -88,32 +89,32 @@ void CollapsibleSection::paintEvent(QPaintEvent*)
     QPainter p(this);
 
     // Header background
-    p.fillRect(0, 0, width(), HEADER_H, HEADER_BG);
+    p.fillRect(0, 0, width(), HEADER_HEIGHT, HEADER_BG);
 
     // Arrow glyph
     p.setPen(Qt::white);
     QFont af = font();
     af.setPointSizeF(af.pointSizeF() * 0.85);
     p.setFont(af);
-    p.drawText(QRect(8, 0, 18, HEADER_H), Qt::AlignVCenter | Qt::AlignHCenter,
-               m_expanded ? QStringLiteral("▼") : QStringLiteral("▶"));
+    p.drawText(QRect(8, 0, 18, HEADER_HEIGHT), Qt::AlignVCenter | Qt::AlignHCenter,
+               expanded ? QStringLiteral("▼") : QStringLiteral("▶"));
 
     // Title
     QFont tf = font();
     tf.setBold(true);
     p.setFont(tf);
-    p.drawText(QRect(30, 0, width() - 34, HEADER_H),
+    p.drawText(QRect(30, 0, width() - 34, HEADER_HEIGHT),
                Qt::AlignVCenter | Qt::AlignLeft, title());
 
     // Subtle border around content area
     p.setPen(QPen(FRAME_BORDER, 1));
-    p.drawRect(0, HEADER_H, width() - 1, height() - HEADER_H - 1);
+    p.drawRect(0, HEADER_HEIGHT, width() - 1, height() - HEADER_HEIGHT - 1);
 }
 
 void CollapsibleSection::mousePressEvent(QMouseEvent* event)
 {
-    if (event->position().y() <= HEADER_H)
-        setExpanded(!m_expanded);
+    if (event->position().y() <= HEADER_HEIGHT)
+        setExpanded(!expanded);
     else
         QGroupBox::mousePressEvent(event);
 }

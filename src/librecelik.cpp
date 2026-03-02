@@ -10,7 +10,6 @@
 #include <QApplication>
 #include <QEvent>
 #include <QLocale>
-#include <QPixmap>
 #include <QSettings>
 
 LibreCelik::LibreCelik(QWidget *parent)
@@ -20,14 +19,15 @@ LibreCelik::LibreCelik(QWidget *parent)
     qCDebug(libreSCRSGeneral, "Setting up GUI");
 
     // Install translator BEFORE setupUi so the initial UI render is translated.
-    // changeEvent is guarded by m_uiReady to avoid calling retranslateUi before
+    // changeEvent is guarded by uiReady to avoid calling retranslateUi before
     // setupUi has run.
     QSettings settings("LibreSCRS", "LibreCelik");
     QString locale = settings.value("language", QString()).toString();
 
     if (!loadLanguage(locale)) {
         locale.clear();
-        for (const QString &l : QLocale::system().uiLanguages()) {
+        auto langs = QLocale::system().uiLanguages();
+        for (const auto &l : std::as_const(langs)) {
             if (loadLanguage(QLocale(l).name())) {
                 locale = QLocale(l).name();
                 break;
@@ -40,8 +40,7 @@ LibreCelik::LibreCelik(QWidget *parent)
     }
 
     ui->setupUi(this);
-    m_uiReady = true;
-    updateLogo();
+    uiReady = true;
 
     ui->stackedWidget->setCurrentIndex(0);
 
@@ -56,6 +55,8 @@ LibreCelik::LibreCelik(QWidget *parent)
     int langIndex = locale.startsWith("sr") ? 1 : 0;
     ui->languageComboBox->setCurrentIndex(langIndex);
     updateAboutText();
+
+    updateWelcomeChips();
 
     connect(ui->languageComboBox, &QComboBox::currentIndexChanged,
             this, &LibreCelik::onLanguageChanged);
@@ -78,12 +79,11 @@ void LibreCelik::updateAboutText()
 #endif
 }
 
-void LibreCelik::updateLogo()
+void LibreCelik::updateWelcomeChips()
 {
-    const QString resource = m_locale.startsWith("sr")
-        ? ":/images/LibreSCCelikLogo.png"
-        : ":/images/LibreSCCelikLogoLatin.png";
-    ui->label->setPixmap(QPixmap(resource));
+    ui->chipEid->setText(qtTrId("lc-eid-title-serbian"));
+    ui->chipForeigner->setText(qtTrId("lc-eid-title-foreigner"));
+    ui->chipVehicle->setText(qtTrId("lc-vehicle-title"));
 }
 
 bool LibreCelik::loadLanguage(const QString& locale)
@@ -93,7 +93,7 @@ bool LibreCelik::loadLanguage(const QString& locale)
     QApplication::removeTranslator(&translator);
     if (translator.load(":/i18n/LibreCelik_" + locale)) {
         QApplication::installTranslator(&translator);
-        m_locale = locale;
+        this->locale = locale;
         return true;
     }
     return false;
@@ -109,10 +109,10 @@ void LibreCelik::onLanguageChanged(int index)
 
 void LibreCelik::changeEvent(QEvent* event)
 {
-    if (event->type() == QEvent::LanguageChange && m_uiReady) {
+    if (event->type() == QEvent::LanguageChange && uiReady) {
         ui->retranslateUi(this);
         updateAboutText();
-        updateLogo();   // retranslateUi resets the pixmap; restore the correct one
+        updateWelcomeChips();
     }
     QMainWindow::changeEvent(event);
 }

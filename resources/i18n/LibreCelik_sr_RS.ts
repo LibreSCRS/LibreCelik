@@ -837,7 +837,7 @@
     </message>
     <message>
         <source>Identity card</source>
-        <translation>Лична карта</translation>
+        <translation type="vanished">Лична карта</translation>
     </message>
     <message>
         <source>Certificates</source>
@@ -1005,10 +1005,6 @@
     <message>
         <source>Libre platform for smart card applications in Republic of Serbia</source>
         <translation>Слободна платформа за коришћење паметних картица у Републици Србији</translation>
-    </message>
-    <message>
-        <source>Supported cards: Serbian eID, eID for Foreigners, Vehicle Registration</source>
-        <translation>Подржане картице: лична карта, лична карта за странце, саобраћајна дозвола</translation>
     </message>
     <message>
         <source>No smart cards are currently detected in any reader</source>

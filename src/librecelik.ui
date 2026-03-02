@@ -22,41 +22,159 @@
       </property>
       <widget class="QWidget" name="page_1">
        <layout class="QVBoxLayout" name="verticalLayout_3">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <!-- Teal header bar -->
+        <item>
+         <widget class="QFrame" name="headerFrame">
+          <property name="styleSheet">
+           <string notr="true">QFrame#headerFrame { background-color: rgb(61,140,149); }</string>
+          </property>
+          <layout class="QHBoxLayout" name="headerLayout">
+           <property name="leftMargin">
+            <number>16</number>
+           </property>
+           <property name="topMargin">
+            <number>10</number>
+           </property>
+           <property name="rightMargin">
+            <number>16</number>
+           </property>
+           <property name="bottomMargin">
+            <number>10</number>
+           </property>
+           <property name="spacing">
+            <number>0</number>
+           </property>
+           <!-- Title + subtitle stacked vertically -->
+           <item>
+            <layout class="QVBoxLayout" name="titleLayout">
+             <property name="spacing">
+              <number>2</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="headerTitleLabel">
+               <property name="text">
+                <string>LibreCelik</string>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QLabel { color: white; font-size: 17px; font-weight: bold; background: transparent; }</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>Libre platform for smart card applications in Republic of Serbia</string>
+               </property>
+               <property name="styleSheet">
+                <string notr="true">QLabel { color: rgba(255,255,255,190); font-size: 11px; background: transparent; }</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <!-- Spacer -->
+           <item>
+            <spacer name="headerSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <!-- Language selector -->
+           <item>
+            <widget class="QComboBox" name="languageComboBox">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">QComboBox { background-color: rgba(255,255,255,55); color: white; border: 1px solid rgba(255,255,255,120); border-radius: 4px; padding: 3px 10px; } QComboBox::drop-down { border: none; width: 18px; } QComboBox QAbstractItemView { background-color: white; color: black; selection-background-color: rgb(61,140,149); selection-color: white; }</string>
+             </property>
+             <item>
+              <property name="text">
+               <string>English</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Српски</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <!-- Content area -->
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_2">
+          <property name="leftMargin">
+           <number>20</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>20</number>
+          </property>
+          <property name="bottomMargin">
+           <number>12</number>
+          </property>
+          <!-- Top spacer -->
           <item>
+           <spacer name="verticalSpacer_top">
+            <property name="orientation">
+             <enum>Qt::Orientation::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <!-- Smart card icon -->
+          <item alignment="Qt::AlignHCenter">
            <widget class="QLabel" name="label">
             <property name="text">
              <string/>
             </property>
             <property name="pixmap">
-             <pixmap resource="../resources/librecelik.qrc">:/images/LibreSCCelikLogo.png</pixmap>
+             <pixmap resource="../resources/librecelik.qrc">:/images/smartcard-id-512.png</pixmap>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>112</width>
+              <height>112</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>112</width>
+              <height>112</height>
+             </size>
             </property>
             <property name="alignment">
              <set>Qt::AlignmentFlag::AlignCenter</set>
             </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_2">
-            <property name="text">
-             <string>Libre platform for smart card applications in Republic of Serbia</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
+            <property name="scaledContents">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
-          <item>
-           <widget class="QLabel" name="label_5">
-            <property name="text">
-             <string>Supported cards: Serbian eID, eID for Foreigners, Vehicle Registration</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
+          <!-- Mid spacer -->
           <item>
            <spacer name="verticalSpacer_2">
             <property name="orientation">
@@ -68,31 +186,136 @@
             <property name="sizeHint" stdset="0">
              <size>
               <width>20</width>
-              <height>100</height>
+              <height>30</height>
              </size>
             </property>
            </spacer>
           </item>
+          <!-- No card status -->
           <item>
            <widget class="QLabel" name="label_3">
             <property name="text">
              <string>No smart cards are currently detected in any reader</string>
             </property>
+            <property name="styleSheet">
+             <string notr="true">QLabel { font-size: 14px; font-weight: bold; }</string>
+            </property>
             <property name="alignment">
              <set>Qt::AlignmentFlag::AlignCenter</set>
             </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
+          <!-- Instruction -->
           <item>
            <widget class="QLabel" name="label_4">
             <property name="text">
              <string>To access a smart card, insert the card into the smart card reader and select the desired feature of the card</string>
             </property>
+            <property name="styleSheet">
+             <string notr="true">QLabel { color: grey; }</string>
+            </property>
             <property name="alignment">
              <set>Qt::AlignmentFlag::AlignCenter</set>
             </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
+          <!-- Lower spacer -->
+          <item>
+           <spacer name="verticalSpacer_mid">
+            <property name="orientation">
+             <enum>Qt::Orientation::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Policy::Preferred</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>24</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <!-- Supported card chips -->
+          <item>
+           <layout class="QHBoxLayout" name="chipsLayout">
+            <property name="spacing">
+             <number>12</number>
+            </property>
+            <item>
+             <spacer name="chipSpacerLeft">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QLabel" name="chipEid">
+              <property name="text">
+               <string/>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">QLabel { border: 1px solid rgb(61,140,149); border-radius: 4px; padding: 4px 12px; color: rgb(61,140,149); }</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="chipForeigner">
+              <property name="text">
+               <string/>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">QLabel { border: 1px solid rgb(61,140,149); border-radius: 4px; padding: 4px 12px; color: rgb(61,140,149); }</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="chipVehicle">
+              <property name="text">
+               <string/>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">QLabel { border: 1px solid rgb(61,140,149); border-radius: 4px; padding: 4px 12px; color: rgb(61,140,149); }</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignmentFlag::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="chipSpacerRight">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <!-- Bottom spacer -->
           <item>
            <spacer name="verticalSpacer">
             <property name="orientation">
@@ -106,10 +329,14 @@
             </property>
            </spacer>
           </item>
+          <!-- About / version text -->
           <item>
            <widget class="QLabel" name="aboutLabel">
             <property name="text">
              <string/>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QLabel { color: grey; font-size: 11px; }</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -122,55 +349,22 @@
             </property>
            </widget>
           </item>
+          <!-- Bottom padding -->
           <item>
-           <layout class="QHBoxLayout" name="languageLayout">
-            <item>
-             <spacer name="horizontalSpacer_lang">
-              <property name="orientation">
-               <enum>Qt::Orientation::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <widget class="QComboBox" name="languageComboBox">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <item>
-               <property name="text">
-                <string>English</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Српски</string>
-               </property>
-              </item>
-             </widget>
-            </item>
-            <item>
-             <spacer name="horizontalSpacer_lang2">
-              <property name="orientation">
-               <enum>Qt::Orientation::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-           </layout>
+           <spacer name="verticalSpacer_bottom">
+            <property name="orientation">
+             <enum>Qt::Orientation::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Policy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>8</height>
+             </size>
+            </property>
+           </spacer>
           </item>
          </layout>
         </item>

@@ -39,7 +39,7 @@ private:
     void removeReader(std::string reader);
     bool loadLanguage(const QString& locale);
     void updateAboutText();
-    void updateLogo();
+    void updateWelcomeChips();
 
 private:
     Ui::LibreCelik *ui;
@@ -51,7 +51,7 @@ private:
     EIdReaders eIdReaders;
 
     QTranslator translator;
-    bool m_uiReady = false;
-    QString m_locale;
+    bool uiReady = false;
+    QString locale;
 };
 #endif // LIBRECELIK_H

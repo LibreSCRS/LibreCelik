@@ -610,10 +610,6 @@
         <translation type="unfinished">Serbian eID</translation>
     </message>
     <message>
-        <source>Identity card</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Certificates</source>
         <translation></translation>
     </message>
@@ -727,10 +723,6 @@
     <message>
         <source>Libre platform for smart card applications in Republic of Serbia</source>
         <translation>Libre platform for smart card applications in Republic of Serbia</translation>
-    </message>
-    <message>
-        <source>Supported cards: Serbian eID, eID for Foreigners, Vehicle Registration</source>
-        <translation>Supported cards: Serbian eID, eID for Foreigners, Vehicle Registration</translation>
     </message>
     <message>
         <source>No smart cards are currently detected in any reader</source>

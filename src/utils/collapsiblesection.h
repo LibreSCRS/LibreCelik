@@ -15,8 +15,8 @@ public:
     explicit CollapsibleSection(QWidget* parent = nullptr);
     explicit CollapsibleSection(const QString& title, QWidget* parent = nullptr);
 
-    bool isExpanded() const { return m_expanded; }
-    void setExpanded(bool expanded);
+    bool isExpanded() const { return expanded; }
+    void setExpanded(bool exp);
 
     // Property target for QPropertyAnimation
     int sectionHeight() const { return maximumHeight(); }
@@ -31,9 +31,9 @@ private:
     void applyCollapsed();
     void setChildrenVisible(bool visible);
 
-    bool m_expanded = true;
-    int m_expandedHeight = -1;
-    QPropertyAnimation* m_animation = nullptr;
+    bool expanded = true;
+    int expandedHeight = -1;
+    QPropertyAnimation* animation = nullptr;
 
-    static constexpr int HEADER_H = 30;
+    static constexpr int HEADER_HEIGHT = 30;
 };

@@ -126,5 +126,5 @@ void Vehicle::vehicleDataReceived(const vehiclecard::VehicleDocumentData& data)
 
 void Vehicle::on_toolButton_clicked()
 {
-    PrintManager::printDocument(VehicleTextDocument(vehicleData), tr("Print Document"));
+    PrintManager::printDocument(VehicleTextDocument(vehicleData), qtTrId("lc-vehicle-print-title"));
 }

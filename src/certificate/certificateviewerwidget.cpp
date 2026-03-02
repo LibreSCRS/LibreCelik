@@ -201,5 +201,5 @@ void CertificateViewerWidget::onCertPathSelectionChanged(const QItemSelection& s
 
     QModelIndex valueIndex = index.sibling(index.row(), 1);
     QString status = valueIndex.data(Qt::DisplayRole).toString();
-    ui->certPathStatusEdit->setText(status.isEmpty() ? tr("Valid") : status);
+    ui->certPathStatusEdit->setText(status.isEmpty() ? qtTrId("lc-cert-verify-valid") : status);
 }

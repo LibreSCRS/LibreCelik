@@ -15,6 +15,8 @@
         <file>transparent_1x20.png</file>
         <file>line.png</file>
         <file>LibreSCCelikLogo.png</file>
+        <file>LibreSCCelikLogoLatin.png</file>
+        <file>smartcard-id-512.png</file>
     </qresource>
     <qresource prefix="/html">
         <file>idcard.html</file>

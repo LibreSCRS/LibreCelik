@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
+#include <QCoreApplication>
 #include <QDate>
 #include "vehicletextdocument.h"
 
@@ -18,55 +19,55 @@ VehicleTextDocument::VehicleTextDocument(const vehiclecard::VehicleDocumentData&
 
 void VehicleTextDocument::translateDocumentData(QString& data) const
 {
-    data.replace("${title}", tr("Vehicle registration card reader"));
-    data.replace("${printing_date}", tr("Printing date"));
+    data.replace("${title}", qtTrId("lc-vehicle-doc-title"));
+    data.replace("${printing_date}", qtTrId("lc-vehicle-doc-printing-date"));
     data.replace("${printing_date_value}", QDate::currentDate().toString("dd.MM.yyyy"));
 
     // Registration number header
-    data.replace("${registration_number}", QCoreApplication::translate("Vehicle", "Registration number"));
+    data.replace("${registration_number}", qtTrId("lc-vehicle-doc-reg-number"));
 
     // Document data section (no heading)
-    data.replace("${issuance_date}", QCoreApplication::translate("Vehicle", "Date of issuance"));
-    data.replace("${validity_date}", QCoreApplication::translate("Vehicle", "Valid to"));
-    data.replace("${state_issuing}", QCoreApplication::translate("Vehicle", "State issuing"));
-    data.replace("${competent_authority}", QCoreApplication::translate("Vehicle", "Competent authority"));
-    data.replace("${authority_issuing}", QCoreApplication::translate("Vehicle", "Authority issuing"));
-    data.replace("${unambiguous_number}", QCoreApplication::translate("Vehicle", "Unambiguous number"));
-    data.replace("${serial_number}", QCoreApplication::translate("Vehicle", "Serial number"));
+    data.replace("${issuance_date}", qtTrId("lc-vehicle-doc-issuance-date"));
+    data.replace("${validity_date}", qtTrId("lc-vehicle-doc-valid-to"));
+    data.replace("${state_issuing}", qtTrId("lc-vehicle-doc-state-issuing"));
+    data.replace("${competent_authority}", qtTrId("lc-vehicle-doc-competent-authority"));
+    data.replace("${authority_issuing}", qtTrId("lc-vehicle-doc-authority-issuing"));
+    data.replace("${unambiguous_number}", qtTrId("lc-vehicle-doc-unambiguous-no"));
+    data.replace("${serial_number}", qtTrId("lc-vehicle-doc-serial-no"));
 
     // Owner data section (combined owner + user)
-    data.replace("${owner_data}", tr("Owner data"));
-    data.replace("${owner_surname}", QCoreApplication::translate("Vehicle", "Surname / Business name"));
-    data.replace("${owner_name}", QCoreApplication::translate("Vehicle", "Name"));
-    data.replace("${owner_address}", QCoreApplication::translate("Vehicle", "Address"));
-    data.replace("${owner_personal_no}", QCoreApplication::translate("Vehicle", "Personal number"));
-    data.replace("${user_surname}", QCoreApplication::translate("Vehicle", "Surname / Business name"));
-    data.replace("${user_name}", QCoreApplication::translate("Vehicle", "Name"));
-    data.replace("${user_address}", QCoreApplication::translate("Vehicle", "Address"));
-    data.replace("${user_personal_no}", QCoreApplication::translate("Vehicle", "Personal number"));
+    data.replace("${owner_data}", qtTrId("lc-vehicle-doc-owner-data"));
+    data.replace("${owner_surname}", qtTrId("lc-vehicle-doc-owner-surname"));
+    data.replace("${owner_name}", qtTrId("lc-vehicle-doc-owner-name"));
+    data.replace("${owner_address}", qtTrId("lc-vehicle-doc-owner-address"));
+    data.replace("${owner_personal_no}", qtTrId("lc-vehicle-doc-owner-personal-no"));
+    data.replace("${user_surname}", qtTrId("lc-vehicle-doc-user-surname"));
+    data.replace("${user_name}", qtTrId("lc-vehicle-doc-user-name"));
+    data.replace("${user_address}", qtTrId("lc-vehicle-doc-user-address"));
+    data.replace("${user_personal_no}", qtTrId("lc-vehicle-doc-user-personal-no"));
 
     // Vehicle data section (combined vehicle + engine + mass)
-    data.replace("${vehicle_data}", QCoreApplication::translate("Vehicle", "Vehicle data"));
-    data.replace("${date_of_first_registration}", QCoreApplication::translate("Vehicle", "Date of first registration"));
-    data.replace("${year_of_production}", QCoreApplication::translate("Vehicle", "Year of production"));
-    data.replace("${make}", QCoreApplication::translate("Vehicle", "Make"));
-    data.replace("${type}", QCoreApplication::translate("Vehicle", "Type"));
-    data.replace("${commercial_description}", QCoreApplication::translate("Vehicle", "Commercial description"));
-    data.replace("${type_approval_number}", QCoreApplication::translate("Vehicle", "Type approval number"));
-    data.replace("${colour}", QCoreApplication::translate("Vehicle", "Colour"));
-    data.replace("${number_of_axles}", QCoreApplication::translate("Vehicle", "Number of axles"));
-    data.replace("${vin}", QCoreApplication::translate("Vehicle", "VIN"));
-    data.replace("${capacity}", QCoreApplication::translate("Vehicle", "Capacity (cm3)"));
-    data.replace("${engine_number}", QCoreApplication::translate("Vehicle", "Engine number"));
-    data.replace("${mass}", QCoreApplication::translate("Vehicle", "Mass (kg)"));
-    data.replace("${power}", QCoreApplication::translate("Vehicle", "Power (kW)"));
-    data.replace("${load}", QCoreApplication::translate("Vehicle", "Load (kg)"));
-    data.replace("${power_weight_ratio}", QCoreApplication::translate("Vehicle", "Power/weight ratio"));
-    data.replace("${max_laden_mass}", QCoreApplication::translate("Vehicle", "Max laden mass (kg)"));
-    data.replace("${category}", QCoreApplication::translate("Vehicle", "Category"));
-    data.replace("${fuel_type}", QCoreApplication::translate("Vehicle", "Fuel type"));
-    data.replace("${seats}", QCoreApplication::translate("Vehicle", "Seats"));
-    data.replace("${standing_places}", QCoreApplication::translate("Vehicle", "Standing places"));
+    data.replace("${vehicle_data}", qtTrId("lc-vehicle-doc-vehicle-data"));
+    data.replace("${date_of_first_registration}", qtTrId("lc-vehicle-doc-first-reg-date"));
+    data.replace("${year_of_production}", qtTrId("lc-vehicle-doc-production-year"));
+    data.replace("${make}", qtTrId("lc-vehicle-doc-make"));
+    data.replace("${type}", qtTrId("lc-vehicle-doc-type"));
+    data.replace("${commercial_description}", qtTrId("lc-vehicle-doc-commercial-desc"));
+    data.replace("${type_approval_number}", qtTrId("lc-vehicle-doc-type-approval-no"));
+    data.replace("${colour}", qtTrId("lc-vehicle-doc-colour"));
+    data.replace("${number_of_axles}", qtTrId("lc-vehicle-doc-axles"));
+    data.replace("${vin}", qtTrId("lc-vehicle-doc-vin"));
+    data.replace("${capacity}", qtTrId("lc-vehicle-doc-capacity"));
+    data.replace("${engine_number}", qtTrId("lc-vehicle-doc-engine-number"));
+    data.replace("${mass}", qtTrId("lc-vehicle-doc-mass"));
+    data.replace("${power}", qtTrId("lc-vehicle-doc-power"));
+    data.replace("${load}", qtTrId("lc-vehicle-doc-load"));
+    data.replace("${power_weight_ratio}", qtTrId("lc-vehicle-doc-power-weight"));
+    data.replace("${max_laden_mass}", qtTrId("lc-vehicle-doc-max-laden-mass"));
+    data.replace("${category}", qtTrId("lc-vehicle-doc-category"));
+    data.replace("${fuel_type}", qtTrId("lc-vehicle-doc-fuel-type"));
+    data.replace("${seats}", qtTrId("lc-vehicle-doc-seats"));
+    data.replace("${standing_places}", qtTrId("lc-vehicle-doc-standing-places"));
 }
 
 void VehicleTextDocument::prepareDocumentData(QString& data, const vehiclecard::VehicleDocumentData& vehicleData) const

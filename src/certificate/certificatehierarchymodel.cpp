@@ -82,7 +82,7 @@ void CertificateHierarchyModel::buildChain(X509* cert, X509_STORE* store)
             }
         }
         if (label.isEmpty())
-            label = tr("Unknown");
+            label = qtTrId("lc-cert-unknown");
 
         // For the leaf, add verification status
         QString value;
@@ -104,42 +104,42 @@ QString CertificateHierarchyModel::translateVerificationResult(int error)
 {
     switch (error) {
     case X509_V_OK:
-        return tr("Valid");
+        return qtTrId("lc-cert-verify-valid");
     case X509_V_ERR_UNSPECIFIED:
-        return tr("Unspecified error");
+        return qtTrId("lc-cert-verify-unspecified-error");
     case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
-        return tr("Unable to get issuer certificate");
+        return qtTrId("lc-cert-verify-no-issuer");
     case X509_V_ERR_UNABLE_TO_GET_CRL:
-        return tr("Unable to get CRL");
+        return qtTrId("lc-cert-verify-no-crl");
     case X509_V_ERR_UNABLE_TO_DECRYPT_CERT_SIGNATURE:
-        return tr("Unable to decrypt certificate signature");
+        return qtTrId("lc-cert-verify-decrypt-fail");
     case X509_V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY:
-        return tr("Unable to decode issuer public key");
+        return qtTrId("lc-cert-verify-decode-fail");
     case X509_V_ERR_CERT_NOT_YET_VALID:
-        return tr("Certificate not yet valid");
+        return qtTrId("lc-cert-verify-not-yet-valid");
     case X509_V_ERR_CERT_HAS_EXPIRED:
-        return tr("Certificate has expired");
+        return qtTrId("lc-cert-verify-expired");
     case X509_V_ERR_CERT_SIGNATURE_FAILURE:
-        return tr("Certificate signature failure");
+        return qtTrId("lc-cert-verify-signature-fail");
     case X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD:
-        return tr("Error in cert not before field");
+        return qtTrId("lc-cert-verify-not-before-error");
     case X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD:
-        return tr("Error in cert not after field");
+        return qtTrId("lc-cert-verify-not-after-error");
     case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
-        return tr("Self-signed certificate");
+        return qtTrId("lc-cert-verify-self-signed");
     case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
-        return tr("Self-signed certificate in chain");
+        return qtTrId("lc-cert-verify-self-signed-chain");
     case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
-        return tr("Unable to get local issuer certificate");
+        return qtTrId("lc-cert-verify-no-local-issuer");
     case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
-        return tr("Unable to verify leaf signature");
+        return qtTrId("lc-cert-verify-leaf-fail");
     case X509_V_ERR_CERT_REVOKED:
-        return tr("Certificate revoked");
+        return qtTrId("lc-cert-verify-revoked");
     default:
     {
         verificationError = X509_V_OK;
         qCDebug(libreCelikCertificates) << "Info cert error: " << QString::fromUtf8(X509_verify_cert_error_string(error));
-        return tr("Valid");
+        return qtTrId("lc-cert-verify-valid");
     }
     }
 }

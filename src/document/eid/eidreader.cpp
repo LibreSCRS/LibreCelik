@@ -81,7 +81,8 @@ void EIdReader::requestEIdData(std::unique_ptr<eidcard::EIdCard>& eidCard)
     if (!eidCard)
         return;
 
-    emit cardTypeRead(eidCard->getCardType());
+    auto cardType = eidCard->getCardType();
+    emit cardTypeRead(cardType);
 
     try
     {
@@ -119,6 +120,17 @@ void EIdReader::requestEIdData(std::unique_ptr<eidcard::EIdCard>& eidCard)
     catch(std::runtime_error& re)
     {
         qCWarning(libreCelikAPI) << "Can not read certificates on reader: " << cardReader << ". Exception: " << re.what();
+    }
+
+    if (cardType == eidcard::CardType::Gemalto2014 || cardType == eidcard::CardType::ForeignerIF2020)
+    {
+        try {
+            auto result = eidCard->getPINTriesLeft();
+            emit pinTriesLeftRead(result.retriesLeft, result.blocked);
+        } catch (const std::exception& e) {
+            qCWarning(libreCelikAPI) << "Can not read PIN tries on reader: " << cardReader << ". Exception: " << e.what();
+            emit pinTriesLeftRead(-1, false);
+        }
     }
 }
 
@@ -179,7 +191,7 @@ void EIdReader::requestChangePIN(const QString& oldPin, const QString& newPin)
 {
     futurePinData = std::async(std::launch::async, [this, oldPin, newPin]() {
         if (!eidCard) {
-            emit pinChangeFailed(-1, false, tr("Failed to connect to card."));
+            emit pinChangeFailed(-1, false, qtTrId("lc-eidreader-failed-connect"));
             return;
         }
         try {
@@ -189,17 +201,17 @@ void EIdReader::requestChangePIN(const QString& oldPin, const QString& newPin)
             } else {
                 QString msg;
                 if (result.blocked) {
-                    msg = tr("PIN is blocked!");
+                    msg = qtTrId("lc-eidreader-pin-blocked");
                 } else if (result.retriesLeft >= 0) {
-                    msg = tr("Incorrect PIN. Retries remaining: %1").arg(result.retriesLeft);
+                    msg = qtTrId("lc-eidreader-pin-incorrect").arg(result.retriesLeft);
                 } else {
-                    msg = tr("PIN change failed.");
+                    msg = qtTrId("lc-eidreader-pin-change-failed");
                 }
                 emit pinChangeFailed(result.retriesLeft, result.blocked, msg);
             }
         } catch (const std::exception& e) {
             qCWarning(libreCelikAPI) << "PIN change failed:" << e.what();
-            emit pinChangeFailed(-1, false, tr("PIN change failed: %1").arg(QString::fromStdString(e.what())));
+            emit pinChangeFailed(-1, false, qtTrId("lc-eidreader-pin-change-exception").arg(QString::fromStdString(e.what())));
         }
     });
 }

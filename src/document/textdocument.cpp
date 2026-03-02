@@ -41,7 +41,7 @@ void TextDocument::setupDocument(const QString& htmlContent, const QString& cssP
 
 QString TextDocument::getPreparedValue(const QString& data) const
 {
-    return (data.isEmpty() || data == "01.01.0001") ? tr("Unavailable") : data;
+    return (data.isEmpty() || data == "01.01.0001") ? qtTrId("lc-doc-unavailable") : data;
 }
 
 bool TextDocument::isMacOS()

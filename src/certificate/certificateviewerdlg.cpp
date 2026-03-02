@@ -21,7 +21,7 @@ CertificateViewerDlg::CertificateViewerDlg(const eidcard::CertificateList& certs
                                              QWidget* parent)
     : QDialog(parent)
 {
-    setWindowTitle(tr("Certificate Viewer"));
+    setWindowTitle(qtTrId("lc-cert-dialog-title"));
     resize(600, 500);
 
     buildStore(certFolderPath);
@@ -96,7 +96,7 @@ void CertificateViewerDlg::buildUI(const eidcard::CertificateList& certs)
     }
 
     if (parsedCerts.empty()) {
-        layout->addWidget(new QLabel(tr("No certificates available.")));
+        layout->addWidget(new QLabel(qtTrId("lc-cert-no-available")));
         auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
         connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
         layout->addWidget(buttons);

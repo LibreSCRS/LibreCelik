@@ -33,7 +33,7 @@ void CertificatePropertiesModel::addVersion(CertificateInfoItem* parent, X509* c
 {
     long ver = X509_get_version(cert) + 1;
     parent->appendChild(std::make_unique<CertificateInfoItem>(
-        tr("Version"), QString("V%1").arg(ver), parent));
+        qtTrId("lc-cert-field-version"), QString("V%1").arg(ver), parent));
 }
 
 void CertificatePropertiesModel::addSerialNumber(CertificateInfoItem* parent, X509* cert)
@@ -44,7 +44,7 @@ void CertificatePropertiesModel::addSerialNumber(CertificateInfoItem* parent, X5
         char* hex = BN_bn2hex(bn);
         if (hex) {
             parent->appendChild(std::make_unique<CertificateInfoItem>(
-                tr("Serial Number"), QString::fromLatin1(hex), parent));
+                qtTrId("lc-cert-field-serial-number"), QString::fromLatin1(hex), parent));
             OPENSSL_free(hex);
         }
         BN_free(bn);
@@ -61,7 +61,7 @@ void CertificatePropertiesModel::addSignatureAlgorithm(CertificateInfoItem* pare
             char buf[128];
             OBJ_obj2txt(buf, sizeof(buf), obj, 0);
             parent->appendChild(std::make_unique<CertificateInfoItem>(
-                tr("Signature Algorithm"), QString::fromLatin1(buf), parent));
+                qtTrId("lc-cert-field-signature-algo"), QString::fromLatin1(buf), parent));
         }
     }
 }
@@ -70,19 +70,19 @@ void CertificatePropertiesModel::addIssuer(CertificateInfoItem* parent, X509* ce
 {
     X509_NAME* issuer = X509_get_issuer_name(cert);
     parent->appendChild(std::make_unique<CertificateInfoItem>(
-        tr("Issuer"), nameToString(issuer), parent));
+        qtTrId("lc-cert-field-issuer"), nameToString(issuer), parent));
 }
 
 void CertificatePropertiesModel::addValidity(CertificateInfoItem* parent, X509* cert)
 {
     auto validityItem = std::make_unique<CertificateInfoItem>(
-        tr("Validity"), QString(), parent);
+        qtTrId("lc-cert-field-validity"), QString(), parent);
     auto* validityPtr = validityItem.get();
 
     validityPtr->appendChild(std::make_unique<CertificateInfoItem>(
-        tr("Not Before"), asnTimeToString(X509_get0_notBefore(cert)), validityPtr));
+        qtTrId("lc-cert-field-not-before"), asnTimeToString(X509_get0_notBefore(cert)), validityPtr));
     validityPtr->appendChild(std::make_unique<CertificateInfoItem>(
-        tr("Not After"), asnTimeToString(X509_get0_notAfter(cert)), validityPtr));
+        qtTrId("lc-cert-field-not-after"), asnTimeToString(X509_get0_notAfter(cert)), validityPtr));
 
     parent->appendChild(std::move(validityItem));
 }
@@ -91,7 +91,7 @@ void CertificatePropertiesModel::addSubject(CertificateInfoItem* parent, X509* c
 {
     X509_NAME* subject = X509_get_subject_name(cert);
     parent->appendChild(std::make_unique<CertificateInfoItem>(
-        tr("Subject"), nameToString(subject), parent));
+        qtTrId("lc-cert-field-subject"), nameToString(subject), parent));
 }
 
 void CertificatePropertiesModel::addPublicKeyInfo(CertificateInfoItem* parent, X509* cert)
@@ -101,17 +101,17 @@ void CertificatePropertiesModel::addPublicKeyInfo(CertificateInfoItem* parent, X
         return;
 
     auto pkItem = std::make_unique<CertificateInfoItem>(
-        tr("Public Key Info"), QString(), parent);
+        qtTrId("lc-cert-field-public-key-info"), QString(), parent);
     auto* pkPtr = pkItem.get();
 
     int keyType = EVP_PKEY_base_id(pkey);
     const char* typeName = OBJ_nid2ln(keyType);
     pkPtr->appendChild(std::make_unique<CertificateInfoItem>(
-        tr("Algorithm"), typeName ? QString::fromLatin1(typeName) : tr("Unknown"), pkPtr));
+        qtTrId("lc-cert-field-algorithm"), typeName ? QString::fromLatin1(typeName) : qtTrId("lc-cert-unknown"), pkPtr));
 
     int bits = EVP_PKEY_bits(pkey);
     pkPtr->appendChild(std::make_unique<CertificateInfoItem>(
-        tr("Key Size"), QString("%1 bits").arg(bits), pkPtr));
+        qtTrId("lc-cert-field-key-size"), QString("%1 bits").arg(bits), pkPtr));
 
     parent->appendChild(std::move(pkItem));
 }
@@ -123,7 +123,7 @@ void CertificatePropertiesModel::addExtensions(CertificateInfoItem* parent, X509
         return;
 
     auto extItem = std::make_unique<CertificateInfoItem>(
-        tr("Extensions"), QString("(%1)").arg(extCount), parent);
+        qtTrId("lc-cert-field-extensions"), QString("(%1)").arg(extCount), parent);
     auto* extPtr = extItem.get();
 
     for (int i = 0; i < extCount; i++) {
@@ -152,7 +152,7 @@ void CertificatePropertiesModel::addExtensions(CertificateInfoItem* parent, X509
             bool critical = X509_EXTENSION_get_critical(ext);
             QString label = QString::fromLatin1(oidBuf);
             if (critical)
-                label += tr(" (Critical)");
+                label += qtTrId("lc-cert-extension-critical");
 
             extPtr->appendChild(std::make_unique<CertificateInfoItem>(
                 label, value, critical, extPtr));

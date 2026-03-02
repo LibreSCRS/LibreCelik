@@ -6,6 +6,7 @@
 
 #include "document/document.h"
 #include <QMainWindow>
+#include <QTranslator>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class LibreCelik; }
@@ -22,9 +23,13 @@ public:
     LibreCelik(QWidget *parent = nullptr);
     ~LibreCelik();
 
+protected:
+    void changeEvent(QEvent* event) override;
+
 private slots:
     void onCardEventReceived(const SmartCardEvent& sce);
     void onSmartCardReaderEnumerationChanged(const QStringList& scrNames);
+    void onLanguageChanged(int index);
 
 private:
     // void addNewEIdReader(std::string reader);
@@ -32,7 +37,10 @@ private:
 
     void addNewReader(std::string reader);
     void removeReader(std::string reader);
-    
+    bool loadLanguage(const QString& locale);
+    void updateAboutText();
+    void updateLogo();
+
 private:
     Ui::LibreCelik *ui;
 
@@ -41,5 +49,9 @@ private:
 
     using EIdReaders = std::map<std::string, EId*>;
     EIdReaders eIdReaders;
+
+    QTranslator translator;
+    bool m_uiReady = false;
+    QString m_locale;
 };
 #endif // LIBRECELIK_H

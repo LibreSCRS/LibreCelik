@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
+#include <QCoreApplication>
 #include <QDate>
 #include "eidtextdocument.h"
 
@@ -25,35 +26,35 @@ EIdTextDocument::EIdTextDocument(const eidcard::FixedPersonalData& fixedPersonal
 
 void EIdTextDocument::translateDocumentData(QString& data) const
 {
-    data.replace("${title}", QCoreApplication::translate("CelikTextDocument", "ELECTRONIC ID CARD READER: DATA PRINTING"));
-    data.replace("${foreigner_id}",QCoreApplication::translate("CelikTextDocument", "Foreigner id"));
-    data.replace("${printing_date}",QCoreApplication::translate("CelikTextDocument", "Printing date"));
-    data.replace("${printing_date_value}",QDate::currentDate().toString("dd.MM.yyyy"));
+    data.replace("${title}", qtTrId("lc-eid-doc-title"));
+    data.replace("${foreigner_id}", qtTrId("lc-eid-doc-foreigner-id"));
+    data.replace("${printing_date}", qtTrId("lc-eid-doc-printing-date"));
+    data.replace("${printing_date_value}", QDate::currentDate().toString("dd.MM.yyyy"));
 
-    data.replace("${foreigner_data}", QCoreApplication::translate("EId", "Foreigner Data"));
-    data.replace("${citizen_data}", QCoreApplication::translate("EId", "Citizen Data"));
-    data.replace("${last_name}", QCoreApplication::translate("EId", "Surname"));
-    data.replace("${first_name}", QCoreApplication::translate("EId", "Name"));
-    data.replace("${parent_name}", QCoreApplication::translate("EId", "Parent name"));
-    data.replace("${nationality}", QCoreApplication::translate("EId", "Nationality"));
-    data.replace("${date_of_birth}", QCoreApplication::translate("EId", "Date of birth"));
-    data.replace("${place_of_birth}", QCoreApplication::translate("EId", "Place of birth"));
-    data.replace("${status_of_foreigner}", QCoreApplication::translate("EId", "Status of foreigner"));
+    data.replace("${foreigner_data}", qtTrId("lc-eid-foreigner-data"));
+    data.replace("${citizen_data}", qtTrId("lc-eid-citizen-data"));
+    data.replace("${last_name}", qtTrId("lc-eid-doc-surname"));
+    data.replace("${first_name}", qtTrId("lc-eid-doc-name"));
+    data.replace("${parent_name}", qtTrId("lc-eid-doc-parent-name"));
+    data.replace("${nationality}", qtTrId("lc-eid-doc-nationality"));
+    data.replace("${date_of_birth}", qtTrId("lc-eid-doc-date-birth"));
+    data.replace("${place_of_birth}", qtTrId("lc-eid-doc-place-birth"));
+    data.replace("${status_of_foreigner}", qtTrId("lc-eid-doc-foreigner-status"));
 
     if(isForeigner)
-        data.replace("${adress}", QCoreApplication::translate("EId", "Address", "foreigner"));
+        data.replace("${adress}", qtTrId("lc-eid-label-address-foreigner"));
     else
-        data.replace("${adress}", QCoreApplication::translate("EId", "Address"));
+        data.replace("${adress}", qtTrId("lc-eid-label-address"));
 
-    data.replace("${date_of_address_change}", QCoreApplication::translate("EId", "Date of address change"));
-    data.replace("${jmbg}", QCoreApplication::translate("EId", "JMBG"));
-    data.replace("${gender}", QCoreApplication::translate("EId", "Gender"));
+    data.replace("${date_of_address_change}", qtTrId("lc-eid-doc-address-change-date"));
+    data.replace("${jmbg}", qtTrId("lc-eid-label-jmbg"));
+    data.replace("${gender}", qtTrId("lc-eid-doc-gender"));
 
-    data.replace("${document_data}", QCoreApplication::translate("EId", "Document data"));
-    data.replace("${document_issuer}", QCoreApplication::translate("EId", "Document issuer"));
-    data.replace("${document_number}", QCoreApplication::translate("EId", "Document number"));
-    data.replace("${issuance_date}", QCoreApplication::translate("EId", "Date of issuance"));
-    data.replace("${validity_date}", QCoreApplication::translate("EId", "Valid to"));
+    data.replace("${document_data}", qtTrId("lc-eid-doc-document-data"));
+    data.replace("${document_issuer}", qtTrId("lc-eid-doc-issuer"));
+    data.replace("${document_number}", qtTrId("lc-eid-doc-number"));
+    data.replace("${issuance_date}", qtTrId("lc-eid-doc-issuance-date"));
+    data.replace("${validity_date}", qtTrId("lc-eid-doc-valid-to"));
 }
 
 void EIdTextDocument::prepareDocumentData(QString& data, const eidcard::FixedPersonalData &fixedPersonalData, const eidcard::VariablePersonalData &variablePersonalData, const eidcard::DocumentData &documentData, const QString& address, const QString& placeOfBirth, const QString &photo) const

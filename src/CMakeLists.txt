@@ -71,6 +71,7 @@ set(PROJECT_SOURCES
         document/vehicle/vehicle.h
         document/vehicle/vehicle.cpp
         document/vehicle/vehicle.ui
+        utils/translations_catalog.cpp
 )
 
 set(RESOURSE_SOURCES
@@ -90,12 +91,14 @@ qt_add_executable(${PROJECT_NAME}
 
 qt_add_translations(${PROJECT_NAME}
     TS_FILES ${TS_PROJECT_FILES}
-    # LUPDATE_OPTIONS -locations none -no-obsolete
-    # LRELEASE_OPTIONS -idbased
+    LUPDATE_OPTIONS -locations none
 )
-add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_lupdate)
-add_dependencies(${PROJECT_NAME} update_translations)
-add_dependencies(${PROJECT_NAME}  ${PROJECT_NAME}_lrelease)
+# Only lrelease runs automatically (compiles .ts → .qm).
+# lupdate is intentionally NOT a build dependency: it is run manually via the
+# LibreCelik_lupdate / update_translations targets when new strings are added.
+# The translations_catalog.cpp file provides //% source strings so that manual
+# lupdate runs preserve existing translations without clearing <source>.
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_lrelease)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::PrintSupport EIdCard VehicleCard PCSC::PCSC UUID::UUID)
 

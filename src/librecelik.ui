@@ -122,49 +122,77 @@
             </property>
            </widget>
           </item>
+          <item>
+           <layout class="QHBoxLayout" name="languageLayout">
+            <item>
+             <spacer name="horizontalSpacer_lang">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QComboBox" name="languageComboBox">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <item>
+               <property name="text">
+                <string>English</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Српски</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer_lang2">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
          </layout>
         </item>
        </layout>
       </widget>
       <widget class="QWidget" name="page_3">
        <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="spacing">
+         <number>4</number>
+        </property>
         <item>
-         <widget class="QTabWidget" name="tabWidget">
-          <property name="currentIndex">
-           <number>0</number>
+         <widget class="QComboBox" name="readerComboBox">
+          <property name="visible">
+           <bool>false</bool>
           </property>
-          <widget class="QWidget" name="tab">
-           <attribute name="title">
-            <string>Libre Celik</string>
-           </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_4">
-            <item>
-             <widget class="QToolBox" name="toolBox">
-              <property name="currentIndex">
-               <number>0</number>
-              </property>
-              <widget class="QWidget" name="page_2">
-               <property name="geometry">
-                <rect>
-                 <x>0</x>
-                 <y>0</y>
-                 <width>60</width>
-                 <height>16</height>
-                </rect>
-               </property>
-               <attribute name="label">
-                <string>Page 2</string>
-               </attribute>
-              </widget>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="tab_2">
-           <attribute name="title">
-            <string>Token</string>
-           </attribute>
-          </widget>
+         </widget>
+        </item>
+        <item>
+         <widget class="QStackedWidget" name="readerStackedWidget">
+          <property name="currentIndex">
+           <number>-1</number>
+          </property>
          </widget>
         </item>
        </layout>

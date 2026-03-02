@@ -16,19 +16,19 @@
 ChangePinDlg::ChangePinDlg(const std::string& readerName, QWidget *parent)
     : QDialog(parent)
 {
-    setWindowTitle(tr("Change PIN"));
+    setWindowTitle(qtTrId("lc-changepin-title"));
     setMinimumWidth(350);
 
     auto *layout = new QVBoxLayout(this);
 
-    retriesLabel = new QLabel(tr("PIN retries remaining: %1").arg("..."), this);
+    retriesLabel = new QLabel(qtTrId("lc-changepin-retries-remaining").arg("..."), this);
     layout->addWidget(retriesLabel);
 
     currentPinEdit = new QLineEdit(this);
     currentPinEdit->setEchoMode(QLineEdit::Password);
     currentPinEdit->setMaxLength(8);
     currentPinEdit->setValidator(new QIntValidator(0, 99999999, this));
-    currentPinEdit->setPlaceholderText(tr("Current PIN"));
+    currentPinEdit->setPlaceholderText(qtTrId("lc-changepin-current"));
     addToggleVisibilityAction(currentPinEdit);
     layout->addWidget(currentPinEdit);
 
@@ -36,7 +36,7 @@ ChangePinDlg::ChangePinDlg(const std::string& readerName, QWidget *parent)
     newPinEdit->setEchoMode(QLineEdit::Password);
     newPinEdit->setMaxLength(8);
     newPinEdit->setValidator(new QIntValidator(0, 99999999, this));
-    newPinEdit->setPlaceholderText(tr("New PIN"));
+    newPinEdit->setPlaceholderText(qtTrId("lc-changepin-new"));
     addToggleVisibilityAction(newPinEdit);
     layout->addWidget(newPinEdit);
 
@@ -44,7 +44,7 @@ ChangePinDlg::ChangePinDlg(const std::string& readerName, QWidget *parent)
     confirmPinEdit->setEchoMode(QLineEdit::Password);
     confirmPinEdit->setMaxLength(8);
     confirmPinEdit->setValidator(new QIntValidator(0, 99999999, this));
-    confirmPinEdit->setPlaceholderText(tr("Confirm new PIN"));
+    confirmPinEdit->setPlaceholderText(qtTrId("lc-changepin-confirm"));
     addToggleVisibilityAction(confirmPinEdit);
     layout->addWidget(confirmPinEdit);
 
@@ -79,7 +79,7 @@ void ChangePinDlg::onOkClicked()
 {
     okButton->setEnabled(false);
     statusLabel->setStyleSheet("");
-    statusLabel->setText(tr("Changing PIN..."));
+    statusLabel->setText(qtTrId("lc-changepin-changing"));
 
     eidReader->requestChangePIN(currentPinEdit->text(), newPinEdit->text());
 }
@@ -87,26 +87,26 @@ void ChangePinDlg::onOkClicked()
 void ChangePinDlg::onPinTriesLeftRead(int triesLeft, bool blocked)
 {
     if (blocked) {
-        retriesLabel->setText(tr("PIN is blocked!"));
+        retriesLabel->setText(qtTrId("lc-changepin-blocked"));
         retriesLabel->setStyleSheet("color: red; font-weight: bold;");
         okButton->setEnabled(false);
         currentPinEdit->setEnabled(false);
         newPinEdit->setEnabled(false);
         confirmPinEdit->setEnabled(false);
     } else if (triesLeft >= 0) {
-        retriesLabel->setText(tr("PIN retries remaining: %1").arg(triesLeft));
+        retriesLabel->setText(qtTrId("lc-changepin-retries-remaining").arg(triesLeft));
     } else {
-        retriesLabel->setText(tr("PIN retries remaining: %1").arg("?"));
+        retriesLabel->setText(qtTrId("lc-changepin-retries-remaining").arg("?"));
     }
 }
 
 void ChangePinDlg::onPinChangeSuccess()
 {
     statusLabel->setStyleSheet("color: green;");
-    statusLabel->setText(tr("PIN changed successfully."));
+    statusLabel->setText(qtTrId("lc-changepin-success"));
     okButton->setEnabled(false);
     // Change Cancel to Close
-    buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Close"));
+    buttonBox->button(QDialogButtonBox::Cancel)->setText(qtTrId("lc-changepin-close"));
 }
 
 void ChangePinDlg::onPinChangeFailed(int retriesLeft, bool blocked, const QString& errorMessage)
@@ -136,7 +136,7 @@ void ChangePinDlg::validateForm()
         && confirmPinEdit->text().length() >= 4
         && newPinEdit->text() != confirmPinEdit->text()) {
         statusLabel->setStyleSheet("color: red;");
-        statusLabel->setText(tr("New PIN and confirmation do not match."));
+        statusLabel->setText(qtTrId("lc-changepin-mismatch"));
     }
 
     okButton->setEnabled(valid);
@@ -153,7 +153,7 @@ void ChangePinDlg::addToggleVisibilityAction(QLineEdit *edit)
     auto visibleIcon = QIcon::fromTheme("view-visible");
 
     auto *action = edit->addAction(hiddenIcon, QLineEdit::TrailingPosition);
-    action->setToolTip(tr("Show/Hide PIN"));
+    action->setToolTip(qtTrId("lc-changepin-show-hide"));
     connect(action, &QAction::triggered, this, [edit, action, hiddenIcon, visibleIcon]() {
         if (edit->echoMode() == QLineEdit::Password) {
             edit->setEchoMode(QLineEdit::Normal);

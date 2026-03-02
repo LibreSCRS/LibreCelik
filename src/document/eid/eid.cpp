@@ -3,9 +3,9 @@
 
 #include <QBuffer>
 #include <QDate>
-#include <QGroupBox>
 #include <QMenu>
 #include <QTreeWidgetItem>
+#include "utils/collapsiblesection.h"
 #include "utils/libreceliklog.h"
 #include "utils/printmanager.h"
 #include "eid.h"
@@ -32,8 +32,7 @@ EId::EId(std::string reader, QWidget *parent)
     connect(ui->tokenTreeWidget, &QTreeWidget::customContextMenuRequested,
             this, &EId::onTokenContextMenu);
 
-    setupCollapsibleGroup(ui->identityGroupBox);
-    setupCollapsibleGroup(ui->tokenGroupBox);
+    ui->tokenGroupBox->setExpanded(false);
 
     eidReader = std::make_unique<EIdReader>(reader);
 
@@ -69,18 +68,6 @@ EId::~EId()
     delete ui;
 }
 
-void EId::setupCollapsibleGroup(QGroupBox* group)
-{
-    // Apply the initial checked state immediately (children hidden when unchecked)
-    for (auto* child : group->findChildren<QWidget*>(Qt::FindDirectChildrenOnly))
-        child->setVisible(group->isChecked());
-
-    connect(group, &QGroupBox::toggled, group, [group](bool checked) {
-        for (auto* child : group->findChildren<QWidget*>(Qt::FindDirectChildrenOnly))
-            child->setVisible(checked);
-    });
-}
-
 void EId::showLabelAndLineEdit(QLabel* label, QLineEdit* lineEdit, bool show)
 {
     if (show)
@@ -108,7 +95,6 @@ void EId::cardTypeReceived(const eidcard::CardType& data)
             ui->identityGroupBox->setTitle(qtTrId("lc-eid-title-serbian"));
             ui->citizenGroupBox_3->setTitle(qtTrId("lc-eid-citizen-data"));
             ui->jmbgLabel_3->setText(qtTrId("lc-eid-label-jmbg"));
-            ui->lkLabel_3->setText(qtTrId("lc-eid-label-identity-card"));
             ui->addressLabel_3->setText(qtTrId("lc-eid-label-address"));
             showLabelAndLineEdit(ui->parentNameLabel_3, ui->parentNameLineEdit_3, true);
             showLabelAndLineEdit(ui->nationalityLabel_3, ui->nationalityLineEdit_3, false);
@@ -121,7 +107,6 @@ void EId::cardTypeReceived(const eidcard::CardType& data)
             ui->identityGroupBox->setTitle(qtTrId("lc-eid-title-serbian"));
             ui->citizenGroupBox_3->setTitle(qtTrId("lc-eid-citizen-data"));
             ui->jmbgLabel_3->setText(qtTrId("lc-eid-label-jmbg"));
-            ui->lkLabel_3->setText(qtTrId("lc-eid-label-identity-card"));
             ui->addressLabel_3->setText(qtTrId("lc-eid-label-address"));
             showLabelAndLineEdit(ui->parentNameLabel_3, ui->parentNameLineEdit_3, true);
             showLabelAndLineEdit(ui->nationalityLabel_3, ui->nationalityLineEdit_3, false);
@@ -135,7 +120,6 @@ void EId::cardTypeReceived(const eidcard::CardType& data)
             ui->identityGroupBox->setTitle(qtTrId("lc-eid-title-foreigner"));
             ui->citizenGroupBox_3->setTitle(qtTrId("lc-eid-foreigner-data"));
             ui->jmbgLabel_3->setText(qtTrId("lc-eid-label-ebs"));
-            ui->lkLabel_3->setText(qtTrId("lc-eid-label-identity-foreigners"));
             ui->addressLabel_3->setText(qtTrId("lc-eid-label-address-foreigner"));
             showLabelAndLineEdit(ui->parentNameLabel_3, ui->parentNameLineEdit_3, false);
             showLabelAndLineEdit(ui->nationalityLabel_3, ui->nationalityLineEdit_3, true);

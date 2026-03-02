@@ -523,6 +523,10 @@
         <source>Standing places</source>
         <translation type="unfinished">Standing places</translation>
     </message>
+    <message id="lc-vehicle-title">
+        <source>Vehicle Registration</source>
+        <translation type="unfinished">Vehicle Registration</translation>
+    </message>
     <message id="lc-vehicle-print-title">
         <source>Print Document</source>
         <translation type="unfinished">Print Document</translation>
@@ -750,14 +754,6 @@
     <message>
         <source>Form</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Republic Of&lt;/p&gt;&lt;p&gt;Serbia&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Vehicle registration</source>
-        <translation></translation>
     </message>
     <message>
         <source>Print</source>

@@ -523,6 +523,10 @@
         <source>Standing places</source>
         <translation type="unfinished">Број места за стајање</translation>
     </message>
+    <message id="lc-vehicle-title">
+        <source>Vehicle Registration</source>
+        <translation type="unfinished">Саобраћајна дозвола</translation>
+    </message>
     <message id="lc-vehicle-print-title">
         <source>Print Document</source>
         <translation type="unfinished">Штампај документ</translation>
@@ -1075,14 +1079,6 @@
     <message>
         <source>Form</source>
         <translation></translation>
-    </message>
-    <message>
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Republic Of&lt;/p&gt;&lt;p&gt;Serbia&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Република&lt;/p&gt;&lt;p&gt;Србија&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
-    </message>
-    <message>
-        <source>Vehicle registration</source>
-        <translation>Саобраћајна дозвола</translation>
     </message>
     <message>
         <source>Print</source>

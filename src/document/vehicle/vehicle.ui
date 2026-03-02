@@ -15,134 +15,38 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout_main">
-     <!-- Header: Flag + Title + Print -->
-     <item>
-      <layout class="QHBoxLayout" name="headerLayout">
-       <property name="sizeConstraint">
-        <enum>QLayout::SizeConstraint::SetFixedSize</enum>
-       </property>
-       <item>
-        <widget class="QLabel" name="flagLabel">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>100</width>
-           <height>60</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="pixmap">
-          <pixmap resource="../../resources/librecelik.qrc">:/images/rs_flag.png</pixmap>
-         </property>
-         <property name="scaledContents">
-          <bool>true</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="stateLabel">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>14</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Republic Of&lt;/p&gt;&lt;p&gt;Serbia&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Orientation::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QLabel" name="titleLabel">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <family>Sans Serif</family>
-           <pointsize>18</pointsize>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Vehicle registration</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Orientation::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QToolButton" name="toolButton">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="text">
-          <string>Print</string>
-         </property>
-         <property name="icon">
-          <iconset resource="../../resources/librecelik.qrc">
-           <normaloff>:/images/printer-1414.png</normaloff>:/images/printer-1414.png</iconset>
-         </property>
-         <property name="iconSize">
-          <size>
-           <width>48</width>
-           <height>48</height>
-          </size>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <!-- Scrollable content area -->
+    <widget class="CollapsibleSection" name="vehicleCardSection">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_main">
+      <item alignment="Qt::AlignmentFlag::AlignRight">
+       <widget class="QToolButton" name="toolButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Print</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../../resources/librecelik.qrc">
+          <normaloff>:/images/printer-1414.png</normaloff>:/images/printer-1414.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>32</width>
+          <height>32</height>
+         </size>
+        </property>
+        <property name="toolButtonStyle">
+         <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+        </property>
+       </widget>
+      </item>
+      <!-- Scrollable content area -->
      <item>
       <widget class="QScrollArea" name="scrollArea">
        <property name="widgetResizable">
@@ -152,13 +56,7 @@
         <layout class="QVBoxLayout" name="scrollLayout">
          <!-- Vehicle Data Group -->
          <item>
-          <widget class="QGroupBox" name="vehicleGroupBox">
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
+          <widget class="CollapsibleSection" name="vehicleGroupBox">
            <property name="title">
             <string>Vehicle data</string>
            </property>
@@ -346,13 +244,7 @@
          </item>
          <!-- Engine Group -->
          <item>
-          <widget class="QGroupBox" name="engineGroupBox">
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
+          <widget class="CollapsibleSection" name="engineGroupBox">
            <property name="title">
             <string>Engine</string>
            </property>
@@ -438,13 +330,7 @@
          </item>
          <!-- Mass/Load Group -->
          <item>
-          <widget class="QGroupBox" name="massGroupBox">
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
+          <widget class="CollapsibleSection" name="massGroupBox">
            <property name="title">
             <string>Mass and load</string>
            </property>
@@ -588,13 +474,7 @@
          </item>
          <!-- Owner Group -->
          <item>
-          <widget class="QGroupBox" name="ownerGroupBox">
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
+          <widget class="CollapsibleSection" name="ownerGroupBox">
            <property name="title">
             <string>Owner</string>
            </property>
@@ -680,13 +560,7 @@
          </item>
          <!-- User Group -->
          <item>
-          <widget class="QGroupBox" name="userGroupBox">
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
+          <widget class="CollapsibleSection" name="userGroupBox">
            <property name="title">
             <string>User</string>
            </property>
@@ -772,13 +646,7 @@
          </item>
          <!-- Document Data Group -->
          <item>
-          <widget class="QGroupBox" name="documentGroupBox">
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
+          <widget class="CollapsibleSection" name="documentGroupBox">
            <property name="title">
             <string>Document data</string>
            </property>
@@ -946,14 +814,48 @@
            </layout>
           </widget>
          </item>
-        </layout>
-       </widget>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
       </widget>
-     </item>
-    </layout>
-   </item>
-  </layout>
- </widget>
+     </widget>
+    </item>
+   </layout>
+   </widget>
+  </item>
+  <item>
+   <spacer name="verticalSpacer_outer">
+    <property name="orientation">
+     <enum>Qt::Orientation::Vertical</enum>
+    </property>
+    <property name="sizeHint" stdset="0">
+     <size>
+      <width>20</width>
+      <height>0</height>
+     </size>
+    </property>
+   </spacer>
+  </item>
+ </layout>
+</widget>
+ <customwidgets>
+  <customwidget>
+   <class>CollapsibleSection</class>
+   <extends>QGroupBox</extends>
+   <header>utils/collapsiblesection.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../../resources/librecelik.qrc"/>
  </resources>

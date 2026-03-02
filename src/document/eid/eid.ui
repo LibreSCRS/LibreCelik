@@ -15,15 +15,9 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="identityGroupBox">
+    <widget class="CollapsibleSection" name="identityGroupBox">
      <property name="title">
       <string>Serbian eID</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_identity">
       <property name="spacing">
@@ -45,153 +39,88 @@
        <widget class="QWidget" name="identityContentWidget" native="true">
     <layout class="QVBoxLayout" name="verticalLayout_70">
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_29" stretch="3">
+      <layout class="QHBoxLayout" name="horizontalLayout_30">
        <item>
-        <layout class="QVBoxLayout" name="verticalLayout_47" stretch="0">
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_30">
-           <item>
-            <widget class="QLabel" name="lkLabel_3">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="font">
-              <font>
-               <pointsize>11</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Identity card</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_5">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QToolButton" name="certificatesButton">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>80</width>
-               <height>70</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Certificates</string>
-             </property>
-             <property name="icon">
-              <iconset resource="../../../resources/librecelik.qrc">
-               <normaloff>:/images/certificate-icon.png</normaloff>:/images/certificate-icon.png</iconset>
-             </property>
-             <property name="iconSize">
-              <size>
-               <width>48</width>
-               <height>48</height>
-              </size>
-             </property>
-             <property name="toolButtonStyle">
-              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QToolButton" name="changePinButton">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>80</width>
-               <height>70</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>PIN</string>
-             </property>
-             <property name="icon">
-              <iconset resource="../../../resources/librecelik.qrc">
-               <normaloff>:/images/pin-change-icon.png</normaloff>:/images/pin-change-icon.png</iconset>
-             </property>
-             <property name="iconSize">
-              <size>
-               <width>48</width>
-               <height>48</height>
-              </size>
-             </property>
-             <property name="toolButtonStyle">
-              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QToolButton" name="toolButton">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="minimumSize">
-              <size>
-               <width>80</width>
-               <height>70</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Print</string>
-             </property>
-             <property name="icon">
-              <iconset resource="../../../resources/librecelik.qrc">
-               <normaloff>:/images/printer-1414.png</normaloff>:/images/printer-1414.png</iconset>
-             </property>
-             <property name="iconSize">
-              <size>
-               <width>48</width>
-               <height>48</height>
-              </size>
-             </property>
-             <property name="toolButtonStyle">
-              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-        </layout>
+        <spacer name="horizontalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QToolButton" name="certificatesButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Certificates</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../../../resources/librecelik.qrc">
+           <normaloff>:/images/certificate-icon.png</normaloff>:/images/certificate-icon.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="toolButtonStyle">
+          <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="changePinButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>PIN</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../../../resources/librecelik.qrc">
+           <normaloff>:/images/pin-change-icon.png</normaloff>:/images/pin-change-icon.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="toolButtonStyle">
+          <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="toolButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Print</string>
+         </property>
+         <property name="icon">
+          <iconset resource="../../../resources/librecelik.qrc">
+           <normaloff>:/images/printer-1414.png</normaloff>:/images/printer-1414.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="toolButtonStyle">
+          <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>
@@ -788,15 +717,9 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="tokenGroupBox">
+    <widget class="CollapsibleSection" name="tokenGroupBox">
      <property name="title">
       <string>Token</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_token">
       <property name="spacing">
@@ -843,8 +766,28 @@
      </layout>
     </widget>
    </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Orientation::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CollapsibleSection</class>
+   <extends>QGroupBox</extends>
+   <header>utils/collapsiblesection.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../../../resources/librecelik.qrc"/>
  </resources>

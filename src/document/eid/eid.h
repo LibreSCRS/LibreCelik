@@ -11,8 +11,8 @@
 #include "document/eid/changepindlg.h"
 #include <string>
 
+class CollapsibleSection;
 class EIdReader;
-class QGroupBox;
 class QLabel;
 class QLineEdit;
 class QTreeWidgetItem;
@@ -46,7 +46,6 @@ private slots:
     void on_changePinButton_clicked();
 
 private:
-    static void setupCollapsibleGroup(QGroupBox* group);
     void updateVerificationIcons(const eidcard::VerificationResult& data, QLabel* iconLabel);
     void showLabelAndLineEdit(QLabel* label, QLineEdit* lineEdit, bool show);
     QString getBase64Photo();

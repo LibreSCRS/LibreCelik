@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
+#include <QCoreApplication>
 #include <QDate>
-#include <QGroupBox>
+#include "utils/collapsiblesection.h"
 #include "utils/libreceliklog.h"
 #include "utils/printmanager.h"
 #include "vehicle.h"
@@ -15,6 +16,10 @@ Vehicle::Vehicle(std::string reader, QWidget *parent)
     , ui(new Ui::Vehicle)
 {
     ui->setupUi(this);
+    ui->vehicleCardSection->setTitle(qtTrId("lc-vehicle-title"));
+    // vehicleCardSection (stretch=1) fills all space when expanded;
+    // verticalSpacer_outer (stretch=0) absorbs the space when collapsed.
+    ui->verticalLayout->setStretch(0, 1);
 
     vehicleReader = std::make_unique<VehicleReader>(reader);
 
@@ -27,22 +32,7 @@ Vehicle::Vehicle(std::string reader, QWidget *parent)
         ui->toolButton->setEnabled(true);
     });
 
-    setupCollapsibleGroup(ui->vehicleGroupBox);
-    setupCollapsibleGroup(ui->engineGroupBox);
-    setupCollapsibleGroup(ui->massGroupBox);
-    setupCollapsibleGroup(ui->ownerGroupBox);
-    setupCollapsibleGroup(ui->userGroupBox);
-    setupCollapsibleGroup(ui->documentGroupBox);
-
     vehicleReader->requestData();
-}
-
-void Vehicle::setupCollapsibleGroup(QGroupBox *group)
-{
-    connect(group, &QGroupBox::toggled, group, [group](bool checked) {
-        for (auto *child : group->findChildren<QWidget *>(Qt::FindDirectChildrenOnly))
-            child->setVisible(checked);
-    });
 }
 
 Vehicle::~Vehicle()

@@ -71,6 +71,8 @@ set(PROJECT_SOURCES
         document/vehicle/vehicle.h
         document/vehicle/vehicle.cpp
         document/vehicle/vehicle.ui
+        utils/collapsiblesection.h
+        utils/collapsiblesection.cpp
         utils/translations_catalog.cpp
 )
 

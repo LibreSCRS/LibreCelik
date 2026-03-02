@@ -211,6 +211,8 @@
     QT_TRID_NOOP("lc-cert-verify-revoked");
 
     // --- Vehicle registration ---
+    //% "Vehicle Registration"
+    QT_TRID_NOOP("lc-vehicle-title");
     //% "Print Document"
     QT_TRID_NOOP("lc-vehicle-print-title");
     //% "Vehicle registration card reader"

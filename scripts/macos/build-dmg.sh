@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Build a LibreCelik DMG for macOS.
+#
+# Usage:  ./scripts/macos/build-dmg.sh [BUILD_DIR]
+#   BUILD_DIR  CMake build directory (default: build)
+#
+# Prerequisites:
+#   - CMake Release build already compiled in BUILD_DIR
+#   - macdeployqt on PATH  OR  Qt installed under ~/Qt/<version>/macos/bin/
+#
+# The script:
+#   1. Copies the built .app to a staging area
+#   2. Runs macdeployqt to bundle Qt frameworks and plugins
+#   3. Ad-hoc signs the bundle (no Apple Developer account needed;
+#      users can bypass Gatekeeper with right-click → Open)
+#   4. Creates a compressed DMG containing the .app and a /Applications symlink
+#
+# Output: LibreCelik-<VERSION>-macos.dmg in the project root.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+BUILD_DIR="${1:-$PROJECT_ROOT/build}"
+
+# ---------------------------------------------------------------------------
+# Resolve macdeployqt
+# ---------------------------------------------------------------------------
+MACDEPLOYQT=""
+
+# 1. Check PATH first
+if command -v macdeployqt &>/dev/null; then
+    MACDEPLOYQT="$(command -v macdeployqt)"
+fi
+
+# 2. Search ~/Qt/<version>/macos/bin/, newest version first
+if [[ -z "$MACDEPLOYQT" ]]; then
+    while IFS= read -r candidate; do
+        if [[ -x "$candidate" ]]; then
+            MACDEPLOYQT="$candidate"
+            break
+        fi
+    done < <(ls -d "$HOME"/Qt/*/macos/bin/macdeployqt 2>/dev/null | sort -Vr)
+fi
+
+if [[ -z "$MACDEPLOYQT" ]]; then
+    echo "ERROR: macdeployqt not found."
+    echo "       Install Qt via the Qt installer or add Qt's bin/ to PATH."
+    exit 1
+fi
+echo "macdeployqt: $MACDEPLOYQT"
+
+# ---------------------------------------------------------------------------
+# Determine version from git tag
+# ---------------------------------------------------------------------------
+VERSION=$(git -C "$PROJECT_ROOT" describe --tags --abbrev=0 2>/dev/null || echo "dev")
+echo "Building DMG for version: $VERSION"
+
+# ---------------------------------------------------------------------------
+# Locate the built .app
+# ---------------------------------------------------------------------------
+APP_SRC="$BUILD_DIR/src/LibreCelik.app"
+if [[ ! -d "$APP_SRC" ]]; then
+    echo "ERROR: App bundle not found at $APP_SRC"
+    echo "       Run: cmake --build $BUILD_DIR first"
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Stage a working copy of the .app (macdeployqt modifies it in-place)
+# ---------------------------------------------------------------------------
+STAGING_DIR="$(mktemp -d)/LibreCelik-dmg-staging"
+APP_STAGING="$STAGING_DIR/LibreCelik.app"
+
+echo "Staging .app..."
+mkdir -p "$STAGING_DIR"
+cp -R "$APP_SRC" "$APP_STAGING"
+
+# ---------------------------------------------------------------------------
+# Run macdeployqt — bundles Qt frameworks, plugins, and .qm translations
+# ---------------------------------------------------------------------------
+echo "Running macdeployqt..."
+"$MACDEPLOYQT" "$APP_STAGING" -verbose=1
+
+# ---------------------------------------------------------------------------
+# Ad-hoc sign — satisfies macOS's basic integrity check without an Apple ID.
+# Users on non-developer machines will still see a Gatekeeper warning on first
+# launch; they can bypass it with right-click → Open.
+# ---------------------------------------------------------------------------
+echo "Ad-hoc signing..."
+codesign --deep --force --sign - "$APP_STAGING"
+
+# ---------------------------------------------------------------------------
+# Build the DMG
+# ---------------------------------------------------------------------------
+DMG_STAGING="$(mktemp -d)/LibreCelik-dmg-contents"
+mkdir -p "$DMG_STAGING"
+
+echo "Assembling DMG contents..."
+cp -R "$APP_STAGING" "$DMG_STAGING/"
+ln -s /Applications "$DMG_STAGING/Applications"
+
+OUTPUT="$PROJECT_ROOT/LibreCelik-$VERSION-macos.dmg"
+
+echo "Creating DMG..."
+hdiutil create \
+    -volname "LibreCelik $VERSION" \
+    -srcfolder "$DMG_STAGING" \
+    -ov \
+    -format UDZO \
+    "$OUTPUT"
+
+echo ""
+echo "DMG created: $OUTPUT"

@@ -47,3 +47,6 @@ CMakeLists.txt.user
 # AppImage packaging
 AppDir/
 *.AppImage
+
+# macOS DMG packaging
+*.dmg

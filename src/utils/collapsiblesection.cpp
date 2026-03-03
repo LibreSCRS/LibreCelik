@@ -5,6 +5,7 @@
 
 #include <QMouseEvent>
 #include <QPainter>
+#include <QShowEvent>
 
 static const QColor HEADER_BG  { 61, 140, 149 };   // teal
 static const QColor FRAME_BORDER{ 61, 140, 149, 80 };
@@ -117,4 +118,31 @@ void CollapsibleSection::mousePressEvent(QMouseEvent* event)
         setExpanded(!expanded);
     else
         QGroupBox::mousePressEvent(event);
+}
+
+// QGroupBox::setTitle() and QGroupBox::changeEvent() both call calculateFrame()
+// internally, which resets our content margins to style-computed values.  On
+// macOS the Aqua style computes a smaller top margin than HEADER_HEIGHT, causing
+// the content widgets to overlap the painted header.  Restore the correct margins
+// after every such reset.
+
+void CollapsibleSection::setTitle(const QString& title)
+{
+    QGroupBox::setTitle(title);
+    setContentsMargins(2, HEADER_HEIGHT + 4, 2, 4);
+}
+
+void CollapsibleSection::changeEvent(QEvent* event)
+{
+    QGroupBox::changeEvent(event);
+    if (event->type() == QEvent::FontChange || event->type() == QEvent::StyleChange)
+        setContentsMargins(2, HEADER_HEIGHT + 4, 2, 4);
+}
+
+void CollapsibleSection::showEvent(QShowEvent* event)
+{
+    // Ensure margins are correct at first show (calculateFrame may have run
+    // between init() and here via setTitle called from .ui setup).
+    setContentsMargins(2, HEADER_HEIGHT + 4, 2, 4);
+    QGroupBox::showEvent(event);
 }

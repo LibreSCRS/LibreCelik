@@ -91,7 +91,7 @@
            </item>
            <!-- Language selector -->
            <item>
-            <widget class="QComboBox" name="languageComboBox">
+            <widget class="QToolButton" name="languageButton">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -99,18 +99,14 @@
               </sizepolicy>
              </property>
              <property name="styleSheet">
-              <string notr="true">QComboBox { background-color: rgba(255,255,255,55); color: white; border: 1px solid rgba(255,255,255,120); border-radius: 4px; padding: 3px 10px; } QComboBox::drop-down { border: none; width: 18px; } QComboBox QAbstractItemView { background-color: white; color: black; selection-background-color: rgb(61,140,149); selection-color: white; }</string>
+              <string notr="true">QToolButton { background-color: rgb(103, 165, 172); color: white; border: 1px solid rgba(255,255,255,120); border-radius: 4px; padding: 3px 10px; } QToolButton::menu-indicator { image: none; }</string>
              </property>
-             <item>
-              <property name="text">
-               <string>English</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Српски</string>
-              </property>
-             </item>
+             <property name="text">
+              <string>English</string>
+             </property>
+             <property name="popupMode">
+              <enum>QToolButton::InstantPopup</enum>
+             </property>
             </widget>
            </item>
           </layout>

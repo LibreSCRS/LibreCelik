@@ -10,6 +10,7 @@
 #include <QApplication>
 #include <QEvent>
 #include <QLocale>
+#include <QMenu>
 #include <QSettings>
 
 LibreCelik::LibreCelik(QWidget *parent)
@@ -50,16 +51,19 @@ LibreCelik::LibreCelik(QWidget *parent)
     ui->statusbar->hide();
     ui->menubar->hide();
 
-    // Set combobox to match the locale that was actually loaded.
-    // Connect the signal AFTER setCurrentIndex to avoid a spurious onLanguageChanged call.
-    int langIndex = locale.startsWith("sr") ? 1 : 0;
-    ui->languageComboBox->setCurrentIndex(langIndex);
+    // Build the language menu and set the button text to match the loaded locale.
+    {
+        auto *langMenu = new QMenu(ui->languageButton);
+        auto *enAction = langMenu->addAction("English");
+        auto *srAction = langMenu->addAction("Српски");
+        ui->languageButton->setMenu(langMenu);
+        connect(enAction, &QAction::triggered, this, [this]() { onLanguageChanged(0); });
+        connect(srAction, &QAction::triggered, this, [this]() { onLanguageChanged(1); });
+    }
+    ui->languageButton->setText(locale.startsWith("sr") ? "Српски" : "English");
+
     updateAboutText();
-
     updateWelcomeChips();
-
-    connect(ui->languageComboBox, &QComboBox::currentIndexChanged,
-            this, &LibreCelik::onLanguageChanged);
 
     connect(&SmartCardReaderListener::instance(), &SmartCardReaderListener::smartCardReaderEventOccured, this, &LibreCelik::onCardEventReceived);
     connect(&SmartCardReaderListener::instance(), &SmartCardReaderListener::smartCardReaderEnumerationChanged, this, &LibreCelik::onSmartCardReaderEnumerationChanged);
@@ -105,6 +109,7 @@ void LibreCelik::onLanguageChanged(int index)
     QSettings settings("LibreSCRS", "LibreCelik");
     settings.setValue("language", locale);
     loadLanguage(locale);
+    ui->languageButton->setText(index == 1 ? "Српски" : "English");
 }
 
 void LibreCelik::changeEvent(QEvent* event)
@@ -113,6 +118,8 @@ void LibreCelik::changeEvent(QEvent* event)
         ui->retranslateUi(this);
         updateAboutText();
         updateWelcomeChips();
+        // retranslateUi resets the button to "English"; restore the actual locale.
+        ui->languageButton->setText(locale.startsWith("sr") ? "Српски" : "English");
     }
     QMainWindow::changeEvent(event);
 }

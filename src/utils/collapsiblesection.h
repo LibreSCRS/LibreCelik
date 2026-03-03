@@ -22,9 +22,15 @@ public:
     int sectionHeight() const { return maximumHeight(); }
     void setSectionHeight(int h) { setMaximumHeight(h); }
 
+    // Shadow (not virtual) — QGroupBox::setTitle calls calculateFrame() which
+    // resets our content margins on macOS; restore them here.
+    void setTitle(const QString& title);
+
 protected:
     void paintEvent(QPaintEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
+    void changeEvent(QEvent* event) override;
+    void showEvent(QShowEvent* event) override;
 
 private:
     void init();

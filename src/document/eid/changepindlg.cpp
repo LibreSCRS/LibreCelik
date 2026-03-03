@@ -10,8 +10,34 @@
 #include <QIntValidator>
 #include <QLabel>
 #include <QLineEdit>
+#include <QPainter>
+#include <QPixmap>
 #include <QPushButton>
 #include <QVBoxLayout>
+
+// Programmatic fallback used when QIcon::fromTheme returns nothing (macOS).
+static QIcon createEyeIcon(bool open)
+{
+    QPixmap px(16, 16);
+    px.fill(Qt::transparent);
+    QPainter p(&px);
+    p.setRenderHint(QPainter::Antialiasing);
+    const QColor col(90, 90, 90);
+    p.setPen(QPen(col, 1.2));
+    p.setBrush(Qt::NoBrush);
+    // Outer eye ellipse (horizontal lens shape)
+    p.drawEllipse(QRectF(0.5, 3.5, 15.0, 9.0));
+    // Pupil
+    p.setBrush(col);
+    p.drawEllipse(QRectF(5.5, 5.5, 5.0, 5.0));
+    if (!open) {
+        // Diagonal slash: eye-hidden / password concealed
+        p.setBrush(Qt::NoBrush);
+        p.setPen(QPen(col, 1.5));
+        p.drawLine(QPointF(2.5, 13.5), QPointF(13.5, 2.5));
+    }
+    return QIcon(px);
+}
 
 ChangePinDlg::ChangePinDlg(const std::string& readerName, QWidget *parent)
     : QDialog(parent)
@@ -149,8 +175,10 @@ bool ChangePinDlg::isValidPinLength(const QString &pin) const
 
 void ChangePinDlg::addToggleVisibilityAction(QLineEdit *edit)
 {
-    auto hiddenIcon = QIcon::fromTheme("view-hidden");
-    auto visibleIcon = QIcon::fromTheme("view-visible");
+    // QIcon::fromTheme returns a null icon on macOS (no FreeDesktop theme);
+    // fall back to programmatically drawn icons so the button is always visible.
+    auto hiddenIcon  = QIcon::fromTheme("view-hidden",  createEyeIcon(false));
+    auto visibleIcon = QIcon::fromTheme("view-visible", createEyeIcon(true));
 
     auto *action = edit->addAction(hiddenIcon, QLineEdit::TrailingPosition);
     action->setToolTip(qtTrId("lc-changepin-show-hide"));

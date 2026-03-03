@@ -12,6 +12,12 @@
 
 #include <QtCore/qttranslation.h>
 
+// QT_TRID_NOOP(id) expands to the bare string literal `id`, so every statement
+// inside this function is an unused-value expression by design.
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_CLANG("-Wunused-value")
+QT_WARNING_DISABLE_GCC("-Wunused-value")
+
 [[maybe_unused]] static void _translationsCatalog()
 {
     // --- main window ---
@@ -296,3 +302,5 @@
     //% "Standing places"
     QT_TRID_NOOP("lc-vehicle-doc-standing-places");
 }
+
+QT_WARNING_POP

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=LibreCelik
+Comment=Libre platform for smart card applications in Republic of Serbia
+Exec=LibreCelik
+Icon=librecelik
+Type=Application
+Categories=Utility;Office;
+Keywords=smart card;eID;identity;Serbia;vehicle registration;
+StartupNotify=true

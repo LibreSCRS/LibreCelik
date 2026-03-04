@@ -59,7 +59,7 @@ inline QDebug &operator<<(QDebug & dbg, SmartCardEvent::EventType cat)
 {
     std::stringstream eventType;
     eventType << cat;
-    dbg.nospace() << eventType.str();
+    dbg.nospace() << QString::fromStdString(eventType.str());
     return dbg.space();
 }
 

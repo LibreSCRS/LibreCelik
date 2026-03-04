@@ -136,7 +136,7 @@ void LibreCelik::changeEvent(QEvent* event)
 
 void LibreCelik::onCardEventReceived(const SmartCardEvent& sce)
 {
-    qCDebug(libreSCRSGeneral) << "SmartCardEvent: " << sce.eventType << " received on reader:  " << sce.readerName;
+    qCDebug(libreSCRSGeneral) << "SmartCardEvent: " << sce.eventType << " received on reader:  " << QString::fromStdString(sce.readerName);
     if (sce.eventType == SmartCardEvent::CardInserted)
     {
         addNewReader(sce.readerName);
@@ -153,9 +153,15 @@ void LibreCelik::onSmartCardReaderEnumerationChanged(const QStringList& scrNames
     for(auto const& reader: documentReaders)
         readers.push_back(reader.first);
 
+    std::vector<std::string> scrNamesStd;
+    scrNamesStd.reserve(static_cast<size_t>(scrNames.size()));
+    for (const auto& s : scrNames)
+        scrNamesStd.push_back(s.toStdString());
+    std::sort(scrNamesStd.begin(), scrNamesStd.end());
+
     // Remove unplugged readers
     std::vector<std::string> toRemove;
-    std::set_difference(std::begin(readers), std::end(readers), std::begin(scrNames), std::end(scrNames), std::inserter(toRemove, std::begin(toRemove)));
+    std::set_difference(std::begin(readers), std::end(readers), std::begin(scrNamesStd), std::end(scrNamesStd), std::inserter(toRemove, std::begin(toRemove)));
     for (const auto& scrName : toRemove)
     {
         removeReader(scrName);

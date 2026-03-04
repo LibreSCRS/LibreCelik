@@ -133,7 +133,7 @@
     </message>
     <message id="lc-eid-title-serbian">
         <source>Serbian eID</source>
-        <translation type="unfinished">Српска ел. лична карта</translation>
+        <translation type="unfinished">Српска електронска лична карта</translation>
     </message>
     <message id="lc-eid-label-identity-card">
         <source>Identity card</source>
@@ -141,7 +141,7 @@
     </message>
     <message id="lc-eid-title-foreigner">
         <source>Serbian eID (Foreigner)</source>
-        <translation type="unfinished">Српска ел. лична карта (Странац)</translation>
+        <translation type="unfinished">Српска електронска лична карта (Странац)</translation>
     </message>
     <message id="lc-eid-label-ebs">
         <source>EBS</source>
@@ -530,6 +530,214 @@
     <message id="lc-vehicle-print-title">
         <source>Print Document</source>
         <translation type="unfinished">Штампај документ</translation>
+    </message>
+    <message id="lc-reader-unsupported-card">
+        <source>Card in reader is not supported.</source>
+        <translation type="unfinished">Kartica u čitaču nije podržana.</translation>
+    </message>
+    <message id="lc-health-title">
+        <source>Health Insurance Card</source>
+        <translation type="unfinished">Здравствена картица</translation>
+    </message>
+    <message id="lc-healthreader-failed-connect">
+        <source>Failed to connect to card.</source>
+        <translation type="unfinished">Неуспешно повезивање са картицом.</translation>
+    </message>
+    <message id="lc-health-print-title">
+        <source>Print Document</source>
+        <translation type="unfinished">Штампај документ</translation>
+    </message>
+    <message id="lc-health-doc-title">
+        <source>HEALTH INSURANCE CARD READER: DATA PRINTING</source>
+        <translation type="unfinished">ЧИТАЧ ЗДРАВСТВЕНЕ КАРТИЦЕ: ШТАМПА ПОДАТАКА</translation>
+    </message>
+    <message id="lc-health-doc-printing-date">
+        <source>Printing date</source>
+        <translation type="unfinished">Датум штампе</translation>
+    </message>
+    <message id="lc-health-section-personal">
+        <source>Personal Data</source>
+        <translation type="unfinished">Лични подаци</translation>
+    </message>
+    <message id="lc-health-section-insurance">
+        <source>Insurance Data</source>
+        <translation type="unfinished">Подаци о осигурању</translation>
+    </message>
+    <message id="lc-health-section-address">
+        <source>Address</source>
+        <translation type="unfinished">Адреса</translation>
+    </message>
+    <message id="lc-health-section-carrier">
+        <source>Insurance Carrier Data</source>
+        <translation type="unfinished">Подаци о носиоцу осигурања</translation>
+    </message>
+    <message id="lc-health-section-taxpayer">
+        <source>Employer / Taxpayer</source>
+        <translation type="unfinished">Послодавац / Порески обвезник</translation>
+    </message>
+    <message id="lc-health-label-given-name">
+        <source>Name</source>
+        <translation type="unfinished">Имe</translation>
+    </message>
+    <message id="lc-health-label-given-name-lat">
+        <source>Name (Latin)</source>
+        <translation type="unfinished">Имe (лат.)</translation>
+    </message>
+    <message id="lc-health-label-family-name">
+        <source>Surname</source>
+        <translation type="unfinished">Презиме</translation>
+    </message>
+    <message id="lc-health-label-family-name-lat">
+        <source>Surname (Latin)</source>
+        <translation type="unfinished">Презиме (лат.)</translation>
+    </message>
+    <message id="lc-health-label-parent-name">
+        <source>Parent name</source>
+        <translation type="unfinished">Имe родитеља</translation>
+    </message>
+    <message id="lc-health-label-parent-name-lat">
+        <source>Parent name (Latin)</source>
+        <translation type="unfinished">Имe родитеља (лат.)</translation>
+    </message>
+    <message id="lc-health-label-dob">
+        <source>Date of birth</source>
+        <translation type="unfinished">Датум рођења</translation>
+    </message>
+    <message id="lc-health-label-gender">
+        <source>Gender</source>
+        <translation type="unfinished">Пол</translation>
+    </message>
+    <message id="lc-health-label-jmbg">
+        <source>Personal number (JMBG)</source>
+        <translation type="unfinished">ЈМБГ</translation>
+    </message>
+    <message id="lc-health-label-lbo">
+        <source>Insurant number (LBO)</source>
+        <translation type="unfinished">ЛБО</translation>
+    </message>
+    <message id="lc-health-label-insurer">
+        <source>Insurer</source>
+        <translation type="unfinished">Назив осигуравача</translation>
+    </message>
+    <message id="lc-health-label-insurer-id">
+        <source>Insurer ID</source>
+        <translation type="unfinished">ИД осигуравача</translation>
+    </message>
+    <message id="lc-health-label-card-id">
+        <source>Card ID</source>
+        <translation type="unfinished">Број картице</translation>
+    </message>
+    <message id="lc-health-label-issue-date">
+        <source>Issue date</source>
+        <translation type="unfinished">Датум издавања</translation>
+    </message>
+    <message id="lc-health-label-expiry">
+        <source>Expiry date</source>
+        <translation type="unfinished">Датум истека</translation>
+    </message>
+    <message id="lc-health-label-valid-until">
+        <source>Valid until</source>
+        <translation type="unfinished">Важи до</translation>
+    </message>
+    <message id="lc-health-label-permanently">
+        <source>Permanently valid</source>
+        <translation type="unfinished">Трајно важење</translation>
+    </message>
+    <message id="lc-health-label-street">
+        <source>Street</source>
+        <translation type="unfinished">Улица</translation>
+    </message>
+    <message id="lc-health-label-number">
+        <source>Number</source>
+        <translation type="unfinished">Број</translation>
+    </message>
+    <message id="lc-health-label-apartment">
+        <source>Apartment</source>
+        <translation type="unfinished">Стан</translation>
+    </message>
+    <message id="lc-health-label-place">
+        <source>Place</source>
+        <translation type="unfinished">Место</translation>
+    </message>
+    <message id="lc-health-label-municipality">
+        <source>Municipality</source>
+        <translation type="unfinished">Општина</translation>
+    </message>
+    <message id="lc-health-label-country">
+        <source>Country</source>
+        <translation type="unfinished">Држава</translation>
+    </message>
+    <message id="lc-health-label-carrier-name">
+        <source>Carrier name</source>
+        <translation type="unfinished">Имe носиоца осигурања</translation>
+    </message>
+    <message id="lc-health-label-carrier-family-name">
+        <source>Carrier surname</source>
+        <translation type="unfinished">Презиме носиоца</translation>
+    </message>
+    <message id="lc-health-label-carrier-relation">
+        <source>Relationship</source>
+        <translation type="unfinished">Сродство</translation>
+    </message>
+    <message id="lc-health-label-carrier-id">
+        <source>Carrier ID</source>
+        <translation type="unfinished">ИД носиоца</translation>
+    </message>
+    <message id="lc-health-label-carrier-lbo">
+        <source>Carrier LBO</source>
+        <translation type="unfinished">ЛБО носиоца</translation>
+    </message>
+    <message id="lc-health-label-taxpayer-name">
+        <source>Employer name</source>
+        <translation type="unfinished">Назив послодавца</translation>
+    </message>
+    <message id="lc-health-label-taxpayer-id">
+        <source>Employer ID (PIB)</source>
+        <translation type="unfinished">ПИБ послодавца</translation>
+    </message>
+    <message id="lc-health-label-taxpayer-res">
+        <source>Employer residence</source>
+        <translation type="unfinished">Седиште послодавца</translation>
+    </message>
+    <message id="lc-health-label-taxpayer-act">
+        <source>Activity code</source>
+        <translation type="unfinished">Шифра делатности</translation>
+    </message>
+    <message id="lc-health-label-insurance-basis">
+        <source>Insurance basis</source>
+        <translation type="unfinished">Основ осигурања</translation>
+    </message>
+    <message id="lc-health-label-insurance-desc">
+        <source>Insurance description</source>
+        <translation type="unfinished">Опис осигурања</translation>
+    </message>
+    <message id="lc-health-label-insurance-start">
+        <source>Insurance start</source>
+        <translation type="unfinished">Почетак осигурања</translation>
+    </message>
+    <message id="lc-health-val-yes">
+        <source>Yes</source>
+        <translation type="unfinished">Да</translation>
+    </message>
+    <message id="lc-pks-title">
+        <source>PKS Qualified Signature</source>
+        <translation type="unfinished">ПКС Квалификовани потпис</translation>
+    </message>
+    <message id="lc-token-title">
+        <source>Token</source>
+        <translation type="unfinished">Токен</translation>
+    </message>
+    <message id="lc-token-certs-button">
+        <source>View Certificates</source>
+        <translation type="unfinished">Прикажи сертификате</translation>
+    </message>
+    <message id="lc-token-change-pin">
+        <source>Change PIN</source>
+        <translation type="unfinished">Промени ПИН</translation>
+    </message>
+    <message id="lc-print-button">
+        <source>Print</source>
+        <translation type="unfinished">Штампај</translation>
     </message>
 </context>
 <context>
@@ -1254,6 +1462,177 @@
     <message>
         <source>Unavailable</source>
         <translation type="obsolete">Недоступно</translation>
+    </message>
+</context>
+<context>
+    <name>Health</name>
+    <message>
+        <source>Form</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Print</source>
+        <translation>Штампа</translation>
+    </message>
+    <message>
+        <source>Personal Data</source>
+        <translation>Лични подаци</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Имe</translation>
+    </message>
+    <message>
+        <source>Surname</source>
+        <translation>Презиме</translation>
+    </message>
+    <message>
+        <source>Name (Latin)</source>
+        <translation>Имe (лат.)</translation>
+    </message>
+    <message>
+        <source>Surname (Latin)</source>
+        <translation>Презиме (лат.)</translation>
+    </message>
+    <message>
+        <source>Parent name</source>
+        <translation>Имe родитеља</translation>
+    </message>
+    <message>
+        <source>Parent name (Latin)</source>
+        <translation>Имe родитеља (лат.)</translation>
+    </message>
+    <message>
+        <source>Date of birth</source>
+        <translation>Датум рођења</translation>
+    </message>
+    <message>
+        <source>Gender</source>
+        <translation>Пол</translation>
+    </message>
+    <message>
+        <source>Personal number (JMBG)</source>
+        <translation>ЈМБГ</translation>
+    </message>
+    <message>
+        <source>Insurant number (LBO)</source>
+        <translation>ЛБО</translation>
+    </message>
+    <message>
+        <source>Insurance Data</source>
+        <translation>Подаци о осигурању</translation>
+    </message>
+    <message>
+        <source>Insurer</source>
+        <translation>Назив осигуравача</translation>
+    </message>
+    <message>
+        <source>Insurer ID</source>
+        <translation>ИД осигуравача</translation>
+    </message>
+    <message>
+        <source>Card ID</source>
+        <translation>Број картице</translation>
+    </message>
+    <message>
+        <source>Issue date</source>
+        <translation>Датум издавања</translation>
+    </message>
+    <message>
+        <source>Expiry date</source>
+        <translation>Датум истека</translation>
+    </message>
+    <message>
+        <source>Valid until</source>
+        <translation>Важи до</translation>
+    </message>
+    <message>
+        <source>Permanently valid</source>
+        <translation>Трајно важење</translation>
+    </message>
+    <message>
+        <source>Insurance basis</source>
+        <translation>Основ осигурања</translation>
+    </message>
+    <message>
+        <source>Insurance description</source>
+        <translation>Опис осигурања</translation>
+    </message>
+    <message>
+        <source>Insurance start</source>
+        <translation>Почетак осигурања</translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation>Адреса</translation>
+    </message>
+    <message>
+        <source>Street</source>
+        <translation>Улица</translation>
+    </message>
+    <message>
+        <source>Number</source>
+        <translation>Број</translation>
+    </message>
+    <message>
+        <source>Apartment</source>
+        <translation>Стан</translation>
+    </message>
+    <message>
+        <source>Place</source>
+        <translation>Место</translation>
+    </message>
+    <message>
+        <source>Municipality</source>
+        <translation>Општина</translation>
+    </message>
+    <message>
+        <source>Country</source>
+        <translation>Држава</translation>
+    </message>
+    <message>
+        <source>Insurance Carrier Data</source>
+        <translation>Подаци о носиоцу осигурања</translation>
+    </message>
+    <message>
+        <source>Carrier name</source>
+        <translation>Имe носиоца осигурања</translation>
+    </message>
+    <message>
+        <source>Carrier surname</source>
+        <translation>Презиме носиоца</translation>
+    </message>
+    <message>
+        <source>Relationship</source>
+        <translation>Сродство</translation>
+    </message>
+    <message>
+        <source>Carrier ID</source>
+        <translation>ИД носиоца</translation>
+    </message>
+    <message>
+        <source>Carrier LBO</source>
+        <translation>ЛБО носиоца</translation>
+    </message>
+    <message>
+        <source>Employer / Taxpayer</source>
+        <translation>Послодавац / Порески обвезник</translation>
+    </message>
+    <message>
+        <source>Employer name</source>
+        <translation>Назив послодавца</translation>
+    </message>
+    <message>
+        <source>Employer ID (PIB)</source>
+        <translation>ПИБ послодавца</translation>
+    </message>
+    <message>
+        <source>Employer residence</source>
+        <translation>Седиште послодавца</translation>
+    </message>
+    <message>
+        <source>Activity code</source>
+        <translation>Шифра делатности</translation>
     </message>
 </context>
 </TS>

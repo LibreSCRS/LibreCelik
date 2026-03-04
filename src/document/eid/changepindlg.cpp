@@ -2,7 +2,6 @@
 // Copyright hirashix0@proton.me
 
 #include "changepindlg.h"
-#include "eidreader.h"
 
 #include <QAction>
 #include <QDialogButtonBox>
@@ -39,7 +38,7 @@ static QIcon createEyeIcon(bool open)
     return QIcon(px);
 }
 
-ChangePinDlg::ChangePinDlg(const std::string& readerName, QWidget *parent)
+ChangePinDlg::ChangePinDlg(QWidget *parent)
     : QDialog(parent)
 {
     setWindowTitle(qtTrId("lc-changepin-title"));
@@ -89,14 +88,6 @@ ChangePinDlg::ChangePinDlg(const std::string& readerName, QWidget *parent)
     connect(currentPinEdit, &QLineEdit::textChanged, this, &ChangePinDlg::validateForm);
     connect(newPinEdit, &QLineEdit::textChanged, this, &ChangePinDlg::validateForm);
     connect(confirmPinEdit, &QLineEdit::textChanged, this, &ChangePinDlg::validateForm);
-
-    eidReader = std::make_unique<EIdReader>(readerName);
-
-    connect(eidReader.get(), &EIdReader::pinTriesLeftRead, this, &ChangePinDlg::onPinTriesLeftRead);
-    connect(eidReader.get(), &EIdReader::pinChangeSuccess, this, &ChangePinDlg::onPinChangeSuccess);
-    connect(eidReader.get(), &EIdReader::pinChangeFailed, this, &ChangePinDlg::onPinChangeFailed);
-
-    eidReader->requestPINTriesLeft();
 }
 
 ChangePinDlg::~ChangePinDlg() = default;
@@ -107,7 +98,7 @@ void ChangePinDlg::onOkClicked()
     statusLabel->setStyleSheet("");
     statusLabel->setText(qtTrId("lc-changepin-changing"));
 
-    eidReader->requestChangePIN(currentPinEdit->text(), newPinEdit->text());
+    emit pinChangeRequested(currentPinEdit->text(), newPinEdit->text());
 }
 
 void ChangePinDlg::onPinTriesLeftRead(int triesLeft, bool blocked)

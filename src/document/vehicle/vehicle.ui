@@ -14,6 +14,10 @@
    <string>Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin"><number>0</number></property>
+   <property name="topMargin"><number>0</number></property>
+   <property name="rightMargin"><number>0</number></property>
+   <property name="bottomMargin"><number>0</number></property>
    <item>
     <widget class="CollapsibleSection" name="vehicleCardSection">
      <property name="sizePolicy">
@@ -23,29 +27,6 @@
       </sizepolicy>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_main">
-      <item alignment="Qt::AlignmentFlag::AlignRight">
-       <widget class="QToolButton" name="toolButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Print</string>
-        </property>
-        <property name="icon">
-         <iconset resource="../../resources/librecelik.qrc">
-          <normaloff>:/images/printer-1414.png</normaloff>:/images/printer-1414.png</iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>32</width>
-          <height>32</height>
-         </size>
-        </property>
-        <property name="toolButtonStyle">
-         <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
-        </property>
-       </widget>
-      </item>
       <!-- Scrollable content area -->
      <item>
       <widget class="QScrollArea" name="scrollArea">

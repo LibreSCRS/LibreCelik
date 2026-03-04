@@ -42,6 +42,8 @@ set(PROJECT_SOURCES
         document/document.cpp
         document/textdocument.h
         document/textdocument.cpp
+        document/tokensection.h
+        document/tokensection.cpp
         document/eid/eidreader.h
         document/eid/eidreader.cpp
         document/eid/eidtextdocument.cpp
@@ -71,6 +73,17 @@ set(PROJECT_SOURCES
         document/vehicle/vehicle.h
         document/vehicle/vehicle.cpp
         document/vehicle/vehicle.ui
+        document/health/healthreader.h
+        document/health/healthreader.cpp
+        document/health/healthtextdocument.h
+        document/health/healthtextdocument.cpp
+        document/health/health.h
+        document/health/health.cpp
+        document/health/health.ui
+        document/pks/pksreader.h
+        document/pks/pksreader.cpp
+        document/pks/pks.h
+        document/pks/pks.cpp
         utils/collapsiblesection.h
         utils/collapsiblesection.cpp
         utils/translations_catalog.cpp
@@ -102,7 +115,7 @@ qt_add_translations(${PROJECT_NAME}
 # lupdate runs preserve existing translations without clearing <source>.
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_lrelease)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::PrintSupport EIdCard VehicleCard PCSC::PCSC UUID::UUID)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::PrintSupport EIdCard VehicleCard HealthCard PKSCard PCSC::PCSC UUID::UUID)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     ${BUNDLE_ID_OPTION}

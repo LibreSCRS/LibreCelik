@@ -12,7 +12,6 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class LibreCelik; }
 QT_END_NAMESPACE
 
-class EId;
 class SmartCardEvent;
 
 class LibreCelik : public QMainWindow
@@ -32,10 +31,7 @@ private slots:
     void onLanguageChanged(int index);
 
 private:
-    // void addNewEIdReader(std::string reader);
-    // void removeEIdReader(std::string reader);
-
-    void addNewReader(std::string reader);
+    void addNewReader(std::string reader, int retryCount = 0);
     void removeReader(std::string reader);
     bool loadLanguage(const QString& locale);
     void updateAboutText();
@@ -46,9 +42,6 @@ private:
 
     using DocumentReaders = std::map<std::string, Document*>;
     DocumentReaders documentReaders;
-
-    using EIdReaders = std::map<std::string, EId*>;
-    EIdReaders eIdReaders;
 
     QTranslator translator;
     bool uiReady = false;

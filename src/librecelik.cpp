@@ -12,6 +12,7 @@
 #include <QLocale>
 #include <QMenu>
 #include <QSettings>
+#include <QTimer>
 
 LibreCelik::LibreCelik(QWidget *parent)
     : QMainWindow(parent)
@@ -51,6 +52,13 @@ LibreCelik::LibreCelik(QWidget *parent)
     ui->statusbar->hide();
     ui->menubar->hide();
 
+    // Auto-hide the status bar once its message is cleared (e.g. after showMessage timeout
+    // or explicit clearMessage). This keeps the bar invisible except when in use.
+    connect(ui->statusbar, &QStatusBar::messageChanged, this, [this](const QString& msg) {
+        if (msg.isEmpty())
+            ui->statusbar->hide();
+    });
+
     // Build the language menu and set the button text to match the loaded locale.
     {
         auto *langMenu = new QMenu(ui->languageButton);
@@ -88,6 +96,8 @@ void LibreCelik::updateWelcomeChips()
     ui->chipEid->setText(qtTrId("lc-eid-title-serbian"));
     ui->chipForeigner->setText(qtTrId("lc-eid-title-foreigner"));
     ui->chipVehicle->setText(qtTrId("lc-vehicle-title"));
+    ui->chipHealth->setText(qtTrId("lc-health-title"));
+    ui->chipPks->setText(qtTrId("lc-pks-title"));
 }
 
 bool LibreCelik::loadLanguage(const QString& locale)
@@ -152,14 +162,33 @@ void LibreCelik::onSmartCardReaderEnumerationChanged(const QStringList& scrNames
     }
 }
 
-void LibreCelik::addNewReader(std::string reader)
+void LibreCelik::addNewReader(std::string reader, int retryCount)
 {
-    if (documentReaders.count(reader))
+    if (retryCount == 0) {
+        // Fresh card event: defensively remove any stale widget left over from a
+        // fast swap where CardRemoved wasn't emitted (no-op if nothing registered).
+        removeReader(reader);
+    } else if (documentReaders.count(reader)) {
+        // Retry timer: a widget was created while this timer was pending — stop.
         return;
+    }
 
     Document* document = Document::CreateDocument(reader, this);
     if (!document)
+    {
+        if (retryCount < 2) {
+            QTimer::singleShot(300, this, [this, reader, retryCount]() {
+                addNewReader(reader, retryCount + 1);
+            });
+        } else {
+            ui->statusbar->show();
+            ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card"));
+        }
         return;
+    }
+
+    // A valid card is being added — clear any previous unsupported-card notice.
+    ui->statusbar->clearMessage();
 
     int idx = ui->readerStackedWidget->addWidget(document);
     ui->readerComboBox->addItem(QString::fromStdString(reader));

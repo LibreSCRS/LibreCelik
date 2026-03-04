@@ -4,6 +4,7 @@
 #ifndef VEHICLEREADER_H
 #define VEHICLEREADER_H
 
+#include <atomic>
 #include <future>
 #include <memory>
 #include <string>
@@ -35,6 +36,7 @@ protected:
 
 private:
     std::string cardReader;
+    std::atomic<bool> stopRequested{false};
     std::future<void> futureData;
 };
 

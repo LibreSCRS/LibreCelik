@@ -4,6 +4,7 @@
 #pragma once
 
 #include <QGroupBox>
+#include <QList>
 #include <QPropertyAnimation>
 
 class CollapsibleSection : public QGroupBox
@@ -26,20 +27,33 @@ public:
     // resets our content margins on macOS; restore them here.
     void setTitle(const QString& title);
 
+    // Place a widget in the header bar (right-aligned, always visible).
+    void addHeaderWidget(QWidget* w);
+
+    // Override the painted header height (default 30). Call before show().
+    void setHeaderHeight(int h);
+
+signals:
+    void sectionExpanded();
+
 protected:
     void paintEvent(QPaintEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
     void changeEvent(QEvent* event) override;
     void showEvent(QShowEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     void init();
     void applyCollapsed();
     void setChildrenVisible(bool visible);
+    void repositionHeaderWidgets();
 
     bool expanded = true;
     int expandedHeight = -1;
     QPropertyAnimation* animation = nullptr;
+    QList<QWidget*> headerWidgets_;
 
     static constexpr int HEADER_HEIGHT = 30;
+    int headerHeight_ = HEADER_HEIGHT;
 };

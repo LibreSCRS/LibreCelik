@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
+#include <chrono>
+#include <thread>
+
 #ifndef NDEBUG
 #include <sstream>
-#include <thread>
 #endif
 
 #include "utils/libreceliklog.h"
@@ -17,8 +19,7 @@ VehicleReader::VehicleReader(const std::string& cardReader, QObject *parent) : c
 
 VehicleReader::~VehicleReader()
 {
-    // The async lambda captures 'this' (including cardReader string). Wait here,
-    // in the destructor body, before any member is destroyed.
+    stopRequested.store(true);
     if (futureData.valid())
         futureData.wait();
 }
@@ -52,16 +53,27 @@ void VehicleReader::requestData()
 
 std::unique_ptr<vehiclecard::VehicleCard> VehicleReader::initVehicleCard()
 {
-    std::unique_ptr<vehiclecard::VehicleCard> card = nullptr;
-    try
+    for (int attempt = 0; attempt < 3; attempt++)
     {
-        card = std::make_unique<vehiclecard::VehicleCard>(cardReader);
+        if (stopRequested.load())
+            return nullptr;
+        try
+        {
+            return std::make_unique<vehiclecard::VehicleCard>(cardReader);
+        }
+        catch (std::runtime_error& re)
+        {
+            if (attempt < 2) {
+                for (int i = 0; i < 5; i++) {
+                    if (stopRequested.load()) return nullptr;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                }
+            } else {
+                qCWarning(libreCelikAPI) << "Can not init vehicle card on reader: " << cardReader << ". Exception: " << re.what();
+            }
+        }
     }
-    catch (std::runtime_error& re)
-    {
-        qCWarning(libreCelikAPI) << "Can not init vehicle card on reader: " << cardReader << ". Exception: " << re.what();
-    }
-    return card;
+    return nullptr;
 }
 
 vehiclecard::VehicleDocumentData VehicleReader::readVehicleData(std::unique_ptr<vehiclecard::VehicleCard>& card)

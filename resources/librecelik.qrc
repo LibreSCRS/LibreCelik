@@ -24,6 +24,8 @@
         <file>idcard.css</file>
         <file>vehiclecard.html</file>
         <file>vehiclecard.css</file>
+        <file>healthcard.html</file>
+        <file>healthcard.css</file>
     </qresource>
     <qresource prefix="/i18n">
         <file>i18n/LibreCelik_en.qm</file>

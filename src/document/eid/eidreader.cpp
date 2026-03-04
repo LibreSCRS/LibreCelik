@@ -20,15 +20,11 @@ EIdReader::EIdReader(const std::string& cardReader, QObject *parent) : cardReade
     qRegisterMetaType<eidcard::PhotoData>();
     qRegisterMetaType<eidcard::VerificationResult>();
     qRegisterMetaType<eidcard::CertificateList>();
-
-    eidCard = initEIdCard();
 }
 
 EIdReader::~EIdReader()
 {
-    // The async lambdas capture 'this' and access eidCard. Wait here, in the
-    // destructor body, before any member is destroyed — otherwise eidCard is
-    // destroyed (last declared → first destroyed) while the task is still running.
+    stopRequested.store(true);
     if (futureData.valid())
         futureData.wait();
     if (futurePinData.valid())
@@ -46,6 +42,9 @@ void EIdReader::requestData()
 
         qDebug(libreCelikAPI) << "EId requestData: " << cardReader << ". Thread: " <<  ss.str();
 #endif
+
+        if (!eidCard)
+            eidCard = initEIdCard();
 
         if (eidCard != nullptr)
         {
@@ -67,6 +66,8 @@ std::unique_ptr<eidcard::EIdCard> EIdReader::initEIdCard()
     // Retry with delay — the card may not be ready immediately after a swap
     for (int attempt = 0; attempt < 3; attempt++)
     {
+        if (stopRequested.load())
+            return nullptr;
         try
         {
             return std::make_unique<eidcard::EIdCard>(cardReader);
@@ -74,7 +75,10 @@ std::unique_ptr<eidcard::EIdCard> EIdReader::initEIdCard()
         catch (std::runtime_error& re)
         {
             if (attempt < 2) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                for (int i = 0; i < 5; i++) {
+                    if (stopRequested.load()) return nullptr;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                }
             } else {
                 qCWarning(libreCelikAPI) << "Can not init eID card on reader: " << cardReader << ". Exception: " << re.what();
             }

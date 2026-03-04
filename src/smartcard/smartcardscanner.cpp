@@ -334,11 +334,19 @@ get_readers:
                     }
                     else if (dwPrevState & SCARD_STATE_PRESENT)
                     {
-                        /* Card was already present; another process connected or
-                         * disconnected (SCARD_STATE_INUSE toggled). Don't re-emit
-                         * CardInserted — LibreCelik already has the card displayed. */
-                        qCDebug(librecSCRSCard) << "SmartCardScanner:     Card state updated (already present)";
-                        continue;
+                        /* Check the pcsclite event counter (upper 16 bits).
+                         * If unchanged, only SCARD_STATE_INUSE toggled (another
+                         * process connected/disconnected) — skip without re-emitting.
+                         * If changed, the card was physically swapped faster than one
+                         * SCardGetStatusChange cycle: emit CardRemoved for the old card
+                         * first, then fall through to emit CardInserted for the new one. */
+                        if ((dwPrevState >> 16) == (rgReaderStates_t[current_reader].dwEventState >> 16)) {
+                            qCDebug(librecSCRSCard) << "SmartCardScanner:     Card state updated (already present)";
+                            continue;
+                        }
+                        qCDebug(librecSCRSCard) << "SmartCardScanner:     Card swapped (new card detected)";
+                        emit smartCardEventOccured({rgReaderStates_t[current_reader].szReader, SmartCardEvent::EventType::CardRemoved});
+                        eventType = SmartCardEvent::EventType::CardInserted;
                     }
                     else
                     {

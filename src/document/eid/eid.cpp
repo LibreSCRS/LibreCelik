@@ -3,16 +3,16 @@
 
 #include <QBuffer>
 #include <QDate>
-#include <QMenu>
-#include <QTreeWidgetItem>
-#include "utils/collapsiblesection.h"
+#include <QIcon>
+#include <QPushButton>
+#include <QVBoxLayout>
 #include "utils/libreceliklog.h"
 #include "utils/printmanager.h"
 #include "eid.h"
 #include "eidtextdocument.h"
 #include "eidreader.h"
 #include "changepindlg.h"
-#include "certificate/certificateviewerdlg.h"
+#include "document/tokensection.h"
 #include "config.h"
 #include "ui_eid.h"
 
@@ -21,18 +21,19 @@ EId::EId(std::string reader, QWidget *parent)
     , ui(new Ui::EId)
 {
     ui->setupUi(this);
+    ui->verticalLayout->setStretch(0, 1);
 
-    tokenCertsItem = new QTreeWidgetItem(ui->tokenTreeWidget, QStringList{qtTrId("lc-eid-tree-certificates")});
-    tokenPinItem   = new QTreeWidgetItem(ui->tokenTreeWidget, QStringList{qtTrId("lc-eid-tree-pin")});
-    tokenCertsItem->setExpanded(true);
-    tokenPinItem->setExpanded(true);
-    tokenPinItem->setHidden(true);  // shown once card type is known
-    ui->tokenTreeWidget->header()->setStretchLastSection(true);
-    ui->tokenTreeWidget->header()->resizeSection(0, 200);
-    connect(ui->tokenTreeWidget, &QTreeWidget::customContextMenuRequested,
-            this, &EId::onTokenContextMenu);
+    ui->identityGroupBox->setHeaderHeight(56);
 
-    ui->tokenGroupBox->setExpanded(false);
+    printButton = new QPushButton(qtTrId("lc-print-button"));
+    printButton->setIcon(QIcon(":/images/printer-1414.png"));
+    printButton->setEnabled(false);
+    ui->identityGroupBox->addHeaderWidget(printButton);
+
+    tokenSection = new TokenSection(LIBRECELIK_CERTIFICATES_DIR, ui->scrollAreaWidgetContents);
+    tokenSection->setPINVisible(false);
+    auto* scrollLayout = qobject_cast<QVBoxLayout*>(ui->scrollAreaWidgetContents->layout());
+    scrollLayout->insertWidget(scrollLayout->count() - 1, tokenSection);
 
     eidReader = std::make_unique<EIdReader>(reader);
 
@@ -44,20 +45,17 @@ EId::EId(std::string reader, QWidget *parent)
     connect(eidReader.get(), &EIdReader::cardVerificationResultRead, this, &EId::cardVerificationResultReceived);
     connect(eidReader.get(), &EIdReader::fixedVerificationResultRead, this, &EId::fixedVerificationResultReceived);
     connect(eidReader.get(), &EIdReader::variableVerificationResultRead, this, &EId::variableVerificationResultReceived);
-    connect(eidReader.get(), &EIdReader::certificateDataRead, this, &EId::certificateDataReceived);
-    connect(eidReader.get(), &EIdReader::pinTriesLeftRead, this, &EId::pinTriesLeftReceived);
+    connect(eidReader.get(), &EIdReader::certificateDataRead, tokenSection, &TokenSection::setCertificates);
+    connect(eidReader.get(), &EIdReader::pinTriesLeftRead, tokenSection, &TokenSection::setPINStatus);
+    connect(tokenSection, &TokenSection::changePINRequested, this, &EId::openChangePinDlg);
 
     connect(eidReader.get(), &EIdReader::readingStarted, [this](){
-        ui->toolButton->setEnabled(false);
-        ui->changePinButton->setEnabled(false);
-        ui->certificatesButton->setEnabled(false);
+        printButton->setEnabled(false);
     });
     connect(eidReader.get(), &EIdReader::readingFinished, [this](){
-        ui->toolButton->setEnabled(true);
-        ui->changePinButton->setEnabled(true);
+        printButton->setEnabled(true);
     });
-
-    certFolderPath = LIBRECELIK_CERTIFICATES_DIR;
+    connect(printButton, &QPushButton::clicked, this, &EId::printDocument);
 
     eidReader->requestData();
 }
@@ -68,18 +66,13 @@ EId::~EId()
     delete ui;
 }
 
-void EId::showLabelAndLineEdit(QLabel* label, QLineEdit* lineEdit, bool show)
+void EId::applyCardTypeVisibility()
 {
-    if (show)
-    {
-        label->show();
-        lineEdit->show();
-    }
-    else
-    {
-        label->hide();
-        lineEdit->hide();
-    }
+    bool isForeigner = (cardType == eidcard::CardType::ForeignerIF2020);
+    ui->parentNameWidget->setVisible(!isForeigner);
+    ui->nationalityWidget->setVisible(isForeigner);
+    ui->placeOfBirthWidget->setVisible(!isForeigner);
+    ui->statusOfForeignerWidget->setVisible(isForeigner);
 }
 
 void EId::cardTypeReceived(const eidcard::CardType& data)
@@ -93,43 +86,32 @@ void EId::cardTypeReceived(const eidcard::CardType& data)
         case eidcard::CardType::Apollo2008:
         {
             ui->identityGroupBox->setTitle(qtTrId("lc-eid-title-serbian"));
-            ui->citizenGroupBox_3->setTitle(qtTrId("lc-eid-citizen-data"));
+            ui->citizenSection->setTitle(qtTrId("lc-eid-citizen-data"));
             ui->jmbgLabel_3->setText(qtTrId("lc-eid-label-jmbg"));
             ui->addressLabel_3->setText(qtTrId("lc-eid-label-address"));
-            showLabelAndLineEdit(ui->parentNameLabel_3, ui->parentNameLineEdit_3, true);
-            showLabelAndLineEdit(ui->nationalityLabel_3, ui->nationalityLineEdit_3, false);
-            showLabelAndLineEdit(ui->placeOfBirthLabel_3, ui->placeOfBirthLineEdit_3, true);
-            showLabelAndLineEdit(ui->statusOfForeignerLabel_3, ui->statusOfForeignerLineEdit_3, false);
             break;
         }
         case eidcard::CardType::Gemalto2014:
         {
             ui->identityGroupBox->setTitle(qtTrId("lc-eid-title-serbian"));
-            ui->citizenGroupBox_3->setTitle(qtTrId("lc-eid-citizen-data"));
+            ui->citizenSection->setTitle(qtTrId("lc-eid-citizen-data"));
             ui->jmbgLabel_3->setText(qtTrId("lc-eid-label-jmbg"));
             ui->addressLabel_3->setText(qtTrId("lc-eid-label-address"));
-            showLabelAndLineEdit(ui->parentNameLabel_3, ui->parentNameLineEdit_3, true);
-            showLabelAndLineEdit(ui->nationalityLabel_3, ui->nationalityLineEdit_3, false);
-            showLabelAndLineEdit(ui->placeOfBirthLabel_3, ui->placeOfBirthLineEdit_3, true);
-            showLabelAndLineEdit(ui->statusOfForeignerLabel_3, ui->statusOfForeignerLineEdit_3, false);
             hasPin = true;
             break;
         }
         case eidcard::CardType::ForeignerIF2020:
         {
             ui->identityGroupBox->setTitle(qtTrId("lc-eid-title-foreigner"));
-            ui->citizenGroupBox_3->setTitle(qtTrId("lc-eid-foreigner-data"));
+            ui->citizenSection->setTitle(qtTrId("lc-eid-foreigner-data"));
             ui->jmbgLabel_3->setText(qtTrId("lc-eid-label-ebs"));
             ui->addressLabel_3->setText(qtTrId("lc-eid-label-address-foreigner"));
-            showLabelAndLineEdit(ui->parentNameLabel_3, ui->parentNameLineEdit_3, false);
-            showLabelAndLineEdit(ui->nationalityLabel_3, ui->nationalityLineEdit_3, true);
-            showLabelAndLineEdit(ui->placeOfBirthLabel_3, ui->placeOfBirthLineEdit_3, false);
-            showLabelAndLineEdit(ui->statusOfForeignerLabel_3, ui->statusOfForeignerLineEdit_3, true);
             hasPin = true;
             break;
         }
     }
-    tokenPinItem->setHidden(!hasPin);
+    applyCardTypeVisibility();
+    tokenSection->setPINVisible(hasPin);
 }
 
 void EId::fixedPersonalDataReceived(const eidcard::FixedPersonalData& data)
@@ -152,15 +134,10 @@ void EId::variablePersonalDataReceived(const eidcard::VariablePersonalData& data
     ui->addressLineEdit_3->setText(assembleAddress(data));
 
     auto addressDate = QString::fromStdString(data.addressDate);
-    if (addressDate != "01.01.0001")
-    {
-        showLabelAndLineEdit(ui->dateOfAddressChangeLabel_3, ui->dateOfAddressChangeLineEdit_3, true);
+    bool show = (addressDate != "01.01.0001");
+    ui->dateOfAddressChangeWidget->setVisible(show);
+    if (show)
         ui->dateOfAddressChangeLineEdit_3->setText(addressDate);
-    }
-    else
-    {
-        showLabelAndLineEdit(ui->dateOfAddressChangeLabel_3, ui->dateOfAddressChangeLineEdit_3, false);
-    }
 }
 
 void EId::documentDataReceived(const eidcard::DocumentData& data)
@@ -270,77 +247,22 @@ QString EId::getBase64Photo()
     return bytes.toBase64();
 }
 
-void EId::certificateDataReceived(const eidcard::CertificateList& data)
+void EId::openChangePinDlg()
 {
-    certificateList = data;
-    ui->certificatesButton->setEnabled(!certificateList.empty());
-
-    while (tokenCertsItem->childCount() > 0)
-        delete tokenCertsItem->takeChild(0);
-
-    for (const auto& cert : certificateList) {
-        auto* item = new QTreeWidgetItem(tokenCertsItem);
-        item->setText(0, QString::fromStdString(cert.label));
-        item->setText(1, cert.keyFID != 0 ? qtTrId("lc-eid-cert-can-sign") : QString());
-    }
+    auto dlg = std::make_unique<ChangePinDlg>(this);
+    connect(dlg.get(), &ChangePinDlg::pinChangeRequested,
+            eidReader.get(), &EIdReader::requestChangePIN);
+    connect(eidReader.get(), &EIdReader::pinTriesLeftRead,
+            dlg.get(), &ChangePinDlg::onPinTriesLeftRead);
+    connect(eidReader.get(), &EIdReader::pinChangeSuccess,
+            dlg.get(), &ChangePinDlg::onPinChangeSuccess);
+    connect(eidReader.get(), &EIdReader::pinChangeFailed,
+            dlg.get(), &ChangePinDlg::onPinChangeFailed);
+    eidReader->requestPINTriesLeft();
+    dlg->exec();
 }
 
-void EId::pinTriesLeftReceived(int triesLeft, bool blocked)
-{
-    while (tokenPinItem->childCount() > 0)
-        delete tokenPinItem->takeChild(0);
-
-    auto* item = new QTreeWidgetItem(tokenPinItem);
-    item->setText(0, qtTrId("lc-eid-pin-user"));
-    if (blocked)
-        item->setText(1, qtTrId("lc-eid-pin-blocked"));
-    else if (triesLeft >= 0)
-        item->setText(1, qtTrId("lc-eid-pin-tries-remaining").arg(triesLeft));
-    else
-        item->setText(1, qtTrId("lc-eid-pin-unknown"));
-    tokenPinItem->setExpanded(true);
-}
-
-void EId::on_certificatesButton_clicked()
-{
-    if (certificateList.empty())
-        return;
-
-    certificateDialog = std::make_unique<CertificateViewerDlg>(certificateList, certFolderPath, this);
-    certificateDialog->exec();
-}
-
-void EId::on_changePinButton_clicked()
-{
-    changePinDlg = std::make_unique<ChangePinDlg>(eidReader->getReaderName(), this);
-    changePinDlg->exec();
-}
-
-void EId::onTokenContextMenu(const QPoint& pos)
-{
-    QTreeWidgetItem* item = ui->tokenTreeWidget->itemAt(pos);
-    if (!item)
-        return;
-
-    QMenu menu(this);
-
-    // Certificate child item → "View Certificate"
-    if (item->parent() == tokenCertsItem) {
-        QAction* viewAction = menu.addAction(qtTrId("lc-eid-menu-view-cert"));
-        connect(viewAction, &QAction::triggered, this, &EId::on_certificatesButton_clicked);
-    }
-
-    // User PIN child item → "Change PIN"
-    if (item->parent() == tokenPinItem) {
-        QAction* pinAction = menu.addAction(qtTrId("lc-eid-menu-change-pin"));
-        connect(pinAction, &QAction::triggered, this, &EId::on_changePinButton_clicked);
-    }
-
-    if (!menu.isEmpty())
-        menu.exec(ui->tokenTreeWidget->viewport()->mapToGlobal(pos));
-}
-
-void EId::on_toolButton_clicked()
+void EId::printDocument()
 {
     QString documentTemplate = ":/html/idcard.html";
     if (cardType == eidcard::CardType::ForeignerIF2020)

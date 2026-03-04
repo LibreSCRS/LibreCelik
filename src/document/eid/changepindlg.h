@@ -5,28 +5,30 @@
 #define CHANGEPINDLG_H
 
 #include <QDialog>
-#include <memory>
-#include <string>
 
 class QAction;
 class QLabel;
 class QLineEdit;
 class QDialogButtonBox;
 class QPushButton;
-class EIdReader;
 
 class ChangePinDlg : public QDialog
 {
     Q_OBJECT
 public:
-    explicit ChangePinDlg(const std::string& readerName, QWidget *parent = nullptr);
+    explicit ChangePinDlg(QWidget *parent = nullptr);
     ~ChangePinDlg();
 
-private slots:
-    void onOkClicked();
+signals:
+    void pinChangeRequested(const QString& oldPin, const QString& newPin);
+
+public slots:
     void onPinTriesLeftRead(int triesLeft, bool blocked);
     void onPinChangeSuccess();
     void onPinChangeFailed(int retriesLeft, bool blocked, const QString& errorMessage);
+
+private slots:
+    void onOkClicked();
     void validateForm();
 
 private:
@@ -39,8 +41,6 @@ private:
     QLabel *statusLabel;
     QDialogButtonBox *buttonBox;
     QPushButton *okButton;
-
-    std::unique_ptr<EIdReader> eidReader;
 };
 
 #endif // CHANGEPINDLG_H

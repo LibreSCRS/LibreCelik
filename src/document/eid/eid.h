@@ -6,16 +6,13 @@
 
 #include <QWidget>
 #include <eidcard/eidtypes.h>
-#include "certificate/certificateviewerdlg.h"
 #include "document/document.h"
-#include "document/eid/changepindlg.h"
 #include <string>
 
-class CollapsibleSection;
 class EIdReader;
 class QLabel;
-class QLineEdit;
-class QTreeWidgetItem;
+class QPushButton;
+class TokenSection;
 
 namespace Ui {
 class EId;
@@ -37,17 +34,13 @@ private slots:
     void cardVerificationResultReceived(const eidcard::VerificationResult& data);
     void fixedVerificationResultReceived(const eidcard::VerificationResult& data);
     void variableVerificationResultReceived(const eidcard::VerificationResult& data);
-    void certificateDataReceived(const eidcard::CertificateList& data);
-    void pinTriesLeftReceived(int triesLeft, bool blocked);
-    void onTokenContextMenu(const QPoint& pos);
 
-    void on_toolButton_clicked();
-    void on_certificatesButton_clicked();
-    void on_changePinButton_clicked();
+    void openChangePinDlg();
+    void printDocument();
 
 private:
     void updateVerificationIcons(const eidcard::VerificationResult& data, QLabel* iconLabel);
-    void showLabelAndLineEdit(QLabel* label, QLineEdit* lineEdit, bool show);
+    void applyCardTypeVisibility();
     QString getBase64Photo();
     QString assembleAddress(const eidcard::VariablePersonalData& vpd) const;
     QString assemblePlaceOfBirth(const eidcard::FixedPersonalData& fpd) const;
@@ -59,20 +52,12 @@ private:
     eidcard::FixedPersonalData fixedPersonalData;
     eidcard::VariablePersonalData variablePersonalData;
     eidcard::DocumentData documentData;
-    eidcard::CertificateList certificateList;
-    std::string certFolderPath;
 
     using EIdReaderUPtr = std::unique_ptr<EIdReader>;
     EIdReaderUPtr eidReader;
 
-    using CertificateViewerDlgUPtr = std::unique_ptr<CertificateViewerDlg>;
-    CertificateViewerDlgUPtr certificateDialog;
-
-    using ChangePinDlgUPtr = std::unique_ptr<ChangePinDlg>;
-    ChangePinDlgUPtr changePinDlg;
-
-    QTreeWidgetItem* tokenCertsItem = nullptr;
-    QTreeWidgetItem* tokenPinItem = nullptr;
+    TokenSection* tokenSection = nullptr;
+    QPushButton* printButton = nullptr;
 };
 
 #endif // EID_H

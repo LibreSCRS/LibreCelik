@@ -23,6 +23,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     // --- main window ---
     //% "<b>LibreCelik</b> :: Version %1 :: <a href=\"https://www.gnu.org/licenses/gpl-3.0.html\">GPL-3.0-or-later</a> :: <a href=\"https://github.com/LibreSCRS/LibreCelik\">github.com/LibreSCRS/LibreCelik</a>"
     QT_TRID_NOOP("lc-main-about-librecelik");
+    //% "Card in reader is not supported."
+    QT_TRID_NOOP("lc-reader-unsupported-card");
     //% "<b>LibreMiddleware</b> :: Version %1 :: <a href=\"https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html\">LGPL-2.1-or-later</a> :: <a href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a>"
     QT_TRID_NOOP("lc-main-about-libremiddleware");
 
@@ -215,6 +217,112 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-cert-verify-leaf-fail");
     //% "Certificate revoked"
     QT_TRID_NOOP("lc-cert-verify-revoked");
+
+    // --- Health insurance card ---
+    //% "Health Insurance Card"
+    QT_TRID_NOOP("lc-health-title");
+    //% "Failed to connect to card."
+    QT_TRID_NOOP("lc-healthreader-failed-connect");
+    //% "Print Document"
+    QT_TRID_NOOP("lc-health-print-title");
+    //% "HEALTH INSURANCE CARD READER: DATA PRINTING"
+    QT_TRID_NOOP("lc-health-doc-title");
+    //% "Printing date"
+    QT_TRID_NOOP("lc-health-doc-printing-date");
+    //% "Personal Data"
+    QT_TRID_NOOP("lc-health-section-personal");
+    //% "Insurance Data"
+    QT_TRID_NOOP("lc-health-section-insurance");
+    //% "Address"
+    QT_TRID_NOOP("lc-health-section-address");
+    //% "Insurance Carrier Data"
+    QT_TRID_NOOP("lc-health-section-carrier");
+    //% "Employer / Taxpayer"
+    QT_TRID_NOOP("lc-health-section-taxpayer");
+    //% "Name"
+    QT_TRID_NOOP("lc-health-label-given-name");
+    //% "Name (Latin)"
+    QT_TRID_NOOP("lc-health-label-given-name-lat");
+    //% "Surname"
+    QT_TRID_NOOP("lc-health-label-family-name");
+    //% "Surname (Latin)"
+    QT_TRID_NOOP("lc-health-label-family-name-lat");
+    //% "Parent name"
+    QT_TRID_NOOP("lc-health-label-parent-name");
+    //% "Parent name (Latin)"
+    QT_TRID_NOOP("lc-health-label-parent-name-lat");
+    //% "Date of birth"
+    QT_TRID_NOOP("lc-health-label-dob");
+    //% "Gender"
+    QT_TRID_NOOP("lc-health-label-gender");
+    //% "Personal number (JMBG)"
+    QT_TRID_NOOP("lc-health-label-jmbg");
+    //% "Insurant number (LBO)"
+    QT_TRID_NOOP("lc-health-label-lbo");
+    //% "Insurer"
+    QT_TRID_NOOP("lc-health-label-insurer");
+    //% "Insurer ID"
+    QT_TRID_NOOP("lc-health-label-insurer-id");
+    //% "Card ID"
+    QT_TRID_NOOP("lc-health-label-card-id");
+    //% "Issue date"
+    QT_TRID_NOOP("lc-health-label-issue-date");
+    //% "Expiry date"
+    QT_TRID_NOOP("lc-health-label-expiry");
+    //% "Valid until"
+    QT_TRID_NOOP("lc-health-label-valid-until");
+    //% "Permanently valid"
+    QT_TRID_NOOP("lc-health-label-permanently");
+    //% "Street"
+    QT_TRID_NOOP("lc-health-label-street");
+    //% "Number"
+    QT_TRID_NOOP("lc-health-label-number");
+    //% "Apartment"
+    QT_TRID_NOOP("lc-health-label-apartment");
+    //% "Place"
+    QT_TRID_NOOP("lc-health-label-place");
+    //% "Municipality"
+    QT_TRID_NOOP("lc-health-label-municipality");
+    //% "Country"
+    QT_TRID_NOOP("lc-health-label-country");
+    //% "Carrier name"
+    QT_TRID_NOOP("lc-health-label-carrier-name");
+    //% "Carrier surname"
+    QT_TRID_NOOP("lc-health-label-carrier-family-name");
+    //% "Relationship"
+    QT_TRID_NOOP("lc-health-label-carrier-relation");
+    //% "Carrier ID"
+    QT_TRID_NOOP("lc-health-label-carrier-id");
+    //% "Carrier LBO"
+    QT_TRID_NOOP("lc-health-label-carrier-lbo");
+    //% "Employer name"
+    QT_TRID_NOOP("lc-health-label-taxpayer-name");
+    //% "Employer ID (PIB)"
+    QT_TRID_NOOP("lc-health-label-taxpayer-id");
+    //% "Employer residence"
+    QT_TRID_NOOP("lc-health-label-taxpayer-res");
+    //% "Activity code"
+    QT_TRID_NOOP("lc-health-label-taxpayer-act");
+    //% "Insurance basis"
+    QT_TRID_NOOP("lc-health-label-insurance-basis");
+    //% "Insurance description"
+    QT_TRID_NOOP("lc-health-label-insurance-desc");
+    //% "Insurance start"
+    QT_TRID_NOOP("lc-health-label-insurance-start");
+    //% "Yes"
+    QT_TRID_NOOP("lc-health-val-yes");
+
+    // --- PKS card ---
+    //% "PKS Qualified Signature"
+    QT_TRID_NOOP("lc-pks-title");
+
+    // --- Token section (shared by eID, PKS, Health) ---
+    //% "Token"
+    QT_TRID_NOOP("lc-token-title");
+    //% "View Certificates"
+    QT_TRID_NOOP("lc-token-certs-button");
+    //% "Change PIN"
+    QT_TRID_NOOP("lc-token-change-pin");
 
     // --- Vehicle registration ---
     //% "Vehicle Registration"

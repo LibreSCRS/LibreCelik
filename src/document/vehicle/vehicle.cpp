@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#include <QCoreApplication>
 #include <QDate>
+#include <QIcon>
+#include <QPushButton>
 #include "utils/collapsiblesection.h"
 #include "utils/libreceliklog.h"
 #include "utils/printmanager.h"
@@ -21,16 +22,24 @@ Vehicle::Vehicle(std::string reader, QWidget *parent)
     // verticalSpacer_outer (stretch=0) absorbs the space when collapsed.
     ui->verticalLayout->setStretch(0, 1);
 
+    ui->vehicleCardSection->setHeaderHeight(56);
+
+    printButton = new QPushButton(qtTrId("lc-print-button"));
+    printButton->setIcon(QIcon(":/images/printer-1414.png"));
+    printButton->setEnabled(false);
+    ui->vehicleCardSection->addHeaderWidget(printButton);
+
     vehicleReader = std::make_unique<VehicleReader>(reader);
 
     connect(vehicleReader.get(), &VehicleReader::vehicleDataRead, this, &Vehicle::vehicleDataReceived);
 
     connect(vehicleReader.get(), &VehicleReader::readingStarted, [this](){
-        ui->toolButton->setEnabled(false);
+        printButton->setEnabled(false);
     });
     connect(vehicleReader.get(), &VehicleReader::readingFinished, [this](){
-        ui->toolButton->setEnabled(true);
+        printButton->setEnabled(true);
     });
+    connect(printButton, &QPushButton::clicked, this, &Vehicle::printDocument);
 
     vehicleReader->requestData();
 }
@@ -114,7 +123,7 @@ void Vehicle::vehicleDataReceived(const vehiclecard::VehicleDocumentData& data)
     }
 }
 
-void Vehicle::on_toolButton_clicked()
+void Vehicle::printDocument()
 {
     PrintManager::printDocument(VehicleTextDocument(vehicleData), qtTrId("lc-vehicle-print-title"));
 }

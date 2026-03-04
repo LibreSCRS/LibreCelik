@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="sr" lang="sr">
+<head>
+    <title>${title}</title>
+    <link rel="stylesheet" type="text/css" href=":/html/healthcard.css" title="Style"/>
+</head>
+<body>
+    <h1>${title}</h1>
+
+    <h2>${section_personal}</h2>
+    <table>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td width="25%"><b>${given_name}:</b></td>
+            <td width="25%">${given_name_value}</td>
+            <td width="25%"><b>${family_name}:</b></td>
+            <td width="25%">${family_name_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${given_name} (lat.):</b></td>
+            <td>${given_name_lat_value}</td>
+            <td><b>${family_name} (lat.):</b></td>
+            <td>${family_name_lat_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${parent_name}:</b></td>
+            <td colspan="3">${parent_name_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${dob}:</b></td>
+            <td>${dob_value}</td>
+            <td><b>${gender}:</b></td>
+            <td>${gender_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${jmbg}:</b></td>
+            <td>${jmbg_value}</td>
+            <td><b>${lbo}:</b></td>
+            <td>${lbo_value}</td>
+        </tr>
+    </table>
+
+    <h2>${section_insurance}</h2>
+    <table>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td width="25%"><b>${insurer}:</b></td>
+            <td width="25%">${insurer_value}</td>
+            <td width="25%"><b>${insurer_id}:</b></td>
+            <td width="25%">${insurer_id_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${card_id}:</b></td>
+            <td colspan="3">${card_id_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${issue_date}:</b></td>
+            <td>${issue_date_value}</td>
+            <td><b>${expiry}:</b></td>
+            <td>${expiry_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${valid_until}:</b></td>
+            <td>${valid_until_value}</td>
+            <td><b>${insurance_start}:</b></td>
+            <td>${insurance_start_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${insurance_basis}:</b></td>
+            <td>${insurance_basis_value}</td>
+            <td><b>${insurance_desc}:</b></td>
+            <td>${insurance_desc_value}</td>
+        </tr>
+    </table>
+
+    <h2>${section_address}</h2>
+    <table>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td width="25%"><b>${street}:</b></td>
+            <td width="25%">${street_value}</td>
+            <td width="25%"><b>${address_number}:</b></td>
+            <td width="25%">${address_number_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${place}:</b></td>
+            <td>${place_value}</td>
+            <td><b>${municipality}:</b></td>
+            <td>${municipality_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${country}:</b></td>
+            <td colspan="3">${country_value}</td>
+        </tr>
+    </table>
+
+    <h2>${section_taxpayer}</h2>
+    <table>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td width="25%"><b>${taxpayer_name}:</b></td>
+            <td colspan="3">${taxpayer_name_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${taxpayer_id}:</b></td>
+            <td>${taxpayer_id_value}</td>
+            <td><b>${taxpayer_act}:</b></td>
+            <td>${taxpayer_act_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td><b>${taxpayer_res}:</b></td>
+            <td colspan="3">${taxpayer_res_value}</td>
+        </tr>
+    </table>
+
+    <table style="margin-top:20px;">
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td width="25%">${printing_date}:</td>
+            <td>${printing_date_value}</td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -531,6 +531,214 @@
         <source>Print Document</source>
         <translation type="unfinished">Print Document</translation>
     </message>
+    <message id="lc-reader-unsupported-card">
+        <source>Card in reader is not supported.</source>
+        <translation type="unfinished">Card in reader is not supported.</translation>
+    </message>
+    <message id="lc-health-title">
+        <source>Health Insurance Card</source>
+        <translation type="unfinished">Health Insurance Card</translation>
+    </message>
+    <message id="lc-healthreader-failed-connect">
+        <source>Failed to connect to card.</source>
+        <translation type="unfinished">Failed to connect to card.</translation>
+    </message>
+    <message id="lc-health-print-title">
+        <source>Print Document</source>
+        <translation type="unfinished">Print Document</translation>
+    </message>
+    <message id="lc-health-doc-title">
+        <source>HEALTH INSURANCE CARD READER: DATA PRINTING</source>
+        <translation type="unfinished">HEALTH INSURANCE CARD READER: DATA PRINTING</translation>
+    </message>
+    <message id="lc-health-doc-printing-date">
+        <source>Printing date</source>
+        <translation type="unfinished">Printing date</translation>
+    </message>
+    <message id="lc-health-section-personal">
+        <source>Personal Data</source>
+        <translation type="unfinished">Personal Data</translation>
+    </message>
+    <message id="lc-health-section-insurance">
+        <source>Insurance Data</source>
+        <translation type="unfinished">Insurance Data</translation>
+    </message>
+    <message id="lc-health-section-address">
+        <source>Address</source>
+        <translation type="unfinished">Address</translation>
+    </message>
+    <message id="lc-health-section-carrier">
+        <source>Insurance Carrier Data</source>
+        <translation type="unfinished">Insurance Carrier Data</translation>
+    </message>
+    <message id="lc-health-section-taxpayer">
+        <source>Employer / Taxpayer</source>
+        <translation type="unfinished">Employer / Taxpayer</translation>
+    </message>
+    <message id="lc-health-label-given-name">
+        <source>Name</source>
+        <translation type="unfinished">Name</translation>
+    </message>
+    <message id="lc-health-label-given-name-lat">
+        <source>Name (Latin)</source>
+        <translation type="unfinished">Name (Latin)</translation>
+    </message>
+    <message id="lc-health-label-family-name">
+        <source>Surname</source>
+        <translation type="unfinished">Surname</translation>
+    </message>
+    <message id="lc-health-label-family-name-lat">
+        <source>Surname (Latin)</source>
+        <translation type="unfinished">Surname (Latin)</translation>
+    </message>
+    <message id="lc-health-label-parent-name">
+        <source>Parent name</source>
+        <translation type="unfinished">Parent name</translation>
+    </message>
+    <message id="lc-health-label-parent-name-lat">
+        <source>Parent name (Latin)</source>
+        <translation type="unfinished">Parent name (Latin)</translation>
+    </message>
+    <message id="lc-health-label-dob">
+        <source>Date of birth</source>
+        <translation type="unfinished">Date of birth</translation>
+    </message>
+    <message id="lc-health-label-gender">
+        <source>Gender</source>
+        <translation type="unfinished">Gender</translation>
+    </message>
+    <message id="lc-health-label-jmbg">
+        <source>Personal number (JMBG)</source>
+        <translation type="unfinished">Personal number (JMBG)</translation>
+    </message>
+    <message id="lc-health-label-lbo">
+        <source>Insurant number (LBO)</source>
+        <translation type="unfinished">Insurant number (LBO)</translation>
+    </message>
+    <message id="lc-health-label-insurer">
+        <source>Insurer</source>
+        <translation type="unfinished">Insurer</translation>
+    </message>
+    <message id="lc-health-label-insurer-id">
+        <source>Insurer ID</source>
+        <translation type="unfinished">Insurer ID</translation>
+    </message>
+    <message id="lc-health-label-card-id">
+        <source>Card ID</source>
+        <translation type="unfinished">Card ID</translation>
+    </message>
+    <message id="lc-health-label-issue-date">
+        <source>Issue date</source>
+        <translation type="unfinished">Issue date</translation>
+    </message>
+    <message id="lc-health-label-expiry">
+        <source>Expiry date</source>
+        <translation type="unfinished">Expiry date</translation>
+    </message>
+    <message id="lc-health-label-valid-until">
+        <source>Valid until</source>
+        <translation type="unfinished">Valid until</translation>
+    </message>
+    <message id="lc-health-label-permanently">
+        <source>Permanently valid</source>
+        <translation type="unfinished">Permanently valid</translation>
+    </message>
+    <message id="lc-health-label-street">
+        <source>Street</source>
+        <translation type="unfinished">Street</translation>
+    </message>
+    <message id="lc-health-label-number">
+        <source>Number</source>
+        <translation type="unfinished">Number</translation>
+    </message>
+    <message id="lc-health-label-apartment">
+        <source>Apartment</source>
+        <translation type="unfinished">Apartment</translation>
+    </message>
+    <message id="lc-health-label-place">
+        <source>Place</source>
+        <translation type="unfinished">Place</translation>
+    </message>
+    <message id="lc-health-label-municipality">
+        <source>Municipality</source>
+        <translation type="unfinished">Municipality</translation>
+    </message>
+    <message id="lc-health-label-country">
+        <source>Country</source>
+        <translation type="unfinished">Country</translation>
+    </message>
+    <message id="lc-health-label-carrier-name">
+        <source>Carrier name</source>
+        <translation type="unfinished">Carrier name</translation>
+    </message>
+    <message id="lc-health-label-carrier-family-name">
+        <source>Carrier surname</source>
+        <translation type="unfinished">Carrier surname</translation>
+    </message>
+    <message id="lc-health-label-carrier-relation">
+        <source>Relationship</source>
+        <translation type="unfinished">Relationship</translation>
+    </message>
+    <message id="lc-health-label-carrier-id">
+        <source>Carrier ID</source>
+        <translation type="unfinished">Carrier ID</translation>
+    </message>
+    <message id="lc-health-label-carrier-lbo">
+        <source>Carrier LBO</source>
+        <translation type="unfinished">Carrier LBO</translation>
+    </message>
+    <message id="lc-health-label-taxpayer-name">
+        <source>Employer name</source>
+        <translation type="unfinished">Employer name</translation>
+    </message>
+    <message id="lc-health-label-taxpayer-id">
+        <source>Employer ID (PIB)</source>
+        <translation type="unfinished">Employer ID (PIB)</translation>
+    </message>
+    <message id="lc-health-label-taxpayer-res">
+        <source>Employer residence</source>
+        <translation type="unfinished">Employer residence</translation>
+    </message>
+    <message id="lc-health-label-taxpayer-act">
+        <source>Activity code</source>
+        <translation type="unfinished">Activity code</translation>
+    </message>
+    <message id="lc-health-label-insurance-basis">
+        <source>Insurance basis</source>
+        <translation type="unfinished">Insurance basis</translation>
+    </message>
+    <message id="lc-health-label-insurance-desc">
+        <source>Insurance description</source>
+        <translation type="unfinished">Insurance description</translation>
+    </message>
+    <message id="lc-health-label-insurance-start">
+        <source>Insurance start</source>
+        <translation type="unfinished">Insurance start</translation>
+    </message>
+    <message id="lc-health-val-yes">
+        <source>Yes</source>
+        <translation type="unfinished">Yes</translation>
+    </message>
+    <message id="lc-pks-title">
+        <source>PKS Qualified Signature</source>
+        <translation type="unfinished">PKS Qualified Signature</translation>
+    </message>
+    <message id="lc-token-title">
+        <source>Token</source>
+        <translation type="unfinished">Token</translation>
+    </message>
+    <message id="lc-token-certs-button">
+        <source>View Certificates</source>
+        <translation type="unfinished">View Certificates</translation>
+    </message>
+    <message id="lc-token-change-pin">
+        <source>Change PIN</source>
+        <translation type="unfinished">Change PIN</translation>
+    </message>
+    <message id="lc-print-button">
+        <source>Print</source>
+        <translation type="unfinished">Print</translation>
+    </message>
 </context>
 <context>
     <name>CertificateViewerWidget</name>
@@ -901,6 +1109,177 @@
     </message>
     <message>
         <source>Valid to</source>
+        <translation></translation>
+    </message>
+</context>
+<context>
+    <name>Health</name>
+    <message>
+        <source>Form</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Print</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Personal Data</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Surname</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Name (Latin)</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Surname (Latin)</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Parent name</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Parent name (Latin)</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Date of birth</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Gender</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Personal number (JMBG)</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Insurant number (LBO)</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Insurance Data</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Insurer</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Insurer ID</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Card ID</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Issue date</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Expiry date</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Valid until</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Permanently valid</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Insurance basis</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Insurance description</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Insurance start</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Address</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Street</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Number</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Apartment</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Place</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Municipality</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Country</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Insurance Carrier Data</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Carrier name</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Carrier surname</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Relationship</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Carrier ID</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Carrier LBO</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Employer / Taxpayer</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Employer name</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Employer ID (PIB)</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Employer residence</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Activity code</source>
         <translation></translation>
     </message>
 </context>

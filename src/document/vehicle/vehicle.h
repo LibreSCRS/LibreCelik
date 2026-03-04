@@ -8,6 +8,7 @@
 #include <vehiclecard/vehicletypes.h>
 #include "document/document.h"
 
+class QPushButton;
 class VehicleReader;
 
 namespace Ui {
@@ -23,8 +24,7 @@ public:
 
 private slots:
     void vehicleDataReceived(const vehiclecard::VehicleDocumentData& data);
-
-    void on_toolButton_clicked();
+    void printDocument();
 
 private:
     Ui::Vehicle *ui;
@@ -33,6 +33,8 @@ private:
 
     using VehicleReaderUPtr = std::unique_ptr<VehicleReader>;
     VehicleReaderUPtr vehicleReader;
+
+    QPushButton* printButton = nullptr;
 };
 
 #endif // VEHICLE_H

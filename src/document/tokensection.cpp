@@ -115,9 +115,9 @@ TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
     treeWidget = new QTreeWidget(this);
     treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     treeWidget->setUniformRowHeights(true);
-    treeWidget->setHeaderLabels({tr("Object"), tr("Details")});
+    treeWidget->setHeaderLabels({qtTrId("lc-token-col-object"), qtTrId("lc-token-col-details")});
     treeWidget->header()->setStretchLastSection(true);
-    treeWidget->header()->resizeSection(0, 200);
+    treeWidget->header()->resizeSection(0, 230);
     // No internal scrollbars — tree always shows full content;
     // outer scroll area handles overflow.
     treeWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);

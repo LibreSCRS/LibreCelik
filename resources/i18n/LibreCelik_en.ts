@@ -723,6 +723,14 @@
         <source>PKS Qualified Signature</source>
         <translation type="unfinished">PKS Qualified Signature</translation>
     </message>
+    <message id="lc-token-col-object">
+        <source>Object</source>
+        <translation type="unfinished">Object</translation>
+    </message>
+    <message id="lc-token-col-details">
+        <source>Details</source>
+        <translation type="unfinished">Details</translation>
+    </message>
     <message id="lc-token-title">
         <source>Token</source>
         <translation type="unfinished">Token</translation>

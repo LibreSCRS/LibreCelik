@@ -723,6 +723,14 @@
         <source>PKS Qualified Signature</source>
         <translation type="unfinished">ПКС Квалификовани потпис</translation>
     </message>
+    <message id="lc-token-col-object">
+        <source>Object</source>
+        <translation type="unfinished">Објекат</translation>
+    </message>
+    <message id="lc-token-col-details">
+        <source>Details</source>
+        <translation type="unfinished">Детаљи</translation>
+    </message>
     <message id="lc-token-title">
         <source>Token</source>
         <translation type="unfinished">Токен</translation>

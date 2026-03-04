@@ -735,6 +735,46 @@
         <source>Change PIN</source>
         <translation type="unfinished">Change PIN</translation>
     </message>
+    <message id="lc-token-key-subject">
+        <source>Subject</source>
+        <translation type="unfinished">Subject</translation>
+    </message>
+    <message id="lc-token-key-algorithm">
+        <source>Algorithm</source>
+        <translation type="unfinished">Algorithm</translation>
+    </message>
+    <message id="lc-token-key-usage">
+        <source>Key usage</source>
+        <translation type="unfinished">Key usage</translation>
+    </message>
+    <message id="lc-token-key-valid">
+        <source>Valid</source>
+        <translation type="unfinished">Valid</translation>
+    </message>
+    <message id="lc-token-key-private-key">
+        <source>Private key</source>
+        <translation type="unfinished">Private key</translation>
+    </message>
+    <message id="lc-token-ku-digital-signature">
+        <source>Digital Signature</source>
+        <translation type="unfinished">Digital Signature</translation>
+    </message>
+    <message id="lc-token-ku-non-repudiation">
+        <source>Non-Repudiation</source>
+        <translation type="unfinished">Non-Repudiation</translation>
+    </message>
+    <message id="lc-token-ku-key-encipherment">
+        <source>Key Encipherment</source>
+        <translation type="unfinished">Key Encipherment</translation>
+    </message>
+    <message id="lc-token-ku-data-encipherment">
+        <source>Data Encipherment</source>
+        <translation type="unfinished">Data Encipherment</translation>
+    </message>
+    <message id="lc-token-ku-key-agreement">
+        <source>Key Agreement</source>
+        <translation type="unfinished">Key Agreement</translation>
+    </message>
     <message id="lc-print-button">
         <source>Print</source>
         <translation type="unfinished">Print</translation>

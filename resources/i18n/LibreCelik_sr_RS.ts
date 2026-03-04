@@ -735,6 +735,46 @@
         <source>Change PIN</source>
         <translation type="unfinished">Промени ПИН</translation>
     </message>
+    <message id="lc-token-key-subject">
+        <source>Subject</source>
+        <translation type="unfinished">Власник</translation>
+    </message>
+    <message id="lc-token-key-algorithm">
+        <source>Algorithm</source>
+        <translation type="unfinished">Алгоритам</translation>
+    </message>
+    <message id="lc-token-key-usage">
+        <source>Key usage</source>
+        <translation type="unfinished">Употреба кључа</translation>
+    </message>
+    <message id="lc-token-key-valid">
+        <source>Valid</source>
+        <translation type="unfinished">Важи</translation>
+    </message>
+    <message id="lc-token-key-private-key">
+        <source>Private key</source>
+        <translation type="unfinished">Тајни кључ</translation>
+    </message>
+    <message id="lc-token-ku-digital-signature">
+        <source>Digital Signature</source>
+        <translation type="unfinished">Дигитални потпис</translation>
+    </message>
+    <message id="lc-token-ku-non-repudiation">
+        <source>Non-Repudiation</source>
+        <translation type="unfinished">Неодрицивост</translation>
+    </message>
+    <message id="lc-token-ku-key-encipherment">
+        <source>Key Encipherment</source>
+        <translation type="unfinished">Шифровање кључа</translation>
+    </message>
+    <message id="lc-token-ku-data-encipherment">
+        <source>Data Encipherment</source>
+        <translation type="unfinished">Шифровање података</translation>
+    </message>
+    <message id="lc-token-ku-key-agreement">
+        <source>Key Agreement</source>
+        <translation type="unfinished">Размена кључева</translation>
+    </message>
     <message id="lc-print-button">
         <source>Print</source>
         <translation type="unfinished">Штампај</translation>

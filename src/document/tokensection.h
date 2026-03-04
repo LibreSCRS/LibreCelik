@@ -32,6 +32,7 @@ private slots:
     void onContextMenu(const QPoint& pos);
 
 private:
+    void updateTreeMinimumHeight();
     std::string certFolderPath;
     eidcard::CertificateList certificateList;
 

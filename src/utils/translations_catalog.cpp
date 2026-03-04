@@ -10,7 +10,13 @@
 // optimiser. When adding a new qtTrId("lc-xxx") call anywhere in the project,
 // add the corresponding QT_TRID_NOOP entry here so lupdate keeps working.
 
-#include <QtCore/qttranslation.h>
+#include <QtCore/qglobal.h>
+// qttranslation.h was introduced in Qt 6.5; use QCoreApplication as fallback.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+#  include <QtCore/qttranslation.h>
+#else
+#  include <QtCore/QCoreApplication>
+#endif
 
 // QT_TRID_NOOP(id) expands to the bare string literal `id`, so every statement
 // inside this function is an unused-value expression by design.

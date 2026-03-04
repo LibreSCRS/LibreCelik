@@ -35,6 +35,9 @@
 build/
 CMakeLists.txt.user
 
+# Generated translation files (compiled from .ts by lrelease at build time)
+resources/i18n/*.qm
+
 # IDE
 .qtcreator/
 

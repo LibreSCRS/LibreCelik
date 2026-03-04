@@ -28,6 +28,9 @@
         <!-- Teal header bar -->
         <item>
          <widget class="QFrame" name="headerFrame">
+          <property name="maximumHeight">
+           <number>64</number>
+          </property>
           <property name="styleSheet">
            <string notr="true">QFrame#headerFrame { background-color: rgb(61,140,149); }</string>
           </property>

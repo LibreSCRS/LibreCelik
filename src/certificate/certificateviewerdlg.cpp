@@ -13,8 +13,8 @@
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 
-#include <filesystem>
-#include <fstream>
+#include <QDir>
+#include <QFile>
 
 CertificateViewerDlg::CertificateViewerDlg(const eidcard::CertificateList& certs,
                                              const std::string& certFolderPath,
@@ -46,30 +46,23 @@ void CertificateViewerDlg::buildStore(const std::string& certFolderPath)
 
     X509_STORE_set_flags(store, X509_V_FLAG_NO_CHECK_TIME);
 
-    if (!std::filesystem::exists(certFolderPath))
+    QDir dir(QString::fromStdString(certFolderPath));
+    if (!dir.exists())
         return;
 
-    for (const auto& entry : std::filesystem::directory_iterator(certFolderPath)) {
-        if (!entry.is_regular_file())
+    for (const QString& name : dir.entryList({"*.cer", "*.crt", "*.pem"}, QDir::Files)) {
+        QFile file(dir.filePath(name));
+        if (!file.open(QIODevice::ReadOnly))
             continue;
 
-        auto ext = entry.path().extension().string();
-        if (ext != ".cer" && ext != ".crt" && ext != ".pem")
+        QByteArray data = file.readAll();
+        if (data.isEmpty())
             continue;
 
-        std::ifstream ifs(entry.path(), std::ios::binary);
-        if (!ifs)
-            continue;
-
-        std::vector<uint8_t> data((std::istreambuf_iterator<char>(ifs)),
-                                   std::istreambuf_iterator<char>());
-        if (data.empty())
-            continue;
-
-        const uint8_t* p = data.data();
+        const uint8_t* p = reinterpret_cast<const uint8_t*>(data.constData());
         X509* cert = d2i_X509(nullptr, &p, static_cast<long>(data.size()));
         if (!cert) {
-            BIO* bio = BIO_new_mem_buf(data.data(), static_cast<int>(data.size()));
+            BIO* bio = BIO_new_mem_buf(data.constData(), static_cast<int>(data.size()));
             if (bio) {
                 cert = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
                 BIO_free(bio);

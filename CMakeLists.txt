@@ -25,7 +25,7 @@ set(MIDDLEWARE_VERSION 1.3.0)
 # Fetch LibreMiddleware (smartcard, eidcard, vehiclecard libraries)
 include(FetchContent)
 FetchContent_Declare(LibreMiddleware
-    GIT_REPOSITORY git@github.com:LibreSCRS/LibreMiddleware.git
+    GIT_REPOSITORY https://github.com/LibreSCRS/LibreMiddleware.git
     GIT_TAG ${MIDDLEWARE_VERSION}
 )
 FetchContent_MakeAvailable(LibreMiddleware)

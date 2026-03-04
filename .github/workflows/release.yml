@@ -1,0 +1,113 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qt6-base-dev qt6-tools-dev qt6-l10n-tools \
+            libpcsclite-dev uuid-dev cmake ninja-build
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test (LibreCelik)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ctest --output-on-failure --test-dir build/test
+
+      - name: Test (LibreMiddleware)
+        run: ctest --output-on-failure --test-dir build/_deps/libremiddleware-build/test
+
+      - name: Cache linuxdeploy tools
+        uses: actions/cache@v4
+        with:
+          path: scripts/linux/tools
+          key: linuxdeploy-continuous-v1
+
+      - name: Build AppImage
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: scripts/linux/build-appimage.sh build
+
+      - name: Build PKCS#11 package
+        run: scripts/linux/build-pkcs11-tar.sh build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: |
+            LibreCelik-*.AppImage
+            LibreSCRS-pkcs11-*.tar.gz
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Qt
+        run: |
+          brew install qt ninja
+          echo "/opt/homebrew/opt/qt/bin" >> $GITHUB_PATH
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja -DCMAKE_OSX_ARCHITECTURES=arm64
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test (LibreCelik)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ctest --output-on-failure --test-dir build/test
+
+      - name: Test (LibreMiddleware)
+        run: ctest --output-on-failure --test-dir build/_deps/libremiddleware-build/test
+
+      - name: Build DMG
+        run: scripts/macos/build-dmg.sh build
+
+      - name: Build PKCS#11 package
+        run: scripts/macos/build-pkcs11-zip.sh build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: |
+            LibreCelik-*.dmg
+            LibreSCRS-pkcs11-*.zip
+
+  release:
+    needs: [build-linux, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: '*-artifacts'
+          merge-multiple: true
+          path: artifacts
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_notes: true
+          files: artifacts/*

@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qt6-base-dev qt6-tools-dev qt6-l10n-tools \
+            libpcsclite-dev uuid-dev cmake ninja-build
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -G Ninja
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test (LibreCelik)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ctest --output-on-failure --test-dir build/test
+
+      - name: Test (LibreMiddleware)
+        run: ctest --output-on-failure --test-dir build/_deps/libremiddleware-build/test
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Qt
+        run: |
+          brew install qt ninja
+          echo "/opt/homebrew/opt/qt/bin" >> $GITHUB_PATH
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -G Ninja -DCMAKE_OSX_ARCHITECTURES=arm64
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test (LibreCelik)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ctest --output-on-failure --test-dir build/test
+
+      - name: Test (LibreMiddleware)
+        run: ctest --output-on-failure --test-dir build/_deps/libremiddleware-build/test

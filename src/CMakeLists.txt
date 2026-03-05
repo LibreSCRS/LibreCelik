@@ -112,23 +112,17 @@ qt_add_executable(${PROJECT_NAME}
 qt_add_translations(${PROJECT_NAME}
     TS_FILES ${TS_PROJECT_FILES}
     LUPDATE_OPTIONS -locations none
-    QM_FILES_OUTPUT_VARIABLE qm_files
 )
-# Only lrelease runs automatically (compiles .ts → .qm).
-# lupdate is intentionally NOT a build dependency: it is run manually via the
-# LibreCelik_lupdate / update_translations targets when new strings are added.
-# The translations_catalog.cpp file provides //% source strings so that manual
-# lupdate runs preserve existing translations without clearing <source>.
-add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_lrelease)
-# Embed the lrelease-generated .qm files (in build dir) into the executable as
-# Qt resources at :/i18n/LibreCelik_<locale>.qm.  This replaces the old approach
-# of committing pre-built .qm files to the source tree and referencing them from
-# librecelik.qrc, which caused stale translations in AppImage builds.
-qt_add_resources(${PROJECT_NAME} "i18n_res"
-    PREFIX "/i18n"
-    BASE "${CMAKE_CURRENT_BINARY_DIR}"
-    FILES ${qm_files}
-)
+# qt_add_translations automatically:
+#   - Creates the LibreCelik_lrelease target (compiles .ts → .qm in build dir)
+#   - Creates a Qt resource that embeds the .qm files at :/i18n/<locale>.qm
+#   - Adds the lrelease target as a build dependency of LibreCelik
+# Do NOT add a separate qt_add_resources for /i18n — it would create a duplicate
+# resource that races with lrelease on a clean CI build, embedding empty data and
+# overriding the correct qt_add_translations resource (root cause of broken
+# AppImage translations in 1.7.1 and 1.7.2).
+# To update translations: edit .ts files, then run LibreCelik_lupdate to sync
+# source strings, and LibreCelik_lrelease to recompile (or just cmake --build).
 # Embed Serbian CA certificates into the executable via Qt resources so they are
 # accessible at runtime in AppImage / DMG builds (where the LibreMiddleware
 # source tree is not present).  :/certificates/<name>.cer mirrors the layout

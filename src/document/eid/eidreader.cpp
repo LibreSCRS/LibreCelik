@@ -10,6 +10,8 @@
 #include <eidcard/eidcard.h>
 #include "eidreader.h"
 #include "config.h"
+#include <QDir>
+#include <QFile>
 
 EIdReader::EIdReader(const std::string& cardReader, QObject *parent) : cardReader(cardReader), QObject(parent)
 {
@@ -150,8 +152,25 @@ void EIdReader::requestVerification(std::unique_ptr<eidcard::EIdCard>& eidCard, 
     if (!eidCard)
         return;
 
-    eidCard->setCertificateFolderPath(LIBRECELIK_CERTIFICATES_DIR);
-    qDebug(libreCelikAPI) << "Verification certificates path:" << LIBRECELIK_CERTIFICATES_DIR;
+    // Load trusted CA certificates from Qt resources into the verifier.
+    // CardVerifier uses std::filesystem which cannot read Qt resource paths,
+    // so we enumerate the resources here and pass each cert as raw bytes.
+    QDir certDir(":/certificates");
+    int certsLoaded = 0;
+    for (const QString& name : certDir.entryList(QDir::Files)) {
+        QFile f(certDir.filePath(name));
+        if (f.open(QIODevice::ReadOnly)) {
+            const QByteArray data = f.readAll();
+            eidCard->addTrustedCertificate(
+                std::vector<uint8_t>(
+                    reinterpret_cast<const uint8_t*>(data.constData()),
+                    reinterpret_cast<const uint8_t*>(data.constData()) + data.size()
+                )
+            );
+            certsLoaded++;
+        }
+    }
+    qDebug(libreCelikAPI) << "Loaded" << certsLoaded << "trusted certificates from :/certificates";
 
     if (options.testFlag(LibreSCRS::VerificationOption::CheckCard))
     {

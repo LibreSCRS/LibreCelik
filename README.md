@@ -4,8 +4,19 @@ LibreCelik (Слободни Челик) is a free and open-source smart card re
 
 - Electronic ID cards (eID) — citizen and foreigner cards
 - Vehicle registration documents
+- Health insurance cards (RFZO)
+- PKS qualified signature cards (Chamber of Commerce)
 
 The application communicates directly with smart cards via PC/SC APDU commands, without relying on proprietary libraries.
+
+## Downloads
+
+Pre-built packages are available on the [Releases](https://github.com/LibreSCRS/LibreCelik/releases) page:
+
+- `LibreCelik-<version>-x86_64.AppImage` — Linux (x86_64)
+- `LibreCelik-<version>-macos.dmg` — macOS (Apple Silicon + Intel)
+
+The PKCS#11 module for Firefox/browser integration is released separately from [LibreMiddleware Releases](https://github.com/LibreSCRS/LibreMiddleware/releases).
 
 ## Prerequisites
 
@@ -40,7 +51,8 @@ The build produces a `LibreCelik.app` bundle on macOS or a `LibreCelik` executab
 
 - Version is derived automatically from git tags via `cmake/GitVersion.cmake`
 - macOS deployment target: 15.0, universal binary (x86_64 + arm64)
-- All internal libraries (`SmartCard`, `EIdCard`, `VehicleCard`) are built as static libraries
+- All internal libraries (`SmartCard`, `EIdCard`, `VehicleCard`, etc.) are built as static libraries
+- Set `FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE` to use a local LibreMiddleware checkout
 
 ## Running tests
 
@@ -63,38 +75,18 @@ LibreCelik uses Qt's `QLoggingCategory` framework with the following categories:
 
 ### Configuring log output
 
-Qt logging is controlled via the `QT_LOGGING_RULES` environment variable. By default, all categories output debug, info, warning, and critical messages.
+Qt logging is controlled via the `QT_LOGGING_RULES` environment variable.
 
-**Disable all debug output (recommended for release):**
+**Disable all debug output:**
 
 ```bash
 export QT_LOGGING_RULES="rs.libresc.librecelik.*.debug=false"
-```
-
-**Disable all logging except warnings and errors:**
-
-```bash
-export QT_LOGGING_RULES="rs.libresc.librecelik.*.debug=false;rs.libresc.librecelik.*.info=false"
 ```
 
 **Enable only smart card logging for troubleshooting:**
 
 ```bash
 export QT_LOGGING_RULES="rs.libresc.librecelik.*.debug=false;rs.libresc.librecelik.smartcard.debug=true"
-```
-
-**Disable logging entirely:**
-
-```bash
-export QT_LOGGING_RULES="rs.libresc.librecelik.*=false"
-```
-
-Alternatively, create a `qtlogging.ini` file in the application's working directory:
-
-```ini
-[Rules]
-rs.libresc.librecelik.*.debug=false
-rs.libresc.librecelik.*.info=false
 ```
 
 ## License

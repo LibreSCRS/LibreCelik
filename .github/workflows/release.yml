@@ -54,15 +54,10 @@ jobs:
           APPIMAGE_EXTRACT_AND_RUN: "1"
         run: scripts/linux/build-appimage.sh build
 
-      - name: Build PKCS#11 package
-        run: scripts/linux/build-pkcs11-tar.sh build
-
       - uses: actions/upload-artifact@v4
         with:
           name: linux-artifacts
-          path: |
-            LibreCelik-*.AppImage
-            LibreSCRS-pkcs11-*.tar.gz
+          path: LibreCelik-*.AppImage
 
   build-macos:
     runs-on: macos-latest
@@ -93,15 +88,10 @@ jobs:
       - name: Build DMG
         run: scripts/macos/build-dmg.sh build
 
-      - name: Build PKCS#11 package
-        run: scripts/macos/build-pkcs11-zip.sh build
-
       - uses: actions/upload-artifact@v4
         with:
           name: macos-artifacts
-          path: |
-            LibreCelik-*.dmg
-            LibreSCRS-pkcs11-*.zip
+          path: LibreCelik-*.dmg
 
   release:
     needs: [build-linux, build-macos]

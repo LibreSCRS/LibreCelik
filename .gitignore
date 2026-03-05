@@ -54,6 +54,3 @@ AppDir/
 # macOS DMG packaging
 *.dmg
 
-# PKCS#11 module packaging
-LibreSCRS-pkcs11-*.zip
-LibreSCRS-pkcs11-*.tar.gz

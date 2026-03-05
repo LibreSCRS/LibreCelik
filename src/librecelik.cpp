@@ -84,11 +84,7 @@ void LibreCelik::updateAboutText()
         qtTrId("lc-main-about-librecelik").arg(LIBRECELIK_VERSION) +
         QString("<br>") +
         qtTrId("lc-main-about-libremiddleware").
-#if defined(LIBRECELIK_LOCAL_MIDDLEWARE_VERSION) && LIBRECELIK_LOCAL_MIDDLEWARE_VERSION
-                                arg("LOCAL"));
-#else
                                 arg(LIBRECELIK_MIDDLEWARE_VERSION));
-#endif
 }
 
 void LibreCelik::updateWelcomeChips()

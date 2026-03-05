@@ -20,7 +20,7 @@ set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_
 
 project(LibreCelik VERSION ${PROJECT_VERSION} LANGUAGES CXX)
 
-set(MIDDLEWARE_VERSION 1.3.1)
+set(MIDDLEWARE_VERSION 1.4.0)
 
 # Fetch LibreMiddleware (smartcard, eidcard, vehiclecard libraries)
 include(FetchContent)
@@ -30,15 +30,19 @@ FetchContent_Declare(LibreMiddleware
 )
 FetchContent_MakeAvailable(LibreMiddleware)
 
-option(LOCAL_LIBREMIDDLEWARE "Use local middleware" 0)
-if(DEFINED CACHE{FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE})
-    set(LOCAL_LIBREMIDDLEWARE 1)
-else()
-    # Verify fetched middleware version matches what we requested
-    if(NOT "${LibreMiddleware_VERSION}" VERSION_EQUAL "${MIDDLEWARE_VERSION}")
-        message(WARNING "LibreMiddleware version mismatch: "
-                "requested ${MIDDLEWARE_VERSION}, got ${LibreMiddleware_VERSION}")
-    endif()
+option(LOCAL_LIBREMIDDLEWARE "Use local LibreMiddleware checkout (for debugging)" OFF)
+
+# Always read the actual version from LibreMiddleware's own git tags
+# (works for both FetchContent clones and local checkouts).
+execute_process(
+    COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
+    WORKING_DIRECTORY ${libremiddleware_SOURCE_DIR}
+    OUTPUT_VARIABLE MW_GIT_VERSION
+    RESULT_VARIABLE MW_GIT_RESULT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+if(MW_GIT_RESULT EQUAL 0 AND MW_GIT_VERSION)
+    set(MIDDLEWARE_VERSION ${MW_GIT_VERSION})
 endif()
 
 # Add LibreMiddleware's cmake modules to our path (for FindPCSC, FindUUID)

@@ -265,6 +265,9 @@
               <property name="text">
                <string/>
               </property>
+              <property name="maximumHeight">
+               <number>30</number>
+              </property>
               <property name="styleSheet">
                <string notr="true">QLabel { border: 1px solid rgb(61,140,149); border-radius: 4px; padding: 4px 12px; color: rgb(61,140,149); }</string>
               </property>
@@ -277,6 +280,9 @@
              <widget class="QLabel" name="chipForeigner">
               <property name="text">
                <string/>
+              </property>
+              <property name="maximumHeight">
+               <number>30</number>
               </property>
               <property name="styleSheet">
                <string notr="true">QLabel { border: 1px solid rgb(61,140,149); border-radius: 4px; padding: 4px 12px; color: rgb(61,140,149); }</string>
@@ -291,6 +297,9 @@
               <property name="text">
                <string/>
               </property>
+              <property name="maximumHeight">
+               <number>30</number>
+              </property>
               <property name="styleSheet">
                <string notr="true">QLabel { border: 1px solid rgb(61,140,149); border-radius: 4px; padding: 4px 12px; color: rgb(61,140,149); }</string>
               </property>
@@ -304,6 +313,9 @@
               <property name="text">
                <string/>
               </property>
+              <property name="maximumHeight">
+               <number>30</number>
+              </property>
               <property name="styleSheet">
                <string notr="true">QLabel { border: 1px solid rgb(61,140,149); border-radius: 4px; padding: 4px 12px; color: rgb(61,140,149); }</string>
               </property>
@@ -316,6 +328,9 @@
              <widget class="QLabel" name="chipPks">
               <property name="text">
                <string/>
+              </property>
+              <property name="maximumHeight">
+               <number>30</number>
               </property>
               <property name="styleSheet">
                <string notr="true">QLabel { border: 1px solid rgb(61,140,149); border-radius: 4px; padding: 4px 12px; color: rgb(61,140,149); }</string>

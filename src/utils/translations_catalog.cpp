@@ -329,6 +329,37 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-token-certs-button");
     //% "Change PIN"
     QT_TRID_NOOP("lc-token-change-pin");
+    // Tree column headers
+    //% "Object"
+    QT_TRID_NOOP("lc-token-col-object");
+    //% "Details"
+    QT_TRID_NOOP("lc-token-col-details");
+    // Key properties
+    //% "Subject"
+    QT_TRID_NOOP("lc-token-key-subject");
+    //% "Algorithm"
+    QT_TRID_NOOP("lc-token-key-algorithm");
+    //% "Key usage"
+    QT_TRID_NOOP("lc-token-key-usage");
+    //% "Valid"
+    QT_TRID_NOOP("lc-token-key-valid");
+    //% "Private key"
+    QT_TRID_NOOP("lc-token-key-private-key");
+    // Key usage flags
+    //% "Digital Signature"
+    QT_TRID_NOOP("lc-token-ku-digital-signature");
+    //% "Non-Repudiation"
+    QT_TRID_NOOP("lc-token-ku-non-repudiation");
+    //% "Key Encipherment"
+    QT_TRID_NOOP("lc-token-ku-key-encipherment");
+    //% "Data Encipherment"
+    QT_TRID_NOOP("lc-token-ku-data-encipherment");
+    //% "Key Agreement"
+    QT_TRID_NOOP("lc-token-ku-key-agreement");
+
+    // --- Shared UI ---
+    //% "Print"
+    QT_TRID_NOOP("lc-print-button");
 
     // --- Vehicle registration ---
     //% "Vehicle Registration"

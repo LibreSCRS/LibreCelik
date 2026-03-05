@@ -19,6 +19,7 @@ find_package(UUID)
 # The actual qt_add_resources call is below, after qt_add_executable.
 file(GLOB LIBRECELIK_CERT_FILES
     "${libremiddleware_SOURCE_DIR}/thirdparty/certificates/all/*.cer"
+    "${libremiddleware_SOURCE_DIR}/thirdparty/certificates/all/*.crt"
 )
 set(LIBRECELIK_CERTIFICATES_DIR ":/certificates")
 

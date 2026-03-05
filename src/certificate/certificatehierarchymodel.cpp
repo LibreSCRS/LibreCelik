@@ -86,10 +86,8 @@ void CertificateHierarchyModel::buildChain(X509* cert, X509_STORE* store)
 
         // For the leaf, add verification status
         QString value;
-        if (i == 0) {
+        if (i == 0)
             value = translateVerificationResult(verificationError);
-            X509_STORE_CTX_set_error(ctx, verificationError);
-        }
 
         auto item = std::make_unique<CertificateInfoItem>(label, value, current);
         auto* ptr = item.get();

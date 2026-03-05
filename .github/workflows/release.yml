@@ -27,7 +27,6 @@ jobs:
           target: desktop
           arch: linux_gcc_64
           modules: ''
-          tools: 'tools_linguist'
           cache: true
 
       - name: Configure

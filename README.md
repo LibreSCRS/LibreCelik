@@ -1,5 +1,7 @@
 # LibreCelik
 
+**[librescrs.github.io](https://librescrs.github.io)**
+
 LibreCelik (Слободни Челик) is a free and open-source smart card reader for documents issued by the Republic of Serbia. It supports:
 
 - Electronic ID cards (eID) — citizen and foreigner cards

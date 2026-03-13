@@ -5,6 +5,7 @@
 #include <QDate>
 #include <QIcon>
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QVBoxLayout>
 #include "utils/libreceliklog.h"
 #include "utils/printmanager.h"
@@ -68,6 +69,54 @@ void EId::applyCardTypeVisibility()
     ui->nationalityWidget->setVisible(isForeigner);
     ui->placeOfBirthWidget->setVisible(!isForeigner);
     ui->statusOfForeignerWidget->setVisible(isForeigner);
+    repositionAddressSection();
+}
+
+void EId::repositionAddressSection()
+{
+    auto* fieldsLayout = ui->verticalLayout_citizenFields;
+    int fieldsHeight = 0;
+    int spacing = fieldsLayout->spacing();
+    int visibleCount = 0;
+
+    for (int i = 0; i < fieldsLayout->count(); ++i) {
+        QLayoutItem* item = fieldsLayout->itemAt(i);
+        if (item->spacerItem())
+            continue;
+        QWidget* w = item->widget();
+        if (w == ui->addressSection)
+            continue;
+        if (w && !w->isVisible())
+            continue;
+        int h = w ? w->sizeHint().height()
+                  : (item->layout() ? item->layout()->sizeHint().height() : 0);
+        fieldsHeight += h;
+        ++visibleCount;
+    }
+    if (visibleCount > 1)
+        fieldsHeight += (visibleCount - 1) * spacing;
+
+    static const int photoMaxHeight = 320;
+    bool fits = (fieldsHeight + ui->addressSection->sizeHint().height() <= photoMaxHeight);
+
+    if (fits == m_addressInColumn)
+        return;
+
+    if (fits) {
+        ui->verticalLayout_citizen->removeWidget(ui->addressSection);
+        fieldsLayout->insertWidget(fieldsLayout->count() - 1, ui->addressSection);
+        m_addressInColumn = true;
+    } else {
+        fieldsLayout->removeWidget(ui->addressSection);
+        ui->verticalLayout_citizen->addWidget(ui->addressSection);
+        m_addressInColumn = false;
+    }
+}
+
+void EId::resizeEvent(QResizeEvent* event)
+{
+    Document::resizeEvent(event);
+    repositionAddressSection();
 }
 
 void EId::cardTypeReceived(const eidcard::CardType& data)
@@ -129,6 +178,7 @@ void EId::variablePersonalDataReceived(const eidcard::VariablePersonalData& data
     ui->dateOfAddressChangeWidget->setVisible(show);
     if (show)
         ui->dateOfAddressChangeLineEdit_3->setText(addressDate);
+    repositionAddressSection();
 }
 
 void EId::documentDataReceived(const eidcard::DocumentData& data)

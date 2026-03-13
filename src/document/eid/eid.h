@@ -9,6 +9,8 @@
 #include "document/document.h"
 #include <string>
 
+class QResizeEvent;
+
 class EIdReader;
 class QLabel;
 class QPushButton;
@@ -41,9 +43,12 @@ private slots:
 private:
     void updateVerificationIcons(const eidcard::VerificationResult& data, QLabel* iconLabel);
     void applyCardTypeVisibility();
+    void repositionAddressSection();
     QString getBase64Photo();
     QString assembleAddress(const eidcard::VariablePersonalData& vpd) const;
     QString assemblePlaceOfBirth(const eidcard::FixedPersonalData& fpd) const;
+
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     Ui::EId* ui;
@@ -58,6 +63,7 @@ private:
 
     TokenSection* tokenSection = nullptr;
     QPushButton* printButton = nullptr;
+    bool m_addressInColumn = false;
 };
 
 #endif // EID_H

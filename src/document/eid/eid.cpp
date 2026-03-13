@@ -75,36 +75,20 @@ void EId::applyCardTypeVisibility()
 void EId::repositionAddressSection()
 {
     auto* fieldsLayout = ui->verticalLayout_citizenFields;
-    int fieldsHeight = 0;
-    int spacing = fieldsLayout->spacing();
-    int visibleCount = 0;
+    int photoMaxHeight = ui->pictureLabel_3->maximumHeight();
 
-    for (int i = 0; i < fieldsLayout->count(); ++i) {
-        QLayoutItem* item = fieldsLayout->itemAt(i);
-        if (item->spacerItem())
-            continue;
-        QWidget* w = item->widget();
-        if (w == ui->addressSection)
-            continue;
-        if (w && !w->isVisible())
-            continue;
-        int h = w ? w->sizeHint().height()
-                  : (item->layout() ? item->layout()->sizeHint().height() : 0);
-        fieldsHeight += h;
-        ++visibleCount;
-    }
-    if (visibleCount > 1)
-        fieldsHeight += (visibleCount - 1) * spacing;
-
-    static const int photoMaxHeight = 320;
-    bool fits = (fieldsHeight + ui->addressSection->sizeHint().height() <= photoMaxHeight);
-
-    if (fits == m_addressInColumn)
-        return;
-
-    if (fits) {
+    // Temporarily move address into the fields column if not already there, so the
+    // layout can compute the combined height in one consistent sizeHint() call.
+    bool wasInColumn = m_addressInColumn;
+    if (!m_addressInColumn) {
         ui->verticalLayout_citizen->removeWidget(ui->addressSection);
         fieldsLayout->insertWidget(fieldsLayout->count() - 1, ui->addressSection);
+    }
+
+    fieldsLayout->invalidate();
+    bool fits = (fieldsLayout->sizeHint().height() <= photoMaxHeight);
+
+    if (fits) {
         m_addressInColumn = true;
     } else {
         fieldsLayout->removeWidget(ui->addressSection);

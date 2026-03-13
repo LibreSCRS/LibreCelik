@@ -9,7 +9,12 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "PCSC/pcsclite.h"
+#ifdef __APPLE__
+#include <PCSC/winscard.h>
+#include <PCSC/wintypes.h>
+#else
+#include <winscard.h>
+#endif
 #include "smartcardevent.h"
 
 class IPCSCScanProvider;

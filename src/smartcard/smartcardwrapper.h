@@ -3,8 +3,12 @@
 
 #ifndef SMARTCARDWRAPPER_H
 #define SMARTCARDWRAPPER_H
-#include <PCSC/wintypes.h>
+#ifdef __APPLE__
 #include <PCSC/winscard.h>
+#include <PCSC/wintypes.h>
+#else
+#include <winscard.h>
+#endif
 #include <string>
 
 inline std::string buildErrorMessage(const char* callerFunctionName, const char* scardFunctionName, const LONG result,

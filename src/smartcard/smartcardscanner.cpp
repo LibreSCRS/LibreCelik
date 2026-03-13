@@ -7,8 +7,12 @@
 #include "utils/libreceliklog.h"
 #include "ipcscscanprovider.h"
 #include "pcscscanprovider.h"
-#include "PCSC/winscard.h"
-#include "PCSC/wintypes.h"
+#ifdef __APPLE__
+#include <PCSC/winscard.h>
+#include <PCSC/wintypes.h>
+#else
+#include <winscard.h>
+#endif
 #include <QThread>
 #include <stdexcept>
 

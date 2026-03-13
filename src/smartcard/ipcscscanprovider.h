@@ -4,9 +4,12 @@
 #ifndef IPCSCSCANPROVIDER_H
 #define IPCSCSCANPROVIDER_H
 
-#include "PCSC/pcsclite.h"
-#include "PCSC/winscard.h"
-#include "PCSC/wintypes.h"
+#ifdef __APPLE__
+#include <PCSC/winscard.h>
+#include <PCSC/wintypes.h>
+#else
+#include <winscard.h>
+#endif
 
 // Thin abstraction over the PC/SC functions used by SmartCardScanner.
 // Production code uses PCSCScanProvider (real PC/SC); tests inject a mock.

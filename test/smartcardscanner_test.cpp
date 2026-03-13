@@ -113,7 +113,7 @@ TEST_F(ScannerTestFixture, CardInserted)
         {SCARD_S_SUCCESS, {SCARD_STATE_PRESENT | SCARD_STATE_CHANGED, 0 /* PnP unchanged */}, false});
 
     // Next getStatusChange: cancelled (stop)
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -137,7 +137,7 @@ TEST_F(ScannerTestFixture, CardRemoved)
     mock->pushStatusChange({SCARD_S_SUCCESS, {SCARD_STATE_EMPTY | SCARD_STATE_CHANGED, 0}, false});
 
     // Stop
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -161,7 +161,7 @@ TEST_F(ScannerTestFixture, CardInsertThenRemove)
     mock->pushStatusChange({SCARD_S_SUCCESS, {SCARD_STATE_EMPTY | SCARD_STATE_CHANGED | (2 << 16), 0}, false});
 
     // Stop
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -184,7 +184,7 @@ TEST_F(ScannerTestFixture, CardPresentWithInuse)
         {SCARD_S_SUCCESS, {SCARD_STATE_PRESENT | SCARD_STATE_INUSE | SCARD_STATE_CHANGED | (1 << 16), 0}, false});
 
     // Stop
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -209,7 +209,7 @@ TEST_F(ScannerTestFixture, InuseToggleNoReEmission)
         {SCARD_S_SUCCESS, {SCARD_STATE_PRESENT | SCARD_STATE_INUSE | SCARD_STATE_CHANGED | (1 << 16), 0}, false});
 
     // Stop
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -234,7 +234,7 @@ TEST_F(ScannerTestFixture, CardSwap)
     mock->pushStatusChange({SCARD_S_SUCCESS, {SCARD_STATE_PRESENT | SCARD_STATE_CHANGED | (2 << 16), 0}, false});
 
     // Stop
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -259,7 +259,7 @@ TEST_F(ScannerTestFixture, ExclusiveModeSkipped)
         {SCARD_S_SUCCESS, {SCARD_STATE_PRESENT | SCARD_STATE_EXCLUSIVE | SCARD_STATE_CHANGED | (1 << 16), 0}, false});
 
     // Stop
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -280,7 +280,7 @@ TEST_F(ScannerTestFixture, UnknownStateTriggersReEnumeration)
     mock->pushStatusChange({SCARD_S_SUCCESS, {SCARD_STATE_UNKNOWN | SCARD_STATE_CHANGED, 0}, false});
 
     // After re-enumeration with same readers, cancel
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -302,10 +302,10 @@ TEST_F(ScannerTestFixture, NoServiceReEstablishesContext)
     mock->pushStatusChange({SCARD_S_SUCCESS, {SCARD_STATE_PRESENT | SCARD_STATE_CHANGED | (1 << 16), 0}, false});
 
     // PC/SC service goes down
-    mock->pushStatusChange({SCARD_E_NO_SERVICE, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_NO_SERVICE), {}, false});
 
     // After re-establish, scanner loops back — second enumeration then cancel
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -332,7 +332,7 @@ TEST_F(ScannerTestFixture, PnPReaderChangeTriggersReEnumeration)
         {SCARD_S_SUCCESS, {0 /* reader A unchanged */, SCARD_STATE_CHANGED /* PnP changed */}, false});
 
     // After re-enumeration: cancel
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -356,7 +356,7 @@ TEST_F(ScannerTestFixture, MultipleReaders)
          false});
 
     // Stop
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -418,7 +418,7 @@ TEST_F(ScannerTestFixture, MuteCardSkipped)
         {SCARD_S_SUCCESS, {SCARD_STATE_PRESENT | SCARD_STATE_MUTE | SCARD_STATE_CHANGED | (1 << 16), 0}, false});
 
     // Stop
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -440,7 +440,7 @@ TEST_F(ScannerTestFixture, NoPnP_CardInserted)
     mock->pushStatusChange({SCARD_S_SUCCESS, {SCARD_STATE_PRESENT | SCARD_STATE_CHANGED}, false});
 
     // Stop
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -462,7 +462,7 @@ TEST_F(ScannerTestFixture, NoPnP_CardRemoved)
     mock->pushStatusChange({SCARD_S_SUCCESS, {SCARD_STATE_EMPTY | SCARD_STATE_CHANGED}, false});
 
     // Stop
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -486,7 +486,7 @@ TEST_F(ScannerTestFixture, NoPnP_CardInsertThenRemove)
     mock->pushStatusChange({SCARD_S_SUCCESS, {SCARD_STATE_EMPTY | SCARD_STATE_CHANGED | (2 << 16)}, false});
 
     // Stop
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -511,7 +511,7 @@ TEST_F(ScannerTestFixture, NoPnP_CardSwap)
     mock->pushStatusChange({SCARD_S_SUCCESS, {SCARD_STATE_PRESENT | SCARD_STATE_CHANGED | (2 << 16)}, false});
 
     // Stop
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -538,7 +538,7 @@ TEST_F(ScannerTestFixture, NoPnP_InuseToggleNoReEmission)
         {SCARD_S_SUCCESS, {SCARD_STATE_PRESENT | SCARD_STATE_INUSE | SCARD_STATE_CHANGED | (1 << 16)}, false});
 
     // Stop
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -559,10 +559,10 @@ TEST_F(ScannerTestFixture, NoPnP_NoServiceReEstablishesContext)
     mock->pushStatusChange({SCARD_S_SUCCESS, {SCARD_STATE_PRESENT | SCARD_STATE_CHANGED | (1 << 16)}, false});
 
     // NO_SERVICE
-    mock->pushStatusChange({SCARD_E_NO_SERVICE, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_NO_SERVICE), {}, false});
 
     // After re-establish, cancel
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -598,7 +598,7 @@ TEST_F(ScannerTestFixture, ReaderUnplugDoesNotReReadSurvivingCard)
     mock->pushStatusChange(std::move(readerChange));
 
     // After re-enumeration with Reader A only: cancel
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 
@@ -637,7 +637,7 @@ TEST_F(ScannerTestFixture, ReaderUnplugThenCardRemoveFromSurvivor)
     mock->pushStatusChange({SCARD_S_SUCCESS, {SCARD_STATE_EMPTY | SCARD_STATE_CHANGED | (2 << 16), 0}, false});
 
     // Stop
-    mock->pushStatusChange({SCARD_E_CANCELLED, {}, false});
+    mock->pushStatusChange({LONG(SCARD_E_CANCELLED), {}, false});
 
     auto result = runScanner(std::move(mock));
 

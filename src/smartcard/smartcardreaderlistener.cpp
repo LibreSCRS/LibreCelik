@@ -37,7 +37,9 @@ SmartCardReaderListener::~SmartCardReaderListener()
         scScanner->requestStop();
         scannerThread->requestInterruption();
         scannerThread->quit();
-        scannerThread->wait();
+        if (!scannerThread->wait(5000)) {
+            qCWarning(librecSCRSCard) << "Scanner thread did not finish in time";
+        }
     }
 }
 

@@ -107,7 +107,7 @@ void SmartCardScanner::waitForFirstReader(bool pnp)
         LONG rv;
         do {
             rv = pcsc->getStatusChange(hContext, SCAN_TIMEOUT, &state, 1);
-        } while (rv == SCARD_E_TIMEOUT);
+        } while (rv == SCARD_E_TIMEOUT && !QThread::currentThread()->isInterruptionRequested());
 
         if (rv != SCARD_S_SUCCESS) {
             qCDebug(librecSCRSCard) << "SCardGetStatusChange (PnP wait) failed:" << rv;
@@ -141,7 +141,10 @@ bool SmartCardScanner::processEvents(std::vector<SCARD_READERSTATE>& states, int
 {
     int totalStates = pnp ? readerCount + 1 : readerCount;
 
-    LONG rv = pcsc->getStatusChange(hContext, SCAN_TIMEOUT, states.data(), totalStates);
+    // Non-blocking probe to capture initial card state.
+    // On macOS, SCardGetStatusChange with SCARD_STATE_UNAWARE and a long timeout
+    // can block indefinitely on certain readers (e.g. HID OMNIKEY 5422).
+    LONG rv = pcsc->getStatusChange(hContext, 0, states.data(), totalStates);
 
     while ((rv == SCARD_S_SUCCESS) || (rv == SCARD_E_TIMEOUT)) {
         if (pnp) {
@@ -176,7 +179,7 @@ bool SmartCardScanner::processEvents(std::vector<SCARD_READERSTATE>& states, int
 #endif
             DWORD dwPrevState = states[i].dwCurrentState;
             if (states[i].dwEventState & SCARD_STATE_CHANGED) {
-                states[i].dwCurrentState = states[i].dwEventState;
+                states[i].dwCurrentState = states[i].dwEventState & ~SCARD_STATE_CHANGED;
             } else {
                 continue;
             }
@@ -241,6 +244,9 @@ bool SmartCardScanner::processEvents(std::vector<SCARD_READERSTATE>& states, int
         if (needReEnumeration) {
             return true;
         }
+
+        if (QThread::currentThread()->isInterruptionRequested())
+            break;
 
         rv = pcsc->getStatusChange(hContext, SCAN_TIMEOUT, states.data(), totalStates);
     }

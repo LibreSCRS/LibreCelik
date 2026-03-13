@@ -85,7 +85,7 @@ void EId::repositionAddressSection()
     }
 
     fieldsLayout->invalidate();
-    bool fits = (fieldsLayout->sizeHint().height() <= photoMaxHeight + 20);
+    bool fits = (fieldsLayout->sizeHint().height() <= photoMaxHeight);
 
     if (fits) {
         m_addressInColumn = true;
@@ -95,9 +95,11 @@ void EId::repositionAddressSection()
         m_addressInColumn = false;
     }
 
-    // When address is below the photo row, center the remaining fields vertically
-    // next to the photo instead of packing them at the top.
-    fieldsLayout->setAlignment(m_addressInColumn ? Qt::Alignment() : Qt::AlignVCenter);
+    // When address is below the photo row, distribute fields evenly next to the photo
+    // by giving each item equal stretch. When address is in the column, pack tightly.
+    for (int i = 0; i < fieldsLayout->count(); ++i) {
+        fieldsLayout->setStretch(i, m_addressInColumn ? 0 : 1);
+    }
 }
 
 void EId::resizeEvent(QResizeEvent* event)

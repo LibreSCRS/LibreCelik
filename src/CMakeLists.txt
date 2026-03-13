@@ -39,6 +39,8 @@ set(PROJECT_SOURCES
         utils/printmanager.h
 	utils/utils.h
 	smartcard/smartcardwrapper.h
+        smartcard/ipcscscanprovider.h
+        smartcard/pcscscanprovider.h
         smartcard/smartcardscanner.h
         smartcard/smartcardscanner.cpp
         smartcard/smartcardevent.h

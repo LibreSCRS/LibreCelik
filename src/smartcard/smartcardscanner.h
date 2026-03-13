@@ -5,15 +5,22 @@
 #define SMARTCARDSCANNER_H
 
 #include <QObject>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 #include "PCSC/pcsclite.h"
+#include "smartcardevent.h"
 
-class SmartCardEvent;
+class IPCSCScanProvider;
 
 class SmartCardScanner : public QObject
 {
     Q_OBJECT
 public:
     explicit SmartCardScanner(QObject* parent = nullptr);
+    explicit SmartCardScanner(std::unique_ptr<IPCSCScanProvider> provider, QObject* parent = nullptr);
+    ~SmartCardScanner() override;
 
 public slots:
     void doWork();
@@ -24,7 +31,15 @@ signals:
     void smartCardEventOccured(SmartCardEvent sce);
 
 private:
-    SCARDCONTEXT hContext;
+    void establishContext();
+    bool checkPnPSupport();
+    std::vector<std::string> enumerateReaders();
+    void waitForFirstReader(bool pnp);
+    bool processEvents(std::vector<SCARD_READERSTATE>& states, int readerCount, bool pnp);
+
+    std::unique_ptr<IPCSCScanProvider> pcsc;
+    SCARDCONTEXT hContext = 0;
+    std::map<std::string, DWORD> previousReaderStates;
 };
 
 #endif // SMARTCARDSCANNER_H

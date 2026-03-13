@@ -31,6 +31,11 @@ set(SOURCE_FILES
     ../src/libreceliktypes.h
     ../src/document/eid/eidreader.h
     ../src/document/eid/eidreader.cpp
+    ../src/smartcard/smartcardscanner.h
+    ../src/smartcard/smartcardscanner.cpp
+    ../src/smartcard/smartcardevent.h
+    ../src/smartcard/ipcscscanprovider.h
+    ../src/smartcard/pcscscanprovider.h
 )
 
 add_executable(
@@ -41,6 +46,8 @@ add_executable(
     uuid_test.cpp
     eidreader_test.cpp
     eidreader_test.h
+    smartcardscanner_test.h
+    smartcardscanner_test.cpp
 )
 target_link_libraries(
     ${PROJECT_NAME}

@@ -5,6 +5,7 @@
 #include "config.h"
 
 // Demonstrate some basic assertions.
-TEST(ConfigurationTest, Basic) {
+TEST(ConfigurationTest, Basic)
+{
     std::cout << "LibreCelik version: " << LIBRECELIK_VERSION << std::endl;
 }

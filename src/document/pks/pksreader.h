@@ -13,7 +13,7 @@ class PKSReader : public QObject
 {
     Q_OBJECT
 public:
-    PKSReader(const std::string& cardReader, QObject *parent = nullptr);
+    PKSReader(const std::string& cardReader, QObject* parent = nullptr);
     ~PKSReader();
 
     void requestCertificates();

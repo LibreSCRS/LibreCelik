@@ -20,7 +20,7 @@ class Health : public Document
 {
     Q_OBJECT
 public:
-    explicit Health(std::string reader, QWidget *parent = nullptr);
+    explicit Health(std::string reader, QWidget* parent = nullptr);
     ~Health();
 
 private slots:
@@ -29,7 +29,7 @@ private slots:
     void printDocument();
 
 private:
-    Ui::Health *ui;
+    Ui::Health* ui;
 
     healthcard::HealthDocumentData healthData;
 

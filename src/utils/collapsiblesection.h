@@ -16,12 +16,21 @@ public:
     explicit CollapsibleSection(QWidget* parent = nullptr);
     explicit CollapsibleSection(const QString& title, QWidget* parent = nullptr);
 
-    bool isExpanded() const { return expanded; }
+    bool isExpanded() const
+    {
+        return expanded;
+    }
     void setExpanded(bool exp);
 
     // Property target for QPropertyAnimation
-    int sectionHeight() const { return maximumHeight(); }
-    void setSectionHeight(int h) { setMaximumHeight(h); }
+    int sectionHeight() const
+    {
+        return maximumHeight();
+    }
+    void setSectionHeight(int h)
+    {
+        setMaximumHeight(h);
+    }
 
     // Shadow (not virtual) — QGroupBox::setTitle calls calculateFrame() which
     // resets our content margins on macOS; restore them here.

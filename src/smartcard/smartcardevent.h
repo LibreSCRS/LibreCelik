@@ -13,8 +13,7 @@
 struct SmartCardEvent
 {
     std::string readerName;
-    typedef enum EventType
-    {
+    typedef enum EventType {
         Unknown = 1 << 1,
         CardInserted = 1 << 2,
         CardRemoved = 1 << 3,
@@ -22,32 +21,28 @@ struct SmartCardEvent
     EventType eventType;
 };
 
-inline SmartCardEvent::EventType operator| (SmartCardEvent::EventType a, SmartCardEvent::EventType b)
+inline SmartCardEvent::EventType operator|(SmartCardEvent::EventType a, SmartCardEvent::EventType b)
 {
     return static_cast<SmartCardEvent::EventType>(static_cast<int>(a) | static_cast<int>(b));
 }
 
-inline SmartCardEvent::EventType operator& (SmartCardEvent::EventType a, SmartCardEvent::EventType b)
+inline SmartCardEvent::EventType operator&(SmartCardEvent::EventType a, SmartCardEvent::EventType b)
 {
     return static_cast<SmartCardEvent::EventType>(static_cast<int>(a) & static_cast<int>(b));
 }
 
-inline std::ostream& operator<<(std::ostream & os, SmartCardEvent::EventType cat)
+inline std::ostream& operator<<(std::ostream& os, SmartCardEvent::EventType cat)
 {
-    switch (cat)
-    {
-    case SmartCardEvent::Unknown:
-    {
+    switch (cat) {
+    case SmartCardEvent::Unknown: {
         os << "Unknown";
         break;
     }
-    case SmartCardEvent::CardInserted:
-    {
+    case SmartCardEvent::CardInserted: {
         os << "CardInserted";
         break;
     }
-    case SmartCardEvent::CardRemoved:
-    {
+    case SmartCardEvent::CardRemoved: {
         os << "CardRemoved";
         break;
     }
@@ -55,7 +50,7 @@ inline std::ostream& operator<<(std::ostream & os, SmartCardEvent::EventType cat
     return os;
 }
 
-inline QDebug &operator<<(QDebug & dbg, SmartCardEvent::EventType cat)
+inline QDebug& operator<<(QDebug& dbg, SmartCardEvent::EventType cat)
 {
     std::stringstream eventType;
     eventType << cat;

@@ -5,8 +5,7 @@
 #include "utils/libreceliklog.h"
 #include <pkscard/pkscard.h>
 
-PKSReader::PKSReader(const std::string& cardReader, QObject *parent)
-    : cardReader(cardReader), QObject(parent)
+PKSReader::PKSReader(const std::string& cardReader, QObject* parent) : cardReader(cardReader), QObject(parent)
 {
     qRegisterMetaType<eidcard::CertificateList>();
 }
@@ -29,8 +28,7 @@ void PKSReader::requestCertificates()
             if (!certs.empty())
                 emit certificateDataRead(std::move(certs));
         } catch (const std::exception& e) {
-            qCWarning(libreCelikPks) << "Cannot read certificates on: " << cardReader
-                                     << ". Exception: " << e.what();
+            qCWarning(libreCelikPks) << "Cannot read certificates on: " << cardReader << ". Exception: " << e.what();
         }
         emit readingFinished();
     });
@@ -44,8 +42,7 @@ void PKSReader::requestPINTriesLeft()
             auto result = card.getPINTriesLeft();
             emit pinTriesLeftRead(result.retriesLeft, result.blocked);
         } catch (const std::exception& e) {
-            qCWarning(libreCelikPks) << "Cannot get PIN tries on: " << cardReader
-                                     << ". Exception: " << e.what();
+            qCWarning(libreCelikPks) << "Cannot get PIN tries on: " << cardReader << ". Exception: " << e.what();
             emit pinTriesLeftRead(-1, false);
         }
     });
@@ -71,9 +68,9 @@ void PKSReader::requestChangePIN(const QString& oldPin, const QString& newPin)
                 emit pinChangeFailed(result.retriesLeft, result.blocked, msg);
             }
         } catch (const std::exception& e) {
-            qCWarning(libreCelikPks) << "PIN change failed on: " << cardReader
-                                     << ". Exception: " << e.what();
-            emit pinChangeFailed(-1, false, qtTrId("lc-eidreader-pin-change-exception").arg(QString::fromStdString(e.what())));
+            qCWarning(libreCelikPks) << "PIN change failed on: " << cardReader << ". Exception: " << e.what();
+            emit pinChangeFailed(-1, false,
+                                 qtTrId("lc-eidreader-pin-change-exception").arg(QString::fromStdString(e.what())));
         }
     });
 }

@@ -16,9 +16,8 @@
 #include <QDir>
 #include <QFile>
 
-CertificateViewerDlg::CertificateViewerDlg(const eidcard::CertificateList& certs,
-                                             const std::string& certFolderPath,
-                                             QWidget* parent)
+CertificateViewerDlg::CertificateViewerDlg(const eidcard::CertificateList& certs, const std::string& certFolderPath,
+                                           QWidget* parent)
     : QDialog(parent)
 {
     setWindowTitle(qtTrId("lc-cert-dialog-title"));
@@ -84,7 +83,7 @@ void CertificateViewerDlg::buildUI(const eidcard::CertificateList& certs)
         const uint8_t* p = cd.derBytes.data();
         X509* x509 = d2i_X509(nullptr, &p, static_cast<long>(cd.derBytes.size()));
         if (x509) {
-            parsedCerts.push_back({ x509, QString::fromStdString(cd.label) });
+            parsedCerts.push_back({x509, QString::fromStdString(cd.label)});
         }
     }
 
@@ -113,8 +112,7 @@ void CertificateViewerDlg::buildUI(const eidcard::CertificateList& certs)
     layout->addWidget(stack);
 
     if (certCombo) {
-        connect(certCombo, &QComboBox::currentIndexChanged,
-                stack, &QStackedWidget::setCurrentIndex);
+        connect(certCombo, &QComboBox::currentIndexChanged, stack, &QStackedWidget::setCurrentIndex);
     }
 
     // Close button

@@ -15,22 +15,16 @@ class EIdTextDocument : public TextDocument
 public:
     EIdTextDocument(const eidcard::FixedPersonalData& fixedPersonalData,
                     const eidcard::VariablePersonalData& variablePersonalData,
-                    const eidcard::DocumentData& documentData,
-                    const QString& address,
-                    const QString& placeOfBirth,
-                    const QString& photo,
-                    QString documentPath = ":/html/idcard.html",
+                    const eidcard::DocumentData& documentData, const QString& address, const QString& placeOfBirth,
+                    const QString& photo, QString documentPath = ":/html/idcard.html",
                     QString cssPath = ":/html/idcard.css");
 
 private:
     void translateDocumentData(QString& data) const;
-    void prepareDocumentData(QString& data,
-                             const eidcard::FixedPersonalData& fixedPersonalData,
+    void prepareDocumentData(QString& data, const eidcard::FixedPersonalData& fixedPersonalData,
                              const eidcard::VariablePersonalData& variablePersonalData,
-                             const eidcard::DocumentData& documentData,
-                             const QString& address,
-                             const QString& placeOfBirth,
-                             const QString& photo) const;
+                             const eidcard::DocumentData& documentData, const QString& address,
+                             const QString& placeOfBirth, const QString& photo) const;
 
     bool isForeigner = false;
 };

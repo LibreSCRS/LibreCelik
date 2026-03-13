@@ -16,9 +16,7 @@
 #include "config.h"
 #include "ui_eid.h"
 
-EId::EId(std::string reader, QWidget *parent)
-    : Document(parent)
-    , ui(new Ui::EId)
+EId::EId(std::string reader, QWidget* parent) : Document(parent), ui(new Ui::EId)
 {
     ui->setupUi(this);
     ui->verticalLayout->setStretch(0, 1);
@@ -44,17 +42,14 @@ EId::EId(std::string reader, QWidget *parent)
     connect(eidReader.get(), &EIdReader::photoDataRead, this, &EId::photoDataReceived);
     connect(eidReader.get(), &EIdReader::cardVerificationResultRead, this, &EId::cardVerificationResultReceived);
     connect(eidReader.get(), &EIdReader::fixedVerificationResultRead, this, &EId::fixedVerificationResultReceived);
-    connect(eidReader.get(), &EIdReader::variableVerificationResultRead, this, &EId::variableVerificationResultReceived);
+    connect(eidReader.get(), &EIdReader::variableVerificationResultRead, this,
+            &EId::variableVerificationResultReceived);
     connect(eidReader.get(), &EIdReader::certificateDataRead, tokenSection, &TokenSection::setCertificates);
     connect(eidReader.get(), &EIdReader::pinTriesLeftRead, tokenSection, &TokenSection::setPINStatus);
     connect(tokenSection, &TokenSection::changePINRequested, this, &EId::openChangePinDlg);
 
-    connect(eidReader.get(), &EIdReader::readingStarted, [this](){
-        printButton->setEnabled(false);
-    });
-    connect(eidReader.get(), &EIdReader::readingFinished, [this](){
-        printButton->setEnabled(true);
-    });
+    connect(eidReader.get(), &EIdReader::readingStarted, [this]() { printButton->setEnabled(false); });
+    connect(eidReader.get(), &EIdReader::readingFinished, [this]() { printButton->setEnabled(true); });
     connect(printButton, &QPushButton::clicked, this, &EId::printDocument);
 
     eidReader->requestData();
@@ -80,35 +75,31 @@ void EId::cardTypeReceived(const eidcard::CardType& data)
     qCDebug(libreSCRSGeneral) << "Card type received" << static_cast<int>(data);
     cardType = data;
     bool hasPin = false;
-    switch (cardType)
-    {
-        case eidcard::CardType::Unknown:
-        case eidcard::CardType::Apollo2008:
-        {
-            ui->identityGroupBox->setTitle(qtTrId("lc-eid-title-serbian"));
-            ui->citizenSection->setTitle(qtTrId("lc-eid-citizen-data"));
-            ui->jmbgLabel_3->setText(qtTrId("lc-eid-label-jmbg"));
-            ui->addressLabel_3->setText(qtTrId("lc-eid-label-address"));
-            break;
-        }
-        case eidcard::CardType::Gemalto2014:
-        {
-            ui->identityGroupBox->setTitle(qtTrId("lc-eid-title-serbian"));
-            ui->citizenSection->setTitle(qtTrId("lc-eid-citizen-data"));
-            ui->jmbgLabel_3->setText(qtTrId("lc-eid-label-jmbg"));
-            ui->addressLabel_3->setText(qtTrId("lc-eid-label-address"));
-            hasPin = true;
-            break;
-        }
-        case eidcard::CardType::ForeignerIF2020:
-        {
-            ui->identityGroupBox->setTitle(qtTrId("lc-eid-title-foreigner"));
-            ui->citizenSection->setTitle(qtTrId("lc-eid-foreigner-data"));
-            ui->jmbgLabel_3->setText(qtTrId("lc-eid-label-ebs"));
-            ui->addressLabel_3->setText(qtTrId("lc-eid-label-address-foreigner"));
-            hasPin = true;
-            break;
-        }
+    switch (cardType) {
+    case eidcard::CardType::Unknown:
+    case eidcard::CardType::Apollo2008: {
+        ui->identityGroupBox->setTitle(qtTrId("lc-eid-title-serbian"));
+        ui->citizenSection->setTitle(qtTrId("lc-eid-citizen-data"));
+        ui->jmbgLabel_3->setText(qtTrId("lc-eid-label-jmbg"));
+        ui->addressLabel_3->setText(qtTrId("lc-eid-label-address"));
+        break;
+    }
+    case eidcard::CardType::Gemalto2014: {
+        ui->identityGroupBox->setTitle(qtTrId("lc-eid-title-serbian"));
+        ui->citizenSection->setTitle(qtTrId("lc-eid-citizen-data"));
+        ui->jmbgLabel_3->setText(qtTrId("lc-eid-label-jmbg"));
+        ui->addressLabel_3->setText(qtTrId("lc-eid-label-address"));
+        hasPin = true;
+        break;
+    }
+    case eidcard::CardType::ForeignerIF2020: {
+        ui->identityGroupBox->setTitle(qtTrId("lc-eid-title-foreigner"));
+        ui->citizenSection->setTitle(qtTrId("lc-eid-foreigner-data"));
+        ui->jmbgLabel_3->setText(qtTrId("lc-eid-label-ebs"));
+        ui->addressLabel_3->setText(qtTrId("lc-eid-label-address-foreigner"));
+        hasPin = true;
+        break;
+    }
     }
     applyCardTypeVisibility();
     tokenSection->setPINVisible(hasPin);
@@ -149,8 +140,7 @@ void EId::documentDataReceived(const eidcard::DocumentData& data)
     QDate receivedDate = QDate::fromString(expiryDate, "dd.MM.yyyy");
     QDate currentDate = QDate::currentDate();
     QPalette palette = ui->validToLineEdit_3->palette();
-    if (receivedDate.isValid() && receivedDate < currentDate)
-    {
+    if (receivedDate.isValid() && receivedDate < currentDate) {
         palette.setColor(QPalette::Text, QColor(0xe6, 0x87, 0x3c));
     }
     ui->validToLineEdit_3->setPalette(palette);
@@ -162,37 +152,30 @@ void EId::documentDataReceived(const eidcard::DocumentData& data)
 
 void EId::photoDataReceived(const eidcard::PhotoData& data)
 {
-    if (data.size() > 0)
-    {
+    if (data.size() > 0) {
         QPixmap pixmap;
         pixmap.loadFromData(data.data(), data.size());
         ui->pictureLabel_3->setPixmap(pixmap);
-    }
-    else
-    {
+    } else {
         ui->pictureLabel_3->setPixmap(QPixmap(QString::fromUtf8(":/images/user.png")));
     }
 }
 
 void EId::updateVerificationIcons(const eidcard::VerificationResult& data, QLabel* iconLabel)
 {
-    switch (data)
-    {
-        case eidcard::VerificationResult::Unknown:
-        {
-            iconLabel->setPixmap(QPixmap(":/images/grey_question_mark.png"));
-            break;
-        }
-        case eidcard::VerificationResult::Valid:
-        {
-            iconLabel->setPixmap(QPixmap(":/images/green_checked.png"));
-            break;
-        }
-        case eidcard::VerificationResult::Invalid:
-        {
-            iconLabel->setPixmap(QPixmap(":/images/red_exclamation.png"));
-            break;
-        }
+    switch (data) {
+    case eidcard::VerificationResult::Unknown: {
+        iconLabel->setPixmap(QPixmap(":/images/grey_question_mark.png"));
+        break;
+    }
+    case eidcard::VerificationResult::Valid: {
+        iconLabel->setPixmap(QPixmap(":/images/green_checked.png"));
+        break;
+    }
+    case eidcard::VerificationResult::Invalid: {
+        iconLabel->setPixmap(QPixmap(":/images/red_exclamation.png"));
+        break;
+    }
     }
 }
 
@@ -214,10 +197,8 @@ void EId::variableVerificationResultReceived(const eidcard::VerificationResult& 
 QString EId::assembleAddress(const eidcard::VariablePersonalData& vpd) const
 {
     QStringList parts;
-    parts << QString::fromStdString(vpd.place)
-          << QString::fromStdString(vpd.community)
-          << QString::fromStdString(vpd.street)
-          << QString::fromStdString(vpd.houseNumber);
+    parts << QString::fromStdString(vpd.place) << QString::fromStdString(vpd.community)
+          << QString::fromStdString(vpd.street) << QString::fromStdString(vpd.houseNumber);
     auto address = parts.join(", ");
     auto floor = QString::fromStdString(vpd.floor);
     auto apartmentNumber = QString::fromStdString(vpd.apartmentNumber);
@@ -231,8 +212,7 @@ QString EId::assembleAddress(const eidcard::VariablePersonalData& vpd) const
 QString EId::assemblePlaceOfBirth(const eidcard::FixedPersonalData& fpd) const
 {
     QStringList parts;
-    parts << QString::fromStdString(fpd.placeOfBirth)
-          << QString::fromStdString(fpd.communityOfBirth)
+    parts << QString::fromStdString(fpd.placeOfBirth) << QString::fromStdString(fpd.communityOfBirth)
           << QString::fromStdString(fpd.stateOfBirth);
     return parts.join(", ");
 }
@@ -250,14 +230,10 @@ QString EId::getBase64Photo()
 void EId::openChangePinDlg()
 {
     auto dlg = std::make_unique<ChangePinDlg>(this);
-    connect(dlg.get(), &ChangePinDlg::pinChangeRequested,
-            eidReader.get(), &EIdReader::requestChangePIN);
-    connect(eidReader.get(), &EIdReader::pinTriesLeftRead,
-            dlg.get(), &ChangePinDlg::onPinTriesLeftRead);
-    connect(eidReader.get(), &EIdReader::pinChangeSuccess,
-            dlg.get(), &ChangePinDlg::onPinChangeSuccess);
-    connect(eidReader.get(), &EIdReader::pinChangeFailed,
-            dlg.get(), &ChangePinDlg::onPinChangeFailed);
+    connect(dlg.get(), &ChangePinDlg::pinChangeRequested, eidReader.get(), &EIdReader::requestChangePIN);
+    connect(eidReader.get(), &EIdReader::pinTriesLeftRead, dlg.get(), &ChangePinDlg::onPinTriesLeftRead);
+    connect(eidReader.get(), &EIdReader::pinChangeSuccess, dlg.get(), &ChangePinDlg::onPinChangeSuccess);
+    connect(eidReader.get(), &EIdReader::pinChangeFailed, dlg.get(), &ChangePinDlg::onPinChangeFailed);
     eidReader->requestPINTriesLeft();
     dlg->exec();
 }
@@ -265,11 +241,12 @@ void EId::openChangePinDlg()
 void EId::printDocument()
 {
     QString documentTemplate = ":/html/idcard.html";
-    if (cardType == eidcard::CardType::ForeignerIF2020)
-    {
+    if (cardType == eidcard::CardType::ForeignerIF2020) {
         documentTemplate = ":/html/idcardIF2020.html";
     }
     auto address = assembleAddress(variablePersonalData);
     auto placeOfBirth = assemblePlaceOfBirth(fixedPersonalData);
-    PrintManager::printDocument(EIdTextDocument(fixedPersonalData, variablePersonalData, documentData, address, placeOfBirth, getBase64Photo(), documentTemplate), qtTrId("lc-eid-print-title"));
+    PrintManager::printDocument(EIdTextDocument(fixedPersonalData, variablePersonalData, documentData, address,
+                                                placeOfBirth, getBase64Photo(), documentTemplate),
+                                qtTrId("lc-eid-print-title"));
 }

@@ -5,8 +5,7 @@
 #include <QDate>
 #include "healthtextdocument.h"
 
-HealthTextDocument::HealthTextDocument(const healthcard::HealthDocumentData& healthData,
-                                       QString documentPath,
+HealthTextDocument::HealthTextDocument(const healthcard::HealthDocumentData& healthData, QString documentPath,
                                        QString cssPath)
 {
     auto data = loadFile(documentPath);

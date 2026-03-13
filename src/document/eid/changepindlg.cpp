@@ -38,13 +38,12 @@ static QIcon createEyeIcon(bool open)
     return QIcon(px);
 }
 
-ChangePinDlg::ChangePinDlg(QWidget *parent)
-    : QDialog(parent)
+ChangePinDlg::ChangePinDlg(QWidget* parent) : QDialog(parent)
 {
     setWindowTitle(qtTrId("lc-changepin-title"));
     setMinimumWidth(350);
 
-    auto *layout = new QVBoxLayout(this);
+    auto* layout = new QVBoxLayout(this);
 
     retriesLabel = new QLabel(qtTrId("lc-changepin-retries-remaining").arg("..."), this);
     layout->addWidget(retriesLabel);
@@ -143,15 +142,12 @@ void ChangePinDlg::validateForm()
     statusLabel->clear();
     statusLabel->setStyleSheet("");
 
-    bool valid = isValidPinLength(currentPinEdit->text())
-              && isValidPinLength(newPinEdit->text())
-              && isValidPinLength(confirmPinEdit->text())
-              && newPinEdit->text() == confirmPinEdit->text();
+    bool valid = isValidPinLength(currentPinEdit->text()) && isValidPinLength(newPinEdit->text()) &&
+                 isValidPinLength(confirmPinEdit->text()) && newPinEdit->text() == confirmPinEdit->text();
 
     // Show hint when confirm doesn't match and both are filled
-    if (isValidPinLength(newPinEdit->text())
-        && confirmPinEdit->text().length() >= 4
-        && newPinEdit->text() != confirmPinEdit->text()) {
+    if (isValidPinLength(newPinEdit->text()) && confirmPinEdit->text().length() >= 4 &&
+        newPinEdit->text() != confirmPinEdit->text()) {
         statusLabel->setStyleSheet("color: red;");
         statusLabel->setText(qtTrId("lc-changepin-mismatch"));
     }
@@ -159,19 +155,19 @@ void ChangePinDlg::validateForm()
     okButton->setEnabled(valid);
 }
 
-bool ChangePinDlg::isValidPinLength(const QString &pin) const
+bool ChangePinDlg::isValidPinLength(const QString& pin) const
 {
     return pin.length() >= 4 && pin.length() <= 8;
 }
 
-void ChangePinDlg::addToggleVisibilityAction(QLineEdit *edit)
+void ChangePinDlg::addToggleVisibilityAction(QLineEdit* edit)
 {
     // QIcon::fromTheme returns a null icon on macOS (no FreeDesktop theme);
     // fall back to programmatically drawn icons so the button is always visible.
-    auto hiddenIcon  = QIcon::fromTheme("view-hidden",  createEyeIcon(false));
+    auto hiddenIcon = QIcon::fromTheme("view-hidden", createEyeIcon(false));
     auto visibleIcon = QIcon::fromTheme("view-visible", createEyeIcon(true));
 
-    auto *action = edit->addAction(hiddenIcon, QLineEdit::TrailingPosition);
+    auto* action = edit->addAction(hiddenIcon, QLineEdit::TrailingPosition);
     action->setToolTip(qtTrId("lc-changepin-show-hide"));
     connect(action, &QAction::triggered, this, [edit, action, hiddenIcon, visibleIcon]() {
         if (edit->echoMode() == QLineEdit::Password) {

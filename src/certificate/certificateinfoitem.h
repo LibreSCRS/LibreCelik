@@ -12,13 +12,9 @@
 class CertificateInfoItem
 {
 public:
-    explicit CertificateInfoItem(const QString& label = {},
-                                  const QString& value = {},
-                                  const bool critical = false,
-                                  CertificateInfoItem* parent = nullptr);
-    CertificateInfoItem(const QString& label,
-                        const QString& value,
-                        CertificateInfoItem* parent);
+    explicit CertificateInfoItem(const QString& label = {}, const QString& value = {}, const bool critical = false,
+                                 CertificateInfoItem* parent = nullptr);
+    CertificateInfoItem(const QString& label, const QString& value, CertificateInfoItem* parent);
 
     ~CertificateInfoItem();
 

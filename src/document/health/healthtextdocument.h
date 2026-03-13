@@ -14,8 +14,7 @@ class HealthTextDocument : public TextDocument
 
 public:
     HealthTextDocument(const healthcard::HealthDocumentData& healthData,
-                       QString documentPath = ":/html/healthcard.html",
-                       QString cssPath = ":/html/healthcard.css");
+                       QString documentPath = ":/html/healthcard.html", QString cssPath = ":/html/healthcard.css");
 
 private:
     void translateDocumentData(QString& data) const;

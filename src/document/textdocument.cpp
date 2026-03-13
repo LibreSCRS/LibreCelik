@@ -7,7 +7,7 @@
 #include "textdocument.h"
 #include "config.h"
 
-void TextDocument::print(QPrinter *printer) const
+void TextDocument::print(QPrinter* printer) const
 {
     qCDebug(libreCelikPrinting) << "Printer page rect: " << printer->pageRect(QPrinter::Unit::Point).size();
     QMarginsF margins(21, 29.7, 21, 29.7);

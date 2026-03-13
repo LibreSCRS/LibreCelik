@@ -7,11 +7,8 @@
 
 EIdTextDocument::EIdTextDocument(const eidcard::FixedPersonalData& fixedPersonalData,
                                  const eidcard::VariablePersonalData& variablePersonalData,
-                                 const eidcard::DocumentData& documentData,
-                                 const QString& address,
-                                 const QString& placeOfBirth,
-                                 const QString &photo,
-                                 QString documentPath,
+                                 const eidcard::DocumentData& documentData, const QString& address,
+                                 const QString& placeOfBirth, const QString& photo, QString documentPath,
                                  QString cssPath)
 {
     auto data = loadFile(documentPath);
@@ -41,7 +38,7 @@ void EIdTextDocument::translateDocumentData(QString& data) const
     data.replace("${place_of_birth}", qtTrId("lc-eid-doc-place-birth"));
     data.replace("${status_of_foreigner}", qtTrId("lc-eid-doc-foreigner-status"));
 
-    if(isForeigner)
+    if (isForeigner)
         data.replace("${adress}", qtTrId("lc-eid-label-address-foreigner"));
     else
         data.replace("${adress}", qtTrId("lc-eid-label-address"));
@@ -57,7 +54,10 @@ void EIdTextDocument::translateDocumentData(QString& data) const
     data.replace("${validity_date}", qtTrId("lc-eid-doc-valid-to"));
 }
 
-void EIdTextDocument::prepareDocumentData(QString& data, const eidcard::FixedPersonalData &fixedPersonalData, const eidcard::VariablePersonalData &variablePersonalData, const eidcard::DocumentData &documentData, const QString& address, const QString& placeOfBirth, const QString &photo) const
+void EIdTextDocument::prepareDocumentData(QString& data, const eidcard::FixedPersonalData& fixedPersonalData,
+                                          const eidcard::VariablePersonalData& variablePersonalData,
+                                          const eidcard::DocumentData& documentData, const QString& address,
+                                          const QString& placeOfBirth, const QString& photo) const
 {
     data.replace("${last_name_value}", getPreparedValue(QString::fromStdString(fixedPersonalData.surname)));
     data.replace("${first_name_value}", getPreparedValue(QString::fromStdString(fixedPersonalData.givenName)));
@@ -65,9 +65,11 @@ void EIdTextDocument::prepareDocumentData(QString& data, const eidcard::FixedPer
     data.replace("${nationality_value}", getPreparedValue(QString::fromStdString(fixedPersonalData.nationalityFull)));
     data.replace("${date_of_birth_value}", getPreparedValue(QString::fromStdString(fixedPersonalData.dateOfBirth)));
     data.replace("${place_of_birth_value}", getPreparedValue(placeOfBirth));
-    data.replace("${status_of_foreigner_value}", getPreparedValue(QString::fromStdString(fixedPersonalData.statusOfForeigner)));
+    data.replace("${status_of_foreigner_value}",
+                 getPreparedValue(QString::fromStdString(fixedPersonalData.statusOfForeigner)));
     data.replace("${adress_value}", getPreparedValue(address));
-    data.replace("${date_of_address_change_value}", getPreparedValue(QString::fromStdString(variablePersonalData.addressDate)));
+    data.replace("${date_of_address_change_value}",
+                 getPreparedValue(QString::fromStdString(variablePersonalData.addressDate)));
     data.replace("${jmbg_value}", getPreparedValue(QString::fromStdString(fixedPersonalData.personalNumber)));
     data.replace("${gender_value}", getPreparedValue(QString::fromStdString(fixedPersonalData.sex)));
 

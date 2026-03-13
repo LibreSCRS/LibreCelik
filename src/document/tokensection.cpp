@@ -24,7 +24,8 @@
 
 namespace {
 
-struct CertInfo {
+struct CertInfo
+{
     QString subject;
     QString algorithm;
     QString keyUsage;
@@ -34,9 +35,11 @@ struct CertInfo {
 
 static QString asnTimeToDate(const ASN1_TIME* t)
 {
-    if (!t) return {};
+    if (!t)
+        return {};
     struct tm tm = {};
-    if (ASN1_TIME_to_tm(t, &tm) != 1) return {};
+    if (ASN1_TIME_to_tm(t, &tm) != 1)
+        return {};
     char buf[16];
     std::strftime(buf, sizeof(buf), "%d.%m.%Y", &tm);
     return QString::fromLatin1(buf);
@@ -47,7 +50,8 @@ static CertInfo parseCertInfo(const std::vector<uint8_t>& der)
     CertInfo info;
     const uint8_t* p = der.data();
     X509* cert = d2i_X509(nullptr, &p, static_cast<long>(der.size()));
-    if (!cert) return info;
+    if (!cert)
+        return info;
 
     // Subject CN
     X509_NAME* subject = X509_get_subject_name(cert);
@@ -76,17 +80,22 @@ static CertInfo parseCertInfo(const std::vector<uint8_t>& der)
     uint32_t usage = X509_get_key_usage(cert);
     if (usage != ~uint32_t{0}) {
         QStringList usages;
-        if (usage & KU_DIGITAL_SIGNATURE) usages << qtTrId("lc-token-ku-digital-signature");
-        if (usage & KU_NON_REPUDIATION)   usages << qtTrId("lc-token-ku-non-repudiation");
-        if (usage & KU_KEY_ENCIPHERMENT)  usages << qtTrId("lc-token-ku-key-encipherment");
-        if (usage & KU_DATA_ENCIPHERMENT) usages << qtTrId("lc-token-ku-data-encipherment");
-        if (usage & KU_KEY_AGREEMENT)     usages << qtTrId("lc-token-ku-key-agreement");
+        if (usage & KU_DIGITAL_SIGNATURE)
+            usages << qtTrId("lc-token-ku-digital-signature");
+        if (usage & KU_NON_REPUDIATION)
+            usages << qtTrId("lc-token-ku-non-repudiation");
+        if (usage & KU_KEY_ENCIPHERMENT)
+            usages << qtTrId("lc-token-ku-key-encipherment");
+        if (usage & KU_DATA_ENCIPHERMENT)
+            usages << qtTrId("lc-token-ku-data-encipherment");
+        if (usage & KU_KEY_AGREEMENT)
+            usages << qtTrId("lc-token-ku-key-agreement");
         info.keyUsage = usages.join(", ");
     }
 
     // Validity
     info.validFrom = asnTimeToDate(X509_get0_notBefore(cert));
-    info.validTo   = asnTimeToDate(X509_get0_notAfter(cert));
+    info.validTo = asnTimeToDate(X509_get0_notAfter(cert));
 
     X509_free(cert);
     return info;
@@ -95,8 +104,7 @@ static CertInfo parseCertInfo(const std::vector<uint8_t>& der)
 } // namespace
 
 TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
-    : CollapsibleSection(qtTrId("lc-token-title"), parent)
-    , certFolderPath(std::move(certFolderPath))
+    : CollapsibleSection(qtTrId("lc-token-title"), parent), certFolderPath(std::move(certFolderPath))
 {
     auto* layout = new QVBoxLayout(this);
     layout->setSpacing(2);
@@ -124,16 +132,14 @@ TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
     treeWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     treeWidget->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
     treeWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    treeWidget->setStyleSheet(
-        "QTreeView::item:selected {"
-        "  background-color: rgb(34, 86, 117);"
-        "  color: white;"
-        "}"
-        "QTreeView::item:selected:!active {"
-        "  background-color: rgb(34, 86, 117);"
-        "  color: white;"
-        "}"
-    );
+    treeWidget->setStyleSheet("QTreeView::item:selected {"
+                              "  background-color: rgb(34, 86, 117);"
+                              "  color: white;"
+                              "}"
+                              "QTreeView::item:selected:!active {"
+                              "  background-color: rgb(34, 86, 117);"
+                              "  color: white;"
+                              "}");
 
     tokenCertsItem = new QTreeWidgetItem(treeWidget, QStringList{qtTrId("lc-eid-tree-certificates")});
     tokenCertsItem->setExpanded(true);
@@ -145,8 +151,7 @@ TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
 
     connect(certsButton, &QPushButton::clicked, this, &TokenSection::onCertsButtonClicked);
     connect(changePinButton, &QPushButton::clicked, this, &TokenSection::changePINRequested);
-    connect(treeWidget, &QTreeWidget::customContextMenuRequested,
-            this, &TokenSection::onContextMenu);
+    connect(treeWidget, &QTreeWidget::customContextMenuRequested, this, &TokenSection::onContextMenu);
 
     setExpanded(false);
 
@@ -159,7 +164,7 @@ TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
                 int widgetBottom = this->mapTo(sa->widget(), QPoint(0, this->height())).y();
                 int target = qBound(0, widgetBottom - sa->viewport()->height() + 8, vbar->maximum());
                 if (target <= vbar->value())
-                    return;  // already fully visible
+                    return; // already fully visible
                 auto* anim = new QPropertyAnimation(vbar, "value", sa);
                 anim->setDuration(200);
                 anim->setStartValue(vbar->value());
@@ -193,15 +198,16 @@ void TokenSection::setCertificates(const eidcard::CertificateList& certList)
         CertInfo info = parseCertInfo(cert.derBytes);
 
         auto addRow = [&](const QString& label, const QString& value) {
-            if (value.isEmpty()) return;
+            if (value.isEmpty())
+                return;
             auto* row = new QTreeWidgetItem(certItem);
             row->setText(0, label);
             row->setText(1, value);
         };
 
-        addRow(qtTrId("lc-token-key-subject"),   info.subject);
+        addRow(qtTrId("lc-token-key-subject"), info.subject);
         addRow(qtTrId("lc-token-key-algorithm"), info.algorithm);
-        addRow(qtTrId("lc-token-key-usage"),     info.keyUsage);
+        addRow(qtTrId("lc-token-key-usage"), info.keyUsage);
 
         QString validity;
         if (!info.validFrom.isEmpty() && !info.validTo.isEmpty())
@@ -265,7 +271,7 @@ void TokenSection::onContextMenu(const QPoint& pos)
     QMenu menu(this);
 
     // Certificate item or any of its sub-info children → "View Certificate"
-    bool isCertItem  = (item->parent() == tokenCertsItem);
+    bool isCertItem = (item->parent() == tokenCertsItem);
     bool isCertChild = (item->parent() && item->parent()->parent() == tokenCertsItem);
     if (isCertItem || isCertChild) {
         QAction* viewAction = menu.addAction(qtTrId("lc-eid-menu-view-cert"));

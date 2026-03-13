@@ -7,16 +7,16 @@
 #include <PCSC/winscard.h>
 #include <string>
 
-inline std::string buildErrorMessage(const char* callerFunctionName, const char* scardFunctionName,
-                                     const LONG result, const char* file, int line)
+inline std::string buildErrorMessage(const char* callerFunctionName, const char* scardFunctionName, const LONG result,
+                                     const char* file, int line)
 {
-    return std::string(scardFunctionName) + " returned " + std::to_string(result) + " in "
-           + file + ':' + std::to_string(line) + ':' + callerFunctionName;
+    return std::string(scardFunctionName) + " returned " + std::to_string(result) + " in " + file + ':' +
+           std::to_string(line) + ':' + callerFunctionName;
 }
 
 template <typename Func, typename... Args>
-void SmartCardWrapper(const char* callerFunctionName, const char* file, int line,
-               const char* scardFunctionName, Func scardFunction, Args... args)
+void SmartCardWrapper(const char* callerFunctionName, const char* file, int line, const char* scardFunctionName,
+                      Func scardFunction, Args... args)
 {
     const LONG result = scardFunction(args...);
 
@@ -45,7 +45,7 @@ void SmartCardWrapper(const char* callerFunctionName, const char* file, int line
     }
 }
 
-#define SCard(APIFunctionName, ...)                                                                \
-SmartCardWrapper(__FUNCTION__, __FILE__, __LINE__, "SCard" #APIFunctionName, SCard##APIFunctionName, __VA_ARGS__)
+#define SCard(APIFunctionName, ...)                                                                                    \
+    SmartCardWrapper(__FUNCTION__, __FILE__, __LINE__, "SCard" #APIFunctionName, SCard##APIFunctionName, __VA_ARGS__)
 
 #endif // SMARTCARDWRAPPER_H

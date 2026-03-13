@@ -18,8 +18,7 @@ class CertificateViewerWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit CertificateViewerWidget(X509* cert, X509_STORE* store,
-                                      QWidget* parent = nullptr);
+    explicit CertificateViewerWidget(X509* cert, X509_STORE* store, QWidget* parent = nullptr);
     ~CertificateViewerWidget();
 
 private slots:

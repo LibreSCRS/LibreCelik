@@ -12,9 +12,7 @@
 #include "vehiclereader.h"
 #include "ui_vehicle.h"
 
-Vehicle::Vehicle(std::string reader, QWidget *parent)
-    : Document(parent)
-    , ui(new Ui::Vehicle)
+Vehicle::Vehicle(std::string reader, QWidget* parent) : Document(parent), ui(new Ui::Vehicle)
 {
     ui->setupUi(this);
     ui->vehicleCardSection->setTitle(qtTrId("lc-vehicle-title"));
@@ -33,12 +31,8 @@ Vehicle::Vehicle(std::string reader, QWidget *parent)
 
     connect(vehicleReader.get(), &VehicleReader::vehicleDataRead, this, &Vehicle::vehicleDataReceived);
 
-    connect(vehicleReader.get(), &VehicleReader::readingStarted, [this](){
-        printButton->setEnabled(false);
-    });
-    connect(vehicleReader.get(), &VehicleReader::readingFinished, [this](){
-        printButton->setEnabled(true);
-    });
+    connect(vehicleReader.get(), &VehicleReader::readingStarted, [this]() { printButton->setEnabled(false); });
+    connect(vehicleReader.get(), &VehicleReader::readingFinished, [this]() { printButton->setEnabled(true); });
     connect(printButton, &QPushButton::clicked, this, &Vehicle::printDocument);
 
     vehicleReader->requestData();
@@ -89,8 +83,7 @@ void Vehicle::vehicleDataReceived(const vehiclecard::VehicleDocumentData& data)
     QDate receivedDate = QDate::fromString(expiryDate, "dd.MM.yyyy");
     QDate currentDate = QDate::currentDate();
     QPalette palette = ui->expiryDateLineEdit->palette();
-    if (receivedDate.isValid() && receivedDate < currentDate)
-    {
+    if (receivedDate.isValid() && receivedDate < currentDate) {
         palette.setColor(QPalette::Text, QColor(0xe6, 0x87, 0x3c));
     }
     ui->expiryDateLineEdit->setPalette(palette);
@@ -117,8 +110,8 @@ void Vehicle::vehicleDataReceived(const vehiclecard::VehicleDocumentData& data)
     ui->usersPersonalNoLineEdit->setText(QString::fromStdString(data.usersPersonalNo));
 
     // Hide User section when all fields are empty
-    if (data.usersSurnameOrBusinessName.empty() && data.usersName.empty()
-        && data.usersAddress.empty() && data.usersPersonalNo.empty()) {
+    if (data.usersSurnameOrBusinessName.empty() && data.usersName.empty() && data.usersAddress.empty() &&
+        data.usersPersonalNo.empty()) {
         ui->userGroupBox->setVisible(false);
     }
 }

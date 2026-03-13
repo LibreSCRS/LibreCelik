@@ -13,8 +13,7 @@ class CertificateHierarchyModel : public CertificateTreeViewModel
 {
     Q_OBJECT
 public:
-    explicit CertificateHierarchyModel(X509* cert, X509_STORE* store,
-                                        QObject* parent = nullptr);
+    explicit CertificateHierarchyModel(X509* cert, X509_STORE* store, QObject* parent = nullptr);
 
     QVariant data(const QModelIndex& index, int role) const override;
 

@@ -19,7 +19,7 @@ class VehicleReader : public QObject
 {
     Q_OBJECT
 public:
-    VehicleReader(const std::string& cardReader, QObject *parent = nullptr);
+    VehicleReader(const std::string& cardReader, QObject* parent = nullptr);
     ~VehicleReader();
 
     void requestData();

@@ -16,7 +16,7 @@ class ChangePinDlg : public QDialog
 {
     Q_OBJECT
 public:
-    explicit ChangePinDlg(QWidget *parent = nullptr);
+    explicit ChangePinDlg(QWidget* parent = nullptr);
     ~ChangePinDlg();
 
 signals:
@@ -32,15 +32,15 @@ private slots:
     void validateForm();
 
 private:
-    void addToggleVisibilityAction(QLineEdit *edit);
-    bool isValidPinLength(const QString &pin) const;
-    QLabel *retriesLabel;
-    QLineEdit *currentPinEdit;
-    QLineEdit *newPinEdit;
-    QLineEdit *confirmPinEdit;
-    QLabel *statusLabel;
-    QDialogButtonBox *buttonBox;
-    QPushButton *okButton;
+    void addToggleVisibilityAction(QLineEdit* edit);
+    bool isValidPinLength(const QString& pin) const;
+    QLabel* retriesLabel;
+    QLineEdit* currentPinEdit;
+    QLineEdit* newPinEdit;
+    QLineEdit* confirmPinEdit;
+    QLabel* statusLabel;
+    QDialogButtonBox* buttonBox;
+    QPushButton* okButton;
 };
 
 #endif // CHANGEPINDLG_H

@@ -13,7 +13,7 @@
 #include <QDir>
 #include <QFile>
 
-EIdReader::EIdReader(const std::string& cardReader, QObject *parent) : cardReader(cardReader), QObject(parent)
+EIdReader::EIdReader(const std::string& cardReader, QObject* parent) : cardReader(cardReader), QObject(parent)
 {
     qRegisterMetaType<eidcard::CardType>();
     qRegisterMetaType<eidcard::DocumentData>();
@@ -42,20 +42,18 @@ void EIdReader::requestData()
         std::stringstream ss;
         ss << std::this_thread::get_id();
 
-        qDebug(libreCelikAPI) << "EId requestData: " << cardReader << ". Thread: " <<  ss.str();
+        qDebug(libreCelikAPI) << "EId requestData: " << cardReader << ". Thread: " << ss.str();
 #endif
 
         if (!eidCard)
             eidCard = initEIdCard();
 
-        if (eidCard != nullptr)
-        {
+        if (eidCard != nullptr) {
             requestEIdData(eidCard);
             requestPhoto(eidCard);
-            requestVerification(eidCard, LibreSCRS::VerificationOption::CheckCard | LibreSCRS::VerificationOption::CheckSignature);
-        }
-        else
-        {
+            requestVerification(eidCard, LibreSCRS::VerificationOption::CheckCard |
+                                             LibreSCRS::VerificationOption::CheckSignature);
+        } else {
             qDebug(libreCelikAPI) << "Can not initialize eID card session on: " << cardReader;
         }
 
@@ -66,23 +64,21 @@ void EIdReader::requestData()
 std::unique_ptr<eidcard::EIdCard> EIdReader::initEIdCard()
 {
     // Retry with delay — the card may not be ready immediately after a swap
-    for (int attempt = 0; attempt < 3; attempt++)
-    {
+    for (int attempt = 0; attempt < 3; attempt++) {
         if (stopRequested.load())
             return nullptr;
-        try
-        {
+        try {
             return std::make_unique<eidcard::EIdCard>(cardReader);
-        }
-        catch (std::runtime_error& re)
-        {
+        } catch (std::runtime_error& re) {
             if (attempt < 2) {
                 for (int i = 0; i < 5; i++) {
-                    if (stopRequested.load()) return nullptr;
+                    if (stopRequested.load())
+                        return nullptr;
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
             } else {
-                qCWarning(libreCelikAPI) << "Can not init eID card on reader: " << cardReader << ". Exception: " << re.what();
+                qCWarning(libreCelikAPI) << "Can not init eID card on reader: " << cardReader
+                                         << ". Exception: " << re.what();
             }
         }
     }
@@ -97,51 +93,43 @@ void EIdReader::requestEIdData(std::unique_ptr<eidcard::EIdCard>& eidCard)
     auto cardType = eidCard->getCardType();
     emit cardTypeRead(cardType);
 
-    try
-    {
+    try {
         emit fixedPersonalDataRead(eidCard->readFixedPersonalData());
-    }
-    catch(std::runtime_error& re)
-    {
-        qCWarning(libreCelikAPI) << "Can not read fixed personal data on reader: " << cardReader << ". Exception: " << re.what();
+    } catch (std::runtime_error& re) {
+        qCWarning(libreCelikAPI) << "Can not read fixed personal data on reader: " << cardReader
+                                 << ". Exception: " << re.what();
     }
 
-    try
-    {
+    try {
         emit variablePersonalDataRead(eidCard->readVariablePersonalData());
-    }
-    catch(std::runtime_error& re)
-    {
-        qCWarning(libreCelikAPI) << "Can not read variable personal data on reader: " << cardReader << ". Exception: " << re.what();
+    } catch (std::runtime_error& re) {
+        qCWarning(libreCelikAPI) << "Can not read variable personal data on reader: " << cardReader
+                                 << ". Exception: " << re.what();
     }
 
-    try
-    {
+    try {
         emit documentDataRead(eidCard->readDocumentData());
-    }
-    catch(std::runtime_error& re)
-    {
-        qCWarning(libreCelikAPI) << "Can not read document data on reader: " << cardReader << ". Exception: " << re.what();
+    } catch (std::runtime_error& re) {
+        qCWarning(libreCelikAPI) << "Can not read document data on reader: " << cardReader
+                                 << ". Exception: " << re.what();
     }
 
-    try
-    {
+    try {
         auto certs = eidCard->readCertificates();
         if (!certs.empty())
             emit certificateDataRead(std::move(certs));
-    }
-    catch(std::runtime_error& re)
-    {
-        qCWarning(libreCelikAPI) << "Can not read certificates on reader: " << cardReader << ". Exception: " << re.what();
+    } catch (std::runtime_error& re) {
+        qCWarning(libreCelikAPI) << "Can not read certificates on reader: " << cardReader
+                                 << ". Exception: " << re.what();
     }
 
-    if (cardType == eidcard::CardType::Gemalto2014 || cardType == eidcard::CardType::ForeignerIF2020)
-    {
+    if (cardType == eidcard::CardType::Gemalto2014 || cardType == eidcard::CardType::ForeignerIF2020) {
         try {
             auto result = eidCard->getPINTriesLeft();
             emit pinTriesLeftRead(result.retriesLeft, result.blocked);
         } catch (const std::exception& e) {
-            qCWarning(libreCelikAPI) << "Can not read PIN tries on reader: " << cardReader << ". Exception: " << e.what();
+            qCWarning(libreCelikAPI) << "Can not read PIN tries on reader: " << cardReader
+                                     << ". Exception: " << e.what();
             emit pinTriesLeftRead(-1, false);
         }
     }
@@ -162,18 +150,14 @@ void EIdReader::requestVerification(std::unique_ptr<eidcard::EIdCard>& eidCard, 
         if (f.open(QIODevice::ReadOnly)) {
             const QByteArray data = f.readAll();
             eidCard->addTrustedCertificate(
-                std::vector<uint8_t>(
-                    reinterpret_cast<const uint8_t*>(data.constData()),
-                    reinterpret_cast<const uint8_t*>(data.constData()) + data.size()
-                )
-            );
+                std::vector<uint8_t>(reinterpret_cast<const uint8_t*>(data.constData()),
+                                     reinterpret_cast<const uint8_t*>(data.constData()) + data.size()));
             certsLoaded++;
         }
     }
     qDebug(libreCelikAPI) << "Loaded" << certsLoaded << "trusted certificates from :/certificates";
 
-    if (options.testFlag(LibreSCRS::VerificationOption::CheckCard))
-    {
+    if (options.testFlag(LibreSCRS::VerificationOption::CheckCard)) {
         try {
             emit cardVerificationResultRead(eidCard->verifyCard());
         } catch (const std::exception& e) {
@@ -182,8 +166,7 @@ void EIdReader::requestVerification(std::unique_ptr<eidcard::EIdCard>& eidCard, 
         }
     }
 
-    if (options.testFlag(LibreSCRS::VerificationOption::CheckSignature))
-    {
+    if (options.testFlag(LibreSCRS::VerificationOption::CheckSignature)) {
         try {
             emit fixedVerificationResultRead(eidCard->verifyFixedData());
         } catch (const std::exception& e) {
@@ -241,7 +224,8 @@ void EIdReader::requestChangePIN(const QString& oldPin, const QString& newPin)
             }
         } catch (const std::exception& e) {
             qCWarning(libreCelikAPI) << "PIN change failed:" << e.what();
-            emit pinChangeFailed(-1, false, qtTrId("lc-eidreader-pin-change-exception").arg(QString::fromStdString(e.what())));
+            emit pinChangeFailed(-1, false,
+                                 qtTrId("lc-eidreader-pin-change-exception").arg(QString::fromStdString(e.what())));
         }
     });
 }
@@ -251,12 +235,9 @@ void EIdReader::requestPhoto(std::unique_ptr<eidcard::EIdCard>& eidCard)
     if (!eidCard)
         return;
 
-    try
-    {
+    try {
         emit photoDataRead(eidCard->readPortrait());
-    }
-    catch(std::runtime_error& re)
-    {
+    } catch (std::runtime_error& re) {
         qCWarning(libreCelikAPI) << "Can not read photo on reader: " << cardReader << ". Exception: " << re.what();
     }
 }

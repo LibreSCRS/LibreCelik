@@ -13,7 +13,7 @@ class TextDocument
     Q_DECLARE_TR_FUNCTIONS(TextDocument);
 
 public:
-    void print(QPrinter *printer) const;
+    void print(QPrinter* printer) const;
 
 protected:
     QTextDocument document;

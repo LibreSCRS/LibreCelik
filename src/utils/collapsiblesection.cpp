@@ -9,17 +9,15 @@
 #include <QResizeEvent>
 #include <QShowEvent>
 
-static const QColor HEADER_BG  { 61, 140, 149 };   // teal
-static const QColor FRAME_BORDER{ 61, 140, 149, 80 };
+static const QColor HEADER_BG{61, 140, 149}; // teal
+static const QColor FRAME_BORDER{61, 140, 149, 80};
 
-CollapsibleSection::CollapsibleSection(QWidget* parent)
-    : QGroupBox(parent)
+CollapsibleSection::CollapsibleSection(QWidget* parent) : QGroupBox(parent)
 {
     init();
 }
 
-CollapsibleSection::CollapsibleSection(const QString& title, QWidget* parent)
-    : QGroupBox(title, parent)
+CollapsibleSection::CollapsibleSection(const QString& title, QWidget* parent) : QGroupBox(title, parent)
 {
     init();
 }
@@ -59,19 +57,17 @@ void CollapsibleSection::addHeaderWidget(QWidget* w)
     w->setParent(this);
     w->setFixedHeight(22);
     if (auto* btn = qobject_cast<QPushButton*>(w)) {
-        btn->setStyleSheet(
-            "QPushButton {"
-            "  color: white;"
-            "  background-color: rgb(72, 148, 156);"
-            "  border: 1px solid rgb(100, 168, 176);"
-            "  border-radius: 3px;"
-            "  padding: 0px 6px;"
-            "  font-size: 11px;"
-            "}"
-            "QPushButton:hover { background-color: rgb(82, 158, 166); }"
-            "QPushButton:pressed { background-color: rgb(50, 120, 130); }"
-            "QPushButton:disabled { color: rgb(160, 205, 210); border-color: rgb(90, 155, 162); }"
-        );
+        btn->setStyleSheet("QPushButton {"
+                           "  color: white;"
+                           "  background-color: rgb(72, 148, 156);"
+                           "  border: 1px solid rgb(100, 168, 176);"
+                           "  border-radius: 3px;"
+                           "  padding: 0px 6px;"
+                           "  font-size: 11px;"
+                           "}"
+                           "QPushButton:hover { background-color: rgb(82, 158, 166); }"
+                           "QPushButton:pressed { background-color: rgb(50, 120, 130); }"
+                           "QPushButton:disabled { color: rgb(160, 205, 210); border-color: rgb(90, 155, 162); }");
     }
     headerWidgets_.append(w);
     repositionHeaderWidgets();
@@ -86,7 +82,8 @@ void CollapsibleSection::repositionHeaderWidgets()
     for (int i = headerWidgets_.size() - 1; i >= 0; --i) {
         QWidget* w = headerWidgets_[i];
         int ww = w->sizeHint().width();
-        if (ww < 1) ww = w->width();
+        if (ww < 1)
+            ww = w->width();
         x -= ww + 4;
         w->setGeometry(x, (headerHeight_ - w->height()) / 2, ww, w->height());
         w->raise();
@@ -162,8 +159,7 @@ void CollapsibleSection::paintEvent(QPaintEvent*)
     QFont tf = font();
     tf.setBold(true);
     p.setFont(tf);
-    p.drawText(QRect(30, 0, titleRight - 30, headerHeight_),
-               Qt::AlignVCenter | Qt::AlignLeft, title());
+    p.drawText(QRect(30, 0, titleRight - 30, headerHeight_), Qt::AlignVCenter | Qt::AlignLeft, title());
 
     // Subtle border around content area
     p.setPen(QPen(FRAME_BORDER, 1));

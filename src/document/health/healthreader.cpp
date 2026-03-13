@@ -12,8 +12,7 @@
 #include <healthcard/healthcard.h>
 #include "healthreader.h"
 
-HealthReader::HealthReader(const std::string& cardReader, QObject *parent)
-    : cardReader(cardReader), QObject(parent)
+HealthReader::HealthReader(const std::string& cardReader, QObject* parent) : cardReader(cardReader), QObject(parent)
 {
     qRegisterMetaType<healthcard::HealthDocumentData>();
     qRegisterMetaType<eidcard::CertificateList>();
@@ -66,8 +65,7 @@ void HealthReader::requestCertificates()
             if (!certs.empty())
                 emit certificateDataRead(std::move(certs));
         } catch (const std::exception& e) {
-            qCWarning(libreCelikHealth) << "Cannot read certificates on: " << cardReader
-                                        << ". Exception: " << e.what();
+            qCWarning(libreCelikHealth) << "Cannot read certificates on: " << cardReader << ". Exception: " << e.what();
         }
     });
 }
@@ -84,8 +82,7 @@ void HealthReader::requestPINTriesLeft()
             auto result = card->getPINTriesLeft();
             emit pinTriesLeftRead(result.retriesLeft, result.blocked);
         } catch (const std::exception& e) {
-            qCWarning(libreCelikHealth) << "Cannot get PIN tries on: " << cardReader
-                                        << ". Exception: " << e.what();
+            qCWarning(libreCelikHealth) << "Cannot get PIN tries on: " << cardReader << ". Exception: " << e.what();
             emit pinTriesLeftRead(-1, false);
         }
     });
@@ -115,9 +112,9 @@ void HealthReader::requestChangePIN(const QString& oldPin, const QString& newPin
                 emit pinChangeFailed(result.retriesLeft, result.blocked, msg);
             }
         } catch (const std::exception& e) {
-            qCWarning(libreCelikHealth) << "PIN change failed on: " << cardReader
-                                        << ". Exception: " << e.what();
-            emit pinChangeFailed(-1, false, qtTrId("lc-eidreader-pin-change-exception").arg(QString::fromStdString(e.what())));
+            qCWarning(libreCelikHealth) << "PIN change failed on: " << cardReader << ". Exception: " << e.what();
+            emit pinChangeFailed(-1, false,
+                                 qtTrId("lc-eidreader-pin-change-exception").arg(QString::fromStdString(e.what())));
         }
     });
 }
@@ -132,12 +129,13 @@ std::unique_ptr<healthcard::HealthCard> HealthReader::initHealthCard()
         } catch (std::runtime_error& re) {
             if (attempt < 2) {
                 for (int i = 0; i < 5; i++) {
-                    if (stopRequested.load()) return nullptr;
+                    if (stopRequested.load())
+                        return nullptr;
                     std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 }
             } else {
-                qCWarning(libreCelikHealth) << "Cannot init health card on reader: " << cardReader
-                                            << ". Exception: " << re.what();
+                qCWarning(libreCelikHealth)
+                    << "Cannot init health card on reader: " << cardReader << ". Exception: " << re.what();
             }
         }
     }

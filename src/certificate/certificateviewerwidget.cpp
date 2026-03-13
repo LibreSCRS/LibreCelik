@@ -11,10 +11,8 @@
 
 #include <QLineEdit>
 
-CertificateViewerWidget::CertificateViewerWidget(X509* cert, X509_STORE* store,
-                                                   QWidget* parent)
-    : QWidget(parent)
-    , ui(new Ui::CertificateViewerWidget)
+CertificateViewerWidget::CertificateViewerWidget(X509* cert, X509_STORE* store, QWidget* parent)
+    : QWidget(parent), ui(new Ui::CertificateViewerWidget)
 {
     ui->setupUi(this);
 
@@ -29,8 +27,8 @@ CertificateViewerWidget::CertificateViewerWidget(X509* cert, X509_STORE* store,
     ui->detailsTreeView->expandAll();
     ui->detailsTreeView->resizeColumnToContents(0);
 
-    connect(ui->detailsTreeView->selectionModel(), &QItemSelectionModel::selectionChanged,
-            this, &CertificateViewerWidget::onDetailsSelectionChanged);
+    connect(ui->detailsTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this,
+            &CertificateViewerWidget::onDetailsSelectionChanged);
 
     // Certification Path tab
     if (store) {
@@ -39,8 +37,8 @@ CertificateViewerWidget::CertificateViewerWidget(X509* cert, X509_STORE* store,
         ui->certPathTreeView->expandAll();
         ui->certPathTreeView->resizeColumnToContents(0);
 
-        connect(ui->certPathTreeView->selectionModel(), &QItemSelectionModel::selectionChanged,
-                this, &CertificateViewerWidget::onCertPathSelectionChanged);
+        connect(ui->certPathTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this,
+                &CertificateViewerWidget::onCertPathSelectionChanged);
 
         // Select the leaf node (deepest child) and populate summary
         QModelIndex idx = hierarchyModel->index(0, 0);
@@ -171,7 +169,7 @@ QString CertificateViewerWidget::keyUsageString(X509* cert)
 }
 
 void CertificateViewerWidget::onDetailsSelectionChanged(const QItemSelection& selected,
-                                                          const QItemSelection& /*deselected*/)
+                                                        const QItemSelection& /*deselected*/)
 {
     if (selected.indexes().isEmpty()) {
         ui->detailsValueEdit->clear();
@@ -186,7 +184,7 @@ void CertificateViewerWidget::onDetailsSelectionChanged(const QItemSelection& se
 }
 
 void CertificateViewerWidget::onCertPathSelectionChanged(const QItemSelection& selected,
-                                                           const QItemSelection& /*deselected*/)
+                                                         const QItemSelection& /*deselected*/)
 {
     if (selected.indexes().isEmpty()) {
         ui->certPathCNEdit->clear();

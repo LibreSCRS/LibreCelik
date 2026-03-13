@@ -13,9 +13,9 @@
 #include <QtCore/qglobal.h>
 // qttranslation.h was introduced in Qt 6.5; use QCoreApplication as fallback.
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
-#  include <QtCore/qttranslation.h>
+#include <QtCore/qttranslation.h>
 #else
-#  include <QtCore/QCoreApplication>
+#include <QtCore/QCoreApplication>
 #endif
 
 // QT_TRID_NOOP(id) expands to the bare string literal `id`, so every statement
@@ -27,11 +27,14 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
 [[maybe_unused]] static void _translationsCatalog()
 {
     // --- main window ---
-    //% "<b>LibreCelik</b> :: Version %1 :: <a href=\"https://www.gnu.org/licenses/gpl-3.0.html\">GPL-3.0-or-later</a> :: <a href=\"https://github.com/LibreSCRS/LibreCelik\">github.com/LibreSCRS/LibreCelik</a>"
+    //% "<b>LibreCelik</b> :: Version %1 :: <a href=\"https://www.gnu.org/licenses/gpl-3.0.html\">GPL-3.0-or-later</a>
+    //:: <a href=\"https://github.com/LibreSCRS/LibreCelik\">github.com/LibreSCRS/LibreCelik</a>"
     QT_TRID_NOOP("lc-main-about-librecelik");
     //% "Card in reader is not supported."
     QT_TRID_NOOP("lc-reader-unsupported-card");
-    //% "<b>LibreMiddleware</b> :: Version %1 :: <a href=\"https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html\">LGPL-2.1-or-later</a> :: <a href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a>"
+    //% "<b>LibreMiddleware</b> :: Version %1 :: <a
+    // href=\"https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html\">LGPL-2.1-or-later</a> :: <a
+    // href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a>"
     QT_TRID_NOOP("lc-main-about-libremiddleware");
 
     // --- generic ---

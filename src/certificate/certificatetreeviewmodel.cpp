@@ -7,10 +7,8 @@
 #include <QFont>
 
 CertificateTreeViewModel::CertificateTreeViewModel(QObject* parent)
-    : QAbstractItemModel(parent)
-    , rootItem(std::make_unique<CertificateInfoItem>())
-{
-}
+    : QAbstractItemModel(parent), rootItem(std::make_unique<CertificateInfoItem>())
+{}
 
 CertificateTreeViewModel::~CertificateTreeViewModel() = default;
 
@@ -49,8 +47,10 @@ QVariant CertificateTreeViewModel::headerData(int section, Qt::Orientation orien
 {
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
         switch (section) {
-        case 0: return qtTrId("lc-cert-tree-field");
-        case 1: return qtTrId("lc-cert-tree-value");
+        case 0:
+            return qtTrId("lc-cert-tree-field");
+        case 1:
+            return qtTrId("lc-cert-tree-value");
         }
     }
     return {};

@@ -16,7 +16,7 @@ class Pks : public Document
 {
     Q_OBJECT
 public:
-    explicit Pks(std::string reader, QWidget *parent = nullptr);
+    explicit Pks(std::string reader, QWidget* parent = nullptr);
     ~Pks();
 
 private slots:

@@ -10,10 +10,10 @@ class Document : public QWidget
 public:
     virtual ~Document() = default;
 
-    static Document* CreateDocument(const std::string &reader, QWidget* parent = nullptr);
+    static Document* CreateDocument(const std::string& reader, QWidget* parent = nullptr);
 
 protected:
-    Document(QWidget *parent = nullptr);
+    Document(QWidget* parent = nullptr);
 };
 
 #endif // DOCUMENT_H

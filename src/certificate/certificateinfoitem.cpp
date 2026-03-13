@@ -3,26 +3,14 @@
 
 #include "certificateinfoitem.h"
 
-CertificateInfoItem::CertificateInfoItem(const QString& label,
-                                         const QString& value,
-                                         const bool critical,
+CertificateInfoItem::CertificateInfoItem(const QString& label, const QString& value, const bool critical,
                                          CertificateInfoItem* parent)
-    : label(label)
-    , value(value)
-    , critical(critical)
-    , parent(parent)
-{
-}
+    : label(label), value(value), critical(critical), parent(parent)
+{}
 
-CertificateInfoItem::CertificateInfoItem(const QString& label,
-                                         const QString& value,
-                                         CertificateInfoItem* parent)
-    : label(label)
-    , value(value)
-    , critical(false)
-    , parent(parent)
-{
-}
+CertificateInfoItem::CertificateInfoItem(const QString& label, const QString& value, CertificateInfoItem* parent)
+    : label(label), value(value), critical(false), parent(parent)
+{}
 
 CertificateInfoItem::~CertificateInfoItem() = default;
 
@@ -51,9 +39,12 @@ int CertificateInfoItem::columnCount() const
 QVariant CertificateInfoItem::data(int column) const
 {
     switch (column) {
-    case 0: return label;
-    case 1: return value;
-    default: return {};
+    case 0:
+        return label;
+    case 1:
+        return value;
+    default:
+        return {};
     }
 }
 

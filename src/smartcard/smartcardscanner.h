@@ -13,7 +13,7 @@ class SmartCardScanner : public QObject
 {
     Q_OBJECT
 public:
-    explicit SmartCardScanner(QObject *parent = nullptr);
+    explicit SmartCardScanner(QObject* parent = nullptr);
 
 public slots:
     void doWork();

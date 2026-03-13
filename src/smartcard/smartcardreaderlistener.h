@@ -22,10 +22,10 @@ signals:
     void smartCardReaderEventOccured(SmartCardEvent sce);
 
 private:
-    SmartCardReaderListener(QObject *parent = nullptr);
+    SmartCardReaderListener(QObject* parent = nullptr);
     ~SmartCardReaderListener();
-    SmartCardReaderListener( const SmartCardReaderListener& ) = delete;
-    SmartCardReaderListener& operator=( const SmartCardReaderListener& ) = delete;
+    SmartCardReaderListener(const SmartCardReaderListener&) = delete;
+    SmartCardReaderListener& operator=(const SmartCardReaderListener&) = delete;
 
 private:
     QThread* scannerThread;

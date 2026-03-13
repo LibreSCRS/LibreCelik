@@ -8,9 +8,9 @@
 #include <healthcard/healthcard.h>
 #include <pkscard/pkscard.h>
 
-Document::Document(QWidget *parent) : QWidget (parent) {}
+Document::Document(QWidget* parent) : QWidget(parent) {}
 
-Document* Document::CreateDocument(const std::string& reader, QWidget *parent)
+Document* Document::CreateDocument(const std::string& reader, QWidget* parent)
 {
     // Lightweight probe — checks ATR / AID without opening a full session
     if (eidcard::EIdCard::probe(reader))

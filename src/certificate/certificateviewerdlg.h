@@ -19,16 +19,16 @@ class CertificateViewerDlg : public QDialog
 {
     Q_OBJECT
 public:
-    explicit CertificateViewerDlg(const eidcard::CertificateList& certs,
-                                   const std::string& certFolderPath,
-                                   QWidget* parent = nullptr);
+    explicit CertificateViewerDlg(const eidcard::CertificateList& certs, const std::string& certFolderPath,
+                                  QWidget* parent = nullptr);
     ~CertificateViewerDlg();
 
 private:
     void buildStore(const std::string& certFolderPath);
     void buildUI(const eidcard::CertificateList& certs);
 
-    struct ParsedCert {
+    struct ParsedCert
+    {
         X509* x509 = nullptr;
         QString label;
     };

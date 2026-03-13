@@ -22,7 +22,7 @@ class EId : public Document
 {
     Q_OBJECT
 public:
-    explicit EId(std::string reader, QWidget *parent = nullptr);
+    explicit EId(std::string reader, QWidget* parent = nullptr);
     ~EId();
 
 private slots:
@@ -46,7 +46,7 @@ private:
     QString assemblePlaceOfBirth(const eidcard::FixedPersonalData& fpd) const;
 
 private:
-    Ui::EId *ui;
+    Ui::EId* ui;
 
     eidcard::CardType cardType = eidcard::CardType::Unknown;
     eidcard::FixedPersonalData fixedPersonalData;

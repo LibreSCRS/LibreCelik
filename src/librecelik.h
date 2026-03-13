@@ -9,7 +9,9 @@
 #include <QTranslator>
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class LibreCelik; }
+namespace Ui {
+class LibreCelik;
+}
 QT_END_NAMESPACE
 
 class SmartCardEvent;
@@ -17,9 +19,9 @@ class SmartCardEvent;
 class LibreCelik : public QMainWindow
 {
     Q_OBJECT
-    
+
 public:
-    LibreCelik(QWidget *parent = nullptr);
+    LibreCelik(QWidget* parent = nullptr);
     ~LibreCelik();
 
 protected:
@@ -38,7 +40,7 @@ private:
     void updateWelcomeChips();
 
 private:
-    Ui::LibreCelik *ui;
+    Ui::LibreCelik* ui;
 
     using DocumentReaders = std::map<std::string, Document*>;
     DocumentReaders documentReaders;

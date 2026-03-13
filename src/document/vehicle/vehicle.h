@@ -19,7 +19,7 @@ class Vehicle : public Document
 {
     Q_OBJECT
 public:
-    explicit Vehicle(std::string reader, QWidget *parent = nullptr);
+    explicit Vehicle(std::string reader, QWidget* parent = nullptr);
     ~Vehicle();
 
 private slots:
@@ -27,7 +27,7 @@ private slots:
     void printDocument();
 
 private:
-    Ui::Vehicle *ui;
+    Ui::Vehicle* ui;
 
     vehiclecard::VehicleDocumentData vehicleData;
 

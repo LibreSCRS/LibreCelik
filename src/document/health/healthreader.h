@@ -20,7 +20,7 @@ class HealthReader : public QObject
 {
     Q_OBJECT
 public:
-    HealthReader(const std::string& cardReader, QObject *parent = nullptr);
+    HealthReader(const std::string& cardReader, QObject* parent = nullptr);
     ~HealthReader();
 
     void requestData();

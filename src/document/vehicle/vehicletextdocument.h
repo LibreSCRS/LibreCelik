@@ -14,8 +14,7 @@ class VehicleTextDocument : public TextDocument
 
 public:
     VehicleTextDocument(const vehiclecard::VehicleDocumentData& vehicleData,
-                        QString documentPath = ":/html/vehiclecard.html",
-                        QString cssPath = ":/html/vehiclecard.css");
+                        QString documentPath = ":/html/vehiclecard.html", QString cssPath = ":/html/vehiclecard.css");
 
 private:
     void translateDocumentData(QString& data) const;

@@ -14,9 +14,7 @@
 #include "config.h"
 #include "ui_health.h"
 
-Health::Health(std::string reader, QWidget *parent)
-    : Document(parent)
-    , ui(new Ui::Health)
+Health::Health(std::string reader, QWidget* parent) : Document(parent), ui(new Ui::Health)
 {
     ui->setupUi(this);
     ui->healthCardSection->setTitle(qtTrId("lc-health-title"));
@@ -43,19 +41,18 @@ Health::Health(std::string reader, QWidget *parent)
     connect(healthReader.get(), &HealthReader::pinTriesLeftRead, tokenSection, &TokenSection::setPINStatus);
     connect(tokenSection, &TokenSection::changePINRequested, this, &Health::openChangePinDlg);
 
-    connect(healthReader.get(), &HealthReader::readingStarted, [this](){
-        printButton->setEnabled(false);
-    });
-    connect(healthReader.get(), &HealthReader::readingFinished, [this](){
-        printButton->setEnabled(true);
-    });
+    connect(healthReader.get(), &HealthReader::readingStarted, [this]() { printButton->setEnabled(false); });
+    connect(healthReader.get(), &HealthReader::readingFinished, [this]() { printButton->setEnabled(true); });
     connect(printButton, &QPushButton::clicked, this, &Health::printDocument);
 
     healthReader->requestData();
-    connect(healthReader.get(), &HealthReader::readingFinished, this, [this]() {
-        healthReader->requestCertificates();
-        healthReader->requestPINTriesLeft();
-    }, Qt::SingleShotConnection);
+    connect(
+        healthReader.get(), &HealthReader::readingFinished, this,
+        [this]() {
+            healthReader->requestCertificates();
+            healthReader->requestPINTriesLeft();
+        },
+        Qt::SingleShotConnection);
 }
 
 Health::~Health()
@@ -120,14 +117,10 @@ void Health::healthDataReceived(const healthcard::HealthDocumentData& data)
 void Health::openChangePinDlg()
 {
     auto dlg = std::make_unique<ChangePinDlg>(this);
-    connect(dlg.get(), &ChangePinDlg::pinChangeRequested,
-            healthReader.get(), &HealthReader::requestChangePIN);
-    connect(healthReader.get(), &HealthReader::pinTriesLeftRead,
-            dlg.get(), &ChangePinDlg::onPinTriesLeftRead);
-    connect(healthReader.get(), &HealthReader::pinChangeSuccess,
-            dlg.get(), &ChangePinDlg::onPinChangeSuccess);
-    connect(healthReader.get(), &HealthReader::pinChangeFailed,
-            dlg.get(), &ChangePinDlg::onPinChangeFailed);
+    connect(dlg.get(), &ChangePinDlg::pinChangeRequested, healthReader.get(), &HealthReader::requestChangePIN);
+    connect(healthReader.get(), &HealthReader::pinTriesLeftRead, dlg.get(), &ChangePinDlg::onPinTriesLeftRead);
+    connect(healthReader.get(), &HealthReader::pinChangeSuccess, dlg.get(), &ChangePinDlg::onPinChangeSuccess);
+    connect(healthReader.get(), &HealthReader::pinChangeFailed, dlg.get(), &ChangePinDlg::onPinChangeFailed);
     healthReader->requestPINTriesLeft();
     dlg->exec();
 }

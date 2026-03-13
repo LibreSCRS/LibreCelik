@@ -14,9 +14,7 @@
 #include <QSettings>
 #include <QTimer>
 
-LibreCelik::LibreCelik(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::LibreCelik)
+LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreCelik)
 {
     qCDebug(libreSCRSGeneral, "Setting up GUI");
 
@@ -29,7 +27,7 @@ LibreCelik::LibreCelik(QWidget *parent)
     if (!loadLanguage(locale)) {
         locale.clear();
         auto langs = QLocale::system().uiLanguages();
-        for (const auto &l : std::as_const(langs)) {
+        for (const auto& l : std::as_const(langs)) {
             if (loadLanguage(QLocale(l).name())) {
                 locale = QLocale(l).name();
                 break;
@@ -46,8 +44,8 @@ LibreCelik::LibreCelik(QWidget *parent)
 
     ui->stackedWidget->setCurrentIndex(0);
 
-    connect(ui->readerComboBox, &QComboBox::currentIndexChanged,
-            ui->readerStackedWidget, &QStackedWidget::setCurrentIndex);
+    connect(ui->readerComboBox, &QComboBox::currentIndexChanged, ui->readerStackedWidget,
+            &QStackedWidget::setCurrentIndex);
 
     ui->statusbar->hide();
     ui->menubar->hide();
@@ -61,9 +59,9 @@ LibreCelik::LibreCelik(QWidget *parent)
 
     // Build the language menu and set the button text to match the loaded locale.
     {
-        auto *langMenu = new QMenu(ui->languageButton);
-        auto *enAction = langMenu->addAction("English");
-        auto *srAction = langMenu->addAction("Српски");
+        auto* langMenu = new QMenu(ui->languageButton);
+        auto* enAction = langMenu->addAction("English");
+        auto* srAction = langMenu->addAction("Српски");
         ui->languageButton->setMenu(langMenu);
         connect(enAction, &QAction::triggered, this, [this]() { onLanguageChanged(0); });
         connect(srAction, &QAction::triggered, this, [this]() { onLanguageChanged(1); });
@@ -73,18 +71,17 @@ LibreCelik::LibreCelik(QWidget *parent)
     updateAboutText();
     updateWelcomeChips();
 
-    connect(&SmartCardReaderListener::instance(), &SmartCardReaderListener::smartCardReaderEventOccured, this, &LibreCelik::onCardEventReceived);
-    connect(&SmartCardReaderListener::instance(), &SmartCardReaderListener::smartCardReaderEnumerationChanged, this, &LibreCelik::onSmartCardReaderEnumerationChanged);
+    connect(&SmartCardReaderListener::instance(), &SmartCardReaderListener::smartCardReaderEventOccured, this,
+            &LibreCelik::onCardEventReceived);
+    connect(&SmartCardReaderListener::instance(), &SmartCardReaderListener::smartCardReaderEnumerationChanged, this,
+            &LibreCelik::onSmartCardReaderEnumerationChanged);
 }
 
 void LibreCelik::updateAboutText()
 {
-    ui->aboutLabel->setText(
-        QString("<br><br>") +
-        qtTrId("lc-main-about-librecelik").arg(LIBRECELIK_VERSION) +
-        QString("<br>") +
-        qtTrId("lc-main-about-libremiddleware").
-                                arg(LIBRECELIK_MIDDLEWARE_VERSION));
+    ui->aboutLabel->setText(QString("<br><br>") + qtTrId("lc-main-about-librecelik").arg(LIBRECELIK_VERSION) +
+                            QString("<br>") +
+                            qtTrId("lc-main-about-libremiddleware").arg(LIBRECELIK_MIDDLEWARE_VERSION));
 }
 
 void LibreCelik::updateWelcomeChips()
@@ -132,13 +129,12 @@ void LibreCelik::changeEvent(QEvent* event)
 
 void LibreCelik::onCardEventReceived(const SmartCardEvent& sce)
 {
-    qCDebug(libreSCRSGeneral) << "SmartCardEvent: " << sce.eventType << " received on reader:  " << QString::fromStdString(sce.readerName);
-    if (sce.eventType == SmartCardEvent::CardInserted)
-    {
+    qCDebug(libreSCRSGeneral) << "SmartCardEvent: " << sce.eventType
+                              << " received on reader:  " << QString::fromStdString(sce.readerName);
+    if (sce.eventType == SmartCardEvent::CardInserted) {
         addNewReader(sce.readerName);
     }
-    if (sce.eventType == SmartCardEvent::CardRemoved)
-    {
+    if (sce.eventType == SmartCardEvent::CardRemoved) {
         removeReader(sce.readerName);
     }
 }
@@ -146,7 +142,7 @@ void LibreCelik::onCardEventReceived(const SmartCardEvent& sce)
 void LibreCelik::onSmartCardReaderEnumerationChanged(const QStringList& scrNames)
 {
     std::vector<std::string> readers;
-    for(auto const& reader: documentReaders)
+    for (auto const& reader : documentReaders)
         readers.push_back(reader.first);
 
     std::vector<std::string> scrNamesStd;
@@ -157,9 +153,9 @@ void LibreCelik::onSmartCardReaderEnumerationChanged(const QStringList& scrNames
 
     // Remove unplugged readers
     std::vector<std::string> toRemove;
-    std::set_difference(std::begin(readers), std::end(readers), std::begin(scrNamesStd), std::end(scrNamesStd), std::inserter(toRemove, std::begin(toRemove)));
-    for (const auto& scrName : toRemove)
-    {
+    std::set_difference(std::begin(readers), std::end(readers), std::begin(scrNamesStd), std::end(scrNamesStd),
+                        std::inserter(toRemove, std::begin(toRemove)));
+    for (const auto& scrName : toRemove) {
         removeReader(scrName);
     }
 }
@@ -176,12 +172,9 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
     }
 
     Document* document = Document::CreateDocument(reader, this);
-    if (!document)
-    {
+    if (!document) {
         if (retryCount < 2) {
-            QTimer::singleShot(300, this, [this, reader, retryCount]() {
-                addNewReader(reader, retryCount + 1);
-            });
+            QTimer::singleShot(300, this, [this, reader, retryCount]() { addNewReader(reader, retryCount + 1); });
         } else {
             ui->statusbar->show();
             ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card"));

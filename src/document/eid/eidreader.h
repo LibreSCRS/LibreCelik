@@ -20,10 +20,13 @@ class EIdReader : public QObject
 {
     Q_OBJECT
 public:
-    EIdReader(const std::string& cardReader, QObject *parent = nullptr);
+    EIdReader(const std::string& cardReader, QObject* parent = nullptr);
     ~EIdReader();
 
-    const std::string& getReaderName() const { return cardReader; }
+    const std::string& getReaderName() const
+    {
+        return cardReader;
+    }
 
     void requestData();
     void requestPINTriesLeft();

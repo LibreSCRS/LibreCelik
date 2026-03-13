@@ -18,9 +18,8 @@ class PrintManager
 public:
     PrintManager() = delete;
 
-
-    template<typename T>
-    requires Printable<T>
+    template <typename T>
+        requires Printable<T>
     static void printDocument(const T& document, QString dialogTitle)
     {
         QPrinter printer;

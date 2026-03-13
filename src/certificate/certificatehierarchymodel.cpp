@@ -10,8 +10,7 @@
 
 #include <QIcon>
 
-CertificateHierarchyModel::CertificateHierarchyModel(X509* cert, X509_STORE* store,
-                                                       QObject* parent)
+CertificateHierarchyModel::CertificateHierarchyModel(X509* cert, X509_STORE* store, QObject* parent)
     : CertificateTreeViewModel(parent)
 {
     if (cert && store)
@@ -133,10 +132,10 @@ QString CertificateHierarchyModel::translateVerificationResult(int error)
         return qtTrId("lc-cert-verify-leaf-fail");
     case X509_V_ERR_CERT_REVOKED:
         return qtTrId("lc-cert-verify-revoked");
-    default:
-    {
+    default: {
         verificationError = X509_V_OK;
-        qCDebug(libreCelikCertificates) << "Info cert error: " << QString::fromUtf8(X509_verify_cert_error_string(error));
+        qCDebug(libreCelikCertificates) << "Info cert error: "
+                                        << QString::fromUtf8(X509_verify_cert_error_string(error));
         return qtTrId("lc-cert-verify-valid");
     }
     }

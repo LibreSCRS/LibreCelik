@@ -5,8 +5,7 @@
 #include <QDate>
 #include "vehicletextdocument.h"
 
-VehicleTextDocument::VehicleTextDocument(const vehiclecard::VehicleDocumentData& vehicleData,
-                                         QString documentPath,
+VehicleTextDocument::VehicleTextDocument(const vehiclecard::VehicleDocumentData& vehicleData, QString documentPath,
                                          QString cssPath)
 {
     auto data = loadFile(documentPath);

@@ -79,7 +79,6 @@ void EId::repositionAddressSection()
 
     // Temporarily move address into the fields column if not already there, so the
     // layout can compute the combined height in one consistent sizeHint() call.
-    bool wasInColumn = m_addressInColumn;
     if (!m_addressInColumn) {
         ui->verticalLayout_citizen->removeWidget(ui->addressSection);
         fieldsLayout->insertWidget(fieldsLayout->count() - 1, ui->addressSection);
@@ -95,6 +94,10 @@ void EId::repositionAddressSection()
         ui->verticalLayout_citizen->addWidget(ui->addressSection);
         m_addressInColumn = false;
     }
+
+    // When address is below the photo row, center the remaining fields vertically
+    // next to the photo instead of packing them at the top.
+    fieldsLayout->setAlignment(m_addressInColumn ? Qt::Alignment() : Qt::AlignVCenter);
 }
 
 void EId::resizeEvent(QResizeEvent* event)

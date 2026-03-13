@@ -86,7 +86,7 @@ void EId::repositionAddressSection()
     }
 
     fieldsLayout->invalidate();
-    bool fits = (fieldsLayout->sizeHint().height() <= photoMaxHeight);
+    bool fits = (fieldsLayout->sizeHint().height() <= photoMaxHeight + 20);
 
     if (fits) {
         m_addressInColumn = true;

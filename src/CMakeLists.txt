@@ -46,19 +46,8 @@ set(PROJECT_SOURCES
         smartcard/smartcardevent.h
         smartcard/smartcardreaderlistener.h
         smartcard/smartcardreaderlistener.cpp
-        document/document.h
-        document/document.cpp
-        document/textdocument.h
-        document/textdocument.cpp
         document/tokensection.h
         document/tokensection.cpp
-        document/eid/eidreader.h
-        document/eid/eidreader.cpp
-        document/eid/eidtextdocument.cpp
-        document/eid/eidtextdocument.h
-        document/eid/eid.h
-        document/eid/eid.cpp
-        document/eid/eid.ui
         document/eid/changepindlg.h
         document/eid/changepindlg.cpp
         certificate/certificateinfoitem.h
@@ -74,27 +63,14 @@ set(PROJECT_SOURCES
         certificate/certificateviewerwidget.ui
         certificate/certificateviewerdlg.h
         certificate/certificateviewerdlg.cpp
-        document/vehicle/vehiclereader.h
-        document/vehicle/vehiclereader.cpp
-        document/vehicle/vehicletextdocument.h
-        document/vehicle/vehicletextdocument.cpp
-        document/vehicle/vehicle.h
-        document/vehicle/vehicle.cpp
-        document/vehicle/vehicle.ui
-        document/health/healthreader.h
-        document/health/healthreader.cpp
-        document/health/healthtextdocument.h
-        document/health/healthtextdocument.cpp
-        document/health/health.h
-        document/health/health.cpp
-        document/health/health.ui
-        document/pks/pksreader.h
-        document/pks/pksreader.cpp
-        document/pks/pks.h
-        document/pks/pks.cpp
         utils/collapsiblesection.h
         utils/collapsiblesection.cpp
         utils/translations_catalog.cpp
+        plugin/cardwidgetplugin.h
+        plugin/cardwidgetpluginregistry.h
+        plugin/cardwidgetpluginregistry.cpp
+        asynccardreader.h
+        asynccardreader.cpp
 )
 
 set(RESOURSE_SOURCES
@@ -105,6 +81,8 @@ set(RESOURSE_SOURCES
 )
 
 set_source_files_properties(${APP_ICON_MACOS} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+
+add_subdirectory(document/printing)
 
 qt_add_executable(${PROJECT_NAME}
     MANUAL_FINALIZATION
@@ -136,7 +114,7 @@ qt_add_resources(${PROJECT_NAME} "certificates_res"
     FILES ${LIBRECELIK_CERT_FILES}
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::PrintSupport EIdCard VehicleCard HealthCard PKSCard PCSC::PCSC UUID::UUID)
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::PrintSupport LibreCelikPrinting CardPlugin SmartCard OpenSSL_Crypto PCSC::PCSC UUID::UUID)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     ${BUNDLE_ID_OPTION}

@@ -3,16 +3,22 @@
 
 #include "librecelik.h"
 #include "config.h"
-#include "utils/libreceliklog.h"
+#include "document/eid/changepindlg.h"
+#include "document/tokensection.h"
 #include "smartcard/smartcardreaderlistener.h"
 #include "ui_librecelik.h"
+#include "utils/libreceliklog.h"
+
+#include <smartcard/pcsc_connection.h>
 
 #include <QApplication>
 #include <QEvent>
 #include <QLocale>
 #include <QMenu>
 #include <QSettings>
+#include <QSpacerItem>
 #include <QTimer>
+#include <QVBoxLayout>
 
 LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreCelik)
 {
@@ -41,6 +47,12 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
 
     ui->setupUi(this);
     uiReady = true;
+
+    // Load middleware card plugins
+    middlewarePluginRegistry.loadPluginsFromDirectory(LIBREMIDDLEWARE_PLUGIN_DIR);
+
+    // Load GUI widget plugins
+    guiPluginRegistry.loadPluginsFromDirectory(LIBRECELIK_GUI_PLUGIN_DIR);
 
     ui->stackedWidget->setCurrentIndex(0);
 
@@ -142,8 +154,8 @@ void LibreCelik::onCardEventReceived(const SmartCardEvent& sce)
 void LibreCelik::onSmartCardReaderEnumerationChanged(const QStringList& scrNames)
 {
     std::vector<std::string> readers;
-    for (auto const& reader : documentReaders)
-        readers.push_back(reader.first);
+    for (const auto& [name, _] : activeReaders)
+        readers.push_back(name);
 
     std::vector<std::string> scrNamesStd;
     scrNamesStd.reserve(static_cast<size_t>(scrNames.size()));
@@ -166,13 +178,28 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
         // Fresh card event: defensively remove any stale widget left over from a
         // fast swap where CardRemoved wasn't emitted (no-op if nothing registered).
         removeReader(reader);
-    } else if (documentReaders.count(reader)) {
+    } else if (activeReaders.count(reader)) {
         // Retry timer: a widget was created while this timer was pending — stop.
         return;
     }
 
-    Document* document = Document::CreateDocument(reader, this);
-    if (!document) {
+    std::unique_ptr<smartcard::PCSCConnection> conn;
+    std::vector<uint8_t> atr;
+    try {
+        conn = std::make_unique<smartcard::PCSCConnection>(reader);
+        atr = conn->getATR();
+    } catch (const std::exception&) {
+        if (retryCount < 2) {
+            QTimer::singleShot(300, this, [this, reader, retryCount]() { addNewReader(reader, retryCount + 1); });
+        } else {
+            ui->statusbar->show();
+            ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card"));
+        }
+        return;
+    }
+
+    auto candidates = middlewarePluginRegistry.findAllCandidates(atr, *conn);
+    if (candidates.empty()) {
         if (retryCount < 2) {
             QTimer::singleShot(300, this, [this, reader, retryCount]() { addNewReader(reader, retryCount + 1); });
         } else {
@@ -185,31 +212,98 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
     // A valid card is being added — clear any previous unsupported-card notice.
     ui->statusbar->clearMessage();
 
-    int idx = ui->readerStackedWidget->addWidget(document);
-    ui->readerComboBox->addItem(QString::fromStdString(reader));
-    ui->readerComboBox->setCurrentIndex(idx);
-    ui->readerComboBox->setVisible(ui->readerComboBox->count() > 1);
+    auto* asyncReader = new AsyncCardReader(std::move(candidates), std::move(conn), this);
 
-    documentReaders[reader] = document;
-    ui->stackedWidget->setCurrentIndex(1);
+    connect(asyncReader, &AsyncCardReader::cardDataReady, this,
+            [this, asyncReader, reader](const plugin::CardData& data) {
+                auto* guiPlugin = guiPluginRegistry.findByCardType(QString::fromStdString(data.cardType));
+                if (!guiPlugin) {
+                    ui->statusbar->show();
+                    ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card"));
+                    return;
+                }
+
+                QWidget* topWidget = guiPlugin->createWidget(data, this);
+
+                if (asyncReader->currentPlugin()->supportsPKI()) {
+                    auto* pkiWidget = guiPlugin->createPKIWidget(this);
+                    if (!pkiWidget) {
+                        auto* ts = new TokenSection(LIBRECELIK_CERTIFICATES_DIR, this);
+                        ts->setPINVisible(true);
+                        pkiWidget = ts;
+                    }
+                    connectPKISignals(asyncReader, pkiWidget);
+
+                    auto* container = new QWidget(this);
+                    auto* layout = new QVBoxLayout(container);
+                    layout->setContentsMargins(0, 0, 0, 0);
+                    layout->addWidget(topWidget);
+                    layout->addWidget(pkiWidget);
+                    layout->addItem(new QSpacerItem(20, 0, QSizePolicy::Minimum, QSizePolicy::Expanding));
+                    topWidget = container;
+
+                    asyncReader->requestCertificates();
+                    asyncReader->requestPINTriesLeft();
+                }
+
+                int idx = ui->readerStackedWidget->addWidget(topWidget);
+                ui->readerComboBox->addItem(QString::fromStdString(reader));
+                ui->readerComboBox->setCurrentIndex(idx);
+                ui->readerComboBox->setVisible(ui->readerComboBox->count() > 1);
+
+                activeReaders[reader] = {asyncReader, topWidget};
+                ui->stackedWidget->setCurrentIndex(1);
+            });
+
+    connect(asyncReader, &AsyncCardReader::errorOccurred, this, [this](const QString& msg) {
+        ui->statusbar->show();
+        ui->statusbar->showMessage(msg, 5000);
+    });
+
+    asyncReader->requestData();
 }
 
 void LibreCelik::removeReader(std::string reader)
 {
-    auto it = documentReaders.find(reader);
-    if (it == documentReaders.end())
+    auto it = activeReaders.find(reader);
+    if (it == activeReaders.end())
         return;
 
-    Document* doc = it->second;
-    int idx = ui->readerStackedWidget->indexOf(doc);
+    auto& [asyncReader, widget] = it->second;
+    int idx = ui->readerStackedWidget->indexOf(widget);
     ui->readerComboBox->removeItem(idx);
-    ui->readerStackedWidget->removeWidget(doc);
-    doc->deleteLater();
-    documentReaders.erase(it);
+    ui->readerStackedWidget->removeWidget(widget);
+    widget->deleteLater();
+    asyncReader->deleteLater();
+    activeReaders.erase(it);
 
     ui->readerComboBox->setVisible(ui->readerComboBox->count() > 1);
-    if (documentReaders.empty())
+    if (activeReaders.empty())
         ui->stackedWidget->setCurrentIndex(0);
+}
+
+void LibreCelik::connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget)
+{
+    auto* tokenSection = qobject_cast<TokenSection*>(pkiWidget);
+    if (!tokenSection)
+        return;
+
+    connect(reader, &AsyncCardReader::certificatesReady, tokenSection, &TokenSection::setCertificates);
+    connect(reader, &AsyncCardReader::pinStatusReady, tokenSection, &TokenSection::setPINStatus);
+    connect(tokenSection, &TokenSection::changePINRequested, this, [this, reader]() {
+        auto dlg = std::make_unique<ChangePinDlg>(this);
+        connect(dlg.get(), &ChangePinDlg::pinChangeRequested, reader, &AsyncCardReader::requestChangePIN);
+        connect(reader, &AsyncCardReader::pinStatusReady, dlg.get(), &ChangePinDlg::onPinTriesLeftRead);
+        connect(reader, &AsyncCardReader::pinChangeResult, dlg.get(),
+                [dlg = dlg.get()](bool success, int triesLeft, const QString& errorMessage) {
+                    if (success)
+                        dlg->onPinChangeSuccess();
+                    else
+                        dlg->onPinChangeFailed(triesLeft, triesLeft == 0, errorMessage);
+                });
+        reader->requestPINTriesLeft();
+        dlg->exec();
+    });
 }
 
 LibreCelik::~LibreCelik()

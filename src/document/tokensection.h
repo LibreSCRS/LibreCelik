@@ -5,7 +5,8 @@
 #define TOKENSECTION_H
 
 #include <string>
-#include <eidcard/eidtypes.h>
+#include <vector>
+#include <plugin/card_plugin.h>
 #include "utils/collapsiblesection.h"
 
 class QPushButton;
@@ -21,7 +22,7 @@ public:
     void setPINVisible(bool visible);
 
 public slots:
-    void setCertificates(const eidcard::CertificateList& certList);
+    void setCertificates(const std::vector<plugin::CertificateData>& certList);
     void setPINStatus(int triesLeft, bool blocked);
 
 signals:
@@ -34,7 +35,7 @@ private slots:
 private:
     void updateTreeMinimumHeight();
     std::string certFolderPath;
-    eidcard::CertificateList certificateList;
+    std::vector<plugin::CertificateData> certificateList;
 
     QPushButton* certsButton = nullptr;
     QPushButton* changePinButton = nullptr;

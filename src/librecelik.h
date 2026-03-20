@@ -4,7 +4,11 @@
 #ifndef LIBRECELIK_H
 #define LIBRECELIK_H
 
-#include "document/document.h"
+#include "asynccardreader.h"
+#include "plugin/cardwidgetpluginregistry.h"
+
+#include <plugin/card_plugin_registry.h>
+
 #include <QMainWindow>
 #include <QTranslator>
 
@@ -35,6 +39,7 @@ private slots:
 private:
     void addNewReader(std::string reader, int retryCount = 0);
     void removeReader(std::string reader);
+    void connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget);
     bool loadLanguage(const QString& locale);
     void updateAboutText();
     void updateWelcomeChips();
@@ -42,8 +47,15 @@ private:
 private:
     Ui::LibreCelik* ui;
 
-    using DocumentReaders = std::map<std::string, Document*>;
-    DocumentReaders documentReaders;
+    plugin::CardPluginRegistry middlewarePluginRegistry;
+    CardWidgetPluginRegistry guiPluginRegistry;
+
+    struct ActiveReader
+    {
+        AsyncCardReader* reader = nullptr;
+        QWidget* widget = nullptr;
+    };
+    std::map<std::string, ActiveReader> activeReaders;
 
     QTranslator translator;
     bool uiReady = false;

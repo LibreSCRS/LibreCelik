@@ -5,7 +5,7 @@
 #define CERTIFICATEVIEWERDLG_H
 
 #include <QDialog>
-#include <eidcard/eidtypes.h>
+#include <plugin/card_plugin.h>
 
 #include <openssl/x509.h>
 #include <openssl/x509_vfy.h>
@@ -19,13 +19,13 @@ class CertificateViewerDlg : public QDialog
 {
     Q_OBJECT
 public:
-    explicit CertificateViewerDlg(const eidcard::CertificateList& certs, const std::string& certFolderPath,
+    explicit CertificateViewerDlg(const std::vector<plugin::CertificateData>& certs, const std::string& certFolderPath,
                                   QWidget* parent = nullptr);
     ~CertificateViewerDlg();
 
 private:
     void buildStore(const std::string& certFolderPath);
-    void buildUI(const eidcard::CertificateList& certs);
+    void buildUI(const std::vector<plugin::CertificateData>& certs);
 
     struct ParsedCert
     {

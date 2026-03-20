@@ -16,8 +16,8 @@
 #include <QDir>
 #include <QFile>
 
-CertificateViewerDlg::CertificateViewerDlg(const eidcard::CertificateList& certs, const std::string& certFolderPath,
-                                           QWidget* parent)
+CertificateViewerDlg::CertificateViewerDlg(const std::vector<plugin::CertificateData>& certs,
+                                           const std::string& certFolderPath, QWidget* parent)
     : QDialog(parent)
 {
     setWindowTitle(qtTrId("lc-cert-dialog-title"));
@@ -74,7 +74,7 @@ void CertificateViewerDlg::buildStore(const std::string& certFolderPath)
     }
 }
 
-void CertificateViewerDlg::buildUI(const eidcard::CertificateList& certs)
+void CertificateViewerDlg::buildUI(const std::vector<plugin::CertificateData>& certs)
 {
     auto* layout = new QVBoxLayout(this);
 

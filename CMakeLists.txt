@@ -48,6 +48,10 @@ endif()
 # Add LibreMiddleware's cmake modules to our path (for FindPCSC, FindUUID)
 list(APPEND CMAKE_MODULE_PATH "${libremiddleware_SOURCE_DIR}/cmake")
 
+set(LIBRECELIK_GUI_PLUGIN_DIR "${CMAKE_BINARY_DIR}/gui-plugins" CACHE PATH
+    "Directory where GUI plugin .so files are placed")
+
 add_subdirectory(resources)
 add_subdirectory(src)
+add_subdirectory(plugins)
 add_subdirectory(test)

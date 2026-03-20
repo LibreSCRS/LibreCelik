@@ -182,7 +182,7 @@ void TokenSection::setPINVisible(bool visible)
     tokenPinItem->setHidden(!visible);
 }
 
-void TokenSection::setCertificates(const eidcard::CertificateList& certList)
+void TokenSection::setCertificates(const std::vector<plugin::CertificateData>& certList)
 {
     certificateList = certList;
     certsButton->setEnabled(!certificateList.empty());

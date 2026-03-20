@@ -6,8 +6,8 @@ project(LibreCelikTests)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Core Widgets)
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
+find_package(QT NAMES Qt6 Core Widgets Test)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Test)
 # PCSC is found by LibreMiddleware; UUID is used directly by tests
 find_package(UUID)
 
@@ -29,8 +29,6 @@ set(SOURCE_FILES
     ../src/utils/libreceliklog.h
     ../src/utils/libreceliklog.cpp
     ../src/libreceliktypes.h
-    ../src/document/eid/eidreader.h
-    ../src/document/eid/eidreader.cpp
     ../src/smartcard/smartcardscanner.h
     ../src/smartcard/smartcardscanner.cpp
     ../src/smartcard/smartcardevent.h
@@ -44,16 +42,14 @@ add_executable(
     hello_test.cpp
     configuration_test.cpp
     uuid_test.cpp
-    eidreader_test.cpp
-    eidreader_test.h
     smartcardscanner_test.h
     smartcardscanner_test.cpp
 )
 target_link_libraries(
     ${PROJECT_NAME}
     GTest::gtest_main
+    CardPlugin
     EIdCard
-    VehicleCard
     PCSC::PCSC
     UUID::UUID
     Qt6::Core
@@ -62,3 +58,44 @@ target_link_libraries(
 
 include(GoogleTest)
 gtest_discover_tests(${PROJECT_NAME})
+
+add_subdirectory(mock_widget_plugin)
+
+add_executable(CardWidgetPluginRegistryTests
+    cardwidgetpluginregistry_test.cpp
+)
+target_include_directories(CardWidgetPluginRegistryTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+target_link_libraries(CardWidgetPluginRegistryTests
+    GTest::gtest_main
+    Qt6::Widgets
+    CardPlugin
+)
+target_sources(CardWidgetPluginRegistryTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/plugin/cardwidgetpluginregistry.cpp
+)
+target_compile_definitions(CardWidgetPluginRegistryTests PRIVATE
+    MOCK_WIDGET_PLUGIN_DIR="$<TARGET_FILE_DIR:mock-widget-plugin>"
+)
+set_target_properties(CardWidgetPluginRegistryTests PROPERTIES AUTOMOC ON)
+add_dependencies(CardWidgetPluginRegistryTests mock-widget-plugin)
+gtest_discover_tests(CardWidgetPluginRegistryTests)
+
+add_executable(AsyncCardReaderTests
+    asynccardreader_test.cpp
+    ${CMAKE_SOURCE_DIR}/src/asynccardreader.cpp
+)
+target_include_directories(AsyncCardReaderTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+target_link_libraries(AsyncCardReaderTests
+    GTest::gtest_main
+    CardPlugin
+    SmartCard
+    Qt6::Core
+    Qt6::Widgets
+    Qt6::Test
+)
+set_target_properties(AsyncCardReaderTests PROPERTIES AUTOMOC ON)
+gtest_discover_tests(AsyncCardReaderTests)

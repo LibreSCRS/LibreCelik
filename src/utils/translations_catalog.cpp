@@ -449,6 +449,56 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-vehicle-doc-seats");
     //% "Standing places"
     QT_TRID_NOOP("lc-vehicle-doc-standing-places");
+
+    // eMRTD (Electronic Passport)
+    //% "Authentication Required"
+    QT_TRID_NOOP("lc-emrtd-auth-required");
+    //% "Enter the CAN or MRZ data from your document to authenticate."
+    QT_TRID_NOOP("lc-emrtd-insert-mrz-hint");
+    //% "Authentication Failed"
+    QT_TRID_NOOP("lc-emrtd-auth-failed");
+    //% "Personal Data"
+    QT_TRID_NOOP("lc-emrtd-personal-data");
+    //% "Surname"
+    QT_TRID_NOOP("lc-emrtd-surname");
+    //% "Given Names"
+    QT_TRID_NOOP("lc-emrtd-given-names");
+    //% "Nationality"
+    QT_TRID_NOOP("lc-emrtd-nationality");
+    //% "Date of Birth"
+    QT_TRID_NOOP("lc-emrtd-date-of-birth");
+    //% "Sex"
+    QT_TRID_NOOP("lc-emrtd-sex");
+    //% "Document Data"
+    QT_TRID_NOOP("lc-emrtd-document-data");
+    //% "Document Number"
+    QT_TRID_NOOP("lc-emrtd-doc-number");
+    //% "Document Code"
+    QT_TRID_NOOP("lc-emrtd-doc-code");
+    //% "Issuing State"
+    QT_TRID_NOOP("lc-emrtd-issuing-state");
+    //% "Date of Expiry"
+    QT_TRID_NOOP("lc-emrtd-date-of-expiry");
+    //% "Additional Data"
+    QT_TRID_NOOP("lc-emrtd-additional");
+    //% "Electronic Passport Authentication"
+    QT_TRID_NOOP("lc-emrtd-auth-dlg-title");
+    //% "CAN (Card Access Number)"
+    QT_TRID_NOOP("lc-emrtd-auth-mode-can");
+    //% "MRZ (Machine Readable Zone)"
+    QT_TRID_NOOP("lc-emrtd-auth-mode-mrz");
+    //% "CAN"
+    QT_TRID_NOOP("lc-emrtd-can-label");
+    //% "Document Number"
+    QT_TRID_NOOP("lc-emrtd-mrz-doc-number");
+    //% "Date of Birth (YYMMDD)"
+    QT_TRID_NOOP("lc-emrtd-mrz-dob");
+    //% "Date of Expiry (YYMMDD)"
+    QT_TRID_NOOP("lc-emrtd-mrz-expiry");
+    //% "Authenticate"
+    QT_TRID_NOOP("lc-emrtd-authenticate");
+    //% "Authenticating..."
+    QT_TRID_NOOP("lc-emrtd-authenticating");
 }
 
 QT_WARNING_POP

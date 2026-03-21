@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright hirashix0@proton.me
+
+#ifndef EMRTDWIDGETPLUGIN_H
+#define EMRTDWIDGETPLUGIN_H
+
+#include "plugin/cardwidgetplugin.h"
+
+#include <QObject>
+#include <QtPlugin>
+
+class EMRTDWidgetPlugin : public QObject, public CardWidgetPlugin
+{
+    Q_OBJECT
+    Q_PLUGIN_METADATA(IID "org.librescrs.CardWidgetPlugin/1.0" FILE "emrtd.json")
+    Q_INTERFACES(CardWidgetPlugin)
+
+public:
+    QString cardType() const override
+    {
+        return QStringLiteral("emrtd");
+    }
+    QString displayName() const override
+    {
+        return QStringLiteral("eMRTD / Passport");
+    }
+    QWidget* createWidget(const plugin::CardData& data, QWidget* parent) const override;
+};
+
+#endif // EMRTDWIDGETPLUGIN_H

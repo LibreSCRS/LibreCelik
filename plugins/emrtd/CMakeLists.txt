@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright hirashix0@proton.me
+
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+
+add_library(emrtd-gui-plugin MODULE
+    emrtdwidgetplugin.h
+    emrtdwidgetplugin.cpp
+    emrtdwidget.h
+    emrtdwidget.cpp
+)
+target_include_directories(emrtd-gui-plugin PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+target_link_libraries(emrtd-gui-plugin PRIVATE
+    Qt6::Widgets
+    CardPlugin
+)
+set_target_properties(emrtd-gui-plugin PROPERTIES
+    AUTOMOC ON
+    PREFIX ""
+    LIBRARY_OUTPUT_DIRECTORY "${LIBRECELIK_GUI_PLUGIN_DIR}"
+)

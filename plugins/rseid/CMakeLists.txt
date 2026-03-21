@@ -9,6 +9,8 @@ add_library(rseid-gui-plugin MODULE
     eidwidget.h
     eidwidget.cpp
     eid.ui
+    ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.h
+    ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.cpp
 )
 target_include_directories(rseid-gui-plugin PRIVATE
     ${CMAKE_SOURCE_DIR}/src

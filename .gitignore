@@ -54,3 +54,4 @@ AppDir/
 # macOS DMG packaging
 *.dmg
 
+aqtinstall.log

@@ -5,8 +5,10 @@
 
 #include <smartcard/pcsc_connection.h>
 
+#include <QMap>
 #include <QMetaObject>
 #include <QMetaType>
+#include <QPointer>
 
 AsyncCardReader::AsyncCardReader(std::vector<plugin::CardPlugin*> candidates,
                                  std::unique_ptr<smartcard::PCSCConnection> conn, QObject* parent)
@@ -37,11 +39,13 @@ void AsyncCardReader::requestData()
 
     emit readingStarted();
 
-    futureData = std::async(std::launch::async, [this]() {
+    QPointer<AsyncCardReader> self = this;
+    futureData = std::async(std::launch::async, [this, self]() {
         if (!conn) {
             QMetaObject::invokeMethod(
-                this,
-                [this]() {
+                self,
+                [this, self]() {
+                    if (!self) return;
                     emit errorOccurred(tr("No card connection available"));
                     emit readingFinished();
                 },
@@ -55,8 +59,9 @@ void AsyncCardReader::requestData()
             try {
                 auto data = candidate->readCard(*conn);
                 QMetaObject::invokeMethod(
-                    this,
-                    [this, data = std::move(data), candidate]() {
+                    self,
+                    [this, self, data = std::move(data), candidate]() {
+                        if (!self) return;
                         activePlugin = candidate;
                         emit cardDataReady(data);
                         emit readingFinished();
@@ -70,8 +75,9 @@ void AsyncCardReader::requestData()
 
         // All candidates failed
         QMetaObject::invokeMethod(
-            this,
-            [this]() {
+            self,
+            [this, self]() {
+                if (!self) return;
                 emit errorOccurred(tr("No plugin could read this card."));
                 emit readingFinished();
             },
@@ -177,6 +183,49 @@ void AsyncCardReader::requestVerifyPIN(const QString& pin)
         } catch (const std::exception& e) {
             QMetaObject::invokeMethod(
                 this, [this, msg = QString::fromStdString(e.what())]() { emit errorOccurred(msg); },
+                Qt::QueuedConnection);
+        }
+    });
+}
+
+void AsyncCardReader::requestDataWithCredentials(const QMap<QString, QString>& credentials)
+{
+    if (!activePlugin)
+        return;
+
+    if (futureData.valid())
+        futureData.wait();
+
+    for (auto it = credentials.constBegin(); it != credentials.constEnd(); ++it) {
+        activePlugin->setCredentials(it.key().toStdString(), it.value().toStdString());
+    }
+
+    futureData = {};
+
+    emit readingStarted();
+
+    QPointer<AsyncCardReader> self2 = this;
+    futureData = std::async(std::launch::async, [this, self2]() {
+        if (stopRequested)
+            return;
+        try {
+            auto data = activePlugin->readCard(*conn);
+            QMetaObject::invokeMethod(
+                self2,
+                [this, self2, data = std::move(data)]() {
+                    if (!self2) return;
+                    emit cardDataReady(data);
+                    emit readingFinished();
+                },
+                Qt::QueuedConnection);
+        } catch (const std::exception& e) {
+            QMetaObject::invokeMethod(
+                self2,
+                [this, self2, msg = QString::fromStdString(e.what())]() {
+                    if (!self2) return;
+                    emit errorOccurred(msg);
+                    emit readingFinished();
+                },
                 Qt::QueuedConnection);
         }
     });

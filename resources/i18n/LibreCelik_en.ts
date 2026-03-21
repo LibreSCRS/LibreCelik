@@ -4,11 +4,15 @@
 <context>
     <name></name>
     <message id="lc-main-about-librecelik">
-        <source>&lt;b&gt;LibreCelik&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GPL-3.0-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreCelik&quot;&gt;github.com/LibreSCRS/LibreCelik&lt;/a&gt;</source>
+        <source>&lt;b&gt;LibreCelik&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GPL-3.0-or-later&lt;/a&gt;
+</source>
+        <oldsource>&lt;b&gt;LibreCelik&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GPL-3.0-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreCelik&quot;&gt;github.com/LibreSCRS/LibreCelik&lt;/a&gt;</oldsource>
         <translation>&lt;b&gt;LibreCelik&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GPL-3.0-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreCelik&quot;&gt;github.com/LibreSCRS/LibreCelik&lt;/a&gt;</translation>
     </message>
     <message id="lc-main-about-libremiddleware">
-        <source>&lt;b&gt;LibreMiddleware&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html&quot;&gt;LGPL-2.1-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt;</source>
+        <source>&lt;b&gt;LibreMiddleware&lt;/b&gt; :: Version %1 :: &lt;a
+</source>
+        <oldsource>&lt;b&gt;LibreMiddleware&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html&quot;&gt;LGPL-2.1-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt;</oldsource>
         <translation>&lt;b&gt;LibreMiddleware&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html&quot;&gt;LGPL-2.1-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt;</translation>
     </message>
     <message id="lc-doc-unavailable">
@@ -719,6 +723,62 @@
         <source>Yes</source>
         <translation>Yes</translation>
     </message>
+    <message id="lc-emrtd-auth-required">
+        <source>Authentication Required</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-auth-failed">
+        <source>Authentication Failed</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-personal-data">
+        <source>Personal Data</source>
+        <translation>Personal Data</translation>
+    </message>
+    <message id="lc-emrtd-surname">
+        <source>Surname</source>
+        <translation>Surname</translation>
+    </message>
+    <message id="lc-emrtd-given-names">
+        <source>Given Names</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-nationality">
+        <source>Nationality</source>
+        <translation>Nationality</translation>
+    </message>
+    <message id="lc-emrtd-date-of-birth">
+        <source>Date of Birth</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-sex">
+        <source>Sex</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-document-data">
+        <source>Document Data</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-doc-number">
+        <source>Document Number</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-doc-code">
+        <source>Document Code</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-issuing-state">
+        <source>Issuing State</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-date-of-expiry">
+        <source>Date of Expiry</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-additional">
+        <source>Additional Data</source>
+        <translation></translation>
+    </message>
     <message id="lc-pks-title">
         <source>PKS Qualified Signature</source>
         <translation>PKS Qualified Signature</translation>
@@ -786,6 +846,61 @@
     <message id="lc-print-button">
         <source>Print</source>
         <translation>Print</translation>
+    </message>
+    <message id="lc-emrtd-auth-dlg-title">
+        <source>Electronic Passport Authentication</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-insert-mrz-hint">
+        <source>Enter the CAN or MRZ data from your document to authenticate.</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-auth-mode-can">
+        <source>CAN (Card Access Number)</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-auth-mode-mrz">
+        <source>MRZ (Machine Readable Zone)</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-can-label">
+        <source>CAN</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-mrz-doc-number">
+        <source>Document Number</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-mrz-dob">
+        <source>Date of Birth (YYMMDD)</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-mrz-expiry">
+        <source>Date of Expiry (YYMMDD)</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-authenticate">
+        <source>Authenticate</source>
+        <translation></translation>
+    </message>
+    <message id="lc-emrtd-authenticating">
+        <source>Authenticating...</source>
+        <translation></translation>
+    </message>
+</context>
+<context>
+    <name>AsyncCardReader</name>
+    <message>
+        <source>No card connection available</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>No plugin could read this card.</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>PIN change failed.</source>
+        <translation>PIN change failed.</translation>
     </message>
 </context>
 <context>
@@ -859,7 +974,7 @@
     <name>EId</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Serbian eID</source>
@@ -954,7 +1069,7 @@
     <name>Health</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Personal Data</source>
@@ -1148,7 +1263,7 @@
     <name>Vehicle</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Vehicle data</source>

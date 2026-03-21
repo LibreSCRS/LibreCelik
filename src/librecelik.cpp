@@ -4,7 +4,9 @@
 #include "librecelik.h"
 #include "config.h"
 #include "document/eid/changepindlg.h"
+#include "document/emrtd/emrtdauthdlg.h"
 #include "document/tokensection.h"
+#include "plugin/carddatautils.h"
 #include "smartcard/smartcardreaderlistener.h"
 #include "ui_librecelik.h"
 #include "utils/libreceliklog.h"
@@ -174,6 +176,8 @@ void LibreCelik::onSmartCardReaderEnumerationChanged(const QStringList& scrNames
 
 void LibreCelik::addNewReader(std::string reader, int retryCount)
 {
+    qCDebug(libreSCRSGeneral) << "addNewReader:" << QString::fromStdString(reader) << "retry=" << retryCount
+                               << "activeReaders.count=" << activeReaders.count(reader);
     if (retryCount == 0) {
         // Fresh card event: defensively remove any stale widget left over from a
         // fast swap where CardRemoved wasn't emitted (no-op if nothing registered).
@@ -216,6 +220,11 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
 
     connect(asyncReader, &AsyncCardReader::cardDataReady, this,
             [this, asyncReader, reader](const plugin::CardData& data) {
+                // Phase 2 re-reads (after auth dialog) are handled by the dialog's own lambda.
+                // Skip here if this reader already has a widget AND data is not auth_required.
+                if (activeReaders.count(reader) && !data.findGroup("auth_required"))
+                    return;
+
                 auto* guiPlugin = guiPluginRegistry.findByCardType(QString::fromStdString(data.cardType));
                 if (!guiPlugin) {
                     ui->statusbar->show();
@@ -224,6 +233,52 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                 }
 
                 QWidget* topWidget = guiPlugin->createWidget(data, this);
+
+                // eMRTD two-phase auth: show widget + open auth dialog
+                if (data.findGroup("auth_required")) {
+                    int idx = ui->readerStackedWidget->addWidget(topWidget);
+                    ui->readerComboBox->addItem(QString::fromStdString(reader));
+                    ui->readerComboBox->setCurrentIndex(idx);
+                    ui->readerComboBox->setVisible(ui->readerComboBox->count() > 1);
+                    activeReaders[reader] = {asyncReader, topWidget};
+                    ui->stackedWidget->setCurrentIndex(1);
+
+                    bool paceSupported =
+                        (plugin::getFieldValue(data.findGroup("auth_required"), "pace_supported") == "true");
+                    auto* dlg = new EMRTDAuthDlg(paceSupported, this);
+
+                    connect(dlg, &EMRTDAuthDlg::credentialsEntered, asyncReader,
+                            &AsyncCardReader::requestDataWithCredentials);
+
+                    connect(asyncReader, &AsyncCardReader::cardDataReady, dlg,
+                            [this, dlg, reader, guiPlugin](const plugin::CardData& newData) {
+                                if (newData.findGroup("auth_required"))
+                                    return;
+                                if (newData.findGroup("error")) {
+                                    auto errMsg = plugin::getFieldValue(newData.findGroup("error"), "error");
+                                    dlg->onAuthFailed(errMsg.isEmpty() ? tr("Authentication failed") : errMsg);
+                                    return;
+                                }
+                                dlg->accept();
+                                auto* newWidget = guiPlugin->createWidget(newData, this);
+                                auto it = activeReaders.find(reader);
+                                if (it != activeReaders.end()) {
+                                    auto* oldWidget = it->second.widget;
+                                    int widx = ui->readerStackedWidget->indexOf(oldWidget);
+                                    ui->readerStackedWidget->removeWidget(oldWidget);
+                                    oldWidget->deleteLater();
+                                    ui->readerStackedWidget->insertWidget(widx, newWidget);
+                                    ui->readerStackedWidget->setCurrentIndex(widx);
+                                    it->second.widget = newWidget;
+                                }
+                            });
+
+                    connect(asyncReader, &AsyncCardReader::errorOccurred, dlg, &EMRTDAuthDlg::onAuthFailed);
+
+                    dlg->exec();
+                    delete dlg;
+                    return;
+                }
 
                 if (asyncReader->currentPlugin()->supportsPKI()) {
                     auto* pkiWidget = guiPlugin->createPKIWidget(this);
@@ -273,7 +328,17 @@ void LibreCelik::removeReader(std::string reader)
     int idx = ui->readerStackedWidget->indexOf(widget);
     ui->readerComboBox->removeItem(idx);
     ui->readerStackedWidget->removeWidget(widget);
+    // Close eMRTD auth dialog if open (before disconnecting signals)
+    if (auto* dlg = findChild<EMRTDAuthDlg*>()) {
+        dlg->reject();
+    }
+
     widget->deleteLater();
+    // Disconnect all signals and schedule deletion. The destructor sets
+    // stopRequested and waits for futures, but queued events may already
+    // be in the event loop. deleteLater ensures they are delivered (to a
+    // disconnected object) before destruction.
+    asyncReader->disconnect();
     asyncReader->deleteLater();
     activeReaders.erase(it);
 

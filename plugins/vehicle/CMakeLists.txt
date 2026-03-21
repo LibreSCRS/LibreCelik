@@ -9,6 +9,8 @@ add_library(vehicle-gui-plugin MODULE
     vehiclewidget.h
     vehiclewidget.cpp
     vehicle.ui
+    ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.h
+    ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.cpp
 )
 target_include_directories(vehicle-gui-plugin PRIVATE
     ${CMAKE_SOURCE_DIR}/src

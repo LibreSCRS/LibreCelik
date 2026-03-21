@@ -9,6 +9,8 @@ add_library(health-gui-plugin MODULE
     healthwidget.h
     healthwidget.cpp
     health.ui
+    ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.h
+    ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.cpp
 )
 target_include_directories(health-gui-plugin PRIVATE
     ${CMAKE_SOURCE_DIR}/src

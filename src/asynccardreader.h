@@ -6,6 +6,7 @@
 
 #include <plugin/card_plugin.h>
 
+#include <QMap>
 #include <QObject>
 
 #include <atomic>
@@ -32,6 +33,7 @@ public:
     void requestPINTriesLeft();
     void requestChangePIN(const QString& oldPin, const QString& newPin);
     void requestVerifyPIN(const QString& pin);
+    void requestDataWithCredentials(const QMap<QString, QString>& credentials);
 
     plugin::CardPlugin* currentPlugin() const;
 

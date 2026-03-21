@@ -67,6 +67,10 @@ set(PROJECT_SOURCES
         certificate/certificateviewerdlg.cpp
         utils/collapsiblesection.h
         utils/collapsiblesection.cpp
+        utils/cardheadercard.h
+        utils/cardheadercard.cpp
+        utils/fieldsectionbuilder.h
+        utils/fieldsectionbuilder.cpp
         utils/translations_catalog.cpp
         plugin/cardwidgetplugin.h
         plugin/cardwidgetpluginregistry.h

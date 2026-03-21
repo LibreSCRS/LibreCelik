@@ -100,6 +100,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-eid-tree-pin");
     //% "Serbian eID"
     QT_TRID_NOOP("lc-eid-title-serbian");
+    //% "Serbian eID"
+    QT_TRID_NOOP("lc-eid-title");
     //% "Serbian eID (Foreigner)"
     QT_TRID_NOOP("lc-eid-title-foreigner");
     //% "JMBG"
@@ -114,6 +116,36 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-eid-label-address");
     //% "Address"
     QT_TRID_NOOP("lc-eid-label-address-foreigner");
+    //% "Given Name"
+    QT_TRID_NOOP("lc-eid-label-given-name");
+    //% "Surname"
+    QT_TRID_NOOP("lc-eid-label-surname");
+    //% "Date of Birth"
+    QT_TRID_NOOP("lc-eid-label-date-of-birth");
+    //% "Sex"
+    QT_TRID_NOOP("lc-eid-label-sex");
+    //% "Nationality"
+    QT_TRID_NOOP("lc-eid-label-nationality");
+    //% "Place of Birth"
+    QT_TRID_NOOP("lc-eid-label-place-of-birth");
+    //% "Parent Name"
+    QT_TRID_NOOP("lc-eid-label-parent-name");
+    //% "Date of Address Change"
+    QT_TRID_NOOP("lc-eid-label-address-date");
+    //% "Document Type"
+    QT_TRID_NOOP("lc-eid-label-document-type");
+    //% "Document Serial Number"
+    QT_TRID_NOOP("lc-eid-label-document-serial-number");
+    //% "Document"
+    QT_TRID_NOOP("lc-eid-label-document");
+    //% "Issuing Authority"
+    QT_TRID_NOOP("lc-eid-label-issuing-authority");
+    //% "Document Reg. No."
+    QT_TRID_NOOP("lc-eid-label-doc-reg-no");
+    //% "Issuing Date"
+    QT_TRID_NOOP("lc-eid-label-issuing-date");
+    //% "Expiry Date"
+    QT_TRID_NOOP("lc-eid-label-expiry-date");
     //% "can sign"
     QT_TRID_NOOP("lc-eid-cert-can-sign");
     //% "User PIN"
@@ -320,10 +352,20 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-health-label-insurance-start");
     //% "Yes"
     QT_TRID_NOOP("lc-health-val-yes");
+    //% "No"
+    QT_TRID_NOOP("lc-health-val-no");
 
     // --- PKS card ---
     //% "PKS Qualified Signature"
     QT_TRID_NOOP("lc-pks-title");
+    //% "Qualified Electronic Certificate"
+    QT_TRID_NOOP("lc-pks-header-title");
+    //% "Certificates"
+    QT_TRID_NOOP("lc-pks-cert-count");
+    //% "Certificate"
+    QT_TRID_NOOP("lc-pks-cert-label");
+    //% "Card Type"
+    QT_TRID_NOOP("lc-pks-card-type");
 
     // --- Token section (shared by eID, PKS, Health) ---
     //% "Token"
@@ -479,8 +521,12 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-emrtd-issuing-state");
     //% "Date of Expiry"
     QT_TRID_NOOP("lc-emrtd-date-of-expiry");
+    //% "Personal Number"
+    QT_TRID_NOOP("lc-emrtd-personal-number");
     //% "Additional Data"
     QT_TRID_NOOP("lc-emrtd-additional");
+    //% "Issuing Information"
+    QT_TRID_NOOP("lc-emrtd-issuing-info");
     //% "Electronic Passport Authentication"
     QT_TRID_NOOP("lc-emrtd-auth-dlg-title");
     //% "CAN (Card Access Number)"

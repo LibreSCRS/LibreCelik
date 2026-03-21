@@ -87,6 +87,10 @@
         <source>Status of foreigner</source>
         <translation>Status of foreigner</translation>
     </message>
+    <message id="lc-eid-title">
+        <source>Serbian eID</source>
+        <translation>Serbian eID</translation>
+    </message>
     <message id="lc-eid-label-address-foreigner">
         <source>Address</source>
         <translation>Address</translation>
@@ -154,6 +158,66 @@
     <message id="lc-eid-label-identity-foreigners">
         <source>Identity card for foreigners</source>
         <translation>Identity card for foreigners</translation>
+    </message>
+    <message id="lc-eid-label-given-name">
+        <source>Given Name</source>
+        <translation>Given Name</translation>
+    </message>
+    <message id="lc-eid-label-surname">
+        <source>Surname</source>
+        <translation>Surname</translation>
+    </message>
+    <message id="lc-eid-label-date-of-birth">
+        <source>Date of Birth</source>
+        <translation>Date of Birth</translation>
+    </message>
+    <message id="lc-eid-label-sex">
+        <source>Sex</source>
+        <translation>Sex</translation>
+    </message>
+    <message id="lc-eid-label-nationality">
+        <source>Nationality</source>
+        <translation>Nationality</translation>
+    </message>
+    <message id="lc-eid-label-place-of-birth">
+        <source>Place of Birth</source>
+        <translation>Place of Birth</translation>
+    </message>
+    <message id="lc-eid-label-parent-name">
+        <source>Parent Name</source>
+        <translation>Parent Name</translation>
+    </message>
+    <message id="lc-eid-label-address-date">
+        <source>Date of Address Change</source>
+        <translation>Date of Address Change</translation>
+    </message>
+    <message id="lc-eid-label-document-type">
+        <source>Document Type</source>
+        <translation>Document Type</translation>
+    </message>
+    <message id="lc-eid-label-document-serial-number">
+        <source>Document Serial Number</source>
+        <translation>Document Serial Number</translation>
+    </message>
+    <message id="lc-eid-label-document">
+        <source>Document</source>
+        <translation>Document</translation>
+    </message>
+    <message id="lc-eid-label-issuing-authority">
+        <source>Issuing Authority</source>
+        <translation>Issuing Authority</translation>
+    </message>
+    <message id="lc-eid-label-doc-reg-no">
+        <source>Document Reg. No.</source>
+        <translation>Document Reg. No.</translation>
+    </message>
+    <message id="lc-eid-label-issuing-date">
+        <source>Issuing Date</source>
+        <translation>Issuing Date</translation>
+    </message>
+    <message id="lc-eid-label-expiry-date">
+        <source>Expiry Date</source>
+        <translation>Expiry Date</translation>
     </message>
     <message id="lc-eid-cert-can-sign">
         <source>can sign</source>
@@ -723,13 +787,33 @@
         <source>Yes</source>
         <translation>Yes</translation>
     </message>
+    <message id="lc-health-val-no">
+        <source>No</source>
+        <translation>No</translation>
+    </message>
+    <message id="lc-pks-header-title">
+        <source>Qualified Electronic Certificate</source>
+        <translation>Qualified Electronic Certificate</translation>
+    </message>
+    <message id="lc-pks-cert-count">
+        <source>Certificates</source>
+        <translation>Certificates</translation>
+    </message>
+    <message id="lc-pks-cert-label">
+        <source>Certificate</source>
+        <translation>Certificate</translation>
+    </message>
+    <message id="lc-pks-card-type">
+        <source>Card Type</source>
+        <translation>Card Type</translation>
+    </message>
     <message id="lc-emrtd-auth-required">
         <source>Authentication Required</source>
-        <translation></translation>
+        <translation>Authentication Required</translation>
     </message>
     <message id="lc-emrtd-auth-failed">
         <source>Authentication Failed</source>
-        <translation></translation>
+        <translation>Authentication Failed</translation>
     </message>
     <message id="lc-emrtd-personal-data">
         <source>Personal Data</source>
@@ -741,7 +825,7 @@
     </message>
     <message id="lc-emrtd-given-names">
         <source>Given Names</source>
-        <translation></translation>
+        <translation>Given Names</translation>
     </message>
     <message id="lc-emrtd-nationality">
         <source>Nationality</source>
@@ -749,35 +833,43 @@
     </message>
     <message id="lc-emrtd-date-of-birth">
         <source>Date of Birth</source>
-        <translation></translation>
+        <translation>Date of Birth</translation>
     </message>
     <message id="lc-emrtd-sex">
         <source>Sex</source>
-        <translation></translation>
+        <translation>Sex</translation>
     </message>
     <message id="lc-emrtd-document-data">
         <source>Document Data</source>
-        <translation></translation>
+        <translation>Document Data</translation>
     </message>
     <message id="lc-emrtd-doc-number">
         <source>Document Number</source>
-        <translation></translation>
+        <translation>Document Number</translation>
     </message>
     <message id="lc-emrtd-doc-code">
         <source>Document Code</source>
-        <translation></translation>
+        <translation>Document Code</translation>
     </message>
     <message id="lc-emrtd-issuing-state">
         <source>Issuing State</source>
-        <translation></translation>
+        <translation>Issuing State</translation>
     </message>
     <message id="lc-emrtd-date-of-expiry">
         <source>Date of Expiry</source>
-        <translation></translation>
+        <translation>Date of Expiry</translation>
+    </message>
+    <message id="lc-emrtd-personal-number">
+        <source>Personal Number</source>
+        <translation>Personal Number</translation>
     </message>
     <message id="lc-emrtd-additional">
         <source>Additional Data</source>
-        <translation></translation>
+        <translation>Additional Data</translation>
+    </message>
+    <message id="lc-emrtd-issuing-info">
+        <source>Issuing Information</source>
+        <translation>Issuing Information</translation>
     </message>
     <message id="lc-pks-title">
         <source>PKS Qualified Signature</source>
@@ -849,54 +941,54 @@
     </message>
     <message id="lc-emrtd-auth-dlg-title">
         <source>Electronic Passport Authentication</source>
-        <translation></translation>
+        <translation>Electronic Passport Authentication</translation>
     </message>
     <message id="lc-emrtd-insert-mrz-hint">
         <source>Enter the CAN or MRZ data from your document to authenticate.</source>
-        <translation></translation>
+        <translation>Enter the CAN or MRZ data from your document to authenticate.</translation>
     </message>
     <message id="lc-emrtd-auth-mode-can">
         <source>CAN (Card Access Number)</source>
-        <translation></translation>
+        <translation>CAN (Card Access Number)</translation>
     </message>
     <message id="lc-emrtd-auth-mode-mrz">
         <source>MRZ (Machine Readable Zone)</source>
-        <translation></translation>
+        <translation>MRZ (Machine Readable Zone)</translation>
     </message>
     <message id="lc-emrtd-can-label">
         <source>CAN</source>
-        <translation></translation>
+        <translation>CAN</translation>
     </message>
     <message id="lc-emrtd-mrz-doc-number">
         <source>Document Number</source>
-        <translation></translation>
+        <translation>Document Number</translation>
     </message>
     <message id="lc-emrtd-mrz-dob">
         <source>Date of Birth (YYMMDD)</source>
-        <translation></translation>
+        <translation>Date of Birth (YYMMDD)</translation>
     </message>
     <message id="lc-emrtd-mrz-expiry">
         <source>Date of Expiry (YYMMDD)</source>
-        <translation></translation>
+        <translation>Date of Expiry (YYMMDD)</translation>
     </message>
     <message id="lc-emrtd-authenticate">
         <source>Authenticate</source>
-        <translation></translation>
+        <translation>Authenticate</translation>
     </message>
     <message id="lc-emrtd-authenticating">
         <source>Authenticating...</source>
-        <translation></translation>
+        <translation>Authenticating...</translation>
     </message>
 </context>
 <context>
     <name>AsyncCardReader</name>
     <message>
         <source>No card connection available</source>
-        <translation></translation>
+        <translation>No card connection available</translation>
     </message>
     <message>
         <source>No plugin could read this card.</source>
-        <translation></translation>
+        <translation>No plugin could read this card.</translation>
     </message>
     <message>
         <source>PIN change failed.</source>
@@ -907,329 +999,78 @@
     <name>CertificateViewerWidget</name>
     <message>
         <source>General</source>
-        <translation></translation>
+        <translation>General</translation>
     </message>
     <message>
         <source>Issued To</source>
-        <translation></translation>
+        <translation>Issued To</translation>
     </message>
     <message>
         <source>Common Name (CN):</source>
-        <translation></translation>
+        <translation>Common Name (CN):</translation>
     </message>
     <message>
         <source>Organization (O):</source>
-        <translation></translation>
+        <translation>Organization (O):</translation>
     </message>
     <message>
         <source>Organizational Unit (OU):</source>
-        <translation></translation>
+        <translation>Organizational Unit (OU):</translation>
     </message>
     <message>
         <source>Serial Number:</source>
-        <translation></translation>
+        <translation>Serial Number:</translation>
     </message>
     <message>
         <source>Issued By</source>
-        <translation></translation>
+        <translation>Issued By</translation>
     </message>
     <message>
         <source>Validity</source>
-        <translation></translation>
+        <translation>Validity</translation>
     </message>
     <message>
         <source>Issued On:</source>
-        <translation></translation>
+        <translation>Issued On:</translation>
     </message>
     <message>
         <source>Expires On:</source>
-        <translation></translation>
+        <translation>Expires On:</translation>
     </message>
     <message>
         <source>Key Usage</source>
-        <translation></translation>
+        <translation>Key Usage</translation>
     </message>
     <message>
         <source>Details</source>
-        <translation></translation>
+        <translation>Details</translation>
     </message>
     <message>
         <source>Certification Path</source>
-        <translation></translation>
+        <translation>Certification Path</translation>
     </message>
     <message>
         <source>Certificate Status</source>
-        <translation></translation>
+        <translation>Certificate Status</translation>
     </message>
     <message>
         <source>Common Name:</source>
-        <translation></translation>
+        <translation>Common Name:</translation>
     </message>
     <message>
         <source>Status:</source>
-        <translation></translation>
+        <translation>Status:</translation>
     </message>
 </context>
 <context>
     <name>EId</name>
     <message>
-        <source>Form</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Serbian eID</source>
-        <translation>Serbian eID</translation>
+        <translation type="vanished">Serbian eID</translation>
     </message>
     <message>
         <source>PIN</source>
         <translation type="vanished">PIN</translation>
-    </message>
-    <message>
-        <source>Signatures of data groups</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Document data</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Personal fixed data</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Personal variable data</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Citizen Data</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Surname</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Nationality</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Parent name</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Status of foreigner</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Place of birth</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Date of address change</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Date of birth</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Address</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>JMBG</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Gender</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Document issuer</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Document number</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Date of issuance</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Valid to</source>
-        <translation></translation>
-    </message>
-</context>
-<context>
-    <name>Health</name>
-    <message>
-        <source>Form</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Personal Data</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Surname</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Name (Latin)</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Surname (Latin)</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Parent name</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Parent name (Latin)</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Date of birth</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Gender</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Personal number (JMBG)</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Insurant number (LBO)</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Insurance Data</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Insurer</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Insurer ID</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Card ID</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Issue date</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Expiry date</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Valid until</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Permanently valid</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Insurance basis</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Insurance description</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Insurance start</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Address</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Street</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Number</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Apartment</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Place</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Municipality</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Country</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Insurance Carrier Data</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Carrier name</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Carrier surname</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Relationship</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Carrier ID</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Carrier LBO</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Employer / Taxpayer</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Employer name</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Employer ID (PIB)</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Employer residence</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Activity code</source>
-        <translation></translation>
     </message>
 </context>
 <context>
@@ -1258,164 +1099,9 @@
         <source>Српски</source>
         <translation type="vanished">Српски</translation>
     </message>
-</context>
-<context>
-    <name>Vehicle</name>
     <message>
-        <source>Form</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Vehicle data</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Registration number</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Date of first registration</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>VIN</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Category</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Make</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Type</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Commercial description</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Colour</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Year of production</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Engine</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Engine number</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Capacity (cm3)</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Power (kW)</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Fuel type</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Mass and load</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Mass (kg)</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Max laden mass (kg)</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Load (kg)</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Power/weight ratio</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Number of axles</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Seats</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Standing places</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Owner</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Surname / Business name</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Name</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Address</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Personal number</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>User</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Document data</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>State issuing</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Competent authority</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Authority issuing</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Unambiguous number</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Serial number</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Type approval number</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Date of issuance</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Valid to</source>
-        <translation></translation>
+        <source>Authentication failed</source>
+        <translation>Authentication failed</translation>
     </message>
 </context>
 </TS>

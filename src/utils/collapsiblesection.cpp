@@ -9,9 +9,6 @@
 #include <QResizeEvent>
 #include <QShowEvent>
 
-static const QColor HEADER_BG{61, 140, 149}; // teal
-static const QColor FRAME_BORDER{61, 140, 149, 80};
-
 CollapsibleSection::CollapsibleSection(QWidget* parent) : QGroupBox(parent)
 {
     init();
@@ -22,9 +19,28 @@ CollapsibleSection::CollapsibleSection(const QString& title, QWidget* parent) : 
     init();
 }
 
+CollapsibleSection::CollapsibleSection(const QString& title, const QColor& headerColor, QWidget* parent)
+    : QGroupBox(title, parent)
+{
+    init();
+    setHeaderColor(headerColor);
+}
+
+QColor CollapsibleSection::headerColor() const
+{
+    return headerBg;
+}
+
+void CollapsibleSection::setHeaderColor(const QColor& color)
+{
+    headerBg = color;
+    frameBorder = QColor(color.red(), color.green(), color.blue(), 80);
+    update();
+}
+
 void CollapsibleSection::setHeaderHeight(int h)
 {
-    headerHeight_ = h;
+    headerHeight = h;
     setContentsMargins(2, h + 4, 2, 4);
     if (!expanded)
         setMaximumHeight(h);
@@ -36,7 +52,7 @@ void CollapsibleSection::init()
 {
     setCheckable(false);
     setMinimumHeight(0);
-    setContentsMargins(2, headerHeight_ + 4, 2, 4);
+    setContentsMargins(2, headerHeight + 4, 2, 4);
 
     animation = new QPropertyAnimation(this, "sectionHeight", this);
     animation->setDuration(200);
@@ -49,6 +65,7 @@ void CollapsibleSection::init()
             setMaximumHeight(QWIDGETSIZE_MAX);
             emit sectionExpanded();
         }
+        updateGeometry();
     });
 }
 
@@ -57,35 +74,42 @@ void CollapsibleSection::addHeaderWidget(QWidget* w)
     w->setParent(this);
     w->setFixedHeight(22);
     if (auto* btn = qobject_cast<QPushButton*>(w)) {
-        btn->setStyleSheet("QPushButton {"
-                           "  color: white;"
-                           "  background-color: rgb(72, 148, 156);"
-                           "  border: 1px solid rgb(100, 168, 176);"
-                           "  border-radius: 3px;"
-                           "  padding: 0px 6px;"
-                           "  font-size: 11px;"
-                           "}"
-                           "QPushButton:hover { background-color: rgb(82, 158, 166); }"
-                           "QPushButton:pressed { background-color: rgb(50, 120, 130); }"
-                           "QPushButton:disabled { color: rgb(160, 205, 210); border-color: rgb(90, 155, 162); }");
+        auto bg = headerBg.lighter(115);
+        auto border = headerBg.lighter(130);
+        auto hover = headerBg.lighter(120);
+        auto pressed = headerBg.darker(115);
+        auto disabledText = headerBg.lighter(180);
+
+        auto style = QString(R"(
+            QPushButton {
+                color: white; background: %1; border: 1px solid %2;
+                border-radius: 3px; padding: 2px 8px; font-size: 11px;
+            }
+            QPushButton:hover { background: %3; }
+            QPushButton:pressed { background: %4; }
+            QPushButton:disabled { color: %5; background: %6; }
+        )")
+                         .arg(bg.name(), border.name(), hover.name(), pressed.name(), disabledText.name(),
+                              headerBg.darker(110).name());
+        btn->setStyleSheet(style);
     }
-    headerWidgets_.append(w);
+    headerWidgets.append(w);
     repositionHeaderWidgets();
     w->show();
 }
 
 void CollapsibleSection::repositionHeaderWidgets()
 {
-    if (headerWidgets_.isEmpty())
+    if (headerWidgets.isEmpty())
         return;
     int x = width() - 4;
-    for (int i = headerWidgets_.size() - 1; i >= 0; --i) {
-        QWidget* w = headerWidgets_[i];
+    for (int i = headerWidgets.size() - 1; i >= 0; --i) {
+        QWidget* w = headerWidgets[i];
         int ww = w->sizeHint().width();
         if (ww < 1)
             ww = w->width();
         x -= ww + 4;
-        w->setGeometry(x, (headerHeight_ - w->height()) / 2, ww, w->height());
+        w->setGeometry(x, (headerHeight - w->height()) / 2, ww, w->height());
         w->raise();
     }
     update();
@@ -95,7 +119,7 @@ void CollapsibleSection::setChildrenVisible(bool visible)
 {
     auto children = findChildren<QWidget*>(Qt::FindDirectChildrenOnly);
     for (auto* child : std::as_const(children)) {
-        if (!headerWidgets_.contains(child))
+        if (!headerWidgets.contains(child))
             child->setVisible(visible);
     }
 }
@@ -104,7 +128,12 @@ void CollapsibleSection::applyCollapsed()
 {
     expandedHeight = sizeHint().height();
     setChildrenVisible(false);
-    setMaximumHeight(headerHeight_);
+    setMaximumHeight(headerHeight);
+}
+
+void CollapsibleSection::setAnimated(bool value)
+{
+    animated = value;
 }
 
 void CollapsibleSection::setExpanded(bool exp)
@@ -114,25 +143,29 @@ void CollapsibleSection::setExpanded(bool exp)
     expanded = exp;
     update();
 
-    if (!isVisible()) {
+    if (!isVisible() || !animated) {
         if (!expanded)
             applyCollapsed();
         else {
             setChildrenVisible(true);
             setMaximumHeight(QWIDGETSIZE_MAX);
+            emit sectionExpanded();
         }
         return;
     }
 
     if (expanded) {
         setChildrenVisible(true);
-        int target = (expandedHeight > headerHeight_) ? expandedHeight : sizeHint().height();
-        animation->setStartValue(headerHeight_);
+        setMaximumHeight(QWIDGETSIZE_MAX); // Allow layout to compute proper size
+        int target = sizeHint().height();
+        if (target <= headerHeight)
+            target = headerHeight + 1;
+        setMaximumHeight(headerHeight); // Reset for animation start
+        animation->setStartValue(headerHeight);
         animation->setEndValue(target);
     } else {
-        expandedHeight = height();
         animation->setStartValue(height());
-        animation->setEndValue(headerHeight_);
+        animation->setEndValue(headerHeight);
     }
     animation->start();
 }
@@ -142,33 +175,33 @@ void CollapsibleSection::paintEvent(QPaintEvent*)
     QPainter p(this);
 
     // Header background
-    p.fillRect(0, 0, width(), headerHeight_, HEADER_BG);
+    p.fillRect(0, 0, width(), headerHeight, headerBg);
 
     // Arrow glyph
     p.setPen(Qt::white);
     QFont af = font();
     af.setPointSizeF(af.pointSizeF() * 0.85);
     p.setFont(af);
-    p.drawText(QRect(8, 0, 18, headerHeight_), Qt::AlignVCenter | Qt::AlignHCenter,
+    p.drawText(QRect(8, 0, 18, headerHeight), Qt::AlignVCenter | Qt::AlignHCenter,
                expanded ? QStringLiteral("▼") : QStringLiteral("▶"));
 
     // Title — leave room for header widgets on the right
     int titleRight = width() - 4;
-    for (auto* w : std::as_const(headerWidgets_))
+    for (auto* w : std::as_const(headerWidgets))
         titleRight -= (w->width() + 4);
     QFont tf = font();
     tf.setBold(true);
     p.setFont(tf);
-    p.drawText(QRect(30, 0, titleRight - 30, headerHeight_), Qt::AlignVCenter | Qt::AlignLeft, title());
+    p.drawText(QRect(30, 0, titleRight - 30, headerHeight), Qt::AlignVCenter | Qt::AlignLeft, title());
 
     // Subtle border around content area
-    p.setPen(QPen(FRAME_BORDER, 1));
-    p.drawRect(0, headerHeight_, width() - 1, height() - headerHeight_ - 1);
+    p.setPen(QPen(frameBorder, 1));
+    p.drawRect(0, headerHeight, width() - 1, height() - headerHeight - 1);
 }
 
 void CollapsibleSection::mousePressEvent(QMouseEvent* event)
 {
-    if (event->position().y() <= headerHeight_)
+    if (event->position().y() <= headerHeight)
         setExpanded(!expanded);
     else
         QGroupBox::mousePressEvent(event);
@@ -183,21 +216,21 @@ void CollapsibleSection::mousePressEvent(QMouseEvent* event)
 void CollapsibleSection::setTitle(const QString& title)
 {
     QGroupBox::setTitle(title);
-    setContentsMargins(2, headerHeight_ + 4, 2, 4);
+    setContentsMargins(2, headerHeight + 4, 2, 4);
 }
 
 void CollapsibleSection::changeEvent(QEvent* event)
 {
     QGroupBox::changeEvent(event);
     if (event->type() == QEvent::FontChange || event->type() == QEvent::StyleChange)
-        setContentsMargins(2, headerHeight_ + 4, 2, 4);
+        setContentsMargins(2, headerHeight + 4, 2, 4);
 }
 
 void CollapsibleSection::showEvent(QShowEvent* event)
 {
     // Ensure margins are correct at first show (calculateFrame may have run
     // between init() and here via setTitle called from .ui setup).
-    setContentsMargins(2, headerHeight_ + 4, 2, 4);
+    setContentsMargins(2, headerHeight + 4, 2, 4);
     QGroupBox::showEvent(event);
     repositionHeaderWidgets();
 }

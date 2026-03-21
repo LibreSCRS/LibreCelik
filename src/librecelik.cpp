@@ -14,9 +14,11 @@
 #include <smartcard/pcsc_connection.h>
 
 #include <QApplication>
+#include <QColor>
 #include <QEvent>
 #include <QLocale>
 #include <QMenu>
+#include <QScrollArea>
 #include <QSettings>
 #include <QSpacerItem>
 #include <QTimer>
@@ -177,7 +179,7 @@ void LibreCelik::onSmartCardReaderEnumerationChanged(const QStringList& scrNames
 void LibreCelik::addNewReader(std::string reader, int retryCount)
 {
     qCDebug(libreSCRSGeneral) << "addNewReader:" << QString::fromStdString(reader) << "retry=" << retryCount
-                               << "activeReaders.count=" << activeReaders.count(reader);
+                              << "activeReaders.count=" << activeReaders.count(reader);
     if (retryCount == 0) {
         // Fresh card event: defensively remove any stale widget left over from a
         // fast swap where CardRemoved wasn't emitted (no-op if nothing registered).
@@ -250,6 +252,8 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                     connect(dlg, &EMRTDAuthDlg::credentialsEntered, asyncReader,
                             &AsyncCardReader::requestDataWithCredentials);
 
+                    // Use Qt::SingleShotConnection so phase-2 data doesn't also trigger
+                    // the outer cardDataReady lambda (which would create a duplicate widget).
                     connect(asyncReader, &AsyncCardReader::cardDataReady, dlg,
                             [this, dlg, reader, guiPlugin](const plugin::CardData& newData) {
                                 if (newData.findGroup("auth_required"))
@@ -271,7 +275,8 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                                     ui->readerStackedWidget->setCurrentIndex(widx);
                                     it->second.widget = newWidget;
                                 }
-                            });
+                            },
+                            static_cast<Qt::ConnectionType>(Qt::QueuedConnection | Qt::SingleShotConnection));
 
                     connect(asyncReader, &AsyncCardReader::errorOccurred, dlg, &EMRTDAuthDlg::onAuthFailed);
 
@@ -284,21 +289,40 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                     auto* pkiWidget = guiPlugin->createPKIWidget(this);
                     if (!pkiWidget) {
                         auto* ts = new TokenSection(LIBRECELIK_CERTIFICATES_DIR, this);
+                        ts->setHeaderColor(QColor(230, 135, 60));
+                        ts->setHeaderHeight(56);
                         ts->setPINVisible(true);
                         pkiWidget = ts;
                     }
                     connectPKISignals(asyncReader, pkiWidget);
 
                     auto* container = new QWidget(this);
-                    auto* layout = new QVBoxLayout(container);
-                    layout->setContentsMargins(0, 0, 0, 0);
-                    layout->addWidget(topWidget);
-                    layout->addWidget(pkiWidget);
-                    layout->addItem(new QSpacerItem(20, 0, QSizePolicy::Minimum, QSizePolicy::Expanding));
-                    topWidget = container;
+                    auto* containerLayout = new QVBoxLayout(container);
+                    containerLayout->setContentsMargins(0, 0, 0, 0);
+                    containerLayout->setAlignment(Qt::AlignTop);
+                    containerLayout->addWidget(topWidget);
+                    containerLayout->addWidget(pkiWidget);
+
+                    auto* scrollArea = new QScrollArea(this);
+                    scrollArea->setWidgetResizable(true);
+                    scrollArea->setFrameShape(QFrame::NoFrame);
+                    scrollArea->setWidget(container);
+                    topWidget = scrollArea;
 
                     asyncReader->requestCertificates();
                     asyncReader->requestPINTriesLeft();
+                } else {
+                    auto* container = new QWidget(this);
+                    auto* containerLayout = new QVBoxLayout(container);
+                    containerLayout->setContentsMargins(0, 0, 0, 0);
+                    containerLayout->setAlignment(Qt::AlignTop);
+                    containerLayout->addWidget(topWidget);
+
+                    auto* scrollArea = new QScrollArea(this);
+                    scrollArea->setWidgetResizable(true);
+                    scrollArea->setFrameShape(QFrame::NoFrame);
+                    scrollArea->setWidget(container);
+                    topWidget = scrollArea;
                 }
 
                 int idx = ui->readerStackedWidget->addWidget(topWidget);

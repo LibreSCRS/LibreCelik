@@ -8,9 +8,12 @@ add_library(vehicle-gui-plugin MODULE
     vehiclewidgetplugin.cpp
     vehiclewidget.h
     vehiclewidget.cpp
-    vehicle.ui
     ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.h
     ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/cardheadercard.h
+    ${CMAKE_SOURCE_DIR}/src/utils/cardheadercard.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.h
+    ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.cpp
 )
 target_include_directories(vehicle-gui-plugin PRIVATE
     ${CMAKE_SOURCE_DIR}/src
@@ -21,7 +24,6 @@ target_link_libraries(vehicle-gui-plugin PRIVATE
 )
 set_target_properties(vehicle-gui-plugin PROPERTIES
     AUTOMOC ON
-    AUTOUIC ON
     PREFIX ""
     LIBRARY_OUTPUT_DIRECTORY "${LIBRECELIK_GUI_PLUGIN_DIR}"
 )

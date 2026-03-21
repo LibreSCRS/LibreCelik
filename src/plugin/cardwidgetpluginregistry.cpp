@@ -11,6 +11,7 @@ Q_LOGGING_CATEGORY(lcPluginRegistry, "rs.libresc.librecelik.plugin")
 
 CardWidgetPluginRegistry::~CardWidgetPluginRegistry()
 {
+    pluginMap.clear();
     qDeleteAll(loaders);
 }
 

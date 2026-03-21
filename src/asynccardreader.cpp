@@ -34,8 +34,10 @@ plugin::CardPlugin* AsyncCardReader::currentPlugin() const
 
 void AsyncCardReader::requestData()
 {
-    if (futureData.valid())
-        return;
+    if (futureData.valid()) {
+        futureData.wait();
+        futureData = {};
+    }
 
     emit readingStarted();
 
@@ -195,6 +197,8 @@ void AsyncCardReader::requestDataWithCredentials(const QMap<QString, QString>& c
 
     if (futureData.valid())
         futureData.wait();
+    if (futurePKI.valid())
+        futurePKI.wait();
 
     for (auto it = credentials.constBegin(); it != credentials.constEnd(); ++it) {
         activePlugin->setCredentials(it.key().toStdString(), it.value().toStdString());

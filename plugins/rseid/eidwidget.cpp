@@ -2,198 +2,172 @@
 // Copyright hirashix0@proton.me
 
 #include "eidwidget.h"
-#include "ui_eid.h"
+
+#include "utils/cardheadercard.h"
+#include "utils/collapsiblesection.h"
+#include "utils/fieldsectionbuilder.h"
 
 #include <plugin/carddatautils.h>
 
 #include <QDate>
-#include <QResizeEvent>
+#include <QLabel>
+#include <QLineEdit>
+#include <QVBoxLayout>
 
 using plugin::getFieldValue;
 
-EidWidget::EidWidget(const plugin::CardData& data, QWidget* parent) : QWidget(parent), ui(new Ui::EId), data(data)
+EidWidget::EidWidget(const plugin::CardData& cardData, QWidget* parent) : QWidget(parent), data(cardData)
 {
-    ui->setupUi(this);
-    ui->verticalLayout->setStretch(0, 1);
-    ui->identityGroupBox->setHeaderHeight(56);
+    buildLayout();
+}
 
-    // Determine card type
+bool EidWidget::isForeigner() const
+{
     const auto* cardTypeField = data.findField("card_type");
-    if (cardTypeField && cardTypeField->asString() == "ForeignerIF2020") {
-        isForeigner = true;
+    return cardTypeField && cardTypeField->asString() == "ForeignerIF2020";
+}
+
+QPixmap EidWidget::loadPhoto() const
+{
+    const auto* photoGroup = data.findGroup("photo");
+    if (photoGroup && !photoGroup->fields.empty() && !photoGroup->fields[0].value.empty()) {
+        QPixmap pixmap;
+        pixmap.loadFromData(photoGroup->fields[0].value.data(), static_cast<uint>(photoGroup->fields[0].value.size()));
+        if (!pixmap.isNull())
+            return pixmap;
+    }
+    return QPixmap(QStringLiteral(":/images/user.png"));
+}
+
+void EidWidget::buildLayout()
+{
+    auto* layout = new QVBoxLayout(this);
+    layout->setContentsMargins(0, 0, 0, 0);
+
+    auto* outerSection = new CollapsibleSection(
+        isForeigner() ? qtTrId("lc-eid-title-foreigner") : qtTrId("lc-eid-title"), QColor(34, 86, 117), this);
+    outerSection->setHeaderHeight(56);
+
+    auto* sectionLayout = new QVBoxLayout();
+    sectionLayout->setSpacing(6);
+
+    // --- Header card: photo + key personal fields ---
+    const auto* personal = data.findGroup("personal");
+    bool foreigner = isForeigner();
+
+    std::vector<LibreSCRS::HeaderField> headerFields;
+    headerFields.push_back({qtTrId("lc-eid-label-given-name"), getFieldValue(personal, "given_name"), 1});
+    headerFields.push_back({qtTrId("lc-eid-label-surname"), getFieldValue(personal, "surname"), 1});
+    headerFields.push_back({qtTrId("lc-eid-label-date-of-birth"), getFieldValue(personal, "date_of_birth"), 1});
+    headerFields.push_back({foreigner ? qtTrId("lc-eid-label-ebs") : qtTrId("lc-eid-label-jmbg"),
+                            getFieldValue(personal, "personal_number"), 1});
+    headerFields.push_back({qtTrId("lc-eid-label-sex"), getFieldValue(personal, "sex"), 1});
+
+    if (foreigner) {
+        headerFields.push_back({qtTrId("lc-eid-label-nationality"), getFieldValue(personal, "nationality"), 1});
+
+        // Assemble place of birth from components
+        QStringList pobParts;
+        pobParts << getFieldValue(personal, "place_of_birth") << getFieldValue(personal, "community_of_birth")
+                 << getFieldValue(personal, "state_of_birth");
+        pobParts.removeAll(QString());
+        headerFields.push_back({qtTrId("lc-eid-label-place-of-birth"), pobParts.join(", "), 2});
+    } else {
+        headerFields.push_back({qtTrId("lc-eid-label-parent-name"), getFieldValue(personal, "parent_given_name"), 1});
     }
 
-    applyCardTypeVisibility();
+    auto* headerCard = new LibreSCRS::CardHeaderCard(loadPhoto(), QSize(190, 250), headerFields, outerSection);
+    sectionLayout->addWidget(headerCard);
 
-    // Populate data from groups
-    if (const auto* group = data.findGroup("personal")) {
-        populatePersonalData(group);
-    }
-    if (const auto* group = data.findGroup("address")) {
-        populateAddressData(group);
-    }
-    if (const auto* group = data.findGroup("document")) {
-        populateDocumentData(group);
-    }
-    if (const auto* group = data.findGroup("photo")) {
-        populatePhoto(group);
-    }
+    // --- Inner sections: Address + Document (stacked vertically) ---
+    auto* addressSection = buildAddressSection(outerSection);
+    auto* documentSection = buildDocumentSection(outerSection);
 
-    // Set verification icons
-    auto setVerificationIcon = [this](const std::string& key, QLabel* label) {
-        const auto* field = this->data.findField(key);
-        if (!field)
+    sectionLayout->addWidget(addressSection);
+    sectionLayout->addWidget(documentSection);
+
+    outerSection->setLayout(sectionLayout);
+    outerSection->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+
+    layout->addWidget(outerSection);
+}
+
+CollapsibleSection* EidWidget::buildAddressSection(QWidget* parent) const
+{
+    const auto* addressGroup = data.findGroup("address");
+
+    // Build address fields with composite assembly (same logic as original)
+    auto* section = new CollapsibleSection(
+        isForeigner() ? qtTrId("lc-eid-label-address-foreigner") : qtTrId("lc-eid-label-address"), parent);
+
+    auto* grid = new QGridLayout();
+    grid->setSpacing(4);
+
+    auto addField = [&](int row, int col, const QString& label, const QString& value, int colSpan = 1) {
+        if (value.isEmpty())
             return;
-        auto val = field->asString();
-        if (val == "valid") {
-            label->setPixmap(QPixmap(":/images/green_checked.png"));
-        } else if (val == "invalid") {
-            label->setPixmap(QPixmap(":/images/red_exclamation.png"));
-        } else {
-            label->setPixmap(QPixmap(":/images/grey_question_mark.png"));
-        }
+        auto* cellLayout = new QVBoxLayout();
+        cellLayout->setContentsMargins(0, 0, 0, 0);
+        cellLayout->setSpacing(0);
+        auto* lbl = new QLabel(label, section);
+        lbl->setStyleSheet("color: #777; font-size: 10px;");
+        auto* val = new QLineEdit(value, section);
+        val->setReadOnly(true);
+        cellLayout->addWidget(lbl);
+        cellLayout->addWidget(val);
+        grid->addLayout(cellLayout, row, col, 1, colSpan);
     };
 
-    setVerificationIcon("card_verification", ui->group1Label_3);
-    setVerificationIcon("fixed_verification", ui->group2Label_3);
-    setVerificationIcon("variable_verification", ui->group3Label_3);
-}
+    // Assemble composite address
+    QStringList addressParts;
+    addressParts << getFieldValue(addressGroup, "place") << getFieldValue(addressGroup, "community")
+                 << getFieldValue(addressGroup, "street") << getFieldValue(addressGroup, "house_number");
+    addressParts.removeAll(QString());
+    auto address = addressParts.join(", ");
 
-EidWidget::~EidWidget()
-{
-    delete ui;
-}
-
-void EidWidget::applyCardTypeVisibility()
-{
-    if (isForeigner) {
-        ui->identityGroupBox->setTitle(qtTrId("lc-eid-title-foreigner"));
-        ui->citizenSection->setTitle(qtTrId("lc-eid-foreigner-data"));
-        ui->jmbgLabel_3->setText(qtTrId("lc-eid-label-ebs"));
-        ui->addressLabel_3->setText(qtTrId("lc-eid-label-address-foreigner"));
-    } else {
-        ui->identityGroupBox->setTitle(qtTrId("lc-eid-title-serbian"));
-        ui->citizenSection->setTitle(qtTrId("lc-eid-citizen-data"));
-        ui->jmbgLabel_3->setText(qtTrId("lc-eid-label-jmbg"));
-        ui->addressLabel_3->setText(qtTrId("lc-eid-label-address"));
-    }
-    ui->parentNameWidget->setVisible(!isForeigner);
-    ui->nationalityWidget->setVisible(isForeigner);
-    ui->placeOfBirthWidget->setVisible(!isForeigner);
-    ui->statusOfForeignerWidget->setVisible(isForeigner);
-    repositionAddressSection();
-}
-
-void EidWidget::repositionAddressSection()
-{
-    auto* fieldsLayout = ui->verticalLayout_citizenFields;
-    int photoMaxHeight = ui->pictureLabel_3->maximumHeight();
-
-    // Temporarily move address into the fields column if not already there, so the
-    // layout can compute the combined height in one consistent sizeHint() call.
-    if (!addressInColumn) {
-        ui->verticalLayout_citizen->removeWidget(ui->addressSection);
-        fieldsLayout->insertWidget(fieldsLayout->count() - 1, ui->addressSection);
-    }
-
-    fieldsLayout->invalidate();
-    bool fits = (fieldsLayout->sizeHint().height() <= photoMaxHeight);
-
-    if (fits) {
-        addressInColumn = true;
-    } else {
-        fieldsLayout->removeWidget(ui->addressSection);
-        ui->verticalLayout_citizen->addWidget(ui->addressSection);
-        addressInColumn = false;
-    }
-
-    // When address is below the photo row, distribute fields evenly next to the photo
-    // by giving each item equal stretch. When address is in the column, pack tightly.
-    for (int i = 0; i < fieldsLayout->count(); ++i) {
-        fieldsLayout->setStretch(i, addressInColumn ? 0 : 1);
-    }
-}
-
-void EidWidget::resizeEvent(QResizeEvent* event)
-{
-    QWidget::resizeEvent(event);
-    repositionAddressSection();
-}
-
-void EidWidget::populatePersonalData(const plugin::CardFieldGroup* group)
-{
-    ui->nameLineEdit_3->setText(getFieldValue(group, "given_name"));
-    ui->surnameLineEdit_3->setText(getFieldValue(group, "surname"));
-    ui->parentNameLineEdit_3->setText(getFieldValue(group, "parent_given_name"));
-    ui->genderLineEdit_3->setText(getFieldValue(group, "sex"));
-    ui->jmbgLineEdit_3->setText(getFieldValue(group, "personal_number"));
-    ui->dateOfBirthLineEdit_3->setText(getFieldValue(group, "date_of_birth"));
-    ui->statusOfForeignerLineEdit_3->setText(getFieldValue(group, "status_of_foreigner"));
-    ui->placeOfBirthLineEdit_3->setText(assemblePlaceOfBirth(group));
-    ui->nationalityLineEdit_3->setText(getFieldValue(group, "nationality"));
-}
-
-void EidWidget::populateAddressData(const plugin::CardFieldGroup* group)
-{
-    ui->addressLineEdit_3->setText(assembleAddress(group));
-
-    auto addressDate = getFieldValue(group, "address_date");
-    bool show = (!addressDate.isEmpty() && addressDate != "01.01.0001");
-    ui->dateOfAddressChangeWidget->setVisible(show);
-    if (show) {
-        ui->dateOfAddressChangeLineEdit_3->setText(addressDate);
-    }
-    repositionAddressSection();
-}
-
-void EidWidget::populateDocumentData(const plugin::CardFieldGroup* group)
-{
-    ui->documentNumberLineEdit_3->setText(getFieldValue(group, "doc_reg_no"));
-
-    auto expiryDate = getFieldValue(group, "expiry_date");
-    QDate receivedDate = QDate::fromString(expiryDate, "dd.MM.yyyy");
-    QDate currentDate = QDate::currentDate();
-    QPalette palette = ui->validToLineEdit_3->palette();
-    if (receivedDate.isValid() && receivedDate < currentDate) {
-        palette.setColor(QPalette::Text, QColor(0xe6, 0x87, 0x3c));
-    }
-    ui->validToLineEdit_3->setPalette(palette);
-    ui->validToLineEdit_3->setText(expiryDate);
-
-    ui->dateOfIssuanceLineEdit_3->setText(getFieldValue(group, "issuing_date"));
-    ui->documentIssuerLineEdit_3->setText(getFieldValue(group, "issuing_authority"));
-}
-
-void EidWidget::populatePhoto(const plugin::CardFieldGroup* group)
-{
-    if (!group->fields.empty() && !group->fields[0].value.empty()) {
-        QPixmap pixmap;
-        pixmap.loadFromData(group->fields[0].value.data(), static_cast<uint>(group->fields[0].value.size()));
-        ui->pictureLabel_3->setPixmap(pixmap);
-    } else {
-        ui->pictureLabel_3->setPixmap(QPixmap(QString::fromUtf8(":/images/user.png")));
-    }
-}
-
-QString EidWidget::assembleAddress(const plugin::CardFieldGroup* group) const
-{
-    QStringList parts;
-    parts << getFieldValue(group, "place") << getFieldValue(group, "community") << getFieldValue(group, "street")
-          << getFieldValue(group, "house_number");
-    auto address = parts.join(", ");
-    auto floor = getFieldValue(group, "floor");
-    auto apartmentNumber = getFieldValue(group, "apartment_number");
+    auto floor = getFieldValue(addressGroup, "floor");
+    auto apartmentNumber = getFieldValue(addressGroup, "apartment_number");
     if (!floor.isEmpty())
         address += "/" + floor;
     if (!apartmentNumber.isEmpty())
         address += "/" + apartmentNumber;
-    return address;
+
+    addField(0, 0, qtTrId("lc-eid-label-address"), address, 2);
+
+    // Address date (only if meaningful)
+    auto addressDate = getFieldValue(addressGroup, "address_date");
+    if (!addressDate.isEmpty() && addressDate != "01.01.0001") {
+        addField(1, 0, qtTrId("lc-eid-label-address-date"), addressDate, 2);
+    }
+
+    section->setLayout(grid);
+    return section;
 }
 
-QString EidWidget::assemblePlaceOfBirth(const plugin::CardFieldGroup* group) const
+CollapsibleSection* EidWidget::buildDocumentSection(QWidget* parent) const
 {
-    QStringList parts;
-    parts << getFieldValue(group, "place_of_birth") << getFieldValue(group, "community_of_birth")
-          << getFieldValue(group, "state_of_birth");
-    return parts.join(", ");
+    const auto* docGroup = data.findGroup("document");
+
+    const std::map<std::string, QString> translationMap = {
+        {"document_type", qtTrId("lc-eid-label-document-type")},
+        {"document_serial_number", qtTrId("lc-eid-label-document-serial-number")},
+        {"issuing_authority", qtTrId("lc-eid-label-issuing-authority")},
+        {"doc_reg_no", qtTrId("lc-eid-label-doc-reg-no")},
+        {"issuing_date", qtTrId("lc-eid-label-issuing-date")},
+        {"expiry_date", qtTrId("lc-eid-label-expiry-date")},
+    };
+
+    // Fields not relevant for display in the document section
+    const std::set<std::string> hiddenFields = {
+        "card_type",
+    };
+
+    if (!docGroup) {
+        // Return empty section if no document group
+        auto* section = new CollapsibleSection(qtTrId("lc-eid-label-document"), parent);
+        return section;
+    }
+
+    return LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-eid-label-document"), *docGroup, translationMap,
+                                                 hiddenFields, parent);
 }

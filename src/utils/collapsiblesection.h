@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <QColor>
 #include <QGroupBox>
 #include <QList>
 #include <QPropertyAnimation>
@@ -15,6 +16,10 @@ class CollapsibleSection : public QGroupBox
 public:
     explicit CollapsibleSection(QWidget* parent = nullptr);
     explicit CollapsibleSection(const QString& title, QWidget* parent = nullptr);
+    CollapsibleSection(const QString& title, const QColor& headerColor, QWidget* parent = nullptr);
+
+    QColor headerColor() const;
+    void setHeaderColor(const QColor& color);
 
     bool isExpanded() const
     {
@@ -42,6 +47,9 @@ public:
     // Override the painted header height (default 30). Call before show().
     void setHeaderHeight(int h);
 
+    // Disable animation for instant collapse/expand (avoids flicker in nested sections).
+    void setAnimated(bool animated);
+
 signals:
     void sectionExpanded();
 
@@ -59,10 +67,13 @@ private:
     void repositionHeaderWidgets();
 
     bool expanded = true;
+    bool animated = true;
     int expandedHeight = -1;
     QPropertyAnimation* animation = nullptr;
-    QList<QWidget*> headerWidgets_;
+    QList<QWidget*> headerWidgets;
+    QColor headerBg{61, 140, 149};
+    QColor frameBorder{61, 140, 149, 80};
 
     static constexpr int HEADER_HEIGHT = 30;
-    int headerHeight_ = HEADER_HEIGHT;
+    int headerHeight = HEADER_HEIGHT;
 };

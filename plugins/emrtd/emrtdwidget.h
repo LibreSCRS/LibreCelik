@@ -10,8 +10,6 @@
 
 class QLabel;
 class QLineEdit;
-class QFormLayout;
-class QGroupBox;
 
 class EMRTDWidget : public QWidget
 {
@@ -19,11 +17,17 @@ class EMRTDWidget : public QWidget
 public:
     explicit EMRTDWidget(const plugin::CardData& data, QWidget* parent = nullptr);
 
+    const plugin::CardData& cardData() const
+    {
+        return data;
+    }
+
 private:
     void showAuthRequired(const plugin::CardFieldGroup* group);
-    void showPersonalData(const plugin::CardData& data);
+    void showPersonalData(const plugin::CardData& cardData);
     void showError(const plugin::CardFieldGroup* group);
-    void addField(QFormLayout* layout, const QString& label, const QString& value);
+
+    plugin::CardData data;
 };
 
 #endif // EMRTDWIDGET_H

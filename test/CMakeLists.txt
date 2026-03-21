@@ -44,6 +44,12 @@ add_executable(
     uuid_test.cpp
     smartcardscanner_test.h
     smartcardscanner_test.cpp
+    collapsiblesection_test.cpp
+    ../src/utils/collapsiblesection.h
+    ../src/utils/collapsiblesection.cpp
+    fieldsectionbuilder_test.cpp
+    ../src/utils/fieldsectionbuilder.h
+    ../src/utils/fieldsectionbuilder.cpp
 )
 target_link_libraries(
     ${PROJECT_NAME}

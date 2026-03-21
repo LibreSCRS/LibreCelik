@@ -12,6 +12,14 @@ class PksWidget : public QWidget
     Q_OBJECT
 public:
     explicit PksWidget(const plugin::CardData& data, QWidget* parent = nullptr);
+
+    const plugin::CardData& cardData() const
+    {
+        return data;
+    }
+
+private:
+    plugin::CardData data;
 };
 
 #endif // PKSWIDGET_H

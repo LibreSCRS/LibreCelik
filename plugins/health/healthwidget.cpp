@@ -2,117 +2,156 @@
 // Copyright hirashix0@proton.me
 
 #include "healthwidget.h"
-#include "ui_health.h"
+
+#include "utils/cardheadercard.h"
+#include "utils/collapsiblesection.h"
+#include "utils/fieldsectionbuilder.h"
 
 #include <plugin/carddatautils.h>
 
+#include <QIcon>
+#include <QVBoxLayout>
+
 using plugin::getFieldValue;
 
-HealthWidget::HealthWidget(const plugin::CardData& data, QWidget* parent)
-    : QWidget(parent), ui(new Ui::Health), data(data)
+// Translation maps: field key -> readable English fallback label.
+// Final translations will be added in Task 10 via translations_catalog.cpp.
+
+static const std::map<std::string, QString>& insuranceTranslationMap()
 {
-    ui->setupUi(this);
-    ui->healthCardSection->setTitle(qtTrId("lc-health-title"));
-    ui->verticalLayout->setStretch(0, 1);
-    ui->healthCardSection->setHeaderHeight(56);
+    static const std::map<std::string, QString> map = {
+        {"insurer_name", "Insurer"},
+        {"insurer_id", "Insurer ID"},
+        {"card_id", "Card ID"},
+        {"date_of_issue", "Issue date"},
+        {"date_of_expiry", "Expiry date"},
+        {"valid_until", "Valid until"},
+        {"permanently_valid", "Permanently valid"},
+        {"insurance_basis_rzzo", "Insurance basis"},
+        {"insurance_description", "Insurance description"},
+        {"insurance_start_date", "Insurance start"},
+    };
+    return map;
+}
 
-    // Personal
-    if (const auto* group = data.findGroup("personal")) {
-        populatePersonalData(group);
-    }
+static const std::map<std::string, QString>& addressTranslationMap()
+{
+    static const std::map<std::string, QString> map = {
+        {"street", "Street"}, {"address_number", "Number"},     {"apartment", "Apartment"},
+        {"place", "Place"},   {"municipality", "Municipality"}, {"country", "Country"},
+    };
+    return map;
+}
 
-    // Insurance
-    if (const auto* group = data.findGroup("insurance")) {
-        populateInsuranceData(group);
-    }
+static const std::map<std::string, QString>& carrierTranslationMap()
+{
+    static const std::map<std::string, QString> map = {
+        {"carrier_given_name", "Carrier name"},     {"carrier_family_name", "Carrier surname"},
+        {"carrier_relationship", "Relationship"},   {"carrier_id_number", "Carrier ID"},
+        {"carrier_insurant_number", "Carrier LBO"}, {"carrier_family_member", "Family member"},
+    };
+    return map;
+}
 
-    // Address
-    if (const auto* group = data.findGroup("address")) {
-        populateAddressData(group);
-    }
+static const std::map<std::string, QString>& taxpayerTranslationMap()
+{
+    static const std::map<std::string, QString> map = {
+        {"taxpayer_name", "Employer name"},
+        {"taxpayer_id_number", "Employer ID (PIB)"},
+        {"taxpayer_residence", "Employer residence"},
+        {"taxpayer_activity_code", "Activity code"},
+    };
+    return map;
+}
 
-    // Carrier — show section only when carrier data is present or carrier_family_member is "true"
-    if (const auto* group = data.findGroup("carrier")) {
-        auto familyMember = getFieldValue(group, "carrier_family_member");
-        bool hasData = !group->fields.empty();
-        if (hasData || familyMember == "true") {
-            populateCarrierData(group);
-        } else {
-            ui->carrierSection->setVisible(false);
+HealthWidget::HealthWidget(const plugin::CardData& cardData, QWidget* parent) : QWidget(parent), data(cardData)
+{
+    transformPermanentlyValid();
+    buildLayout();
+}
+
+void HealthWidget::transformPermanentlyValid()
+{
+    if (auto* field = data.findField("permanently_valid")) {
+        auto val = field->asString();
+        if (val == "true") {
+            std::string yes = qtTrId("lc-health-val-yes").toStdString();
+            field->value.assign(yes.begin(), yes.end());
+        } else if (val == "false") {
+            std::string no = qtTrId("lc-health-val-no").toStdString();
+            field->value.assign(no.begin(), no.end());
         }
-    } else {
-        ui->carrierSection->setVisible(false);
-    }
-
-    // Taxpayer
-    if (const auto* group = data.findGroup("taxpayer")) {
-        populateTaxpayerData(group);
     }
 }
 
-HealthWidget::~HealthWidget()
+void HealthWidget::buildLayout()
 {
-    delete ui;
-}
+    static const QColor navy(34, 86, 117);
 
-void HealthWidget::populatePersonalData(const plugin::CardFieldGroup* group)
-{
-    ui->givenNameLineEdit->setText(getFieldValue(group, "given_name"));
-    ui->familyNameLineEdit->setText(getFieldValue(group, "family_name"));
-    ui->givenNameLatLineEdit->setText(getFieldValue(group, "given_name_latin"));
-    ui->familyNameLatLineEdit->setText(getFieldValue(group, "family_name_latin"));
-    ui->parentNameLineEdit->setText(getFieldValue(group, "parent_name"));
-    ui->parentNameLatLineEdit->setText(getFieldValue(group, "parent_name_latin"));
-    ui->dobLineEdit->setText(getFieldValue(group, "date_of_birth"));
-    ui->genderLineEdit->setText(getFieldValue(group, "gender"));
-    ui->jmbgLineEdit->setText(getFieldValue(group, "personal_number"));
-    ui->lboLineEdit->setText(getFieldValue(group, "insurant_number"));
-}
+    auto* outerLayout = new QVBoxLayout(this);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
 
-void HealthWidget::populateInsuranceData(const plugin::CardFieldGroup* group)
-{
-    ui->insurerLineEdit->setText(getFieldValue(group, "insurer_name"));
-    ui->insurerIdLineEdit->setText(getFieldValue(group, "insurer_id"));
-    ui->cardIdLineEdit->setText(getFieldValue(group, "card_id"));
-    ui->issueDateLineEdit->setText(getFieldValue(group, "date_of_issue"));
-    ui->expiryLineEdit->setText(getFieldValue(group, "date_of_expiry"));
-    ui->validUntilLineEdit->setText(getFieldValue(group, "valid_until"));
+    // Outer navy CollapsibleSection
+    auto* outerSection = new CollapsibleSection(qtTrId("lc-health-title"), navy, this);
+    outerSection->setHeaderHeight(56);
+    outerSection->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
-    auto permanentVal = getFieldValue(group, "permanently_valid");
-    if (permanentVal == "true") {
-        ui->permanentLineEdit->setText(qtTrId("lc-health-val-yes"));
-    } else {
-        ui->permanentLineEdit->setText(QString());
+    auto* contentLayout = new QVBoxLayout();
+
+    // --- CardHeaderCard with health icon and key personal fields ---
+    const auto* personal = data.findGroup("personal");
+    const auto* insurance = data.findGroup("insurance");
+
+    std::vector<LibreSCRS::HeaderField> headerFields;
+    if (personal) {
+        headerFields.push_back({"Name", getFieldValue(personal, "given_name")});
+        headerFields.push_back({"Surname", getFieldValue(personal, "family_name")});
+        headerFields.push_back({"Personal number (JMBG)", getFieldValue(personal, "personal_number")});
+        headerFields.push_back({"Insurant number (LBO)", getFieldValue(personal, "insurant_number")});
+    }
+    if (insurance) {
+        headerFields.push_back({"Card ID", getFieldValue(insurance, "card_id")});
+        headerFields.push_back({"Valid until", getFieldValue(insurance, "valid_until")});
     }
 
-    ui->insuranceBasisLineEdit->setText(getFieldValue(group, "insurance_basis_rzzo"));
-    ui->insuranceDescLineEdit->setText(getFieldValue(group, "insurance_description"));
-    ui->insuranceStartLineEdit->setText(getFieldValue(group, "insurance_start_date"));
-}
+    QIcon healthIcon(QStringLiteral(":/images/smartcard-id-512.png"));
+    auto* headerCard = new LibreSCRS::CardHeaderCard(healthIcon, QSize(80, 80), headerFields, outerSection);
+    contentLayout->addWidget(headerCard);
 
-void HealthWidget::populateAddressData(const plugin::CardFieldGroup* group)
-{
-    ui->streetLineEdit->setText(getFieldValue(group, "street"));
-    ui->addressNumberLineEdit->setText(getFieldValue(group, "address_number"));
-    ui->apartmentLineEdit->setText(getFieldValue(group, "apartment"));
-    ui->placeLineEdit->setText(getFieldValue(group, "place"));
-    ui->municipalityLineEdit->setText(getFieldValue(group, "municipality"));
-    ui->countryLineEdit->setText(getFieldValue(group, "country"));
-}
+    // --- Insurance, Address — stacked vertically ---
+    if (insurance) {
+        auto* insuranceSec =
+            LibreSCRS::FieldSectionBuilder::build("Insurance", *insurance, insuranceTranslationMap(), {}, outerSection);
+        contentLayout->addWidget(insuranceSec);
+    }
+    if (const auto* address = data.findGroup("address")) {
+        auto* addressSec =
+            LibreSCRS::FieldSectionBuilder::build("Address", *address, addressTranslationMap(), {}, outerSection);
+        contentLayout->addWidget(addressSec);
+    }
 
-void HealthWidget::populateCarrierData(const plugin::CardFieldGroup* group)
-{
-    ui->carrierGivenNameLineEdit->setText(getFieldValue(group, "carrier_given_name"));
-    ui->carrierFamilyNameLineEdit->setText(getFieldValue(group, "carrier_family_name"));
-    ui->carrierRelLineEdit->setText(getFieldValue(group, "carrier_relationship"));
-    ui->carrierIdLineEdit->setText(getFieldValue(group, "carrier_id_number"));
-    ui->carrierLboLineEdit->setText(getFieldValue(group, "carrier_insurant_number"));
-}
+    // --- Carrier, Taxpayer — stacked vertically ---
+    const auto* carrier = data.findGroup("carrier");
+    bool showCarrier = false;
+    if (carrier) {
+        auto familyMember = getFieldValue(carrier, "carrier_family_member");
+        bool hasData = !carrier->fields.empty();
+        showCarrier = hasData || familyMember == "true";
+    }
 
-void HealthWidget::populateTaxpayerData(const plugin::CardFieldGroup* group)
-{
-    ui->taxpayerNameLineEdit->setText(getFieldValue(group, "taxpayer_name"));
-    ui->taxpayerIdLineEdit->setText(getFieldValue(group, "taxpayer_id_number"));
-    ui->taxpayerResLineEdit->setText(getFieldValue(group, "taxpayer_residence"));
-    ui->taxpayerActLineEdit->setText(getFieldValue(group, "taxpayer_activity_code"));
+    if (showCarrier) {
+        carrierSection = LibreSCRS::FieldSectionBuilder::build("Insurance Carrier", *carrier, carrierTranslationMap(),
+                                                               {}, outerSection);
+        contentLayout->addWidget(carrierSection);
+    }
+
+    if (const auto* taxpayer = data.findGroup("taxpayer")) {
+        auto* taxpayerSec = LibreSCRS::FieldSectionBuilder::build("Employer / Taxpayer", *taxpayer,
+                                                                  taxpayerTranslationMap(), {}, outerSection);
+        contentLayout->addWidget(taxpayerSec);
+    }
+
+    outerSection->setLayout(contentLayout);
+
+    outerLayout->addWidget(outerSection);
 }

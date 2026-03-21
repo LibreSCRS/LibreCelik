@@ -87,6 +87,10 @@
         <source>Status of foreigner</source>
         <translation>Статус странца</translation>
     </message>
+    <message id="lc-eid-title">
+        <source>Serbian eID</source>
+        <translation>Лична карта</translation>
+    </message>
     <message id="lc-eid-label-address-foreigner">
         <source>Address</source>
         <translation>Адреса</translation>
@@ -145,7 +149,7 @@
     </message>
     <message id="lc-eid-title-foreigner">
         <source>Serbian eID (Foreigner)</source>
-        <translation>Српска електронска лична карта (Странац)</translation>
+        <translation>Лична карта за странце</translation>
     </message>
     <message id="lc-eid-label-ebs">
         <source>EBS</source>
@@ -154,6 +158,66 @@
     <message id="lc-eid-label-identity-foreigners">
         <source>Identity card for foreigners</source>
         <translation>Лична карта за странце</translation>
+    </message>
+    <message id="lc-eid-label-given-name">
+        <source>Given Name</source>
+        <translation>Име</translation>
+    </message>
+    <message id="lc-eid-label-surname">
+        <source>Surname</source>
+        <translation>Презиме</translation>
+    </message>
+    <message id="lc-eid-label-date-of-birth">
+        <source>Date of Birth</source>
+        <translation>Датум рођења</translation>
+    </message>
+    <message id="lc-eid-label-sex">
+        <source>Sex</source>
+        <translation>Пол</translation>
+    </message>
+    <message id="lc-eid-label-nationality">
+        <source>Nationality</source>
+        <translation>Националност</translation>
+    </message>
+    <message id="lc-eid-label-place-of-birth">
+        <source>Place of Birth</source>
+        <translation>Место рођења</translation>
+    </message>
+    <message id="lc-eid-label-parent-name">
+        <source>Parent Name</source>
+        <translation>Име родитеља</translation>
+    </message>
+    <message id="lc-eid-label-address-date">
+        <source>Date of Address Change</source>
+        <translation>Датум пријаве адресе</translation>
+    </message>
+    <message id="lc-eid-label-document-type">
+        <source>Document Type</source>
+        <translation>Тип документа</translation>
+    </message>
+    <message id="lc-eid-label-document-serial-number">
+        <source>Document Serial Number</source>
+        <translation>Серијски број документа</translation>
+    </message>
+    <message id="lc-eid-label-document">
+        <source>Document</source>
+        <translation>Документ</translation>
+    </message>
+    <message id="lc-eid-label-issuing-authority">
+        <source>Issuing Authority</source>
+        <translation>Орган издавања</translation>
+    </message>
+    <message id="lc-eid-label-doc-reg-no">
+        <source>Document Reg. No.</source>
+        <translation>Регистарски број документа</translation>
+    </message>
+    <message id="lc-eid-label-issuing-date">
+        <source>Issuing Date</source>
+        <translation>Датум издавања</translation>
+    </message>
+    <message id="lc-eid-label-expiry-date">
+        <source>Expiry Date</source>
+        <translation>Датум истека</translation>
     </message>
     <message id="lc-eid-cert-can-sign">
         <source>can sign</source>
@@ -723,6 +787,26 @@
         <source>Yes</source>
         <translation>Да</translation>
     </message>
+    <message id="lc-health-val-no">
+        <source>No</source>
+        <translation>Не</translation>
+    </message>
+    <message id="lc-pks-header-title">
+        <source>Qualified Electronic Certificate</source>
+        <translation>Квалификовани електронски сертификат</translation>
+    </message>
+    <message id="lc-pks-cert-count">
+        <source>Certificates</source>
+        <translation>Број сертификата</translation>
+    </message>
+    <message id="lc-pks-cert-label">
+        <source>Certificate</source>
+        <translation>Сертификат</translation>
+    </message>
+    <message id="lc-pks-card-type">
+        <source>Card Type</source>
+        <translation>Тип картице</translation>
+    </message>
     <message id="lc-emrtd-auth-required">
         <source>Authentication Required</source>
         <translation>Потребна аутентификација</translation>
@@ -775,9 +859,17 @@
         <source>Date of Expiry</source>
         <translation>Датум истека</translation>
     </message>
+    <message id="lc-emrtd-personal-number">
+        <source>Personal Number</source>
+        <translation>Лични број</translation>
+    </message>
     <message id="lc-emrtd-additional">
         <source>Additional Data</source>
         <translation>Додатни подаци</translation>
+    </message>
+    <message id="lc-emrtd-issuing-info">
+        <source>Issuing Information</source>
+        <translation>Информације о издавању</translation>
     </message>
     <message id="lc-pks-title">
         <source>PKS Qualified Signature</source>
@@ -892,15 +984,15 @@
     <name>AsyncCardReader</name>
     <message>
         <source>No card connection available</source>
-        <translation></translation>
+        <translation>Нема везе са картицом</translation>
     </message>
     <message>
         <source>No plugin could read this card.</source>
-        <translation></translation>
+        <translation>Ниједан додатак не може да прочита ову картицу.</translation>
     </message>
     <message>
         <source>PIN change failed.</source>
-        <translation></translation>
+        <translation>Промена ПИН-а неуспешна.</translation>
     </message>
 </context>
 <context>
@@ -1195,10 +1287,6 @@
 <context>
     <name>EId</name>
     <message>
-        <source>Form</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Republic Of Serbia</source>
         <translation type="obsolete">Република Србија</translation>
     </message>
@@ -1228,87 +1316,87 @@
     </message>
     <message>
         <source>Serbian eID</source>
-        <translation>Српска ел. лична карта</translation>
+        <translation type="vanished">Српска ел. лична карта</translation>
     </message>
     <message>
         <source>Signatures of data groups</source>
-        <translation>Потписи група података</translation>
+        <translation type="vanished">Потписи група података</translation>
     </message>
     <message>
         <source>Document data</source>
-        <translation>Подаци о документу</translation>
+        <translation type="vanished">Подаци о документу</translation>
     </message>
     <message>
         <source>Personal fixed data</source>
-        <translation>Лични непроменљиви подаци</translation>
+        <translation type="vanished">Лични непроменљиви подаци</translation>
     </message>
     <message>
         <source>Personal variable data</source>
-        <translation>Лични променљиви подаци</translation>
+        <translation type="vanished">Лични променљиви подаци</translation>
     </message>
     <message>
         <source>Citizen Data</source>
-        <translation>Подаци о грађанину</translation>
+        <translation type="vanished">Подаци о грађанину</translation>
     </message>
     <message>
         <source>Surname</source>
-        <translation>Презиме</translation>
+        <translation type="vanished">Презиме</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>Име</translation>
+        <translation type="vanished">Име</translation>
     </message>
     <message>
         <source>Nationality</source>
-        <translation>Држављанство</translation>
+        <translation type="vanished">Држављанство</translation>
     </message>
     <message>
         <source>Parent name</source>
-        <translation>Име једног родитеља</translation>
+        <translation type="vanished">Име једног родитеља</translation>
     </message>
     <message>
         <source>Status of foreigner</source>
-        <translation>Основ боравка</translation>
+        <translation type="vanished">Основ боравка</translation>
     </message>
     <message>
         <source>Place of birth</source>
-        <translation>Место рођења</translation>
+        <translation type="vanished">Место рођења</translation>
     </message>
     <message>
         <source>Date of address change</source>
-        <translation>Датум промене адресе</translation>
+        <translation type="vanished">Датум промене адресе</translation>
     </message>
     <message>
         <source>Date of birth</source>
-        <translation>Датум рођења</translation>
+        <translation type="vanished">Датум рођења</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>Адреса</translation>
+        <translation type="vanished">Адреса</translation>
     </message>
     <message>
         <source>JMBG</source>
-        <translation>ЈМБГ</translation>
+        <translation type="vanished">ЈМБГ</translation>
     </message>
     <message>
         <source>Gender</source>
-        <translation>Пол</translation>
+        <translation type="vanished">Пол</translation>
     </message>
     <message>
         <source>Document issuer</source>
-        <translation>Издавалац документа</translation>
+        <translation type="vanished">Издавалац документа</translation>
     </message>
     <message>
         <source>Document number</source>
-        <translation>Број документа</translation>
+        <translation type="vanished">Број документа</translation>
     </message>
     <message>
         <source>Date of issuance</source>
-        <translation>Датум издавања</translation>
+        <translation type="vanished">Датум издавања</translation>
     </message>
     <message>
         <source>Valid to</source>
-        <translation>Важи до</translation>
+        <translation type="vanished">Важи до</translation>
     </message>
     <message>
         <source>Token</source>
@@ -1370,172 +1458,168 @@
 <context>
     <name>Health</name>
     <message>
-        <source>Form</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Print</source>
         <translation type="vanished">Штампа</translation>
     </message>
     <message>
         <source>Personal Data</source>
-        <translation>Лични подаци</translation>
+        <translation type="vanished">Лични подаци</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>Имe</translation>
+        <translation type="vanished">Имe</translation>
     </message>
     <message>
         <source>Surname</source>
-        <translation>Презиме</translation>
+        <translation type="vanished">Презиме</translation>
     </message>
     <message>
         <source>Name (Latin)</source>
-        <translation>Имe (лат.)</translation>
+        <translation type="vanished">Имe (лат.)</translation>
     </message>
     <message>
         <source>Surname (Latin)</source>
-        <translation>Презиме (лат.)</translation>
+        <translation type="vanished">Презиме (лат.)</translation>
     </message>
     <message>
         <source>Parent name</source>
-        <translation>Имe родитеља</translation>
+        <translation type="vanished">Имe родитеља</translation>
     </message>
     <message>
         <source>Parent name (Latin)</source>
-        <translation>Имe родитеља (лат.)</translation>
+        <translation type="vanished">Имe родитеља (лат.)</translation>
     </message>
     <message>
         <source>Date of birth</source>
-        <translation>Датум рођења</translation>
+        <translation type="vanished">Датум рођења</translation>
     </message>
     <message>
         <source>Gender</source>
-        <translation>Пол</translation>
+        <translation type="vanished">Пол</translation>
     </message>
     <message>
         <source>Personal number (JMBG)</source>
-        <translation>ЈМБГ</translation>
+        <translation type="vanished">ЈМБГ</translation>
     </message>
     <message>
         <source>Insurant number (LBO)</source>
-        <translation>ЛБО</translation>
+        <translation type="vanished">ЛБО</translation>
     </message>
     <message>
         <source>Insurance Data</source>
-        <translation>Подаци о осигурању</translation>
+        <translation type="vanished">Подаци о осигурању</translation>
     </message>
     <message>
         <source>Insurer</source>
-        <translation>Назив осигуравача</translation>
+        <translation type="vanished">Назив осигуравача</translation>
     </message>
     <message>
         <source>Insurer ID</source>
-        <translation>ИД осигуравача</translation>
+        <translation type="vanished">ИД осигуравача</translation>
     </message>
     <message>
         <source>Card ID</source>
-        <translation>Број картице</translation>
+        <translation type="vanished">Број картице</translation>
     </message>
     <message>
         <source>Issue date</source>
-        <translation>Датум издавања</translation>
+        <translation type="vanished">Датум издавања</translation>
     </message>
     <message>
         <source>Expiry date</source>
-        <translation>Датум истека</translation>
+        <translation type="vanished">Датум истека</translation>
     </message>
     <message>
         <source>Valid until</source>
-        <translation>Важи до</translation>
+        <translation type="vanished">Важи до</translation>
     </message>
     <message>
         <source>Permanently valid</source>
-        <translation>Трајно важење</translation>
+        <translation type="vanished">Трајно важење</translation>
     </message>
     <message>
         <source>Insurance basis</source>
-        <translation>Основ осигурања</translation>
+        <translation type="vanished">Основ осигурања</translation>
     </message>
     <message>
         <source>Insurance description</source>
-        <translation>Опис осигурања</translation>
+        <translation type="vanished">Опис осигурања</translation>
     </message>
     <message>
         <source>Insurance start</source>
-        <translation>Почетак осигурања</translation>
+        <translation type="vanished">Почетак осигурања</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>Адреса</translation>
+        <translation type="vanished">Адреса</translation>
     </message>
     <message>
         <source>Street</source>
-        <translation>Улица</translation>
+        <translation type="vanished">Улица</translation>
     </message>
     <message>
         <source>Number</source>
-        <translation>Број</translation>
+        <translation type="vanished">Број</translation>
     </message>
     <message>
         <source>Apartment</source>
-        <translation>Стан</translation>
+        <translation type="vanished">Стан</translation>
     </message>
     <message>
         <source>Place</source>
-        <translation>Место</translation>
+        <translation type="vanished">Место</translation>
     </message>
     <message>
         <source>Municipality</source>
-        <translation>Општина</translation>
+        <translation type="vanished">Општина</translation>
     </message>
     <message>
         <source>Country</source>
-        <translation>Држава</translation>
+        <translation type="vanished">Држава</translation>
     </message>
     <message>
         <source>Insurance Carrier Data</source>
-        <translation>Подаци о носиоцу осигурања</translation>
+        <translation type="vanished">Подаци о носиоцу осигурања</translation>
     </message>
     <message>
         <source>Carrier name</source>
-        <translation>Имe носиоца осигурања</translation>
+        <translation type="vanished">Имe носиоца осигурања</translation>
     </message>
     <message>
         <source>Carrier surname</source>
-        <translation>Презиме носиоца</translation>
+        <translation type="vanished">Презиме носиоца</translation>
     </message>
     <message>
         <source>Relationship</source>
-        <translation>Сродство</translation>
+        <translation type="vanished">Сродство</translation>
     </message>
     <message>
         <source>Carrier ID</source>
-        <translation>ИД носиоца</translation>
+        <translation type="vanished">ИД носиоца</translation>
     </message>
     <message>
         <source>Carrier LBO</source>
-        <translation>ЛБО носиоца</translation>
+        <translation type="vanished">ЛБО носиоца</translation>
     </message>
     <message>
         <source>Employer / Taxpayer</source>
-        <translation>Послодавац / Порески обвезник</translation>
+        <translation type="vanished">Послодавац / Порески обвезник</translation>
     </message>
     <message>
         <source>Employer name</source>
-        <translation>Назив послодавца</translation>
+        <translation type="vanished">Назив послодавца</translation>
     </message>
     <message>
         <source>Employer ID (PIB)</source>
-        <translation>ПИБ послодавца</translation>
+        <translation type="vanished">ПИБ послодавца</translation>
     </message>
     <message>
         <source>Employer residence</source>
-        <translation>Седиште послодавца</translation>
+        <translation type="vanished">Седиште послодавца</translation>
     </message>
     <message>
         <source>Activity code</source>
-        <translation>Шифра делатности</translation>
+        <translation type="vanished">Шифра делатности</translation>
     </message>
 </context>
 <context>
@@ -1604,6 +1688,10 @@
         <source>&lt;b&gt;LibreMiddleware&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html&quot;&gt;LGPL-2.1-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt;</source>
         <translation type="obsolete">&lt;b&gt;Слободни Мидлвер&lt;/b&gt; :: Верзија %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html&quot;&gt;LGPL-2.1-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt;</translation>
     </message>
+    <message>
+        <source>Authentication failed</source>
+        <translation>Аутентификација неуспешна</translation>
+    </message>
 </context>
 <context>
     <name>TextDocument</name>
@@ -1615,164 +1703,160 @@
 <context>
     <name>Vehicle</name>
     <message>
-        <source>Form</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>Print</source>
         <translation type="vanished">Штампа</translation>
     </message>
     <message>
         <source>Vehicle data</source>
-        <translation>Подаци о возилу</translation>
+        <translation type="vanished">Подаци о возилу</translation>
     </message>
     <message>
         <source>Registration number</source>
-        <translation>Регистарски број</translation>
+        <translation type="vanished">Регистарски број</translation>
     </message>
     <message>
         <source>Date of first registration</source>
-        <translation>Датум прве регистрације</translation>
+        <translation type="vanished">Датум прве регистрације</translation>
     </message>
     <message>
         <source>VIN</source>
-        <translation>Број шасије</translation>
+        <translation type="vanished">Број шасије</translation>
     </message>
     <message>
         <source>Category</source>
-        <translation>Категорија</translation>
+        <translation type="vanished">Категорија</translation>
     </message>
     <message>
         <source>Make</source>
-        <translation>Марка</translation>
+        <translation type="vanished">Марка</translation>
     </message>
     <message>
         <source>Type</source>
-        <translation>Тип</translation>
+        <translation type="vanished">Тип</translation>
     </message>
     <message>
         <source>Commercial description</source>
-        <translation>Комерцијални назив</translation>
+        <translation type="vanished">Комерцијални назив</translation>
     </message>
     <message>
         <source>Colour</source>
-        <translation>Боја</translation>
+        <translation type="vanished">Боја</translation>
     </message>
     <message>
         <source>Year of production</source>
-        <translation>Година производње</translation>
+        <translation type="vanished">Година производње</translation>
     </message>
     <message>
         <source>Engine</source>
-        <translation>Мотор</translation>
+        <translation type="vanished">Мотор</translation>
     </message>
     <message>
         <source>Engine number</source>
-        <translation>Број мотора</translation>
+        <translation type="vanished">Број мотора</translation>
     </message>
     <message>
         <source>Capacity (cm3)</source>
-        <translation>Запремина (cm3)</translation>
+        <translation type="vanished">Запремина (cm3)</translation>
     </message>
     <message>
         <source>Power (kW)</source>
-        <translation>Снага (kW)</translation>
+        <translation type="vanished">Снага (kW)</translation>
     </message>
     <message>
         <source>Fuel type</source>
-        <translation>Врста горива</translation>
+        <translation type="vanished">Врста горива</translation>
     </message>
     <message>
         <source>Mass and load</source>
-        <translation>Маса и носивост</translation>
+        <translation type="vanished">Маса и носивост</translation>
     </message>
     <message>
         <source>Mass (kg)</source>
-        <translation>Маса (kg)</translation>
+        <translation type="vanished">Маса (kg)</translation>
     </message>
     <message>
         <source>Max laden mass (kg)</source>
-        <translation>Највећа дозвољена маса (kg)</translation>
+        <translation type="vanished">Највећа дозвољена маса (kg)</translation>
     </message>
     <message>
         <source>Load (kg)</source>
-        <translation>Носивост (kg)</translation>
+        <translation type="vanished">Носивост (kg)</translation>
     </message>
     <message>
         <source>Power/weight ratio</source>
-        <translation>Однос снага/маса</translation>
+        <translation type="vanished">Однос снага/маса</translation>
     </message>
     <message>
         <source>Number of axles</source>
-        <translation>Број осовина</translation>
+        <translation type="vanished">Број осовина</translation>
     </message>
     <message>
         <source>Seats</source>
-        <translation>Седишта</translation>
+        <translation type="vanished">Седишта</translation>
     </message>
     <message>
         <source>Standing places</source>
-        <translation>Стајаћа места</translation>
+        <translation type="vanished">Стајаћа места</translation>
     </message>
     <message>
         <source>Owner</source>
-        <translation>Власник</translation>
+        <translation type="vanished">Власник</translation>
     </message>
     <message>
         <source>Surname / Business name</source>
-        <translation>Презиме / Пословно име</translation>
+        <translation type="vanished">Презиме / Пословно име</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>Име</translation>
+        <translation type="vanished">Име</translation>
     </message>
     <message>
         <source>Address</source>
-        <translation>Адреса</translation>
+        <translation type="vanished">Адреса</translation>
     </message>
     <message>
         <source>Personal number</source>
-        <translation>ЈМБГ</translation>
+        <translation type="vanished">ЈМБГ</translation>
     </message>
     <message>
         <source>User</source>
-        <translation>Корисник</translation>
+        <translation type="vanished">Корисник</translation>
     </message>
     <message>
         <source>Document data</source>
-        <translation>Подаци о документу</translation>
+        <translation type="vanished">Подаци о документу</translation>
     </message>
     <message>
         <source>State issuing</source>
-        <translation>Држава издавања</translation>
+        <translation type="vanished">Држава издавања</translation>
     </message>
     <message>
         <source>Competent authority</source>
-        <translation>Надлежни орган</translation>
+        <translation type="vanished">Надлежни орган</translation>
     </message>
     <message>
         <source>Authority issuing</source>
-        <translation>Орган издавања</translation>
+        <translation type="vanished">Орган издавања</translation>
     </message>
     <message>
         <source>Unambiguous number</source>
-        <translation>Јединствени број</translation>
+        <translation type="vanished">Јединствени број</translation>
     </message>
     <message>
         <source>Serial number</source>
-        <translation>Серијски број</translation>
+        <translation type="vanished">Серијски број</translation>
     </message>
     <message>
         <source>Type approval number</source>
-        <translation>Број одобрења типа</translation>
+        <translation type="vanished">Број одобрења типа</translation>
     </message>
     <message>
         <source>Date of issuance</source>
-        <translation>Датум издавања</translation>
+        <translation type="vanished">Датум издавања</translation>
     </message>
     <message>
         <source>Valid to</source>
-        <translation>Важи до</translation>
+        <translation type="vanished">Важи до</translation>
     </message>
     <message>
         <source>Print Document</source>

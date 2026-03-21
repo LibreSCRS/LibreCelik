@@ -7,16 +7,13 @@
 #include <plugin/card_data.h>
 #include <QWidget>
 
-namespace Ui {
-class Health;
-}
+class CollapsibleSection;
 
 class HealthWidget : public QWidget
 {
     Q_OBJECT
 public:
     explicit HealthWidget(const plugin::CardData& data, QWidget* parent = nullptr);
-    ~HealthWidget();
 
     const plugin::CardData& cardData() const
     {
@@ -24,14 +21,11 @@ public:
     }
 
 private:
-    void populatePersonalData(const plugin::CardFieldGroup* group);
-    void populateInsuranceData(const plugin::CardFieldGroup* group);
-    void populateAddressData(const plugin::CardFieldGroup* group);
-    void populateCarrierData(const plugin::CardFieldGroup* group);
-    void populateTaxpayerData(const plugin::CardFieldGroup* group);
+    void buildLayout();
+    void transformPermanentlyValid();
 
-    Ui::Health* ui;
     plugin::CardData data;
+    CollapsibleSection* carrierSection = nullptr;
 };
 
 #endif // HEALTHWIDGET_H

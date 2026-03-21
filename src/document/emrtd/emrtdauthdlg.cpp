@@ -132,7 +132,7 @@ void EMRTDAuthDlg::onAuthSuccess()
 
 void EMRTDAuthDlg::onAuthFailed(const QString& errorMessage)
 {
-    statusLabel->setStyleSheet("color: red;");
+    statusLabel->setStyleSheet("color: #CC3333;");
     statusLabel->setText(errorMessage);
     statusLabel->setVisible(true);
     authButton->setEnabled(true);

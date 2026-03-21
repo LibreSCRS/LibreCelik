@@ -8,6 +8,12 @@ add_library(pks-gui-plugin MODULE
     pkswidgetplugin.cpp
     pkswidget.h
     pkswidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.h
+    ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/cardheadercard.h
+    ${CMAKE_SOURCE_DIR}/src/utils/cardheadercard.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.h
+    ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.cpp
 )
 target_include_directories(pks-gui-plugin PRIVATE
     ${CMAKE_SOURCE_DIR}/src

@@ -21,3 +21,14 @@ QWidget* EMRTDWidgetPlugin::createWidget(const plugin::CardData& data, QWidget* 
     }
     return new EMRTDWidget(data, parent);
 }
+
+QWidget* EMRTDWidgetPlugin::createEmptyWidget(QWidget* parent) const
+{
+    return new EMRTDWidget(parent);
+}
+
+void EMRTDWidgetPlugin::addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const
+{
+    if (auto* w = qobject_cast<EMRTDWidget*>(widget))
+        w->addGroup(group);
+}

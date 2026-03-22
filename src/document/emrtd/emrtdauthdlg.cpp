@@ -141,6 +141,7 @@ EMRTDAuthDlg::EMRTDAuthDlg(bool paceSupported, QWidget* parent) : QDialog(parent
 
     // Default: always CAN (user-friendly, printed on card)
     canRadio->setChecked(true);
+    canEdit->setFocus();
 
     updateMrzPreview();
 }
@@ -189,8 +190,8 @@ void EMRTDAuthDlg::validateForm()
     if (canRadio->isChecked()) {
         valid = canEdit->text().length() == 6;
     } else {
-        valid = !docNumberEdit->text().isEmpty() && QDate::fromString(dobEdit->text(), "dd.MM.yyyy").isValid()
-                && QDate::fromString(expiryEdit->text(), "dd.MM.yyyy").isValid();
+        valid = !docNumberEdit->text().isEmpty() && QDate::fromString(dobEdit->text(), "dd.MM.yyyy").isValid() &&
+                QDate::fromString(expiryEdit->text(), "dd.MM.yyyy").isValid();
     }
     authButton->setEnabled(valid);
 }

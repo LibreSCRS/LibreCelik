@@ -615,6 +615,10 @@
         <source>Card in reader is not supported.</source>
         <translation>Card in reader is not supported.</translation>
     </message>
+    <message id="lc-reading-card">
+        <source>Reading card...</source>
+        <translation>Reading card...</translation>
+    </message>
     <message id="lc-health-title">
         <source>Health Insurance Card</source>
         <translation>Health Insurance Card</translation>

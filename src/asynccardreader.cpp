@@ -15,10 +15,16 @@ AsyncCardReader::AsyncCardReader(std::vector<plugin::CardPlugin*> candidates,
     : QObject(parent), candidates(std::move(candidates)), conn(std::move(conn))
 {
     qRegisterMetaType<plugin::CardData>("plugin::CardData");
+    qRegisterMetaType<plugin::CardFieldGroup>("plugin::CardFieldGroup");
     qRegisterMetaType<std::vector<plugin::CertificateData>>("std::vector<plugin::CertificateData>");
 }
 
 AsyncCardReader::~AsyncCardReader()
+{
+    cancel();
+}
+
+void AsyncCardReader::cancel()
 {
     stopRequested = true;
     if (futureData.valid())
@@ -44,6 +50,7 @@ void AsyncCardReader::requestData()
         futureData = {};
     }
 
+    stopRequested = false;
     emit readingStarted();
 
     QPointer<AsyncCardReader> self = this;
@@ -61,11 +68,29 @@ void AsyncCardReader::requestData()
             return;
         }
 
+        // Note: if a candidate emits groups via onGroup then throws, those groups
+        // are already queued to the GUI thread. The user may briefly see partial UI
+        // from the wrong plugin. When the correct plugin succeeds, cardDataReady
+        // replaces the widget. Acceptable tradeoff for v1 (avoids double card read).
         for (auto* candidate : candidates) {
             if (stopRequested)
                 return;
             try {
-                auto data = candidate->readCard(*conn);
+                auto callback = [self](const std::string& cardType, const plugin::CardFieldGroup& group) {
+                    if (!self)
+                        return;
+                    auto ct = QString::fromStdString(cardType);
+                    QMetaObject::invokeMethod(
+                        self,
+                        [self, ct, group]() {
+                            if (!self)
+                                return;
+                            emit self->cardGroupReady(ct, group);
+                        },
+                        Qt::QueuedConnection);
+                };
+
+                auto data = candidate->readCardStreaming(*conn, callback);
                 QMetaObject::invokeMethod(
                     self,
                     [this, self, data = std::move(data), candidate]() {
@@ -106,6 +131,11 @@ void AsyncCardReader::requestData()
 
 void AsyncCardReader::requestCertificates()
 {
+    // requestDataWithCredentials already read certs inline and queued
+    // certificatesReady — skip redundant read.
+    if (certsAlreadyQueued)
+        return;
+
     auto* pki = pkiPlugin ? pkiPlugin : activePlugin;
     if (!pki || !pki->supportsPKI())
         return;
@@ -221,6 +251,8 @@ void AsyncCardReader::requestDataWithCredentials(const QMap<QString, QString>& c
     if (futurePKI.valid())
         futurePKI.wait();
 
+    stopRequested = false;
+
     for (auto it = credentials.constBegin(); it != credentials.constEnd(); ++it) {
         activePlugin->setCredentials(it.key().toStdString(), it.value().toStdString());
     }
@@ -234,36 +266,59 @@ void AsyncCardReader::requestDataWithCredentials(const QMap<QString, QString>& c
         if (stopRequested)
             return;
         try {
-            auto data = activePlugin->readCard(*conn);
+            auto callback = [self2](const std::string& cardType, const plugin::CardFieldGroup& group) {
+                if (!self2)
+                    return;
+                auto ct = QString::fromStdString(cardType);
+                QMetaObject::invokeMethod(
+                    self2,
+                    [self2, ct, group]() {
+                        if (!self2)
+                            return;
+                        emit self2->cardGroupReady(ct, group);
+                    },
+                    Qt::QueuedConnection);
+            };
 
-            // PKI fallback — SM filter is now active on conn.
-            // pkiPlugin was discovered during Phase 1 requestData().
+            auto data = activePlugin->readCardStreaming(*conn, callback);
+
+            // Clear SM filter before PKI fallback — eMRTD SM wrapping
+            // may interfere with VERIFY and PKCS#15 operations on contact.
+            conn->clearTransmitFilter();
+
+            // PKI fallback — pkiPlugin was discovered during Phase 1 requestData().
+            // Read certificates inline while the connection is still live.
+            // PIN tries are NOT read here — connectPKISignals chains
+            // certificatesReady → requestPINTriesLeft to avoid double-read.
             std::vector<plugin::CertificateData> certs;
-            int pinTries = -1;
-            auto* pki =
-                pkiPlugin ? pkiPlugin : (activePlugin->supportsPKI() ? activePlugin : nullptr);
+            auto* pki = pkiPlugin ? pkiPlugin : (activePlugin->supportsPKI() ? activePlugin : nullptr);
             if (pki && pki->supportsPKI()) {
                 try {
                     certs = pki->readCertificates(*conn);
-                } catch (...) {
-                }
-                try {
-                    pinTries = pki->getPINTriesLeft(*conn);
                 } catch (...) {
                 }
             }
 
             QMetaObject::invokeMethod(
                 self2,
-                [this, self2, data = std::move(data), certs = std::move(certs), pinTries]() {
+                [this, self2, data = std::move(data), certs = std::move(certs)]() {
                     if (!self2)
                         return;
+                    certsAlreadyQueued = !certs.empty();
                     emit cardDataReady(data);
-                    if (!certs.empty())
-                        emit certificatesReady(certs);
-                    if (pinTries >= 0)
-                        emit pinStatusReady(pinTries, pinTries == 0);
                     emit readingFinished();
+                    // Emit certificatesReady in a separate queued invocation so that
+                    // cardDataReady handlers (which may themselves be QueuedConnection)
+                    // have a chance to call connectPKISignals before the signal fires.
+                    if (!certs.empty()) {
+                        QMetaObject::invokeMethod(
+                            self2, [this, self2, certs]() {
+                                if (!self2)
+                                    return;
+                                emit certificatesReady(certs);
+                            },
+                            Qt::QueuedConnection);
+                    }
                 },
                 Qt::QueuedConnection);
         } catch (const std::exception& e) {

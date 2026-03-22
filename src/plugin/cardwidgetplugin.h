@@ -34,6 +34,21 @@ public:
     // Caller takes ownership of the returned widget.
     virtual QWidget* createWidget(const plugin::CardData& data, QWidget* parent) const = 0;
 
+    // Progressive display: create an empty shell widget for incremental population.
+    // Returns nullptr if plugin does not support streaming (fallback to createWidget).
+    virtual QWidget* createEmptyWidget(QWidget* parent) const
+    {
+        Q_UNUSED(parent);
+        return nullptr;
+    }
+
+    // Progressive display: add a group to an existing widget created by createEmptyWidget.
+    virtual void addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const
+    {
+        Q_UNUSED(group);
+        Q_UNUSED(widget);
+    }
+
     // PKI UI override — return nullptr to use default TokenSection.
     // Caller takes ownership if non-null.
     virtual QWidget* createPKIWidget(QWidget* /*parent*/) const

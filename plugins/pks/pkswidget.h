@@ -7,11 +7,16 @@
 #include <plugin/card_data.h>
 #include <QWidget>
 
+class QVBoxLayout;
+
 class PksWidget : public QWidget
 {
     Q_OBJECT
 public:
     explicit PksWidget(const plugin::CardData& data, QWidget* parent = nullptr);
+    explicit PksWidget(QWidget* parent = nullptr);
+
+    void addGroup(const plugin::CardFieldGroup& group);
 
     const plugin::CardData& cardData() const
     {
@@ -19,7 +24,11 @@ public:
     }
 
 private:
+    void buildHeader();
+
     plugin::CardData data;
+    QVBoxLayout* outerLayout = nullptr;
+    bool headerBuilt = false;
 };
 
 #endif // PKSWIDGET_H

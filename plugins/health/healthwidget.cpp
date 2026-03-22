@@ -70,6 +70,99 @@ HealthWidget::HealthWidget(const plugin::CardData& cardData, QWidget* parent) : 
     buildLayout();
 }
 
+HealthWidget::HealthWidget(QWidget* parent) : QWidget(parent)
+{
+    buildEmptyShell();
+}
+
+void HealthWidget::buildEmptyShell()
+{
+    static const QColor navy(34, 86, 117);
+
+    auto* outerLayout = new QVBoxLayout(this);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
+
+    outerSection = new CollapsibleSection(qtTrId("lc-health-title"), navy, this);
+    outerSection->setHeaderHeight(56);
+    outerSection->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+
+    contentLayout = new QVBoxLayout();
+    outerSection->setLayout(contentLayout);
+
+    outerLayout->addWidget(outerSection);
+}
+
+void HealthWidget::addGroup(const plugin::CardFieldGroup& group)
+{
+    // Accumulate into data for cardData() accessor and printing
+    data.groups.push_back(group);
+
+    const auto& key = group.groupKey;
+    if (key == "personal") {
+        addPersonalGroup(group);
+    } else if (key == "insurance") {
+        addInsuranceGroup(group);
+    } else if (key == "address") {
+        addAddressGroup(group);
+    } else if (key == "carrier") {
+        addCarrierGroup(group);
+    } else if (key == "taxpayer") {
+        addTaxpayerGroup(group);
+    }
+}
+
+void HealthWidget::addPersonalGroup(const plugin::CardFieldGroup& group)
+{
+    // Build CardHeaderCard with health icon and key personal fields.
+    // Insurance fields are not yet available, so only personal fields appear in header.
+    std::vector<LibreSCRS::HeaderField> headerFields;
+    headerFields.push_back({"Name", getFieldValue(&group, "given_name")});
+    headerFields.push_back({"Surname", getFieldValue(&group, "family_name")});
+    headerFields.push_back({"Personal number (JMBG)", getFieldValue(&group, "personal_number")});
+    headerFields.push_back({"Insurant number (LBO)", getFieldValue(&group, "insurant_number")});
+
+    QIcon healthIcon(QStringLiteral(":/images/health-icon.svg"));
+    auto* headerCard = new LibreSCRS::CardHeaderCard(healthIcon, QSize(80, 80), headerFields, outerSection);
+    contentLayout->addWidget(headerCard);
+}
+
+void HealthWidget::addInsuranceGroup(const plugin::CardFieldGroup& group)
+{
+    // Transform permanently_valid in accumulated data
+    transformPermanentlyValid(data.groups.back());
+
+    auto* insuranceSec = LibreSCRS::FieldSectionBuilder::build("Insurance", data.groups.back(),
+                                                               insuranceTranslationMap(), {}, outerSection);
+    contentLayout->addWidget(insuranceSec);
+}
+
+void HealthWidget::addAddressGroup(const plugin::CardFieldGroup& group)
+{
+    auto* addressSec =
+        LibreSCRS::FieldSectionBuilder::build("Address", group, addressTranslationMap(), {}, outerSection);
+    contentLayout->addWidget(addressSec);
+}
+
+void HealthWidget::addCarrierGroup(const plugin::CardFieldGroup& group)
+{
+    auto familyMember = getFieldValue(&group, "carrier_family_member");
+    bool hasData = !group.fields.empty();
+    bool showCarrier = hasData || familyMember == "true";
+
+    if (showCarrier) {
+        carrierSection = LibreSCRS::FieldSectionBuilder::build("Insurance Carrier", group, carrierTranslationMap(), {},
+                                                               outerSection);
+        contentLayout->addWidget(carrierSection);
+    }
+}
+
+void HealthWidget::addTaxpayerGroup(const plugin::CardFieldGroup& group)
+{
+    auto* taxpayerSec =
+        LibreSCRS::FieldSectionBuilder::build("Employer / Taxpayer", group, taxpayerTranslationMap(), {}, outerSection);
+    contentLayout->addWidget(taxpayerSec);
+}
+
 void HealthWidget::transformPermanentlyValid()
 {
     if (auto* field = data.findField("permanently_valid")) {
@@ -80,6 +173,23 @@ void HealthWidget::transformPermanentlyValid()
         } else if (val == "false") {
             std::string no = qtTrId("lc-health-val-no").toStdString();
             field->value.assign(no.begin(), no.end());
+        }
+    }
+}
+
+void HealthWidget::transformPermanentlyValid(plugin::CardFieldGroup& group)
+{
+    for (auto& field : group.fields) {
+        if (field.key == "permanently_valid") {
+            auto val = field.asString();
+            if (val == "true") {
+                std::string yes = qtTrId("lc-health-val-yes").toStdString();
+                field.value.assign(yes.begin(), yes.end());
+            } else if (val == "false") {
+                std::string no = qtTrId("lc-health-val-no").toStdString();
+                field.value.assign(no.begin(), no.end());
+            }
+            break;
         }
     }
 }

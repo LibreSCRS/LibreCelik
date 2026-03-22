@@ -9,6 +9,7 @@
 
 class QGridLayout;
 class QIcon;
+class QLabel;
 class QPixmap;
 class QVBoxLayout;
 
@@ -42,8 +43,12 @@ public:
     // Add verification indicators below the fields on the right side.
     void setVerificationResults(const std::vector<VerificationStatus>& results);
 
+    // Replace the photo pixmap (for progressive display).
+    void setPhoto(const QPixmap& photo, const QSize& photoSize);
+
 private:
     void buildLayout(QWidget* leftWidget, const std::vector<HeaderField>& fields);
+    QLabel* photoLabel = nullptr;
     QGridLayout* fieldsGrid = nullptr;
     QVBoxLayout* rightColumnLayout = nullptr;
 };

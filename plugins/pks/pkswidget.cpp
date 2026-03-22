@@ -14,8 +14,31 @@ using plugin::getFieldValue;
 
 PksWidget::PksWidget(const plugin::CardData& data, QWidget* parent) : QWidget(parent), data(data)
 {
-    auto* outerLayout = new QVBoxLayout(this);
+    outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
+    buildHeader();
+}
+
+PksWidget::PksWidget(QWidget* parent) : QWidget(parent)
+{
+    outerLayout = new QVBoxLayout(this);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
+}
+
+void PksWidget::addGroup(const plugin::CardFieldGroup& group)
+{
+    data.groups.push_back(group);
+
+    if (!headerBuilt && (group.groupKey == "meta" || group.groupKey == "pki")) {
+        buildHeader();
+    }
+}
+
+void PksWidget::buildHeader()
+{
+    if (headerBuilt)
+        return;
+    headerBuilt = true;
 
     // Navy header section
     auto* headerSection = new CollapsibleSection(qtTrId("lc-pks-header-title"), // "Qualified Electronic Certificate"

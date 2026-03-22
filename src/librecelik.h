@@ -44,7 +44,6 @@ private:
     void connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget);
     bool loadLanguage(const QString& locale);
     void updateAboutText();
-    void updateWelcomeChips();
 
 private:
     Ui::LibreCelik* ui;

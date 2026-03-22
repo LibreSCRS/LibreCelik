@@ -8,14 +8,27 @@
 
 #include <QWidget>
 
+class CollapsibleSection;
 class QLabel;
 class QLineEdit;
+class QVBoxLayout;
+
+namespace LibreSCRS {
+class CardHeaderCard;
+}
 
 class EMRTDWidget : public QWidget
 {
     Q_OBJECT
 public:
+    // Full-data constructor (existing behaviour, unchanged)
     explicit EMRTDWidget(const plugin::CardData& data, QWidget* parent = nullptr);
+
+    // Empty-shell constructor for progressive display
+    explicit EMRTDWidget(QWidget* parent);
+
+    // Progressive display: add one group at a time
+    void addGroup(const plugin::CardFieldGroup& group);
 
     const plugin::CardData& cardData() const
     {
@@ -28,6 +41,12 @@ private:
     void showError(const plugin::CardFieldGroup* group);
 
     plugin::CardData data;
+
+    // Progressive-display state
+    QVBoxLayout* outerLayout = nullptr;
+    CollapsibleSection* outerSection = nullptr;
+    QVBoxLayout* sectionLayout = nullptr;
+    LibreSCRS::CardHeaderCard* headerCard = nullptr;
 };
 
 #endif // EMRTDWIDGET_H

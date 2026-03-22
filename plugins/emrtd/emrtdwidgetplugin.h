@@ -29,6 +29,8 @@ public:
         return {QStringLiteral("pkcs15")};
     }
     QWidget* createWidget(const plugin::CardData& data, QWidget* parent) const override;
+    QWidget* createEmptyWidget(QWidget* parent) const override;
+    void addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const override;
 };
 
 #endif // EMRTDWIDGETPLUGIN_H

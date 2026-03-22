@@ -22,16 +22,122 @@ VehicleWidget::VehicleWidget(const plugin::CardData& cardData, QWidget* parent) 
     buildLayout();
 }
 
+VehicleWidget::VehicleWidget(QWidget* parent) : QWidget(parent)
+{
+    buildShell();
+}
+
+void VehicleWidget::buildShell()
+{
+    auto* outerLayout = new QVBoxLayout(this);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
+
+    outerSection = new CollapsibleSection(qtTrId("lc-vehicle-title"), QColor(34, 86, 117), this);
+    outerSection->setHeaderHeight(56);
+
+    contentLayout = new QVBoxLayout();
+    contentLayout->setContentsMargins(8, 8, 8, 8);
+    contentLayout->setSpacing(8);
+
+    outerSection->setLayout(contentLayout);
+    outerSection->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+
+    outerLayout->addWidget(outerSection);
+}
+
+void VehicleWidget::addGroup(const plugin::CardFieldGroup& group)
+{
+    // Accumulate into data for cardData() accessor
+    data.groups.push_back(group);
+
+    if (group.groupKey == "vehicle")
+        addVehicleGroup(group);
+    else if (group.groupKey == "owner")
+        addOwnerGroup(group);
+    else if (group.groupKey == "user")
+        addUserGroup(group);
+}
+
+void VehicleWidget::addVehicleGroup(const plugin::CardFieldGroup& group)
+{
+    // CardHeaderCard: icon + key fields
+    auto regNumber = getFieldValue(&group, "registration_number");
+    auto make = getFieldValue(&group, "vehicle_make");
+    auto model = getFieldValue(&group, "commercial_description");
+    auto year = getFieldValue(&group, "year_of_production");
+    auto expiry = getFieldValue(&group, "expiry_date");
+
+    // Owner name from the vehicle group (owner group may arrive later)
+    auto ownerName = getFieldValue(&group, "owners_surname_or_business_name");
+    auto firstName = getFieldValue(&group, "owner_name");
+    if (!firstName.isEmpty()) {
+        if (!ownerName.isEmpty())
+            ownerName += " ";
+        ownerName += firstName;
+    }
+
+    std::vector<LibreSCRS::HeaderField> headerFields = {
+        {"Registration", regNumber, 2}, {"Make", make},          {"Model", model}, {"Year", year},
+        {"Owner", ownerName},           {"Valid to", expiry, 2},
+    };
+
+    auto* header =
+        new LibreSCRS::CardHeaderCard(QIcon(":/images/vehicle-icon.svg"), QSize(80, 80), headerFields, outerSection);
+    contentLayout->addWidget(header);
+
+    // Engine, Mass, Capacity, Document — stacked vertically
+    contentLayout->addWidget(buildEngineSection(&group));
+    contentLayout->addWidget(buildMassSection(&group));
+    contentLayout->addWidget(buildCapacitySection(&group));
+    contentLayout->addWidget(buildDocumentSection(&group));
+}
+
+void VehicleWidget::addOwnerGroup(const plugin::CardFieldGroup& group)
+{
+    // Owner arrives — check if user group already present
+    const auto* userGroup = data.findGroup("user");
+    auto* section = buildOwnerUserSection(&group, userGroup);
+    contentLayout->addWidget(section);
+}
+
+void VehicleWidget::addUserGroup(const plugin::CardFieldGroup& group)
+{
+    // User arrives — owner group should already be present
+    const auto* ownerGroup = data.findGroup("owner");
+    if (ownerGroup) {
+        // Owner/User section already built by addOwnerGroup — rebuild with both
+        // Find and remove the existing owner/user section
+        for (int i = contentLayout->count() - 1; i >= 0; --i) {
+            auto* item = contentLayout->itemAt(i);
+            if (auto* widget = item ? item->widget() : nullptr) {
+                if (auto* section = qobject_cast<CollapsibleSection*>(widget)) {
+                    if (section->title() == "Owner / User") {
+                        contentLayout->removeWidget(section);
+                        delete section;
+                        break;
+                    }
+                }
+            }
+        }
+        auto* section = buildOwnerUserSection(ownerGroup, &group);
+        contentLayout->addWidget(section);
+    } else {
+        // No owner yet — build with user only
+        auto* section = buildOwnerUserSection(nullptr, &group);
+        contentLayout->addWidget(section);
+    }
+}
+
 void VehicleWidget::buildLayout()
 {
     auto* outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
 
     // Navy outer CollapsibleSection
-    auto* outerSection = new CollapsibleSection(qtTrId("lc-vehicle-title"), QColor(34, 86, 117), this);
+    outerSection = new CollapsibleSection(qtTrId("lc-vehicle-title"), QColor(34, 86, 117), this);
     outerSection->setHeaderHeight(56);
 
-    auto* contentLayout = new QVBoxLayout();
+    contentLayout = new QVBoxLayout();
     contentLayout->setContentsMargins(8, 8, 8, 8);
     contentLayout->setSpacing(8);
 
@@ -62,8 +168,8 @@ void VehicleWidget::buildLayout()
             {"Owner", ownerName},           {"Valid to", expiry, 2},
         };
 
-        auto* header =
-            new LibreSCRS::CardHeaderCard(QIcon(":/images/vehicle-icon.svg"), QSize(80, 80), headerFields, outerSection);
+        auto* header = new LibreSCRS::CardHeaderCard(QIcon(":/images/vehicle-icon.svg"), QSize(80, 80), headerFields,
+                                                     outerSection);
         contentLayout->addWidget(header);
     }
 

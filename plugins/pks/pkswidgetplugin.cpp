@@ -8,3 +8,15 @@ QWidget* PksWidgetPlugin::createWidget(const plugin::CardData& data, QWidget* pa
 {
     return new PksWidget(data, parent);
 }
+
+QWidget* PksWidgetPlugin::createEmptyWidget(QWidget* parent) const
+{
+    return new PksWidget(parent);
+}
+
+void PksWidgetPlugin::addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const
+{
+    if (auto* pks = qobject_cast<PksWidget*>(widget)) {
+        pks->addGroup(group);
+    }
+}

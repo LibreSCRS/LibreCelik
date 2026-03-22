@@ -16,8 +16,10 @@
 #include <QApplication>
 #include <QColor>
 #include <QEvent>
+#include <QLabel>
 #include <QLocale>
 #include <QMenu>
+#include <QProgressBar>
 #include <QScrollArea>
 #include <QSettings>
 #include <QSpacerItem>
@@ -85,8 +87,6 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
     ui->languageButton->setText(locale.startsWith("sr") ? "Српски" : "English");
 
     updateAboutText();
-    updateWelcomeChips();
-
     connect(&SmartCardReaderListener::instance(), &SmartCardReaderListener::smartCardReaderEventOccured, this,
             &LibreCelik::onCardEventReceived);
     connect(&SmartCardReaderListener::instance(), &SmartCardReaderListener::smartCardReaderEnumerationChanged, this,
@@ -98,15 +98,6 @@ void LibreCelik::updateAboutText()
     ui->aboutLabel->setText(QString("<br><br>") + qtTrId("lc-main-about-librecelik").arg(LIBRECELIK_VERSION) +
                             QString("<br>") +
                             qtTrId("lc-main-about-libremiddleware").arg(LIBRECELIK_MIDDLEWARE_VERSION));
-}
-
-void LibreCelik::updateWelcomeChips()
-{
-    ui->chipEid->setText(qtTrId("lc-eid-title-serbian"));
-    ui->chipForeigner->setText(qtTrId("lc-eid-title-foreigner"));
-    ui->chipVehicle->setText(qtTrId("lc-vehicle-title"));
-    ui->chipHealth->setText(qtTrId("lc-health-title"));
-    ui->chipPks->setText(qtTrId("lc-pks-title"));
 }
 
 bool LibreCelik::loadLanguage(const QString& locale)
@@ -136,7 +127,6 @@ void LibreCelik::changeEvent(QEvent* event)
     if (event->type() == QEvent::LanguageChange && uiReady) {
         ui->retranslateUi(this);
         updateAboutText();
-        updateWelcomeChips();
         // retranslateUi resets the button to "English"; restore the actual locale.
         ui->languageButton->setText(locale.startsWith("sr") ? "Српски" : "English");
     }
@@ -153,7 +143,12 @@ void LibreCelik::onCardEventReceived(const smartcard::MonitorEvent& event)
         // Dual-interface readers (e.g. OMNIKEY 5422) expose the same card on both slots.
         // We prefer the contact slot — it avoids CL communication instability.
         auto readerStr = QString::fromStdString(event.readerName);
-        auto basePrefix = readerStr.left(readerStr.indexOf('('));
+        // Use '[' as delimiter — the bracketed part contains slot-specific info
+        // (e.g. "5422CL" vs "5422"). Using '(' would include the brackets and fail to match.
+        int delim = readerStr.indexOf('[');
+        if (delim < 0)
+            delim = readerStr.indexOf('(');
+        auto basePrefix = (delim >= 0) ? readerStr.left(delim) : readerStr;
 
         if (readerStr.contains("CL")) {
             // CL slot detected — skip if contact slot of same reader is already active
@@ -175,7 +170,8 @@ void LibreCelik::onCardEventReceived(const smartcard::MonitorEvent& event)
                 }
             }
             if (!clToRemove.empty()) {
-                qCDebug(libreSCRSGeneral) << "Contact slot detected — removing CL slot:" << QString::fromStdString(clToRemove);
+                qCDebug(libreSCRSGeneral)
+                    << "Contact slot detected — removing CL slot:" << QString::fromStdString(clToRemove);
                 removeReader(clToRemove);
             }
         }
@@ -210,6 +206,22 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
 {
     qCDebug(libreSCRSGeneral) << "addNewReader:" << QString::fromStdString(reader) << "retry=" << retryCount
                               << "activeReaders.count=" << activeReaders.count(reader);
+
+    // Dual-interface: skip CL if contact slot of same physical reader is active.
+    // This catches retries that bypass onCardEventReceived.
+    auto readerStr = QString::fromStdString(reader);
+    if (readerStr.contains("CL")) {
+        int d = readerStr.indexOf('[');
+        auto bp = readerStr.left(d >= 0 ? d : readerStr.indexOf('('));
+        for (const auto& [name, _] : activeReaders) {
+            auto an = QString::fromStdString(name);
+            if (!an.contains("CL") && an.startsWith(bp)) {
+                qCDebug(libreSCRSGeneral) << "Skipping CL — contact slot already active";
+                return;
+            }
+        }
+    }
+
     if (retryCount == 0) {
         // Fresh card event: defensively remove any stale widget left over from a
         // fast swap where CardRemoved wasn't emitted (no-op if nothing registered).
@@ -250,11 +262,55 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
 
     auto* asyncReader = new AsyncCardReader(std::move(candidates), std::move(conn), this);
 
+    // Show loading spinner immediately
+    auto* spinnerWidget = new QWidget(this);
+    {
+        auto* layout = new QVBoxLayout(spinnerWidget);
+        layout->setAlignment(Qt::AlignCenter);
+        auto* bar = new QProgressBar(spinnerWidget);
+        bar->setRange(0, 0);
+        bar->setFixedWidth(200);
+        bar->setTextVisible(false);
+        auto* label = new QLabel(qtTrId("lc-reading-card"), spinnerWidget);
+        label->setAlignment(Qt::AlignCenter);
+        layout->addWidget(bar);
+        layout->addWidget(label);
+    }
+
+    int spinnerIdx = ui->readerStackedWidget->addWidget(spinnerWidget);
+    ui->readerComboBox->addItem(QString::fromStdString(reader));
+    ui->readerComboBox->setCurrentIndex(spinnerIdx);
+    ui->readerComboBox->setVisible(ui->readerComboBox->count() > 1);
+    activeReaders[reader] = {asyncReader, spinnerWidget};
+    ui->stackedWidget->setCurrentIndex(1);
+
+    // Helper: detect if current widget is the loading spinner
+    auto isSpinner = [](QWidget* w) { return w && w->findChild<QProgressBar*>() != nullptr; };
+
+    // Helper: replace the current widget for a reader with a new one
+    auto replaceWidget = [this, reader](QWidget* newWidget) {
+        auto it = activeReaders.find(reader);
+        if (it == activeReaders.end())
+            return;
+        auto* oldWidget = it->second.widget;
+        int widx = ui->readerStackedWidget->indexOf(oldWidget);
+        ui->readerStackedWidget->removeWidget(oldWidget);
+        oldWidget->deleteLater();
+        ui->readerStackedWidget->insertWidget(widx, newWidget);
+        ui->readerStackedWidget->setCurrentIndex(widx);
+        it->second.widget = newWidget;
+    };
+
     connect(asyncReader, &AsyncCardReader::cardDataReady, this,
-            [this, asyncReader, reader](const plugin::CardData& data) {
-                // Phase 2 re-reads (after auth dialog) are handled by the dialog's own lambda.
-                // Skip here if this reader already has a widget AND data is not auth_required.
-                if (activeReaders.count(reader) && !data.findGroup("auth_required"))
+            [this, asyncReader, reader, isSpinner, replaceWidget](const plugin::CardData& data) {
+                auto it = activeReaders.find(reader);
+                if (it == activeReaders.end())
+                    return;
+
+                bool streamedWidget = it->second.widget && !isSpinner(it->second.widget);
+
+                // Phase 2 re-reads are handled by the dialog's own lambda.
+                if (streamedWidget && data.findGroup("auth_required"))
                     return;
 
                 auto* guiPlugin = guiPluginRegistry.findByCardType(QString::fromStdString(data.cardType));
@@ -264,17 +320,8 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                     return;
                 }
 
-                QWidget* topWidget = guiPlugin->createWidget(data, this);
-
-                // eMRTD two-phase auth: show widget + open auth dialog
+                // eMRTD two-phase auth: keep spinner, open auth dialog over it
                 if (data.findGroup("auth_required")) {
-                    int idx = ui->readerStackedWidget->addWidget(topWidget);
-                    ui->readerComboBox->addItem(QString::fromStdString(reader));
-                    ui->readerComboBox->setCurrentIndex(idx);
-                    ui->readerComboBox->setVisible(ui->readerComboBox->count() > 1);
-                    activeReaders[reader] = {asyncReader, topWidget};
-                    ui->stackedWidget->setCurrentIndex(1);
-
                     bool paceSupported =
                         (plugin::getFieldValue(data.findGroup("auth_required"), "pace_supported") == "true");
                     auto* dlg = new EMRTDAuthDlg(paceSupported, this);
@@ -282,42 +329,24 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                     connect(dlg, &EMRTDAuthDlg::credentialsEntered, asyncReader,
                             &AsyncCardReader::requestDataWithCredentials);
 
-                    // Use Qt::SingleShotConnection so phase-2 data doesn't also trigger
-                    // the outer cardDataReady lambda (which would create a duplicate widget).
+                    // Close dialog on first streaming group (auth succeeded, data arriving)
+                    connect(
+                        asyncReader, &AsyncCardReader::cardGroupReady, dlg,
+                        [dlg](const QString& /*cardType*/, const plugin::CardFieldGroup& group) {
+                            if (group.groupKey == "auth_required" || group.groupKey == "error")
+                                return;
+                            dlg->accept();
+                        },
+                        static_cast<Qt::ConnectionType>(Qt::QueuedConnection | Qt::SingleShotConnection));
+
+                    // Phase 2 errors go to the dialog
                     connect(
                         asyncReader, &AsyncCardReader::cardDataReady, dlg,
-                        [this, dlg, reader, guiPlugin](const plugin::CardData& newData) {
-                            if (newData.findGroup("auth_required"))
-                                return;
+                        [dlg](const plugin::CardData& newData) {
                             if (newData.findGroup("error")) {
                                 auto errMsg = plugin::getFieldValue(newData.findGroup("error"), "error");
-                                dlg->onAuthFailed(errMsg.isEmpty() ? tr("Authentication failed") : errMsg);
+                                dlg->onAuthFailed(errMsg.isEmpty() ? QObject::tr("Authentication failed") : errMsg);
                                 return;
-                            }
-                            dlg->accept();
-                            auto* newWidget = guiPlugin->createWidget(newData, this);
-
-                            // Wrap in container + QScrollArea (same as non-auth flow)
-                            auto* container = new QWidget(this);
-                            auto* containerLayout = new QVBoxLayout(container);
-                            containerLayout->setContentsMargins(0, 0, 0, 0);
-                            containerLayout->setAlignment(Qt::AlignTop);
-                            containerLayout->addWidget(newWidget);
-
-                            auto* scrollArea = new QScrollArea(this);
-                            scrollArea->setWidgetResizable(true);
-                            scrollArea->setFrameShape(QFrame::NoFrame);
-                            scrollArea->setWidget(container);
-
-                            auto it = activeReaders.find(reader);
-                            if (it != activeReaders.end()) {
-                                auto* oldWidget = it->second.widget;
-                                int widx = ui->readerStackedWidget->indexOf(oldWidget);
-                                ui->readerStackedWidget->removeWidget(oldWidget);
-                                oldWidget->deleteLater();
-                                ui->readerStackedWidget->insertWidget(widx, scrollArea);
-                                ui->readerStackedWidget->setCurrentIndex(widx);
-                                it->second.widget = scrollArea;
                             }
                         },
                         static_cast<Qt::ConnectionType>(Qt::QueuedConnection | Qt::SingleShotConnection));
@@ -328,6 +357,32 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                     delete dlg;
                     return;
                 }
+
+                // Streaming already built the card widget — just append TokenSection
+                if (streamedWidget) {
+                    if (asyncReader->hasPKI()) {
+                        auto* scrollArea = qobject_cast<QScrollArea*>(it->second.widget);
+                        if (scrollArea && scrollArea->widget()) {
+                            auto* containerLayout = qobject_cast<QVBoxLayout*>(scrollArea->widget()->layout());
+                            if (containerLayout) {
+                                auto* pkiWidget = guiPlugin->createPKIWidget(this);
+                                if (!pkiWidget) {
+                                    auto* ts = new TokenSection(LIBRECELIK_CERTIFICATES_DIR, this);
+                                    ts->setHeaderColor(QColor(230, 135, 60));
+                                    ts->setHeaderHeight(56);
+                                    ts->setPINVisible(true);
+                                    pkiWidget = ts;
+                                }
+                                connectPKISignals(asyncReader, pkiWidget);
+                                containerLayout->addWidget(pkiWidget);
+                                asyncReader->requestCertificates();
+                            }
+                        }
+                    }
+                    return;
+                }
+
+                QWidget* topWidget = guiPlugin->createWidget(data, this);
 
                 if (asyncReader->hasPKI()) {
                     auto* pkiWidget = guiPlugin->createPKIWidget(this);
@@ -354,7 +409,6 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                     topWidget = scrollArea;
 
                     asyncReader->requestCertificates();
-                    asyncReader->requestPINTriesLeft();
                 } else {
                     auto* container = new QWidget(this);
                     auto* containerLayout = new QVBoxLayout(container);
@@ -369,19 +423,59 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                     topWidget = scrollArea;
                 }
 
-                int idx = ui->readerStackedWidget->addWidget(topWidget);
-                ui->readerComboBox->addItem(QString::fromStdString(reader));
-                ui->readerComboBox->setCurrentIndex(idx);
-                ui->readerComboBox->setVisible(ui->readerComboBox->count() > 1);
-
-                activeReaders[reader] = {asyncReader, topWidget};
-                ui->stackedWidget->setCurrentIndex(1);
+                replaceWidget(topWidget);
             });
 
     connect(asyncReader, &AsyncCardReader::errorOccurred, this, [this](const QString& msg) {
         ui->statusbar->show();
         ui->statusbar->showMessage(msg, 5000);
     });
+
+    // Progressive display: replace spinner with empty widget on first group, then add groups
+    connect(asyncReader, &AsyncCardReader::cardGroupReady, this,
+            [this, reader, isSpinner, replaceWidget](const QString& cardType, const plugin::CardFieldGroup& group) {
+                if (group.groupKey == "auth_required" || group.groupKey == "error")
+                    return;
+
+                auto it = activeReaders.find(reader);
+                if (it == activeReaders.end())
+                    return;
+
+                auto* guiPlugin = guiPluginRegistry.findByCardType(cardType);
+                if (!guiPlugin)
+                    return;
+
+                auto* currentWidget = it->second.widget;
+
+                // First group: replace spinner with empty widget shell
+                if (isSpinner(currentWidget)) {
+                    auto* emptyWidget = guiPlugin->createEmptyWidget(this);
+                    if (!emptyWidget)
+                        return; // plugin doesn't support streaming — wait for cardDataReady
+
+                    auto* container = new QWidget(this);
+                    auto* containerLayout = new QVBoxLayout(container);
+                    containerLayout->setContentsMargins(0, 0, 0, 0);
+                    containerLayout->setAlignment(Qt::AlignTop);
+                    containerLayout->addWidget(emptyWidget);
+
+                    auto* scrollArea = new QScrollArea(this);
+                    scrollArea->setWidgetResizable(true);
+                    scrollArea->setFrameShape(QFrame::NoFrame);
+                    scrollArea->setWidget(container);
+
+                    replaceWidget(scrollArea);
+                }
+
+                // Find the plugin widget inside the scroll area and add the group
+                auto* scrollArea = qobject_cast<QScrollArea*>(it->second.widget);
+                if (!scrollArea || !scrollArea->widget())
+                    return;
+
+                auto children = scrollArea->widget()->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+                if (!children.isEmpty())
+                    guiPlugin->addGroup(group, children.first());
+            });
 
     asyncReader->requestData();
 }
@@ -393,19 +487,19 @@ void LibreCelik::removeReader(std::string reader)
         return;
 
     auto& [asyncReader, widget] = it->second;
-    int idx = ui->readerStackedWidget->indexOf(widget);
-    ui->readerComboBox->removeItem(idx);
-    ui->readerStackedWidget->removeWidget(widget);
+    if (widget) {
+        int idx = ui->readerStackedWidget->indexOf(widget);
+        ui->readerComboBox->removeItem(idx);
+        ui->readerStackedWidget->removeWidget(widget);
+        widget->deleteLater();
+    }
     // Close eMRTD auth dialog if open (before disconnecting signals)
     if (auto* dlg = findChild<EMRTDAuthDlg*>()) {
         dlg->reject();
     }
-
-    widget->deleteLater();
-    // Disconnect all signals and schedule deletion. The destructor sets
-    // stopRequested and waits for futures, but queued events may already
-    // be in the event loop. deleteLater ensures they are delivered (to a
-    // disconnected object) before destruction.
+    // Synchronously stop async threads so the PC/SC connection is released
+    // before any new reader on the same physical card tries to connect.
+    asyncReader->cancel();
     asyncReader->disconnect();
     asyncReader->deleteLater();
     activeReaders.erase(it);
@@ -422,6 +516,9 @@ void LibreCelik::connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget)
         return;
 
     connect(reader, &AsyncCardReader::certificatesReady, tokenSection, &TokenSection::setCertificates);
+    // Chain PIN status request after certificates arrive — avoids blocking the
+    // main thread with back-to-back futurePKI.wait() calls.
+    connect(reader, &AsyncCardReader::certificatesReady, reader, &AsyncCardReader::requestPINTriesLeft);
     connect(reader, &AsyncCardReader::pinStatusReady, tokenSection, &TokenSection::setPINStatus);
     connect(tokenSection, &TokenSection::changePINRequested, this, [this, reader]() {
         auto dlg = std::make_unique<ChangePinDlg>(this);

@@ -615,6 +615,10 @@
         <source>Card in reader is not supported.</source>
         <translation>Kartica u čitaču nije podržana.</translation>
     </message>
+    <message id="lc-reading-card">
+        <source>Reading card...</source>
+        <translation>Читање картице...</translation>
+    </message>
     <message id="lc-health-title">
         <source>Health Insurance Card</source>
         <translation>Здравствена картица</translation>

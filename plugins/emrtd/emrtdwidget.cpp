@@ -66,6 +66,95 @@ EMRTDWidget::EMRTDWidget(const plugin::CardData& cardData, QWidget* parent) : QW
     showPersonalData(data);
 }
 
+EMRTDWidget::EMRTDWidget(QWidget* parent) : QWidget(parent)
+{
+    outerLayout = new QVBoxLayout(this);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
+
+    // Navy outer CollapsibleSection — shell for Phase 2 travel document display
+    static const QColor navy(34, 86, 117);
+    outerSection = new CollapsibleSection("Travel Document", navy, this);
+    outerSection->setHeaderHeight(56);
+
+    sectionLayout = new QVBoxLayout();
+    sectionLayout->setSpacing(6);
+
+    outerSection->setLayout(sectionLayout);
+    outerSection->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    outerLayout->addWidget(outerSection);
+}
+
+void EMRTDWidget::addGroup(const plugin::CardFieldGroup& group)
+{
+    const auto& key = group.groupKey;
+
+    // Phase 1 groups are handled by createWidget — ignore here
+    if (key == "auth_required" || key == "error")
+        return;
+
+    // Store the group for cardData() access
+    data.groups.push_back(group);
+
+    if (key == "personal") {
+        // Create CardHeaderCard with placeholder photo + personal fields
+        std::vector<LibreSCRS::HeaderField> headerFields;
+        headerFields.push_back({"Given Names", getFieldValue(&group, "given_names")});
+        headerFields.push_back({"Surname", getFieldValue(&group, "surname")});
+        headerFields.push_back({"Nationality", getFieldValue(&group, "nationality")});
+        headerFields.push_back({"Date of Birth", getFieldValue(&group, "date_of_birth")});
+
+        QPixmap placeholder(190, 250);
+        placeholder.fill(QColor(220, 220, 220));
+        headerCard = new LibreSCRS::CardHeaderCard(placeholder, QSize(190, 250), headerFields, outerSection);
+        sectionLayout->insertWidget(0, headerCard);
+    } else if (key == "document") {
+        // Add document number / expiry to header card if it exists
+        if (headerCard) {
+            // Header card already built — we cannot add fields to it after construction,
+            // but we stored the group so showPersonalData/cardData can access it.
+        }
+        auto* docSection = LibreSCRS::FieldSectionBuilder::build("Document Data", group, documentTranslationMap);
+        sectionLayout->addWidget(docSection);
+    } else if (key == "photo") {
+        // Replace placeholder photo in the header card
+        if (headerCard && !group.fields.empty() && !group.fields[0].value.empty()) {
+            QPixmap photo;
+            photo.loadFromData(group.fields[0].value.data(), static_cast<uint>(group.fields[0].value.size()));
+            if (!photo.isNull())
+                headerCard->setPhoto(photo, QSize(190, 250));
+        }
+    } else if (key == "signature") {
+        if (!group.fields.empty() && !group.fields[0].value.empty()) {
+            auto* sigSection = new CollapsibleSection("Signature / Mark", outerSection);
+            auto* sigLayout = new QVBoxLayout();
+            auto* sigLabel = new QLabel();
+            QPixmap sigPixmap;
+            sigPixmap.loadFromData(group.fields[0].value.data(), static_cast<uint>(group.fields[0].value.size()));
+            sigLabel->setPixmap(sigPixmap.scaled(200, 80, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            sigLabel->setAlignment(Qt::AlignCenter);
+            sigLayout->addWidget(sigLabel);
+            sigSection->setLayout(sigLayout);
+            sectionLayout->addWidget(sigSection);
+        }
+    } else if (key == "additional") {
+        auto* additionalSection = LibreSCRS::FieldSectionBuilder::build("Additional", group, additionalTranslationMap);
+        sectionLayout->addWidget(additionalSection);
+    } else if (key == "document_extra") {
+        // If "additional" already added, show as separate "Issuing Information" section
+        // Otherwise show as "Additional"
+        bool hasAdditional = data.findGroup("additional") != nullptr;
+        if (hasAdditional) {
+            auto* extraSection =
+                LibreSCRS::FieldSectionBuilder::build("Issuing Information", group, documentExtraTranslationMap);
+            sectionLayout->addWidget(extraSection);
+        } else {
+            auto* extraSection =
+                LibreSCRS::FieldSectionBuilder::build("Additional", group, documentExtraTranslationMap);
+            sectionLayout->addWidget(extraSection);
+        }
+    }
+}
+
 void EMRTDWidget::showAuthRequired(const plugin::CardFieldGroup* group)
 {
     auto* layout = qobject_cast<QVBoxLayout*>(this->layout());
@@ -133,8 +222,7 @@ void EMRTDWidget::showPersonalData(const plugin::CardData& data)
         // No photo — show fields only with a placeholder
         QPixmap placeholder(190, 250);
         placeholder.fill(QColor(220, 220, 220));
-        auto* headerCard =
-            new LibreSCRS::CardHeaderCard(placeholder, QSize(190, 250), headerFields, travelDocSection);
+        auto* headerCard = new LibreSCRS::CardHeaderCard(placeholder, QSize(190, 250), headerFields, travelDocSection);
         sectionLayout->addWidget(headerCard);
     }
 

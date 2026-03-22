@@ -21,6 +21,87 @@ EidWidget::EidWidget(const plugin::CardData& cardData, QWidget* parent) : QWidge
     buildLayout();
 }
 
+EidWidget::EidWidget(QWidget* parent) : QWidget(parent)
+{
+    outerLayout = new QVBoxLayout(this);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
+}
+
+void EidWidget::addGroup(const plugin::CardFieldGroup& group)
+{
+    // Accumulate group into data so helpers like isForeigner() / loadPhoto() work
+    data.groups.push_back(group);
+
+    const auto key = QString::fromStdString(group.groupKey);
+
+    if (key == QLatin1String("meta")) {
+        // Determine foreigner status and create the outer CollapsibleSection
+        bool foreigner = isForeigner();
+        outerSection = new CollapsibleSection(foreigner ? qtTrId("lc-eid-title-foreigner") : qtTrId("lc-eid-title"),
+                                              QColor(34, 86, 117), this);
+        outerSection->setHeaderHeight(56);
+
+        sectionLayout = new QVBoxLayout();
+        sectionLayout->setSpacing(6);
+
+        outerSection->setLayout(sectionLayout);
+        outerSection->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+        outerLayout->addWidget(outerSection);
+
+    } else if (key == QLatin1String("personal")) {
+        if (!outerSection)
+            return;
+
+        const auto* personal = data.findGroup("personal");
+        bool foreigner = isForeigner();
+
+        std::vector<LibreSCRS::HeaderField> headerFields;
+        headerFields.push_back({qtTrId("lc-eid-label-given-name"), getFieldValue(personal, "given_name"), 1});
+        headerFields.push_back({qtTrId("lc-eid-label-surname"), getFieldValue(personal, "surname"), 1});
+        headerFields.push_back({qtTrId("lc-eid-label-date-of-birth"), getFieldValue(personal, "date_of_birth"), 1});
+        headerFields.push_back({foreigner ? qtTrId("lc-eid-label-ebs") : qtTrId("lc-eid-label-jmbg"),
+                                getFieldValue(personal, "personal_number"), 1});
+        headerFields.push_back({qtTrId("lc-eid-label-sex"), getFieldValue(personal, "sex"), 1});
+
+        if (foreigner) {
+            headerFields.push_back({qtTrId("lc-eid-label-nationality"), getFieldValue(personal, "nationality"), 1});
+
+            QStringList pobParts;
+            pobParts << getFieldValue(personal, "place_of_birth") << getFieldValue(personal, "community_of_birth")
+                     << getFieldValue(personal, "state_of_birth");
+            pobParts.removeAll(QString());
+            headerFields.push_back({qtTrId("lc-eid-label-place-of-birth"), pobParts.join(", "), 2});
+        } else {
+            headerFields.push_back(
+                {qtTrId("lc-eid-label-parent-name"), getFieldValue(personal, "parent_given_name"), 1});
+        }
+
+        // Grey placeholder photo until the photo group arrives
+        QPixmap placeholder(190, 250);
+        placeholder.fill(QColor(200, 200, 200));
+        headerCard = new LibreSCRS::CardHeaderCard(placeholder, QSize(190, 250), headerFields, outerSection);
+        sectionLayout->addWidget(headerCard);
+
+    } else if (key == QLatin1String("address")) {
+        if (!sectionLayout)
+            return;
+        auto* addressSection = buildAddressSection(outerSection);
+        sectionLayout->addWidget(addressSection);
+
+    } else if (key == QLatin1String("document")) {
+        if (!sectionLayout)
+            return;
+        auto* documentSection = buildDocumentSection(outerSection);
+        sectionLayout->addWidget(documentSection);
+
+    } else if (key == QLatin1String("photo")) {
+        if (!headerCard)
+            return;
+        QPixmap photo = loadPhoto();
+        headerCard->setPhoto(photo, QSize(190, 250));
+    }
+}
+
 bool EidWidget::isForeigner() const
 {
     const auto* cardTypeField = data.findField("card_type");

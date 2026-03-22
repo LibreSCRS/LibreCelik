@@ -32,6 +32,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-main-about-librecelik");
     //% "Card in reader is not supported."
     QT_TRID_NOOP("lc-reader-unsupported-card");
+    //% "Reading card..."
+    QT_TRID_NOOP("lc-reading-card");
     //% "<b>LibreMiddleware</b> :: Version %1 :: <a
     // href=\"https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html\">LGPL-2.1-or-later</a> :: <a
     // href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a>"

@@ -17,7 +17,7 @@ CardHeaderCard::CardHeaderCard(const QPixmap& photo, const QSize& photoSize, con
                                QWidget* parent)
     : QWidget(parent)
 {
-    auto* photoLabel = new QLabel(this);
+    photoLabel = new QLabel(this);
     auto scaledPhoto = photo.scaled(photoSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     photoLabel->setFixedSize(scaledPhoto.size());
     photoLabel->setMinimumSize(scaledPhoto.size());
@@ -123,6 +123,16 @@ void CardHeaderCard::setVerificationResults(const std::vector<VerificationStatus
 
     row->addStretch();
     rightColumnLayout->addLayout(row);
+}
+
+void CardHeaderCard::setPhoto(const QPixmap& photo, const QSize& photoSize)
+{
+    if (!photoLabel)
+        return;
+    auto scaledPhoto = photo.scaled(photoSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    photoLabel->setFixedSize(scaledPhoto.size());
+    photoLabel->setMinimumSize(scaledPhoto.size());
+    photoLabel->setPixmap(scaledPhoto);
 }
 
 } // namespace LibreSCRS

@@ -8,3 +8,14 @@ QWidget* RsEidWidgetPlugin::createWidget(const plugin::CardData& data, QWidget* 
 {
     return new EidWidget(data, parent);
 }
+
+QWidget* RsEidWidgetPlugin::createEmptyWidget(QWidget* parent) const
+{
+    return new EidWidget(parent);
+}
+
+void RsEidWidgetPlugin::addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const
+{
+    if (auto* w = qobject_cast<EidWidget*>(widget))
+        w->addGroup(group);
+}

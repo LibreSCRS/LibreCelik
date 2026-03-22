@@ -182,6 +182,41 @@ void AsyncCardReader::requestPINTriesLeft()
     });
 }
 
+void AsyncCardReader::requestPINTriesLeft(uint8_t pinReference)
+{
+    auto* pki = pkiPlugin ? pkiPlugin : activePlugin;
+    if (!pki || !pki->supportsPKI())
+        return;
+
+    if (futurePKI.valid())
+        futurePKI.wait();
+
+    futurePKI = std::async(std::launch::async, [this, pki, pinReference]() {
+        if (stopRequested)
+            return;
+        try {
+            auto pins = pki->getPINList(*conn);
+            int tries = -1;
+            for (const auto& p : pins) {
+                if (p.reference == pinReference) {
+                    tries = p.triesLeft;
+                    break;
+                }
+            }
+            if (tries == -1 && pins.empty()) {
+                // Fallback to single-PIN API
+                tries = pki->getPINTriesLeft(*conn);
+            }
+            QMetaObject::invokeMethod(
+                this, [this, tries]() { emit pinStatusReady(tries, tries == 0); }, Qt::QueuedConnection);
+        } catch (const std::exception& e) {
+            QMetaObject::invokeMethod(
+                this, [this, msg = QString::fromStdString(e.what())]() { emit errorOccurred(msg); },
+                Qt::QueuedConnection);
+        }
+    });
+}
+
 void AsyncCardReader::requestChangePIN(const QString& oldPin, const QString& newPin)
 {
     auto* pki = pkiPlugin ? pkiPlugin : activePlugin;
@@ -204,6 +239,72 @@ void AsyncCardReader::requestChangePIN(const QString& oldPin, const QString& new
                 [this, result]() {
                     emit pinChangeResult(result.success, result.retriesLeft,
                                          result.success ? QString() : tr("PIN change failed."));
+                },
+                Qt::QueuedConnection);
+        } catch (const std::exception& e) {
+            QMetaObject::invokeMethod(
+                this, [this, msg = QString::fromStdString(e.what())]() { emit pinChangeResult(false, -1, msg); },
+                Qt::QueuedConnection);
+        }
+    });
+}
+
+void AsyncCardReader::requestPINList()
+{
+    auto* pki = pkiPlugin ? pkiPlugin : activePlugin;
+    if (!pki || !pki->supportsPKI())
+        return;
+
+    if (futurePKI.valid())
+        futurePKI.wait();
+
+    futurePKI = std::async(std::launch::async, [this, pki]() {
+        if (stopRequested)
+            return;
+        try {
+            auto pins = pki->getPINList(*conn);
+            if (!pins.empty()) {
+                QMetaObject::invokeMethod(
+                    this, [this, pins = std::move(pins)]() { emit pinListReady(pins); }, Qt::QueuedConnection);
+            } else {
+                int tries = pki->getPINTriesLeft(*conn);
+                QMetaObject::invokeMethod(
+                    this, [this, tries]() { emit pinStatusReady(tries, tries == 0); }, Qt::QueuedConnection);
+            }
+        } catch (const std::exception& e) {
+            QMetaObject::invokeMethod(
+                this, [this, msg = QString::fromStdString(e.what())]() { emit errorOccurred(msg); },
+                Qt::QueuedConnection);
+        }
+    });
+}
+
+void AsyncCardReader::requestChangePIN(uint8_t pinReference, const QString& oldPin, const QString& newPin)
+{
+    auto* pki = pkiPlugin ? pkiPlugin : activePlugin;
+    if (!pki || !pki->supportsPKI())
+        return;
+
+    if (futurePKI.valid())
+        futurePKI.wait();
+
+    auto oldPinStd = oldPin.toStdString();
+    auto newPinStd = newPin.toStdString();
+
+    futurePKI = std::async(std::launch::async, [this, pki, pinReference, oldPinStd, newPinStd]() {
+        if (stopRequested)
+            return;
+        try {
+            auto result = pki->changePIN(*conn, pinReference, oldPinStd, newPinStd);
+            if (!result.success && result.retriesLeft == -1 && !result.blocked) {
+                result = pki->changePIN(*conn, oldPinStd, newPinStd);
+            }
+
+            QMetaObject::invokeMethod(
+                this,
+                [this, result]() {
+                    emit pinChangeResult(result.success, result.retriesLeft,
+                                         result.success ? QString() : qtTrId("lc-changepin-failed"));
                 },
                 Qt::QueuedConnection);
         } catch (const std::exception& e) {

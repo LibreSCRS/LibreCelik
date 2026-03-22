@@ -1649,8 +1649,8 @@
         <translation>Слободни Челик</translation>
     </message>
     <message>
-        <source>Libre platform for smart card applications in Republic of Serbia</source>
-        <translation>Слободна платформа за коришћење паметних картица у Републици Србији</translation>
+        <source>Open-source smart card reader — any card, any platform</source>
+        <translation>Читач смарт картица отвореног кода — било која картица, било која платформа</translation>
     </message>
     <message>
         <source>No smart cards are currently detected in any reader</source>

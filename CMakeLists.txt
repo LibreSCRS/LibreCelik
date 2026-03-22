@@ -30,10 +30,9 @@ FetchContent_Declare(LibreMiddleware
 )
 FetchContent_MakeAvailable(LibreMiddleware)
 
-option(LOCAL_LIBREMIDDLEWARE "Use local LibreMiddleware checkout (for debugging)" OFF)
-
-# Always read the actual version from LibreMiddleware's own git tags
-# (works for both FetchContent clones and local checkouts).
+# Read the actual version from LibreMiddleware's own git tags.
+# When using a local checkout (FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE),
+# append "-local" so the UI clearly shows it's a development build.
 execute_process(
     COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
     WORKING_DIRECTORY ${libremiddleware_SOURCE_DIR}
@@ -43,6 +42,9 @@ execute_process(
 )
 if(MW_GIT_RESULT EQUAL 0 AND MW_GIT_VERSION)
     set(MIDDLEWARE_VERSION ${MW_GIT_VERSION})
+endif()
+if(DEFINED FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE)
+    set(MIDDLEWARE_VERSION "${MIDDLEWARE_VERSION}-local")
 endif()
 
 # Add LibreMiddleware's cmake modules to our path (for FindPCSC, FindUUID)

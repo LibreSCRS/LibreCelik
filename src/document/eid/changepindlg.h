@@ -16,7 +16,7 @@ class ChangePinDlg : public QDialog
 {
     Q_OBJECT
 public:
-    explicit ChangePinDlg(QWidget* parent = nullptr);
+    explicit ChangePinDlg(const QString& pinLabel, bool isTransport, QWidget* parent = nullptr);
     ~ChangePinDlg();
 
 signals:

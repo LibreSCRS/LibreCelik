@@ -31,7 +31,10 @@ public:
     void requestData();
     void requestCertificates();
     void requestPINTriesLeft();
+    void requestPINTriesLeft(uint8_t pinReference);
     void requestChangePIN(const QString& oldPin, const QString& newPin);
+    void requestPINList();
+    void requestChangePIN(uint8_t pinReference, const QString& oldPin, const QString& newPin);
     void requestVerifyPIN(const QString& pin);
     void requestDataWithCredentials(const QMap<QString, QString>& credentials);
 
@@ -49,6 +52,7 @@ signals:
     void pinStatusReady(int triesLeft, bool blocked);
     void pinChangeResult(bool success, int triesLeft, const QString& errorMessage);
     void pinVerifyResult(bool success, int triesLeft);
+    void pinListReady(const std::vector<plugin::PinStatusEntry>& pins);
     void errorOccurred(const QString& message);
     void readingStarted();
     void readingFinished();

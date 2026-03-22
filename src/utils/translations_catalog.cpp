@@ -168,12 +168,20 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-eid-menu-view-cert");
     //% "Change PIN"
     QT_TRID_NOOP("lc-eid-menu-change-pin");
+    //% "Initialize PIN"
+    QT_TRID_NOOP("lc-eid-menu-initialize-pin");
+    //% "Transport PIN (not initialized)"
+    QT_TRID_NOOP("lc-eid-pin-transport");
     //% "Print Document"
     QT_TRID_NOOP("lc-eid-print-title");
 
     // --- Change PIN dialog ---
-    //% "Change PIN"
-    QT_TRID_NOOP("lc-changepin-title");
+    //% "Initialize %1"
+    QT_TRID_NOOP("lc-changepin-initialize-title");
+    //% "Change %1"
+    QT_TRID_NOOP("lc-changepin-change-title");
+    //% "Transport PIN"
+    QT_TRID_NOOP("lc-changepin-transport-placeholder");
     //% "PIN retries remaining: %1"
     QT_TRID_NOOP("lc-changepin-retries-remaining");
     //% "Current PIN"
@@ -194,6 +202,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-changepin-mismatch");
     //% "Show/Hide PIN"
     QT_TRID_NOOP("lc-changepin-show-hide");
+    //% "PIN change failed."
+    QT_TRID_NOOP("lc-changepin-failed");
 
     // --- Certificate viewer ---
     //% "Field"

@@ -9,7 +9,6 @@
 #include <plugin/card_plugin.h>
 #include "utils/collapsiblesection.h"
 
-class QPushButton;
 class QTreeWidget;
 class QTreeWidgetItem;
 
@@ -24,9 +23,10 @@ public:
 public slots:
     void setCertificates(const std::vector<plugin::CertificateData>& certList);
     void setPINStatus(int triesLeft, bool blocked);
+    void setPINList(const std::vector<plugin::PinStatusEntry>& pins);
 
 signals:
-    void changePINRequested();
+    void changePINRequested(uint8_t pinReference, const QString& pinLabel, bool isTransport);
 
 private slots:
     void onCertsButtonClicked();
@@ -37,8 +37,6 @@ private:
     std::string certFolderPath;
     std::vector<plugin::CertificateData> certificateList;
 
-    QPushButton* certsButton = nullptr;
-    QPushButton* changePinButton = nullptr;
     QTreeWidget* treeWidget = nullptr;
     QTreeWidgetItem* tokenCertsItem = nullptr;
     QTreeWidgetItem* tokenPinItem = nullptr;

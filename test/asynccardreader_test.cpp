@@ -64,3 +64,45 @@ TEST(AsyncCardReaderTest, CurrentPluginNullBeforeData)
 // connected to a card reader. These are hardware-dependent integration tests
 // that cannot run in CI without a reader. The fallback chain and signal
 // marshalling are verified with hardware during manual testing.
+
+TEST(PinStatusEntryTest, DefaultValues)
+{
+    plugin::PinStatusEntry entry;
+    EXPECT_TRUE(entry.label.empty());
+    EXPECT_EQ(entry.reference, 0);
+    EXPECT_EQ(entry.triesLeft, -1);
+    EXPECT_TRUE(entry.initialized);
+    EXPECT_FALSE(entry.blocked);
+}
+
+TEST(PinStatusEntryTest, TransportPin)
+{
+    plugin::PinStatusEntry entry{"Signature PIN", 0x82, -1, false, false};
+    EXPECT_EQ(entry.label, "Signature PIN");
+    EXPECT_EQ(entry.reference, 0x82);
+    EXPECT_FALSE(entry.initialized);
+    EXPECT_FALSE(entry.blocked);
+}
+
+TEST(PinStatusEntryTest, BlockedPin)
+{
+    plugin::PinStatusEntry entry{"User PIN", 0x81, 0, true, true};
+    EXPECT_TRUE(entry.blocked);
+    EXPECT_EQ(entry.triesLeft, 0);
+}
+
+TEST(CardPluginTest, MinimalPluginDoesNotSupportPKI)
+{
+    class MinimalPlugin : public plugin::CardPlugin
+    {
+    public:
+        std::string pluginId() const override { return "minimal"; }
+        std::string displayName() const override { return "Minimal"; }
+        int probePriority() const override { return 100; }
+        bool canHandle(const std::vector<uint8_t>&) const override { return false; }
+        plugin::CardData readCard(smartcard::PCSCConnection&) const override { return {}; }
+    };
+
+    MinimalPlugin plugin;
+    EXPECT_FALSE(plugin.supportsPKI());
+}

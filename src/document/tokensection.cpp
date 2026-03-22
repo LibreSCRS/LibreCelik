@@ -4,10 +4,9 @@
 #include "tokensection.h"
 #include "certificate/certificateviewerdlg.h"
 
+#include <QBrush>
 #include <QHeaderView>
-#include <QIcon>
 #include <QMenu>
-#include <QPushButton>
 #include <QEasingCurve>
 #include <QPropertyAnimation>
 #include <QScrollArea>
@@ -101,6 +100,11 @@ static CertInfo parseCertInfo(const std::vector<uint8_t>& der)
     return info;
 }
 
+constexpr int PinReferenceRole = Qt::UserRole;
+constexpr int PinTransportRole = Qt::UserRole + 1;
+constexpr int PinLabelRole = Qt::UserRole + 2;
+constexpr int PinBlockedRole = Qt::UserRole + 3;
+
 } // namespace
 
 TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
@@ -109,15 +113,6 @@ TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
     auto* layout = new QVBoxLayout(this);
     layout->setSpacing(2);
     layout->setContentsMargins(6, 4, 6, 4);
-
-    // Buttons go into the header bar
-    certsButton = new QPushButton(qtTrId("lc-token-certs-button"));
-    certsButton->setIcon(QIcon(":/images/certificate-icon.png"));
-    certsButton->setEnabled(false);
-    changePinButton = new QPushButton(qtTrId("lc-token-change-pin"));
-    changePinButton->setIcon(QIcon(":/images/pin-change-icon.png"));
-    addHeaderWidget(certsButton);
-    addHeaderWidget(changePinButton);
 
     // Tree widget
     treeWidget = new QTreeWidget(this);
@@ -149,8 +144,6 @@ TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
 
     layout->addWidget(treeWidget);
 
-    connect(certsButton, &QPushButton::clicked, this, &TokenSection::onCertsButtonClicked);
-    connect(changePinButton, &QPushButton::clicked, this, &TokenSection::changePINRequested);
     connect(treeWidget, &QTreeWidget::customContextMenuRequested, this, &TokenSection::onContextMenu);
 
     setExpanded(false);
@@ -185,7 +178,6 @@ void TokenSection::setPINVisible(bool visible)
 void TokenSection::setCertificates(const std::vector<plugin::CertificateData>& certList)
 {
     certificateList = certList;
-    certsButton->setEnabled(!certificateList.empty());
 
     while (tokenCertsItem->childCount() > 0)
         delete tokenCertsItem->takeChild(0);
@@ -233,12 +225,52 @@ void TokenSection::setPINStatus(int triesLeft, bool blocked)
 
     auto* item = new QTreeWidgetItem(tokenPinItem);
     item->setText(0, qtTrId("lc-eid-pin-user"));
-    if (blocked)
+    item->setData(0, PinReferenceRole, static_cast<unsigned int>(0x80));
+    item->setData(0, PinTransportRole, false);
+    item->setData(0, PinLabelRole, qtTrId("lc-eid-pin-user"));
+    item->setData(0, PinBlockedRole, blocked);
+    if (blocked) {
         item->setText(1, qtTrId("lc-eid-pin-blocked"));
-    else if (triesLeft >= 0)
+        item->setForeground(1, QBrush(Qt::red));
+    } else if (triesLeft >= 0)
         item->setText(1, qtTrId("lc-eid-pin-tries-remaining").arg(triesLeft));
     else
         item->setText(1, qtTrId("lc-eid-pin-unknown"));
+    tokenPinItem->setExpanded(true);
+    updateTreeMinimumHeight();
+}
+
+void TokenSection::setPINList(const std::vector<plugin::PinStatusEntry>& pins)
+{
+    if (pins.empty()) {
+        tokenPinItem->setHidden(true);
+        return;
+    }
+
+    while (tokenPinItem->childCount() > 0)
+        delete tokenPinItem->takeChild(0);
+
+    for (const auto& pin : pins) {
+        auto* item = new QTreeWidgetItem(tokenPinItem);
+        item->setText(0, QString::fromStdString(pin.label));
+
+        if (!pin.initialized) {
+            item->setText(1, qtTrId("lc-eid-pin-transport"));
+        } else if (pin.blocked) {
+            item->setText(1, qtTrId("lc-eid-pin-blocked"));
+            item->setForeground(1, QBrush(Qt::red));
+        } else if (pin.triesLeft >= 0)
+            item->setText(1, qtTrId("lc-eid-pin-tries-remaining").arg(pin.triesLeft));
+        else
+            item->setText(1, qtTrId("lc-eid-pin-unknown"));
+
+        item->setData(0, PinReferenceRole, pin.reference);
+        item->setData(0, PinTransportRole, !pin.initialized);
+        item->setData(0, PinLabelRole, QString::fromStdString(pin.label));
+        item->setData(0, PinBlockedRole, pin.blocked);
+    }
+
+    tokenPinItem->setHidden(false);
     tokenPinItem->setExpanded(true);
     updateTreeMinimumHeight();
 }
@@ -270,7 +302,6 @@ void TokenSection::onContextMenu(const QPoint& pos)
 
     QMenu menu(this);
 
-    // Certificate item or any of its sub-info children → "View Certificate"
     bool isCertItem = (item->parent() == tokenCertsItem);
     bool isCertChild = (item->parent() && item->parent()->parent() == tokenCertsItem);
     if (isCertItem || isCertChild) {
@@ -278,10 +309,24 @@ void TokenSection::onContextMenu(const QPoint& pos)
         connect(viewAction, &QAction::triggered, this, &TokenSection::onCertsButtonClicked);
     }
 
-    // User PIN child item → "Change PIN"
     if (item->parent() == tokenPinItem) {
-        QAction* pinAction = menu.addAction(qtTrId("lc-eid-menu-change-pin"));
-        connect(pinAction, &QAction::triggered, this, &TokenSection::changePINRequested);
+        bool isTransport = item->data(0, PinTransportRole).toBool();
+        bool isBlocked = item->data(0, PinBlockedRole).toBool();
+        uint8_t pinRef = static_cast<uint8_t>(item->data(0, PinReferenceRole).toUInt());
+        QString pinLabel = item->data(0, PinLabelRole).toString();
+
+        QString actionText = isTransport ? qtTrId("lc-eid-menu-initialize-pin")
+                                         : qtTrId("lc-eid-menu-change-pin");
+        QAction* pinAction = menu.addAction(actionText);
+
+        if (isBlocked) {
+            pinAction->setEnabled(false);
+        } else {
+            connect(pinAction, &QAction::triggered, this,
+                    [this, pinRef, pinLabel, isTransport]() {
+                        emit changePINRequested(pinRef, pinLabel, isTransport);
+                    });
+        }
     }
 
     if (!menu.isEmpty())

@@ -69,7 +69,7 @@
              <item>
               <widget class="QLabel" name="label_2">
                <property name="text">
-                <string>Libre platform for smart card applications in Republic of Serbia</string>
+                <string>Open-source smart card reader — any card, any platform</string>
                </property>
                <property name="styleSheet">
                 <string notr="true">QLabel { color: rgba(255,255,255,190); font-size: 11px; background: transparent; }</string>

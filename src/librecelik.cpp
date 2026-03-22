@@ -140,41 +140,6 @@ void LibreCelik::onCardEventReceived(const smartcard::MonitorEvent& event)
                                                                                             : "CardRemoved")
                               << "received on reader:" << QString::fromStdString(event.readerName);
     if (event.type == smartcard::MonitorEvent::Type::CardInserted) {
-        // Dual-interface readers (e.g. OMNIKEY 5422) expose the same card on both slots.
-        // We prefer the contact slot — it avoids CL communication instability.
-        auto readerStr = QString::fromStdString(event.readerName);
-        // Use '[' as delimiter — the bracketed part contains slot-specific info
-        // (e.g. "5422CL" vs "5422"). Using '(' would include the brackets and fail to match.
-        int delim = readerStr.indexOf('[');
-        if (delim < 0)
-            delim = readerStr.indexOf('(');
-        auto basePrefix = (delim >= 0) ? readerStr.left(delim) : readerStr;
-
-        if (readerStr.contains("CL")) {
-            // CL slot detected — skip if contact slot of same reader is already active
-            for (const auto& [name, _] : activeReaders) {
-                auto activeName = QString::fromStdString(name);
-                if (!activeName.contains("CL") && activeName.startsWith(basePrefix)) {
-                    qCDebug(libreSCRSGeneral) << "Skipping CL slot — contact slot already active for same reader";
-                    return;
-                }
-            }
-        } else {
-            // Contact slot detected — if CL slot of same reader is active, remove it first
-            std::string clToRemove;
-            for (const auto& [name, _] : activeReaders) {
-                auto activeName = QString::fromStdString(name);
-                if (activeName.contains("CL") && activeName.startsWith(basePrefix)) {
-                    clToRemove = name;
-                    break;
-                }
-            }
-            if (!clToRemove.empty()) {
-                qCDebug(libreSCRSGeneral)
-                    << "Contact slot detected — removing CL slot:" << QString::fromStdString(clToRemove);
-                removeReader(clToRemove);
-            }
-        }
         addNewReader(event.readerName);
     } else if (event.type == smartcard::MonitorEvent::Type::CardRemoved) {
         removeReader(event.readerName);
@@ -206,21 +171,6 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
 {
     qCDebug(libreSCRSGeneral) << "addNewReader:" << QString::fromStdString(reader) << "retry=" << retryCount
                               << "activeReaders.count=" << activeReaders.count(reader);
-
-    // Dual-interface: skip CL if contact slot of same physical reader is active.
-    // This catches retries that bypass onCardEventReceived.
-    auto readerStr = QString::fromStdString(reader);
-    if (readerStr.contains("CL")) {
-        int d = readerStr.indexOf('[');
-        auto bp = readerStr.left(d >= 0 ? d : readerStr.indexOf('('));
-        for (const auto& [name, _] : activeReaders) {
-            auto an = QString::fromStdString(name);
-            if (!an.contains("CL") && an.startsWith(bp)) {
-                qCDebug(libreSCRSGeneral) << "Skipping CL — contact slot already active";
-                return;
-            }
-        }
-    }
 
     if (retryCount == 0) {
         // Fresh card event: defensively remove any stale widget left over from a
@@ -370,7 +320,6 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                                     auto* ts = new TokenSection(LIBRECELIK_CERTIFICATES_DIR, this);
                                     ts->setHeaderColor(QColor(230, 135, 60));
                                     ts->setHeaderHeight(56);
-                                    ts->setPINVisible(true);
                                     pkiWidget = ts;
                                 }
                                 connectPKISignals(asyncReader, pkiWidget);
@@ -390,7 +339,6 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                         auto* ts = new TokenSection(LIBRECELIK_CERTIFICATES_DIR, this);
                         ts->setHeaderColor(QColor(230, 135, 60));
                         ts->setHeaderHeight(56);
-                        ts->setPINVisible(true);
                         pkiWidget = ts;
                     }
                     connectPKISignals(asyncReader, pkiWidget);
@@ -516,24 +464,32 @@ void LibreCelik::connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget)
         return;
 
     connect(reader, &AsyncCardReader::certificatesReady, tokenSection, &TokenSection::setCertificates);
-    // Chain PIN status request after certificates arrive — avoids blocking the
-    // main thread with back-to-back futurePKI.wait() calls.
-    connect(reader, &AsyncCardReader::certificatesReady, reader, &AsyncCardReader::requestPINTriesLeft);
+    // Chain PIN list request after certificates arrive
+    connect(reader, &AsyncCardReader::certificatesReady, reader, &AsyncCardReader::requestPINList);
+    // Multi-PIN path
+    connect(reader, &AsyncCardReader::pinListReady, tokenSection, &TokenSection::setPINList);
+    // Single-PIN fallback path (CardEdge)
     connect(reader, &AsyncCardReader::pinStatusReady, tokenSection, &TokenSection::setPINStatus);
-    connect(tokenSection, &TokenSection::changePINRequested, this, [this, reader]() {
-        auto dlg = std::make_unique<ChangePinDlg>(this);
-        connect(dlg.get(), &ChangePinDlg::pinChangeRequested, reader, &AsyncCardReader::requestChangePIN);
-        connect(reader, &AsyncCardReader::pinStatusReady, dlg.get(), &ChangePinDlg::onPinTriesLeftRead);
-        connect(reader, &AsyncCardReader::pinChangeResult, dlg.get(),
-                [dlg = dlg.get()](bool success, int triesLeft, const QString& errorMessage) {
-                    if (success)
-                        dlg->onPinChangeSuccess();
-                    else
-                        dlg->onPinChangeFailed(triesLeft, triesLeft == 0, errorMessage);
-                });
-        reader->requestPINTriesLeft();
-        dlg->exec();
-    });
+
+    connect(tokenSection, &TokenSection::changePINRequested, this,
+            [this, reader](uint8_t pinRef, const QString& pinLabel, bool isTransport) {
+                auto dlg = std::make_unique<ChangePinDlg>(pinLabel, isTransport, this);
+                connect(dlg.get(), &ChangePinDlg::pinChangeRequested, reader,
+                        [reader, pinRef](const QString& oldPin, const QString& newPin) {
+                            reader->requestChangePIN(pinRef, oldPin, newPin);
+                        });
+                connect(reader, &AsyncCardReader::pinStatusReady, dlg.get(),
+                        &ChangePinDlg::onPinTriesLeftRead);
+                connect(reader, &AsyncCardReader::pinChangeResult, dlg.get(),
+                        [dlg = dlg.get()](bool success, int triesLeft, const QString& errorMessage) {
+                            if (success)
+                                dlg->onPinChangeSuccess();
+                            else
+                                dlg->onPinChangeFailed(triesLeft, triesLeft == 0, errorMessage);
+                        });
+                reader->requestPINTriesLeft(pinRef);
+                dlg->exec();
+            });
 }
 
 LibreCelik::~LibreCelik()

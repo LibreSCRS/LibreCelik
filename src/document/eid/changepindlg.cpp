@@ -38,9 +38,10 @@ static QIcon createEyeIcon(bool open)
     return QIcon(px);
 }
 
-ChangePinDlg::ChangePinDlg(QWidget* parent) : QDialog(parent)
+ChangePinDlg::ChangePinDlg(const QString& pinLabel, bool isTransport, QWidget* parent) : QDialog(parent)
 {
-    setWindowTitle(qtTrId("lc-changepin-title"));
+    setWindowTitle(isTransport ? qtTrId("lc-changepin-initialize-title").arg(pinLabel)
+                               : qtTrId("lc-changepin-change-title").arg(pinLabel));
     setMinimumWidth(350);
 
     auto* layout = new QVBoxLayout(this);
@@ -52,7 +53,8 @@ ChangePinDlg::ChangePinDlg(QWidget* parent) : QDialog(parent)
     currentPinEdit->setEchoMode(QLineEdit::Password);
     currentPinEdit->setMaxLength(8);
     currentPinEdit->setValidator(new QIntValidator(0, 99999999, this));
-    currentPinEdit->setPlaceholderText(qtTrId("lc-changepin-current"));
+    currentPinEdit->setPlaceholderText(isTransport ? qtTrId("lc-changepin-transport-placeholder")
+                                                   : qtTrId("lc-changepin-current"));
     addToggleVisibilityAction(currentPinEdit);
     layout->addWidget(currentPinEdit);
 

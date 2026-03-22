@@ -46,8 +46,8 @@ set(PROJECT_SOURCES
         document/tokensection.cpp
         document/eid/changepindlg.h
         document/eid/changepindlg.cpp
-        document/emrtd/emrtdauthdlg.h
-        document/emrtd/emrtdauthdlg.cpp
+        document/emrtd/emrtdauthwidget.h
+        document/emrtd/emrtdauthwidget.cpp
         certificate/certificateinfoitem.h
         certificate/certificateinfoitem.cpp
         certificate/certificatetreeviewmodel.h

@@ -251,9 +251,17 @@
         <source>?</source>
         <translation>?</translation>
     </message>
+    <message id="lc-eid-pin-transport">
+        <source>Transport PIN (not initialized)</source>
+        <translation>Transport PIN (not initialized)</translation>
+    </message>
     <message id="lc-eid-menu-view-cert">
         <source>View Certificate</source>
         <translation>View Certificate</translation>
+    </message>
+    <message id="lc-eid-menu-initialize-pin">
+        <source>Initialize PIN</source>
+        <translation>Initialize PIN</translation>
     </message>
     <message id="lc-eid-menu-change-pin">
         <source>Change PIN</source>
@@ -265,11 +273,23 @@
     </message>
     <message id="lc-changepin-title">
         <source>Change PIN</source>
-        <translation>Change PIN</translation>
+        <translation type="vanished">Change PIN</translation>
+    </message>
+    <message id="lc-changepin-initialize-title">
+        <source>Initialize %1</source>
+        <translation>Initialize %1</translation>
+    </message>
+    <message id="lc-changepin-change-title">
+        <source>Change %1</source>
+        <translation>Change %1</translation>
     </message>
     <message id="lc-changepin-retries-remaining">
         <source>PIN retries remaining: %1</source>
         <translation>PIN retries remaining: %1</translation>
+    </message>
+    <message id="lc-changepin-transport-placeholder">
+        <source>Transport PIN</source>
+        <translation>Transport PIN</translation>
     </message>
     <message id="lc-changepin-current">
         <source>Current PIN</source>
@@ -606,6 +626,10 @@
     <message id="lc-vehicle-title">
         <source>Vehicle Registration</source>
         <translation>Vehicle Registration</translation>
+    </message>
+    <message id="lc-changepin-failed">
+        <source>PIN change failed.</source>
+        <translation>PIN change failed.</translation>
     </message>
     <message id="lc-vehicle-print-title">
         <source>Print Document</source>
@@ -956,8 +980,9 @@
         <translation>Print</translation>
     </message>
     <message id="lc-emrtd-auth-dlg-title">
-        <source>eMRTD Authentication</source>
-        <translation>eMRTD Authentication</translation>
+        <source>Electronic Passport Authentication</source>
+        <oldsource>eMRTD Authentication</oldsource>
+        <translation type="unfinished">eMRTD Authentication</translation>
     </message>
     <message id="lc-emrtd-auth-dlg-subtitle">
         <source>Foreigner ID Card</source>
@@ -998,6 +1023,14 @@
     <message id="lc-emrtd-authenticating">
         <source>Authenticating...</source>
         <translation>Authenticating...</translation>
+    </message>
+    <message id="lc-pkcs15-smart-card">
+        <source></source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="lc-emrtd-insert-mrz-hint">
+        <source></source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1121,7 +1154,14 @@
     </message>
     <message>
         <source>Authentication failed</source>
-        <translation>Authentication failed</translation>
+        <translation type="vanished">Authentication failed</translation>
+    </message>
+</context>
+<context>
+    <name>QObject</name>
+    <message>
+        <source>Authentication failed</source>
+        <translation type="unfinished">Authentication failed</translation>
     </message>
 </context>
 </TS>

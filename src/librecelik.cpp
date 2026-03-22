@@ -4,7 +4,7 @@
 #include "librecelik.h"
 #include "config.h"
 #include "document/eid/changepindlg.h"
-#include "document/emrtd/emrtdauthdlg.h"
+#include "document/emrtd/emrtdauthwidget.h"
 #include "document/tokensection.h"
 #include "plugin/carddatautils.h"
 #include "smartcard/smartcardreaderlistener.h"
@@ -270,41 +270,32 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                     return;
                 }
 
-                // eMRTD two-phase auth: keep spinner, open auth dialog over it
+                // eMRTD two-phase auth: show inline CAN widget in the reader tab.
+                // The auth widget contains a QProgressBar so isSpinner() returns true.
+                // When PACE succeeds, cardGroupReady detects this and replaces the auth
+                // widget with the streaming card data widget — no explicit success handler needed.
                 if (data.findGroup("auth_required")) {
-                    bool paceSupported =
-                        (plugin::getFieldValue(data.findGroup("auth_required"), "pace_supported") == "true");
-                    auto* dlg = new EMRTDAuthDlg(paceSupported, this);
+                    // Re-entry guard: on wrong CAN retry, requestDataWithCredentials emits
+                    // cardDataReady with auth_required + error groups. Route the error to
+                    // the existing widget instead of creating a duplicate.
+                    if (auto* existing = qobject_cast<EMRTDAuthWidget*>(it->second.widget)) {
+                        if (data.findGroup("error")) {
+                            auto errMsg = plugin::getFieldValue(data.findGroup("error"), "error");
+                            existing->onAuthFailed(
+                                errMsg.isEmpty() ? QObject::tr("Authentication failed") : errMsg);
+                        }
+                        return;
+                    }
 
-                    connect(dlg, &EMRTDAuthDlg::credentialsEntered, asyncReader,
+                    auto* authWidget = new EMRTDAuthWidget(this);
+
+                    connect(authWidget, &EMRTDAuthWidget::credentialsEntered, asyncReader,
                             &AsyncCardReader::requestDataWithCredentials);
 
-                    // Close dialog on first streaming group (auth succeeded, data arriving)
-                    connect(
-                        asyncReader, &AsyncCardReader::cardGroupReady, dlg,
-                        [dlg](const QString& /*cardType*/, const plugin::CardFieldGroup& group) {
-                            if (group.groupKey == "auth_required" || group.groupKey == "error")
-                                return;
-                            dlg->accept();
-                        },
-                        static_cast<Qt::ConnectionType>(Qt::QueuedConnection | Qt::SingleShotConnection));
+                    connect(asyncReader, &AsyncCardReader::errorOccurred, authWidget,
+                            &EMRTDAuthWidget::onAuthFailed);
 
-                    // Phase 2 errors go to the dialog
-                    connect(
-                        asyncReader, &AsyncCardReader::cardDataReady, dlg,
-                        [dlg](const plugin::CardData& newData) {
-                            if (newData.findGroup("error")) {
-                                auto errMsg = plugin::getFieldValue(newData.findGroup("error"), "error");
-                                dlg->onAuthFailed(errMsg.isEmpty() ? QObject::tr("Authentication failed") : errMsg);
-                                return;
-                            }
-                        },
-                        static_cast<Qt::ConnectionType>(Qt::QueuedConnection | Qt::SingleShotConnection));
-
-                    connect(asyncReader, &AsyncCardReader::errorOccurred, dlg, &EMRTDAuthDlg::onAuthFailed);
-
-                    dlg->exec();
-                    delete dlg;
+                    replaceWidget(authWidget);
                     return;
                 }
 
@@ -440,10 +431,6 @@ void LibreCelik::removeReader(std::string reader)
         ui->readerComboBox->removeItem(idx);
         ui->readerStackedWidget->removeWidget(widget);
         widget->deleteLater();
-    }
-    // Close eMRTD auth dialog if open (before disconnecting signals)
-    if (auto* dlg = findChild<EMRTDAuthDlg*>()) {
-        dlg->reject();
     }
     // Synchronously stop async threads so the PC/SC connection is released
     // before any new reader on the same physical card tries to connect.

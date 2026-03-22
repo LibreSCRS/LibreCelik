@@ -236,6 +236,7 @@ void TokenSection::setPINStatus(int triesLeft, bool blocked)
         item->setText(1, qtTrId("lc-eid-pin-tries-remaining").arg(triesLeft));
     else
         item->setText(1, qtTrId("lc-eid-pin-unknown"));
+    tokenPinItem->setHidden(false);
     tokenPinItem->setExpanded(true);
     updateTreeMinimumHeight();
 }

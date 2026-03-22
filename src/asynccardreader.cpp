@@ -235,12 +235,34 @@ void AsyncCardReader::requestDataWithCredentials(const QMap<QString, QString>& c
             return;
         try {
             auto data = activePlugin->readCard(*conn);
+
+            // PKI fallback — SM filter is now active on conn.
+            // pkiPlugin was discovered during Phase 1 requestData().
+            std::vector<plugin::CertificateData> certs;
+            int pinTries = -1;
+            auto* pki =
+                pkiPlugin ? pkiPlugin : (activePlugin->supportsPKI() ? activePlugin : nullptr);
+            if (pki && pki->supportsPKI()) {
+                try {
+                    certs = pki->readCertificates(*conn);
+                } catch (...) {
+                }
+                try {
+                    pinTries = pki->getPINTriesLeft(*conn);
+                } catch (...) {
+                }
+            }
+
             QMetaObject::invokeMethod(
                 self2,
-                [this, self2, data = std::move(data)]() {
+                [this, self2, data = std::move(data), certs = std::move(certs), pinTries]() {
                     if (!self2)
                         return;
                     emit cardDataReady(data);
+                    if (!certs.empty())
+                        emit certificatesReady(certs);
+                    if (pinTries >= 0)
+                        emit pinStatusReady(pinTries, pinTries == 0);
                     emit readingFinished();
                 },
                 Qt::QueuedConnection);

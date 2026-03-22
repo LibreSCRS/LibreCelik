@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef EMRTDAUTHDLG_H
-#define EMRTDAUTHDLG_H
+#pragma once
 
 #include <QDialog>
 #include <QMap>
@@ -31,8 +30,11 @@ private slots:
     void onAuthenticateClicked();
     void onAuthModeChanged();
     void validateForm();
+    void updateMrzPreview();
 
 private:
+    QString dateToYYMMDD(const QString& ddmmyyyy) const;
+
     QRadioButton* canRadio;
     QRadioButton* mrzRadio;
     QStackedWidget* inputStack;
@@ -40,9 +42,8 @@ private:
     QLineEdit* docNumberEdit;
     QLineEdit* dobEdit;
     QLineEdit* expiryEdit;
+    QLabel* mrzPreview;
     QLabel* statusLabel;
     QDialogButtonBox* buttonBox;
     QPushButton* authButton;
 };
-
-#endif // EMRTDAUTHDLG_H

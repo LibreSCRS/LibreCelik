@@ -62,7 +62,8 @@ void VehicleWidget::buildLayout()
             {"Owner", ownerName},           {"Valid to", expiry, 2},
         };
 
-        auto* header = new LibreSCRS::CardHeaderCard(QIcon(), QSize(80, 80), headerFields, outerSection);
+        auto* header =
+            new LibreSCRS::CardHeaderCard(QIcon(":/images/vehicle-icon.svg"), QSize(80, 80), headerFields, outerSection);
         contentLayout->addWidget(header);
     }
 
@@ -97,8 +98,11 @@ CollapsibleSection* VehicleWidget::buildEngineSection(const plugin::CardFieldGro
 
     auto addIfPresent = [&](const char* key) {
         auto val = getFieldValue(group, key);
-        if (!val.isEmpty())
-            engineGroup.fields.push_back({key, std::string(val.toUtf8().constData())});
+        if (!val.isEmpty()) {
+            auto bytes = val.toUtf8();
+            engineGroup.fields.push_back(
+                {key, key, plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+        }
     };
 
     addIfPresent("engine_id_number");
@@ -123,8 +127,11 @@ CollapsibleSection* VehicleWidget::buildMassSection(const plugin::CardFieldGroup
 
     auto addIfPresent = [&](const char* key) {
         auto val = getFieldValue(group, key);
-        if (!val.isEmpty())
-            massGroup.fields.push_back({key, std::string(val.toUtf8().constData())});
+        if (!val.isEmpty()) {
+            auto bytes = val.toUtf8();
+            massGroup.fields.push_back(
+                {key, key, plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+        }
     };
 
     addIfPresent("vehicle_mass");
@@ -149,8 +156,11 @@ CollapsibleSection* VehicleWidget::buildCapacitySection(const plugin::CardFieldG
 
     auto addIfPresent = [&](const char* key) {
         auto val = getFieldValue(group, key);
-        if (!val.isEmpty())
-            capGroup.fields.push_back({key, std::string(val.toUtf8().constData())});
+        if (!val.isEmpty()) {
+            auto bytes = val.toUtf8();
+            capGroup.fields.push_back(
+                {key, key, plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+        }
     };
 
     addIfPresent("vehicle_category");
@@ -176,8 +186,11 @@ CollapsibleSection* VehicleWidget::buildDocumentSection(const plugin::CardFieldG
 
     auto addIfPresent = [&](const char* key) {
         auto val = getFieldValue(group, key);
-        if (!val.isEmpty())
-            docGroup.fields.push_back({key, std::string(val.toUtf8().constData())});
+        if (!val.isEmpty()) {
+            auto bytes = val.toUtf8();
+            docGroup.fields.push_back(
+                {key, key, plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+        }
     };
 
     addIfPresent("state_issuing");
@@ -230,8 +243,11 @@ CollapsibleSection* VehicleWidget::buildOwnerUserSection(const plugin::CardField
 
     auto addIfPresent = [&](const plugin::CardFieldGroup* group, const char* key) {
         auto val = getFieldValue(group, key);
-        if (!val.isEmpty())
-            combinedGroup.fields.push_back({key, std::string(val.toUtf8().constData())});
+        if (!val.isEmpty()) {
+            auto bytes = val.toUtf8();
+            combinedGroup.fields.push_back(
+                {key, key, plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+        }
     };
 
     // Owner fields

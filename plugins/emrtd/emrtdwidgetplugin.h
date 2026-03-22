@@ -24,6 +24,10 @@ public:
     {
         return QStringLiteral("eMRTD / Passport");
     }
+    QStringList additionalCardTypes() const override
+    {
+        return {QStringLiteral("pkcs15")};
+    }
     QWidget* createWidget(const plugin::CardData& data, QWidget* parent) const override;
 };
 

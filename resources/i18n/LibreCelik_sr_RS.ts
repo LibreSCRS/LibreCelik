@@ -952,36 +952,40 @@
         <translation>Штампај</translation>
     </message>
     <message id="lc-emrtd-auth-dlg-title">
-        <source>Electronic Passport Authentication</source>
-        <translation>Аутентификација електронског пасоша</translation>
+        <source>eMRTD Authentication</source>
+        <translation>eMRTD Аутентификација</translation>
     </message>
-    <message id="lc-emrtd-insert-mrz-hint">
-        <source>Enter the CAN or MRZ data from your document to authenticate.</source>
-        <translation>Унесите CAN или MRZ податке са вашег документа за аутентификацију.</translation>
+    <message id="lc-emrtd-auth-dlg-subtitle">
+        <source>Foreigner ID Card</source>
+        <translation>Лична карта за странце</translation>
     </message>
-    <message id="lc-emrtd-auth-mode-can">
-        <source>CAN (Card Access Number)</source>
-        <translation>CAN (приступни број картице)</translation>
-    </message>
-    <message id="lc-emrtd-auth-mode-mrz">
-        <source>MRZ (Machine Readable Zone)</source>
-        <translation>MRZ (машински читљива зона)</translation>
-    </message>
-    <message id="lc-emrtd-can-label">
+    <message id="lc-emrtd-auth-can-title">
         <source>CAN</source>
         <translation>CAN</translation>
     </message>
-    <message id="lc-emrtd-mrz-doc-number">
-        <source>Document Number</source>
+    <message id="lc-emrtd-auth-can-desc">
+        <source>6-digit number on card front</source>
+        <translation>6-цифрени број на предњој страни картице</translation>
+    </message>
+    <message id="lc-emrtd-auth-mrz-title">
+        <source>MRZ</source>
+        <translation>MRZ</translation>
+    </message>
+    <message id="lc-emrtd-auth-mrz-desc">
+        <source>Data from document</source>
+        <translation>Подаци са документа</translation>
+    </message>
+    <message id="lc-emrtd-auth-mrz-docnum">
+        <source>Document number</source>
         <translation>Број документа</translation>
     </message>
-    <message id="lc-emrtd-mrz-dob">
-        <source>Date of Birth (YYMMDD)</source>
-        <translation>Датум рођења (ГГММДД)</translation>
+    <message id="lc-emrtd-auth-mrz-dob">
+        <source>Date of birth</source>
+        <translation>Датум рођења</translation>
     </message>
-    <message id="lc-emrtd-mrz-expiry">
-        <source>Date of Expiry (YYMMDD)</source>
-        <translation>Датум истека (ГГММДД)</translation>
+    <message id="lc-emrtd-auth-mrz-expiry">
+        <source>Date of expiry</source>
+        <translation>Датум истека</translation>
     </message>
     <message id="lc-emrtd-authenticate">
         <source>Authenticate</source>

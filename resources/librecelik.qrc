@@ -17,6 +17,8 @@
         <file>LibreSCCelikLogo.png</file>
         <file>LibreSCCelikLogoLatin.png</file>
         <file>smartcard-id-512.png</file>
+        <file>vehicle-icon.svg</file>
+        <file>health-icon.svg</file>
     </qresource>
     <qresource prefix="/html">
         <file>idcard.html</file>

@@ -8,6 +8,7 @@
 
 #include <QIcon>
 #include <QString>
+#include <QStringList>
 #include <QWidget>
 
 class QPrinter;
@@ -21,6 +22,10 @@ public:
     virtual QString cardType() const = 0;
     virtual QString displayName() const = 0;
     virtual QIcon icon() const
+    {
+        return {};
+    }
+    virtual QStringList additionalCardTypes() const
     {
         return {};
     }

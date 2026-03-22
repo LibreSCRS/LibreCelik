@@ -3,6 +3,7 @@
 
 #include "emrtdauthdlg.h"
 
+#include <QDate>
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -13,66 +14,99 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
+namespace {
+QString padRight(const QString& s, int len, QChar fill = '<')
+{
+    if (s.length() >= len)
+        return s.left(len);
+    return s + QString(len - s.length(), fill);
+}
+} // namespace
+
 EMRTDAuthDlg::EMRTDAuthDlg(bool paceSupported, QWidget* parent) : QDialog(parent)
 {
     setWindowTitle(qtTrId("lc-emrtd-auth-dlg-title"));
-    setMinimumWidth(400);
+    setMinimumWidth(420);
 
     auto* layout = new QVBoxLayout(this);
+    layout->setSpacing(12);
 
-    auto* hintLabel = new QLabel(qtTrId("lc-emrtd-insert-mrz-hint"), this);
-    hintLabel->setWordWrap(true);
-    layout->addWidget(hintLabel);
-
-    // Radio buttons for auth mode
+    // Radio buttons
     auto* radioLayout = new QHBoxLayout();
-    canRadio = new QRadioButton(qtTrId("lc-emrtd-auth-mode-can"), this);
-    mrzRadio = new QRadioButton(qtTrId("lc-emrtd-auth-mode-mrz"), this);
+    radioLayout->setSpacing(16);
+    canRadio = new QRadioButton(qtTrId("lc-emrtd-auth-can-title") + " — " + qtTrId("lc-emrtd-auth-can-desc"), this);
+    mrzRadio = new QRadioButton(qtTrId("lc-emrtd-auth-mrz-title") + " — " + qtTrId("lc-emrtd-auth-mrz-desc"), this);
     radioLayout->addWidget(canRadio);
     radioLayout->addWidget(mrzRadio);
     layout->addLayout(radioLayout);
 
-    // Stacked widget for CAN / MRZ input pages
+    // Stacked widget
     inputStack = new QStackedWidget(this);
 
-    // Page 0: CAN input
+    // --- Page 0: CAN ---
     auto* canPage = new QWidget();
     auto* canLayout = new QVBoxLayout(canPage);
-    auto* canLabel = new QLabel(qtTrId("lc-emrtd-can-label"), canPage);
+    canLayout->setContentsMargins(0, 8, 0, 0);
+
+    auto* canHintLabel = new QLabel(qtTrId("lc-emrtd-auth-can-desc"), canPage);
+    canHintLabel->setStyleSheet("color: #888; font-size: 10px;");
+    canLayout->addWidget(canHintLabel);
+
     canEdit = new QLineEdit(canPage);
     canEdit->setMaxLength(6);
     canEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{6}"), this));
     canEdit->setPlaceholderText("000000");
-    canLayout->addWidget(canLabel);
+    canEdit->setStyleSheet("font-family: monospace; font-size: 20px; letter-spacing: 10px;"
+                           "padding: 8px; text-align: center;");
+    canEdit->setAlignment(Qt::AlignCenter);
     canLayout->addWidget(canEdit);
     canLayout->addStretch();
     inputStack->addWidget(canPage);
 
-    // Page 1: MRZ input
+    // --- Page 1: MRZ ---
     auto* mrzPage = new QWidget();
     auto* mrzLayout = new QVBoxLayout(mrzPage);
+    mrzLayout->setContentsMargins(0, 8, 0, 0);
+    mrzLayout->setSpacing(8);
 
-    auto* docNumberLabel = new QLabel(qtTrId("lc-emrtd-mrz-doc-number"), mrzPage);
+    auto* docNumLabel = new QLabel(qtTrId("lc-emrtd-auth-mrz-docnum"), mrzPage);
+    docNumLabel->setStyleSheet("color: #888; font-size: 10px;");
     docNumberEdit = new QLineEdit(mrzPage);
     docNumberEdit->setMaxLength(9);
-    mrzLayout->addWidget(docNumberLabel);
+    mrzLayout->addWidget(docNumLabel);
     mrzLayout->addWidget(docNumberEdit);
 
-    auto* dobLabel = new QLabel(qtTrId("lc-emrtd-mrz-dob"), mrzPage);
-    dobEdit = new QLineEdit(mrzPage);
-    dobEdit->setMaxLength(6);
-    dobEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{6}"), this));
-    dobEdit->setPlaceholderText("YYMMDD");
-    mrzLayout->addWidget(dobLabel);
-    mrzLayout->addWidget(dobEdit);
+    auto* dateRow = new QHBoxLayout();
+    dateRow->setSpacing(8);
 
-    auto* expiryLabel = new QLabel(qtTrId("lc-emrtd-mrz-expiry"), mrzPage);
+    auto* dobBox = new QVBoxLayout();
+    auto* dobLabel = new QLabel(qtTrId("lc-emrtd-auth-mrz-dob"), mrzPage);
+    dobLabel->setStyleSheet("color: #888; font-size: 10px;");
+    dobEdit = new QLineEdit(mrzPage);
+    dobEdit->setInputMask("99.99.9999");
+    dobEdit->setPlaceholderText("DD.MM.YYYY");
+    dobBox->addWidget(dobLabel);
+    dobBox->addWidget(dobEdit);
+    dateRow->addLayout(dobBox);
+
+    auto* expiryBox = new QVBoxLayout();
+    auto* expiryLabel = new QLabel(qtTrId("lc-emrtd-auth-mrz-expiry"), mrzPage);
+    expiryLabel->setStyleSheet("color: #888; font-size: 10px;");
     expiryEdit = new QLineEdit(mrzPage);
-    expiryEdit->setMaxLength(6);
-    expiryEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("\\d{6}"), this));
-    expiryEdit->setPlaceholderText("YYMMDD");
-    mrzLayout->addWidget(expiryLabel);
-    mrzLayout->addWidget(expiryEdit);
+    expiryEdit->setInputMask("99.99.9999");
+    expiryEdit->setPlaceholderText("DD.MM.YYYY");
+    expiryBox->addWidget(expiryLabel);
+    expiryBox->addWidget(expiryEdit);
+    dateRow->addLayout(expiryBox);
+
+    mrzLayout->addLayout(dateRow);
+
+    // MRZ preview
+    mrzPreview = new QLabel(mrzPage);
+    mrzPreview->setStyleSheet("font-family: monospace; font-size: 10px; color: #7CB;"
+                              "background: rgba(0,0,0,0.3); border-radius: 4px; padding: 8px;");
+    mrzPreview->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    mrzLayout->addWidget(mrzPreview);
 
     mrzLayout->addStretch();
     inputStack->addWidget(mrzPage);
@@ -99,11 +133,16 @@ EMRTDAuthDlg::EMRTDAuthDlg(bool paceSupported, QWidget* parent) : QDialog(parent
 
     connect(canEdit, &QLineEdit::textChanged, this, &EMRTDAuthDlg::validateForm);
     connect(docNumberEdit, &QLineEdit::textChanged, this, &EMRTDAuthDlg::validateForm);
+    connect(docNumberEdit, &QLineEdit::textChanged, this, &EMRTDAuthDlg::updateMrzPreview);
     connect(dobEdit, &QLineEdit::textChanged, this, &EMRTDAuthDlg::validateForm);
+    connect(dobEdit, &QLineEdit::textChanged, this, &EMRTDAuthDlg::updateMrzPreview);
     connect(expiryEdit, &QLineEdit::textChanged, this, &EMRTDAuthDlg::validateForm);
+    connect(expiryEdit, &QLineEdit::textChanged, this, &EMRTDAuthDlg::updateMrzPreview);
 
-    // Default to CAN (printed on card, user-friendly)
+    // Default: always CAN (user-friendly, printed on card)
     canRadio->setChecked(true);
+
+    updateMrzPreview();
 }
 
 void EMRTDAuthDlg::onAuthenticateClicked()
@@ -118,8 +157,8 @@ void EMRTDAuthDlg::onAuthenticateClicked()
         credentials["can"] = canEdit->text();
     } else {
         credentials["mrz_doc_number"] = docNumberEdit->text();
-        credentials["mrz_dob"] = dobEdit->text();
-        credentials["mrz_expiry"] = expiryEdit->text();
+        credentials["mrz_dob"] = dateToYYMMDD(dobEdit->text());
+        credentials["mrz_expiry"] = dateToYYMMDD(expiryEdit->text());
     }
 
     emit credentialsEntered(credentials);
@@ -140,11 +179,7 @@ void EMRTDAuthDlg::onAuthFailed(const QString& errorMessage)
 
 void EMRTDAuthDlg::onAuthModeChanged()
 {
-    if (canRadio->isChecked()) {
-        inputStack->setCurrentIndex(0);
-    } else {
-        inputStack->setCurrentIndex(1);
-    }
+    inputStack->setCurrentIndex(canRadio->isChecked() ? 0 : 1);
     validateForm();
 }
 
@@ -154,7 +189,31 @@ void EMRTDAuthDlg::validateForm()
     if (canRadio->isChecked()) {
         valid = canEdit->text().length() == 6;
     } else {
-        valid = !docNumberEdit->text().isEmpty() && dobEdit->text().length() == 6 && expiryEdit->text().length() == 6;
+        valid = !docNumberEdit->text().isEmpty() && QDate::fromString(dobEdit->text(), "dd.MM.yyyy").isValid()
+                && QDate::fromString(expiryEdit->text(), "dd.MM.yyyy").isValid();
     }
     authButton->setEnabled(valid);
+}
+
+void EMRTDAuthDlg::updateMrzPreview()
+{
+    QString docNum = padRight(docNumberEdit->text().toUpper(), 9);
+    QString dob = dateToYYMMDD(dobEdit->text());
+    if (dob.isEmpty())
+        dob = "<<<<<<";
+    QString expiry = dateToYYMMDD(expiryEdit->text());
+    if (expiry.isEmpty())
+        expiry = "<<<<<<";
+
+    QString line1 = padRight("I<SRV" + docNum, 30);
+    QString line2 = padRight(dob + "<" + expiry + "SRV", 30);
+    mrzPreview->setText(line1 + "\n" + line2);
+}
+
+QString EMRTDAuthDlg::dateToYYMMDD(const QString& ddmmyyyy) const
+{
+    QDate d = QDate::fromString(ddmmyyyy, "dd.MM.yyyy");
+    if (!d.isValid())
+        return {};
+    return d.toString("yyMMdd");
 }

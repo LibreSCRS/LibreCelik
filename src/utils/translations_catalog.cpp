@@ -501,8 +501,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     // eMRTD (Electronic Passport)
     //% "Authentication Required"
     QT_TRID_NOOP("lc-emrtd-auth-required");
-    //% "Enter the CAN or MRZ data from your document to authenticate."
-    QT_TRID_NOOP("lc-emrtd-insert-mrz-hint");
     //% "Authentication Failed"
     QT_TRID_NOOP("lc-emrtd-auth-failed");
     //% "Personal Data"
@@ -535,18 +533,22 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-emrtd-issuing-info");
     //% "Electronic Passport Authentication"
     QT_TRID_NOOP("lc-emrtd-auth-dlg-title");
-    //% "CAN (Card Access Number)"
-    QT_TRID_NOOP("lc-emrtd-auth-mode-can");
-    //% "MRZ (Machine Readable Zone)"
-    QT_TRID_NOOP("lc-emrtd-auth-mode-mrz");
+    //% "Foreigner ID Card"
+    QT_TRID_NOOP("lc-emrtd-auth-dlg-subtitle");
     //% "CAN"
-    QT_TRID_NOOP("lc-emrtd-can-label");
-    //% "Document Number"
-    QT_TRID_NOOP("lc-emrtd-mrz-doc-number");
-    //% "Date of Birth (YYMMDD)"
-    QT_TRID_NOOP("lc-emrtd-mrz-dob");
-    //% "Date of Expiry (YYMMDD)"
-    QT_TRID_NOOP("lc-emrtd-mrz-expiry");
+    QT_TRID_NOOP("lc-emrtd-auth-can-title");
+    //% "6-digit number on card front"
+    QT_TRID_NOOP("lc-emrtd-auth-can-desc");
+    //% "MRZ"
+    QT_TRID_NOOP("lc-emrtd-auth-mrz-title");
+    //% "Data from document"
+    QT_TRID_NOOP("lc-emrtd-auth-mrz-desc");
+    //% "Document number"
+    QT_TRID_NOOP("lc-emrtd-auth-mrz-docnum");
+    //% "Date of birth"
+    QT_TRID_NOOP("lc-emrtd-auth-mrz-dob");
+    //% "Date of expiry"
+    QT_TRID_NOOP("lc-emrtd-auth-mrz-expiry");
     //% "Authenticate"
     QT_TRID_NOOP("lc-emrtd-authenticate");
     //% "Authenticating..."

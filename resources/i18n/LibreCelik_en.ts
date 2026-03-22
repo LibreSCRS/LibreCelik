@@ -952,36 +952,40 @@
         <translation>Print</translation>
     </message>
     <message id="lc-emrtd-auth-dlg-title">
-        <source>Electronic Passport Authentication</source>
-        <translation>Electronic Passport Authentication</translation>
+        <source>eMRTD Authentication</source>
+        <translation>eMRTD Authentication</translation>
     </message>
-    <message id="lc-emrtd-insert-mrz-hint">
-        <source>Enter the CAN or MRZ data from your document to authenticate.</source>
-        <translation>Enter the CAN or MRZ data from your document to authenticate.</translation>
+    <message id="lc-emrtd-auth-dlg-subtitle">
+        <source>Foreigner ID Card</source>
+        <translation>Foreigner ID Card</translation>
     </message>
-    <message id="lc-emrtd-auth-mode-can">
-        <source>CAN (Card Access Number)</source>
-        <translation>CAN (Card Access Number)</translation>
-    </message>
-    <message id="lc-emrtd-auth-mode-mrz">
-        <source>MRZ (Machine Readable Zone)</source>
-        <translation>MRZ (Machine Readable Zone)</translation>
-    </message>
-    <message id="lc-emrtd-can-label">
+    <message id="lc-emrtd-auth-can-title">
         <source>CAN</source>
         <translation>CAN</translation>
     </message>
-    <message id="lc-emrtd-mrz-doc-number">
-        <source>Document Number</source>
-        <translation>Document Number</translation>
+    <message id="lc-emrtd-auth-can-desc">
+        <source>6-digit number on card front</source>
+        <translation>6-digit number on card front</translation>
     </message>
-    <message id="lc-emrtd-mrz-dob">
-        <source>Date of Birth (YYMMDD)</source>
-        <translation>Date of Birth (YYMMDD)</translation>
+    <message id="lc-emrtd-auth-mrz-title">
+        <source>MRZ</source>
+        <translation>MRZ</translation>
     </message>
-    <message id="lc-emrtd-mrz-expiry">
-        <source>Date of Expiry (YYMMDD)</source>
-        <translation>Date of Expiry (YYMMDD)</translation>
+    <message id="lc-emrtd-auth-mrz-desc">
+        <source>Data from document</source>
+        <translation>Data from document</translation>
+    </message>
+    <message id="lc-emrtd-auth-mrz-docnum">
+        <source>Document number</source>
+        <translation>Document number</translation>
+    </message>
+    <message id="lc-emrtd-auth-mrz-dob">
+        <source>Date of birth</source>
+        <translation>Date of birth</translation>
+    </message>
+    <message id="lc-emrtd-auth-mrz-expiry">
+        <source>Date of expiry</source>
+        <translation>Date of expiry</translation>
     </message>
     <message id="lc-emrtd-authenticate">
         <source>Authenticate</source>

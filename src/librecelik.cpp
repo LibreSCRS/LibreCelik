@@ -150,6 +150,35 @@ void LibreCelik::onCardEventReceived(const smartcard::MonitorEvent& event)
                                                                                             : "CardRemoved")
                               << "received on reader:" << QString::fromStdString(event.readerName);
     if (event.type == smartcard::MonitorEvent::Type::CardInserted) {
+        // Dual-interface readers (e.g. OMNIKEY 5422) expose the same card on both slots.
+        // We prefer the contact slot — it avoids CL communication instability.
+        auto readerStr = QString::fromStdString(event.readerName);
+        auto basePrefix = readerStr.left(readerStr.indexOf('('));
+
+        if (readerStr.contains("CL")) {
+            // CL slot detected — skip if contact slot of same reader is already active
+            for (const auto& [name, _] : activeReaders) {
+                auto activeName = QString::fromStdString(name);
+                if (!activeName.contains("CL") && activeName.startsWith(basePrefix)) {
+                    qCDebug(libreSCRSGeneral) << "Skipping CL slot — contact slot already active for same reader";
+                    return;
+                }
+            }
+        } else {
+            // Contact slot detected — if CL slot of same reader is active, remove it first
+            std::string clToRemove;
+            for (const auto& [name, _] : activeReaders) {
+                auto activeName = QString::fromStdString(name);
+                if (activeName.contains("CL") && activeName.startsWith(basePrefix)) {
+                    clToRemove = name;
+                    break;
+                }
+            }
+            if (!clToRemove.empty()) {
+                qCDebug(libreSCRSGeneral) << "Contact slot detected — removing CL slot:" << QString::fromStdString(clToRemove);
+                removeReader(clToRemove);
+            }
+        }
         addNewReader(event.readerName);
     } else if (event.type == smartcard::MonitorEvent::Type::CardRemoved) {
         removeReader(event.readerName);

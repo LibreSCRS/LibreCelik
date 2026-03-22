@@ -49,6 +49,10 @@ void CardWidgetPluginRegistry::loadPluginsFromDirectory(const QString& dir)
 
         qCInfo(lcPluginRegistry) << "Loaded GUI plugin:" << plugin->cardType() << "(" << plugin->displayName() << ")";
         pluginMap.insert(plugin->cardType(), plugin);
+        for (const auto& type : plugin->additionalCardTypes()) {
+            qCInfo(lcPluginRegistry) << "  also registered for cardType:" << type;
+            pluginMap.insert(type, plugin);
+        }
         loaders.append(loader);
     }
 }

@@ -114,7 +114,7 @@ void HealthWidget::buildLayout()
         headerFields.push_back({"Valid until", getFieldValue(insurance, "valid_until")});
     }
 
-    QIcon healthIcon(QStringLiteral(":/images/smartcard-id-512.png"));
+    QIcon healthIcon(QStringLiteral(":/images/health-icon.svg"));
     auto* headerCard = new LibreSCRS::CardHeaderCard(healthIcon, QSize(80, 80), headerFields, outerSection);
     contentLayout->addWidget(headerCard);
 

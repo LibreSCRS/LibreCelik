@@ -9,6 +9,10 @@
 
 #include <plugin/card_plugin_registry.h>
 
+namespace smartcard {
+struct MonitorEvent;
+}
+
 #include <QMainWindow>
 #include <QTranslator>
 
@@ -17,8 +21,6 @@ namespace Ui {
 class LibreCelik;
 }
 QT_END_NAMESPACE
-
-class SmartCardEvent;
 
 class LibreCelik : public QMainWindow
 {
@@ -32,7 +34,7 @@ protected:
     void changeEvent(QEvent* event) override;
 
 private slots:
-    void onCardEventReceived(const SmartCardEvent& sce);
+    void onCardEventReceived(const smartcard::MonitorEvent& event);
     void onSmartCardReaderEnumerationChanged(const QStringList& scrNames);
     void onLanguageChanged(int index);
 

@@ -77,6 +77,24 @@ void EidWidget::buildLayout()
     }
 
     auto* headerCard = new LibreSCRS::CardHeaderCard(loadPhoto(), QSize(190, 250), headerFields, outerSection);
+
+    // Verification indicators — read from middleware meta group
+    const auto* meta = data.findGroup("meta");
+    if (meta) {
+        auto toResult = [](const QString& val) -> LibreSCRS::VerificationStatus::Result {
+            if (val == "valid")
+                return LibreSCRS::VerificationStatus::Valid;
+            if (val == "invalid")
+                return LibreSCRS::VerificationStatus::Invalid;
+            return LibreSCRS::VerificationStatus::Unknown;
+        };
+        headerCard->setVerificationResults({
+            {qtTrId("lc-eid-label-card-verification"), toResult(getFieldValue(meta, "card_verification"))},
+            {qtTrId("lc-eid-label-fixed-verification"), toResult(getFieldValue(meta, "fixed_verification"))},
+            {qtTrId("lc-eid-label-variable-verification"), toResult(getFieldValue(meta, "variable_verification"))},
+        });
+    }
+
     sectionLayout->addWidget(headerCard);
 
     // --- Inner sections: Address + Document (stacked vertically) ---

@@ -42,6 +42,10 @@ void CardHeaderCard::buildLayout(QWidget* leftWidget, const std::vector<HeaderFi
     mainLayout->setContentsMargins(10, 10, 10, 10);
     mainLayout->addWidget(leftWidget, 0, Qt::AlignTop);
 
+    // Right column: fields grid at top, stretch, verification at bottom
+    rightColumnLayout = new QVBoxLayout();
+    rightColumnLayout->setContentsMargins(0, 0, 0, 0);
+
     fieldsGrid = new QGridLayout();
     fieldsGrid->setSpacing(4);
 
@@ -73,7 +77,52 @@ void CardHeaderCard::buildLayout(QWidget* leftWidget, const std::vector<HeaderFi
 
     auto* fieldsWidget = new QWidget(this);
     fieldsWidget->setLayout(fieldsGrid);
-    mainLayout->addWidget(fieldsWidget, 1, Qt::AlignTop);
+    rightColumnLayout->addWidget(fieldsWidget, 0);
+
+    mainLayout->addLayout(rightColumnLayout, 1);
+}
+
+void CardHeaderCard::setVerificationResults(const std::vector<VerificationStatus>& results)
+{
+    if (!rightColumnLayout || results.empty())
+        return;
+
+    auto* row = new QHBoxLayout();
+    row->setContentsMargins(0, 2, 0, 0);
+    row->setSpacing(12);
+
+    for (const auto& r : results) {
+        auto* item = new QHBoxLayout();
+        item->setSpacing(3);
+
+        auto* icon = new QLabel(this);
+        auto* text = new QLabel(r.label, this);
+
+        switch (r.result) {
+        case VerificationStatus::Valid:
+            icon->setText(QStringLiteral("\u2714")); // ✔
+            icon->setStyleSheet("color: #4CAF50; font-size: 12px;");
+            text->setStyleSheet("color: #4CAF50; font-size: 10px;");
+            break;
+        case VerificationStatus::Invalid:
+            icon->setText(QStringLiteral("\u2718")); // ✘
+            icon->setStyleSheet("color: #F44336; font-size: 12px;");
+            text->setStyleSheet("color: #F44336; font-size: 10px;");
+            break;
+        case VerificationStatus::Unknown:
+            icon->setText(QStringLiteral("?")); // ?
+            icon->setStyleSheet("color: #9E9E9E; font-size: 12px;");
+            text->setStyleSheet("color: #9E9E9E; font-size: 10px;");
+            break;
+        }
+
+        item->addWidget(icon);
+        item->addWidget(text);
+        row->addLayout(item);
+    }
+
+    row->addStretch();
+    rightColumnLayout->addLayout(row);
 }
 
 } // namespace LibreSCRS

@@ -29,11 +29,6 @@ set(SOURCE_FILES
     ../src/utils/libreceliklog.h
     ../src/utils/libreceliklog.cpp
     ../src/libreceliktypes.h
-    ../src/smartcard/smartcardscanner.h
-    ../src/smartcard/smartcardscanner.cpp
-    ../src/smartcard/smartcardevent.h
-    ../src/smartcard/ipcscscanprovider.h
-    ../src/smartcard/pcscscanprovider.h
 )
 
 add_executable(
@@ -42,8 +37,6 @@ add_executable(
     hello_test.cpp
     configuration_test.cpp
     uuid_test.cpp
-    smartcardscanner_test.h
-    smartcardscanner_test.cpp
     collapsiblesection_test.cpp
     ../src/utils/collapsiblesection.h
     ../src/utils/collapsiblesection.cpp
@@ -56,7 +49,6 @@ target_link_libraries(
     GTest::gtest_main
     CardPlugin
     EIdCard
-    PCSC::PCSC
     UUID::UUID
     Qt6::Core
     Qt6::Widgets
@@ -105,3 +97,22 @@ target_link_libraries(AsyncCardReaderTests
 )
 set_target_properties(AsyncCardReaderTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(AsyncCardReaderTests)
+
+add_executable(QSmartCardMonitorTests
+    qsmartcardmonitor_test.cpp
+    ../src/smartcard/qsmartcardmonitor.h
+    ../src/smartcard/qsmartcardmonitor.cpp
+)
+set_target_properties(QSmartCardMonitorTests PROPERTIES AUTOMOC ON)
+target_link_libraries(QSmartCardMonitorTests PRIVATE
+    GTest::gtest_main
+    Qt6::Core
+    Qt6::Test
+    SmartCard
+    Threads::Threads
+)
+target_include_directories(QSmartCardMonitorTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${libremiddleware_SOURCE_DIR}/test
+)
+gtest_discover_tests(QSmartCardMonitorTests)

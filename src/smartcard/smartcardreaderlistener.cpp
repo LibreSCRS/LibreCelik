@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0 and LibreSCRS contributors
 
 #include "smartcardreaderlistener.h"
-#include "smartcardscanner.h"
+#include "qsmartcardmonitor.h"
 #include "utils/libreceliklog.h"
-#include <QThread>
 
 SmartCardReaderListener& SmartCardReaderListener::instance()
 {
@@ -14,50 +13,35 @@ SmartCardReaderListener& SmartCardReaderListener::instance()
 
 SmartCardReaderListener::SmartCardReaderListener(QObject* parent) : QObject(parent)
 {
-    scannerThread = new QThread(this);
-    scScanner = new SmartCardScanner;
-    scScanner->moveToThread(scannerThread);
+    qRegisterMetaType<smartcard::MonitorEvent>("smartcard::MonitorEvent");
 
-    connect(scannerThread, &QThread::started, scScanner, &SmartCardScanner::doWork);
-    connect(scannerThread, &QThread::finished, scScanner, &QObject::deleteLater);
-    connect(scannerThread, &QThread::finished, scannerThread, &QObject::deleteLater);
-    connect(scScanner, &SmartCardScanner::smartCardReaderEnumerationChanged, this,
-            &SmartCardReaderListener::onSmartCardReaderEnumerationChanged);
-    connect(scScanner, &SmartCardScanner::smartCardEventOccured, this,
-            &SmartCardReaderListener::onSmartCardEventOccured);
+    monitor = std::make_unique<smartcard::Monitor>();
+    qtMonitor = new QSmartCardMonitor(*monitor, this);
 
-    if (!scannerThread->isRunning()) {
-        scannerThread->start();
-    }
+    connect(qtMonitor, &QSmartCardMonitor::readerListChanged, this, [this](const QStringList& readers) {
+        qCDebug(librecSCRSCard) << "SmartCardListener (main thread) got readers:";
+        for (const auto& r : readers)
+            qCInfo(librecSCRSCard) << "    " << r;
+        emit smartCardReaderEnumerationChanged(readers);
+    });
+
+    connect(qtMonitor, &QSmartCardMonitor::cardEvent, this, [this](const smartcard::MonitorEvent& event) {
+        qCDebug(librecSCRSCard) << "SmartCardListener received event from the reader:"
+                                << QString::fromStdString(event.readerName) << "Type:"
+                                << (event.type == smartcard::MonitorEvent::Type::CardInserted ? "CardInserted"
+                                                                                              : "CardRemoved");
+        emit smartCardReaderEventOccured(event);
+    });
 }
 
-SmartCardReaderListener::~SmartCardReaderListener()
+void SmartCardReaderListener::shutdown()
 {
-    if (scannerThread->isRunning()) {
-        scScanner->requestStop();
-        scannerThread->requestInterruption();
-        scannerThread->quit();
-        if (!scannerThread->wait(5000)) {
-            qCWarning(librecSCRSCard) << "Scanner thread did not finish in time";
-        }
-    }
+    // Explicitly destroy monitor before static destruction order issues.
+    // QSmartCardMonitor unsubscribes in its destructor (child QObject, destroyed first),
+    // then Monitor joins the thread.
+    delete qtMonitor;
+    qtMonitor = nullptr;
+    monitor.reset();
 }
 
-// Received from sc scanner
-void SmartCardReaderListener::onSmartCardReaderEnumerationChanged(const QStringList& scrNames)
-{
-    qCDebug(librecSCRSCard) << "SmartCardListener (main thread) got readers: ";
-    for (auto& scrName : scrNames)
-        qCInfo(librecSCRSCard) << "    " << scrName;
-
-    emit smartCardReaderEnumerationChanged(scrNames);
-}
-
-// Received from sc scanner
-void SmartCardReaderListener::onSmartCardEventOccured(const SmartCardEvent& sce)
-{
-    qCDebug(librecSCRSCard) << "SmartCardListener received event from the reader: " << sce.readerName.c_str()
-                            << " Event: " << sce.eventType;
-
-    emit smartCardReaderEventOccured(sce);
-}
+SmartCardReaderListener::~SmartCardReaderListener() = default;

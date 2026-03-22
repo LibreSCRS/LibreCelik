@@ -219,6 +219,18 @@
         <source>Expiry Date</source>
         <translation>Датум истека</translation>
     </message>
+    <message id="lc-eid-label-card-verification">
+        <source>Card Certificate</source>
+        <translation>Сертификат</translation>
+    </message>
+    <message id="lc-eid-label-fixed-verification">
+        <source>Fixed Data</source>
+        <translation>Фиксни подаци</translation>
+    </message>
+    <message id="lc-eid-label-variable-verification">
+        <source>Variable Data</source>
+        <translation>Променљиви подаци</translation>
+    </message>
     <message id="lc-eid-cert-can-sign">
         <source>can sign</source>
         <translation>може потписати</translation>

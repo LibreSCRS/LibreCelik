@@ -1,40 +1,38 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0 and LibreSCRS contributors
 
 #ifndef SMARTCARDREADERLISTENER_H
 #define SMARTCARDREADERLISTENER_H
 
-#include <QString>
 #include <QObject>
-#include "smartcardevent.h"
+#include <QString>
+#include <smartcard/monitor.h>
+#include <smartcard/monitor_event.h>
 
-class QThread;
-class SmartCardScanner;
+#include <memory>
+
+#include "qsmartcardmonitor.h"
 
 class SmartCardReaderListener : public QObject
 {
     Q_OBJECT
 public:
     static SmartCardReaderListener& instance();
+    void shutdown(); // Stop monitor before app exit
 
 signals:
-    void smartCardReaderEnumerationChanged(QStringList scrNames);
-    void smartCardReaderEventOccured(SmartCardEvent sce);
+    void smartCardReaderEnumerationChanged(const QStringList& scrNames);
+    void smartCardReaderEventOccured(smartcard::MonitorEvent event);
 
 private:
     SmartCardReaderListener(QObject* parent = nullptr);
-    ~SmartCardReaderListener();
+    ~SmartCardReaderListener() override;
     SmartCardReaderListener(const SmartCardReaderListener&) = delete;
     SmartCardReaderListener& operator=(const SmartCardReaderListener&) = delete;
 
 private:
-    QThread* scannerThread;
-    SmartCardScanner* scScanner;
-
-private slots:
-    // Slots for signals from scanner thread
-    void onSmartCardReaderEnumerationChanged(const QStringList& scrNames);
-    void onSmartCardEventOccured(const SmartCardEvent& sce);
+    std::unique_ptr<smartcard::Monitor> monitor;
+    QSmartCardMonitor* qtMonitor = nullptr;
 };
 
 #endif // SMARTCARDREADERLISTENER_H

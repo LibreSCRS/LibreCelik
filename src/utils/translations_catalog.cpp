@@ -146,6 +146,12 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-eid-label-issuing-date");
     //% "Expiry Date"
     QT_TRID_NOOP("lc-eid-label-expiry-date");
+    //% "Card Certificate"
+    QT_TRID_NOOP("lc-eid-label-card-verification");
+    //% "Fixed Data"
+    QT_TRID_NOOP("lc-eid-label-fixed-verification");
+    //% "Variable Data"
+    QT_TRID_NOOP("lc-eid-label-variable-verification");
     //% "can sign"
     QT_TRID_NOOP("lc-eid-cert-can-sign");
     //% "User PIN"

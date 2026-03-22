@@ -35,6 +35,14 @@ public:
     void setSectionHeight(int h)
     {
         setMaximumHeight(h);
+        // Propagate layout invalidation up so that parent layouts
+        // (e.g. the scroll area container) recalculate in the same
+        // frame — prevents a one-frame bounce in nested sections.
+        for (QWidget* p = parentWidget(); p; p = p->parentWidget()) {
+            p->updateGeometry();
+            if (p->inherits("QAbstractScrollArea"))
+                break;
+        }
     }
 
     // Shadow (not virtual) — QGroupBox::setTitle calls calculateFrame() which

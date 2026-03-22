@@ -32,6 +32,11 @@ plugin::CardPlugin* AsyncCardReader::currentPlugin() const
     return activePlugin;
 }
 
+bool AsyncCardReader::hasPKI() const
+{
+    return (activePlugin && activePlugin->supportsPKI()) || (pkiPlugin && pkiPlugin->supportsPKI());
+}
+
 void AsyncCardReader::requestData()
 {
     if (futureData.valid()) {
@@ -47,7 +52,8 @@ void AsyncCardReader::requestData()
             QMetaObject::invokeMethod(
                 self,
                 [this, self]() {
-                    if (!self) return;
+                    if (!self)
+                        return;
                     emit errorOccurred(tr("No card connection available"));
                     emit readingFinished();
                 },
@@ -63,8 +69,18 @@ void AsyncCardReader::requestData()
                 QMetaObject::invokeMethod(
                     self,
                     [this, self, data = std::move(data), candidate]() {
-                        if (!self) return;
+                        if (!self)
+                            return;
                         activePlugin = candidate;
+                        pkiPlugin = nullptr;
+                        if (!activePlugin->supportsPKI()) {
+                            for (auto* c : candidates) {
+                                if (c != activePlugin && c->supportsPKI()) {
+                                    pkiPlugin = c;
+                                    break;
+                                }
+                            }
+                        }
                         emit cardDataReady(data);
                         emit readingFinished();
                     },
@@ -79,7 +95,8 @@ void AsyncCardReader::requestData()
         QMetaObject::invokeMethod(
             self,
             [this, self]() {
-                if (!self) return;
+                if (!self)
+                    return;
                 emit errorOccurred(tr("No plugin could read this card."));
                 emit readingFinished();
             },
@@ -89,17 +106,18 @@ void AsyncCardReader::requestData()
 
 void AsyncCardReader::requestCertificates()
 {
-    if (!activePlugin || !activePlugin->supportsPKI())
+    auto* pki = pkiPlugin ? pkiPlugin : activePlugin;
+    if (!pki || !pki->supportsPKI())
         return;
 
     if (futurePKI.valid())
         futurePKI.wait();
 
-    futurePKI = std::async(std::launch::async, [this]() {
+    futurePKI = std::async(std::launch::async, [this, pki]() {
         if (stopRequested)
             return;
         try {
-            auto certs = activePlugin->readCertificates(*conn);
+            auto certs = pki->readCertificates(*conn);
             QMetaObject::invokeMethod(
                 this, [this, certs = std::move(certs)]() { emit certificatesReady(certs); }, Qt::QueuedConnection);
         } catch (const std::exception& e) {
@@ -112,17 +130,18 @@ void AsyncCardReader::requestCertificates()
 
 void AsyncCardReader::requestPINTriesLeft()
 {
-    if (!activePlugin || !activePlugin->supportsPKI())
+    auto* pki = pkiPlugin ? pkiPlugin : activePlugin;
+    if (!pki || !pki->supportsPKI())
         return;
 
     if (futurePKI.valid())
         futurePKI.wait();
 
-    futurePKI = std::async(std::launch::async, [this]() {
+    futurePKI = std::async(std::launch::async, [this, pki]() {
         if (stopRequested)
             return;
         try {
-            int tries = activePlugin->getPINTriesLeft(*conn);
+            int tries = pki->getPINTriesLeft(*conn);
             QMetaObject::invokeMethod(
                 this, [this, tries]() { emit pinStatusReady(tries, tries == 0); }, Qt::QueuedConnection);
         } catch (const std::exception& e) {
@@ -135,7 +154,8 @@ void AsyncCardReader::requestPINTriesLeft()
 
 void AsyncCardReader::requestChangePIN(const QString& oldPin, const QString& newPin)
 {
-    if (!activePlugin || !activePlugin->supportsPKI())
+    auto* pki = pkiPlugin ? pkiPlugin : activePlugin;
+    if (!pki || !pki->supportsPKI())
         return;
 
     if (futurePKI.valid())
@@ -144,11 +164,11 @@ void AsyncCardReader::requestChangePIN(const QString& oldPin, const QString& new
     auto oldPinStd = oldPin.toStdString();
     auto newPinStd = newPin.toStdString();
 
-    futurePKI = std::async(std::launch::async, [this, oldPinStd, newPinStd]() {
+    futurePKI = std::async(std::launch::async, [this, pki, oldPinStd, newPinStd]() {
         if (stopRequested)
             return;
         try {
-            auto result = activePlugin->changePIN(*conn, oldPinStd, newPinStd);
+            auto result = pki->changePIN(*conn, oldPinStd, newPinStd);
             QMetaObject::invokeMethod(
                 this,
                 [this, result]() {
@@ -166,7 +186,8 @@ void AsyncCardReader::requestChangePIN(const QString& oldPin, const QString& new
 
 void AsyncCardReader::requestVerifyPIN(const QString& pin)
 {
-    if (!activePlugin || !activePlugin->supportsPKI())
+    auto* pki = pkiPlugin ? pkiPlugin : activePlugin;
+    if (!pki || !pki->supportsPKI())
         return;
 
     if (futurePKI.valid())
@@ -174,11 +195,11 @@ void AsyncCardReader::requestVerifyPIN(const QString& pin)
 
     auto pinStd = pin.toStdString();
 
-    futurePKI = std::async(std::launch::async, [this, pinStd]() {
+    futurePKI = std::async(std::launch::async, [this, pki, pinStd]() {
         if (stopRequested)
             return;
         try {
-            auto result = activePlugin->verifyPIN(*conn, pinStd);
+            auto result = pki->verifyPIN(*conn, pinStd);
             QMetaObject::invokeMethod(
                 this, [this, result]() { emit pinVerifyResult(result.success, result.retriesLeft); },
                 Qt::QueuedConnection);
@@ -217,7 +238,8 @@ void AsyncCardReader::requestDataWithCredentials(const QMap<QString, QString>& c
             QMetaObject::invokeMethod(
                 self2,
                 [this, self2, data = std::move(data)]() {
-                    if (!self2) return;
+                    if (!self2)
+                        return;
                     emit cardDataReady(data);
                     emit readingFinished();
                 },
@@ -226,7 +248,8 @@ void AsyncCardReader::requestDataWithCredentials(const QMap<QString, QString>& c
             QMetaObject::invokeMethod(
                 self2,
                 [this, self2, msg = QString::fromStdString(e.what())]() {
-                    if (!self2) return;
+                    if (!self2)
+                        return;
                     emit errorOccurred(msg);
                     emit readingFinished();
                 },

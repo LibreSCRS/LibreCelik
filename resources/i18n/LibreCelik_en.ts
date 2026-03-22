@@ -219,6 +219,18 @@
         <source>Expiry Date</source>
         <translation>Expiry Date</translation>
     </message>
+    <message id="lc-eid-label-card-verification">
+        <source>Card Certificate</source>
+        <translation>Certificate</translation>
+    </message>
+    <message id="lc-eid-label-fixed-verification">
+        <source>Fixed Data</source>
+        <translation>Fixed Data</translation>
+    </message>
+    <message id="lc-eid-label-variable-verification">
+        <source>Variable Data</source>
+        <translation>Variable Data</translation>
+    </message>
     <message id="lc-eid-cert-can-sign">
         <source>can sign</source>
         <translation>can sign</translation>

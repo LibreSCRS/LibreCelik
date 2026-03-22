@@ -3,6 +3,7 @@
 
 #include "librecelik.h"
 #include "config.h"
+#include "smartcard/smartcardreaderlistener.h"
 #include "utils/libreceliklog.h"
 
 #include <QApplication>
@@ -30,6 +31,10 @@ int main(int argc, char* argv[])
 #else
     qCInfo(libreSCRSGeneral) << "Using LibreMiddleware - Version: " << LIBRECELIK_MIDDLEWARE_VERSION;
 #endif
+
+    // Shut down the smart card monitor before QApplication destructs,
+    // to avoid static destruction order issues with the singleton.
+    QObject::connect(&a, &QApplication::aboutToQuit, []() { SmartCardReaderListener::instance().shutdown(); });
 
     LibreCelik w;
     w.show();

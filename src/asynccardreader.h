@@ -36,6 +36,7 @@ public:
     void requestDataWithCredentials(const QMap<QString, QString>& credentials);
 
     plugin::CardPlugin* currentPlugin() const;
+    bool hasPKI() const;
 
 signals:
     void cardDataReady(const plugin::CardData& data);
@@ -50,6 +51,7 @@ signals:
 private:
     std::vector<plugin::CardPlugin*> candidates;
     plugin::CardPlugin* activePlugin = nullptr;
+    plugin::CardPlugin* pkiPlugin = nullptr;
     std::unique_ptr<smartcard::PCSCConnection> conn;
     std::atomic<bool> stopRequested{false};
     std::future<void> futureData;

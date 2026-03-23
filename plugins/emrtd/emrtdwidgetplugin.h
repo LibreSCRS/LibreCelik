@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef EMRTDWIDGETPLUGIN_H
-#define EMRTDWIDGETPLUGIN_H
+#pragma once
 
 #include "plugin/cardwidgetplugin.h"
 
@@ -32,5 +31,3 @@ public:
     QWidget* createEmptyWidget(QWidget* parent) const override;
     void addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const override;
 };
-
-#endif // EMRTDWIDGETPLUGIN_H

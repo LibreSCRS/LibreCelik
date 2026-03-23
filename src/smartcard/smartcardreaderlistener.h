@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 hirashix0 and LibreSCRS contributors
 
-#ifndef SMARTCARDREADERLISTENER_H
-#define SMARTCARDREADERLISTENER_H
+#pragma once
 
 #include <QObject>
 #include <QString>
@@ -34,5 +33,3 @@ private:
     std::unique_ptr<smartcard::Monitor> monitor;
     QSmartCardMonitor* qtMonitor = nullptr;
 };
-
-#endif // SMARTCARDREADERLISTENER_H

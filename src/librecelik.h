@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef LIBRECELIK_H
-#define LIBRECELIK_H
+#pragma once
 
 #include "asynccardreader.h"
 #include "plugin/cardwidgetpluginregistry.h"
@@ -62,4 +61,3 @@ private:
     bool uiReady = false;
     QString locale;
 };
-#endif // LIBRECELIK_H

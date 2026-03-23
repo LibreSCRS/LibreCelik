@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef CARDWIDGETPLUGIN_H
-#define CARDWIDGETPLUGIN_H
+#pragma once
 
 #include <plugin/card_data.h>
 
@@ -69,5 +68,3 @@ public:
 };
 
 Q_DECLARE_INTERFACE(CardWidgetPlugin, "org.librescrs.CardWidgetPlugin/1.0")
-
-#endif // CARDWIDGETPLUGIN_H

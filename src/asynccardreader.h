@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef ASYNCCARDREADER_H
-#define ASYNCCARDREADER_H
+#pragma once
 
 #include <plugin/card_plugin.h>
 
@@ -67,5 +66,3 @@ private:
     std::future<void> futureData;
     std::future<void> futurePKI;
 };
-
-#endif // ASYNCCARDREADER_H

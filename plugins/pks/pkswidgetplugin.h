@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef PKSWIDGETPLUGIN_H
-#define PKSWIDGETPLUGIN_H
+#pragma once
 
 #include "plugin/cardwidgetplugin.h"
 #include <QObject>
@@ -27,5 +26,3 @@ public:
     QWidget* createEmptyWidget(QWidget* parent) const override;
     void addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const override;
 };
-
-#endif // PKSWIDGETPLUGIN_H

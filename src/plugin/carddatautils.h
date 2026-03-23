@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef CARDDATAUTILS_H
-#define CARDDATAUTILS_H
+#pragma once
 
 #include <plugin/card_data.h>
 #include <QString>
@@ -27,5 +26,3 @@ inline QString getFieldValue(const CardData& data, const std::string& key)
 }
 
 } // namespace plugin
-
-#endif // CARDDATAUTILS_H

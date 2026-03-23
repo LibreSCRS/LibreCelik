@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef CARDWIDGETPLUGINREGISTRY_H
-#define CARDWIDGETPLUGINREGISTRY_H
+#pragma once
 
 #include "cardwidgetplugin.h"
 
@@ -28,5 +27,3 @@ private:
     QList<QPluginLoader*> loaders;
     QMap<QString, CardWidgetPlugin*> pluginMap;
 };
-
-#endif // CARDWIDGETPLUGINREGISTRY_H

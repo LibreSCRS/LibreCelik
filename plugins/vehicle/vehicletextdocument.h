@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef VEHICLETEXTDOCUMENT_H
-#define VEHICLETEXTDOCUMENT_H
+#pragma once
 
 #include <QCoreApplication>
 #include <plugin/card_data.h>
@@ -20,5 +19,3 @@ private:
     void translateDocumentData(QString& data) const;
     void prepareDocumentData(QString& html, const plugin::CardData& cardData) const;
 };
-
-#endif // VEHICLETEXTDOCUMENT_H

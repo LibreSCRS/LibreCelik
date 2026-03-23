@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef PKSWIDGET_H
-#define PKSWIDGET_H
+#pragma once
 
 #include <plugin/card_data.h>
 #include <QWidget>
@@ -30,5 +29,3 @@ private:
     QVBoxLayout* outerLayout = nullptr;
     bool headerBuilt = false;
 };
-
-#endif // PKSWIDGET_H

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 hirashix0 and LibreSCRS contributors
 
-#ifndef QSMARTCARDMONITOR_H
-#define QSMARTCARDMONITOR_H
+#pragma once
 
 #include <QMetaType>
 #include <QObject>
@@ -26,5 +25,3 @@ private:
     smartcard::Monitor& monitor;
     smartcard::Monitor::SubscriptionId subscriptionId;
 };
-
-#endif // QSMARTCARDMONITOR_H

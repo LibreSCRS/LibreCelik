@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef libreceliklog_H
-#define libreceliklog_H
+#pragma once
 
 #include <QDebug>
 #include <QLoggingCategory>
@@ -24,5 +23,3 @@ Q_DECLARE_LOGGING_CATEGORY(libreCelikPrinting)
 Q_DECLARE_LOGGING_CATEGORY(libreCelikCertificates)
 Q_DECLARE_LOGGING_CATEGORY(libreCelikHealth)
 Q_DECLARE_LOGGING_CATEGORY(libreCelikPks)
-
-#endif // libreceliklog_H

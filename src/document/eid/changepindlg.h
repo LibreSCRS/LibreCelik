@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef CHANGEPINDLG_H
-#define CHANGEPINDLG_H
+#pragma once
 
 #include <QDialog>
 
@@ -42,5 +41,3 @@ private:
     QDialogButtonBox* buttonBox;
     QPushButton* okButton;
 };
-
-#endif // CHANGEPINDLG_H

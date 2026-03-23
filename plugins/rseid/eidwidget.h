@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef EIDWIDGET_H
-#define EIDWIDGET_H
+#pragma once
 
 #include <plugin/card_data.h>
 #include <QWidget>
@@ -54,5 +53,3 @@ private:
     CollapsibleSection* personalSection = nullptr;
     QToolButton* printBtn = nullptr;
 };
-
-#endif // EIDWIDGET_H

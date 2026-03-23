@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef CERTIFICATETREEVIEWMODEL_H
-#define CERTIFICATETREEVIEWMODEL_H
+#pragma once
 
 #include <QAbstractItemModel>
 #include <memory>
@@ -27,5 +26,3 @@ public:
 protected:
     std::unique_ptr<CertificateInfoItem> rootItem;
 };
-
-#endif // CERTIFICATETREEVIEWMODEL_H

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef CERTIFICATEPROPERTIESMODEL_H
-#define CERTIFICATEPROPERTIESMODEL_H
+#pragma once
 
 #include "certificatetreeviewmodel.h"
 
@@ -28,5 +27,3 @@ private:
     static QString nameToString(X509_NAME* name);
     static QString asnTimeToString(const ASN1_TIME* time);
 };
-
-#endif // CERTIFICATEPROPERTIESMODEL_H

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef TEXTDOCUMENT_H
-#define TEXTDOCUMENT_H
+#pragma once
 
 #include <QPrinter>
 #include <QTextDocument>
@@ -33,5 +32,3 @@ protected:
     inline static const int MACOS_FONTSIZE = 12;
     inline static const int LINUX_FONTSIZE = 8;
 };
-
-#endif // TEXTDOCUMENT_H

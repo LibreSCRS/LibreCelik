@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef CERTIFICATEINFOITEM_H
-#define CERTIFICATEINFOITEM_H
+#pragma once
 
 #include <QString>
 #include <QVariant>
@@ -32,9 +31,7 @@ public:
 private:
     QString label;
     QString value;
+    bool critical;
     CertificateInfoItem* parent;
     std::vector<std::unique_ptr<CertificateInfoItem>> children;
-    bool critical;
 };
-
-#endif // CERTIFICATEINFOITEM_H

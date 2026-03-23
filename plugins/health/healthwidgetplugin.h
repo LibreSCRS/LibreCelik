@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef HEALTHWIDGETPLUGIN_H
-#define HEALTHWIDGETPLUGIN_H
+#pragma once
 
 #include "plugin/cardwidgetplugin.h"
 #include <QObject>
@@ -32,5 +31,3 @@ public:
     }
     void print(const plugin::CardData& data, QPrinter* printer) const override;
 };
-
-#endif // HEALTHWIDGETPLUGIN_H

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef TOKENSECTION_H
-#define TOKENSECTION_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -39,5 +38,3 @@ private:
     QTreeWidgetItem* tokenCertsItem = nullptr;
     QTreeWidgetItem* tokenPinItem = nullptr;
 };
-
-#endif // TOKENSECTION_H

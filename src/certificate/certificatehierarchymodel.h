@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef CERTIFICATEHIERARCHYMODEL_H
-#define CERTIFICATEHIERARCHYMODEL_H
+#pragma once
 
 #include "certificatetreeviewmodel.h"
 
@@ -23,5 +22,3 @@ private:
 
     int verificationError = X509_V_OK;
 };
-
-#endif // CERTIFICATEHIERARCHYMODEL_H

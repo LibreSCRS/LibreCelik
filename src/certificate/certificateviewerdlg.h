@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef CERTIFICATEVIEWERDLG_H
-#define CERTIFICATEVIEWERDLG_H
+#pragma once
 
 #include <QDialog>
 #include <plugin/card_plugin.h>
@@ -38,5 +37,3 @@ private:
     QComboBox* certCombo = nullptr;
     QStackedWidget* stack = nullptr;
 };
-
-#endif // CERTIFICATEVIEWERDLG_H

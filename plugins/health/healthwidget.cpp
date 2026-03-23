@@ -149,7 +149,7 @@ void HealthWidget::addPersonalGroup(const plugin::CardFieldGroup& group)
     contentLayout->addWidget(headerCard);
 }
 
-void HealthWidget::addInsuranceGroup(const plugin::CardFieldGroup& group)
+void HealthWidget::addInsuranceGroup(const plugin::CardFieldGroup& /*group*/)
 {
     // Transform permanently_valid in accumulated data
     transformPermanentlyValid(data.groups.back());

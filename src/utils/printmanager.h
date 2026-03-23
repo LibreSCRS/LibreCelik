@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef PRINTMANAGER_H
-#define PRINTMANAGER_H
+#pragma once
 
 #include <QString>
 #include <QPrinter>
@@ -31,5 +30,3 @@ public:
         document.print(&printer);
     }
 };
-
-#endif // PRINTMANAGER_H

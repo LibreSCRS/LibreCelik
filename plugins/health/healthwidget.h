@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef HEALTHWIDGET_H
-#define HEALTHWIDGET_H
+#pragma once
 
 #include <plugin/card_data.h>
 #include <QWidget>
@@ -52,5 +51,3 @@ private:
     CollapsibleSection* carrierSection = nullptr;
     QToolButton* printBtn = nullptr;
 };
-
-#endif // HEALTHWIDGET_H

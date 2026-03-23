@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef EIDTEXTDOCUMENT_H
-#define EIDTEXTDOCUMENT_H
+#pragma once
 
 #include <QCoreApplication>
 #include <plugin/card_data.h>
@@ -21,5 +20,3 @@ private:
 
     bool isForeigner = false;
 };
-
-#endif // EIDTEXTDOCUMENT_H

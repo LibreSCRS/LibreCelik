@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef EMRTDWIDGET_H
-#define EMRTDWIDGET_H
+#pragma once
 
 #include <plugin/card_data.h>
 
@@ -44,5 +43,3 @@ private:
     QVBoxLayout* sectionLayout = nullptr;
     QLabel* photoLabel = nullptr;
 };
-
-#endif // EMRTDWIDGET_H

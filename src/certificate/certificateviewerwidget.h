@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#ifndef CERTIFICATEVIEWERWIDGET_H
-#define CERTIFICATEVIEWERWIDGET_H
+#pragma once
 
 #include <QWidget>
 #include <QItemSelection>
@@ -34,5 +33,3 @@ private:
 
     Ui::CertificateViewerWidget* ui;
 };
-
-#endif // CERTIFICATEVIEWERWIDGET_H

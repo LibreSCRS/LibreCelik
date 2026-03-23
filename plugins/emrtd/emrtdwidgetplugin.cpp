@@ -3,6 +3,8 @@
 
 #include "emrtdwidgetplugin.h"
 #include "emrtdwidget.h"
+#include "emrtdtextdocument.h"
+#include "utils/printmanager.h"
 
 #include <QLabel>
 #include <QVBoxLayout>
@@ -19,16 +21,26 @@ QWidget* EMRTDWidgetPlugin::createWidget(const plugin::CardData& data, QWidget* 
         layout->addStretch();
         return widget;
     }
-    return new EMRTDWidget(data, parent);
+    auto* w = new EMRTDWidget(data, parent);
+    connect(w, &EMRTDWidget::printRequested, this, [this](const plugin::CardData& d) { print(d, nullptr); });
+    return w;
 }
 
 QWidget* EMRTDWidgetPlugin::createEmptyWidget(QWidget* parent) const
 {
-    return new EMRTDWidget(parent);
+    auto* w = new EMRTDWidget(parent);
+    connect(w, &EMRTDWidget::printRequested, this, [this](const plugin::CardData& d) { print(d, nullptr); });
+    return w;
 }
 
 void EMRTDWidgetPlugin::addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const
 {
     if (auto* w = qobject_cast<EMRTDWidget*>(widget))
         w->addGroup(group);
+}
+
+void EMRTDWidgetPlugin::print(const plugin::CardData& data, QPrinter* /*printer*/) const
+{
+    EMRTDTextDocument doc(data);
+    PrintManager::printDocument(doc, qtTrId("lc-emrtd-doc-title"));
 }

@@ -30,6 +30,8 @@
         <file>vehiclecard.css</file>
         <file>healthcard.html</file>
         <file>healthcard.css</file>
+        <file>emrtdcard.html</file>
+        <file>emrtdcard.css</file>
     </qresource>
 
 </RCC>

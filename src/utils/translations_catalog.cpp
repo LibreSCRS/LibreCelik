@@ -612,6 +612,14 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-emrtd-title");
     //% "Custody Information"
     QT_TRID_NOOP("lc-emrtd-custody-info");
+
+    // eMRTD print-only translations
+    //% "TRAVEL DOCUMENT: DATA PRINTING"
+    QT_TRID_NOOP("lc-emrtd-doc-title");
+    //% "Printing date"
+    QT_TRID_NOOP("lc-emrtd-doc-printing-date");
+    //% "Sex"
+    QT_TRID_NOOP("lc-emrtd-doc-sex");
 }
 
 QT_WARNING_POP

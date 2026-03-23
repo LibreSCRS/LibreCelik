@@ -78,8 +78,7 @@ EMRTDAuthWidget::EMRTDAuthWidget(QWidget* parent)
 
     docNumberEdit = new QLineEdit(formWidget);
     docNumberEdit->setMaxLength(9);
-    docNumberEdit->setValidator(
-        new QRegularExpressionValidator(QRegularExpression("[A-Za-z0-9]{0,9}"), this));
+    docNumberEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("[A-Za-z0-9]{0,9}"), this));
     docNumberEdit->setPlaceholderText("AB1234567");
     connect(docNumberEdit, &QLineEdit::textChanged, this, [this](const QString& text) {
         QString upper = text.toUpper();

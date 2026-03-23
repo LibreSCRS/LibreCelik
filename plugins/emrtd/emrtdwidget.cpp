@@ -6,7 +6,10 @@
 #include "utils/collapsiblesection.h"
 #include "utils/fieldsectionbuilder.h"
 
+#include <QGraphicsOpacityEffect>
 #include <QHBoxLayout>
+#include <QIcon>
+#include <QToolButton>
 
 #include <plugin/carddatautils.h>
 
@@ -94,6 +97,19 @@ EMRTDWidget::EMRTDWidget(QWidget* parent) : QWidget(parent)
     outerSection->setLayout(sectionLayout);
     outerSection->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     outerLayout->addWidget(outerSection);
+
+    // Print button — disabled (dimmed) until all streaming completes
+    printBtn = new QToolButton(this);
+    printBtn->setIcon(QIcon(":/images/printer-header.svg"));
+    printBtn->setIconSize(QSize(24, 24));
+    printBtn->setToolTip(qtTrId("lc-print-tooltip"));
+    printBtn->setAutoRaise(true);
+    printBtn->setEnabled(false);
+    auto* dimEffect = new QGraphicsOpacityEffect(printBtn);
+    dimEffect->setOpacity(0.3);
+    printBtn->setGraphicsEffect(dimEffect);
+    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
+    outerSection->addHeaderWidget(printBtn);
 }
 
 void EMRTDWidget::addGroup(const plugin::CardFieldGroup& group)
@@ -209,6 +225,16 @@ void EMRTDWidget::showPersonalData(const plugin::CardData& data)
     static const QColor navy(34, 86, 117);
     auto* travelDocSection = new CollapsibleSection(qtTrId("lc-emrtd-travel-document"), navy, this);
     travelDocSection->setHeaderHeight(56);
+
+    // Print button — immediately enabled (all data present)
+    printBtn = new QToolButton(this);
+    printBtn->setIcon(QIcon(":/images/printer-header.svg"));
+    printBtn->setIconSize(QSize(24, 24));
+    printBtn->setToolTip(qtTrId("lc-print-tooltip"));
+    printBtn->setAutoRaise(true);
+    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(this->data); });
+    travelDocSection->addHeaderWidget(printBtn);
+
     auto* sectionLayout = new QVBoxLayout();
     sectionLayout->setSpacing(6);
 
@@ -317,4 +343,12 @@ void EMRTDWidget::showError(const plugin::CardFieldGroup* group)
     layout->addWidget(detailLabel);
 
     layout->addStretch();
+}
+
+void EMRTDWidget::enablePrintButton()
+{
+    if (printBtn) {
+        printBtn->setGraphicsEffect(nullptr);
+        printBtn->setEnabled(true);
+    }
 }

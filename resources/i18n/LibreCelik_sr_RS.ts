@@ -15,6 +15,10 @@
         <oldsource>&lt;b&gt;LibreMiddleware&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html&quot;&gt;LGPL-2.1-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt;</oldsource>
         <translation>&lt;b&gt;LibreMiddleware&lt;/b&gt; :: Верзија %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html&quot;&gt;LGPL-2.1-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt;</translation>
     </message>
+    <message id="lc-error-auth-failed">
+        <source>Authentication failed</source>
+        <translation type="unfinished">Аутентификација неуспешна</translation>
+    </message>
     <message id="lc-doc-unavailable">
         <source>Unavailable</source>
         <translation>Недоступно</translation>
@@ -635,6 +639,14 @@
         <source>PIN change failed.</source>
         <translation>Промена PIN-а неуспешна.</translation>
     </message>
+    <message id="lc-error-no-connection">
+        <source>No card connection available</source>
+        <translation type="unfinished">Нема везе са картицом</translation>
+    </message>
+    <message id="lc-error-no-plugin">
+        <source>No plugin could read this card.</source>
+        <translation type="unfinished">Ниједан додатак не може да прочита ову картицу.</translation>
+    </message>
     <message id="lc-vehicle-print-title">
         <source>Print Document</source>
         <translation>Штампај документ</translation>
@@ -862,6 +874,18 @@
     <message id="lc-emrtd-auth-failed">
         <source>Authentication Failed</source>
         <translation>Аутентификација неуспешна</translation>
+    </message>
+    <message id="lc-emrtd-doc-title">
+        <source>TRAVEL DOCUMENT: DATA PRINTING</source>
+        <translation>ПУТНА ИСПРАВА: ШТАМПА ПОДАТАКА</translation>
+    </message>
+    <message id="lc-emrtd-doc-printing-date">
+        <source>Printing date</source>
+        <translation>Датум штампе</translation>
+    </message>
+    <message id="lc-emrtd-doc-sex">
+        <source>Sex</source>
+        <translation>Пол</translation>
     </message>
     <message id="lc-emrtd-personal-data">
         <source>Personal Data</source>
@@ -1093,11 +1117,11 @@
         <translation>Информације о старатељству</translation>
     </message>
     <message id="lc-pkcs15-smart-card">
-        <source></source>
+        <source>Smart Card</source>
         <translation type="unfinished"></translation>
     </message>
     <message id="lc-emrtd-insert-mrz-hint">
-        <source></source>
+        <source>Insert the MRZ data from the bottom of the document</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1105,15 +1129,15 @@
     <name>AsyncCardReader</name>
     <message>
         <source>No card connection available</source>
-        <translation>Нема везе са картицом</translation>
+        <translation type="vanished">Нема везе са картицом</translation>
     </message>
     <message>
         <source>No plugin could read this card.</source>
-        <translation>Ниједан додатак не може да прочита ову картицу.</translation>
+        <translation type="vanished">Ниједан додатак не може да прочита ову картицу.</translation>
     </message>
     <message>
         <source>PIN change failed.</source>
-        <translation>Промена ПИН-а неуспешна.</translation>
+        <translation type="vanished">Промена ПИН-а неуспешна.</translation>
     </message>
 </context>
 <context>
@@ -1818,7 +1842,7 @@
     <name>QObject</name>
     <message>
         <source>Authentication failed</source>
-        <translation type="unfinished">Аутентификација неуспешна</translation>
+        <translation type="obsolete">Аутентификација неуспешна</translation>
     </message>
 </context>
 <context>

@@ -22,7 +22,10 @@ protected:
         ASSERT_NE(authButton, nullptr);
     }
 
-    void TearDown() override { delete widget; }
+    void TearDown() override
+    {
+        delete widget;
+    }
 
     EMRTDAuthWidget* widget = nullptr;
     QPushButton* authButton = nullptr;

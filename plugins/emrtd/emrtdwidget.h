@@ -10,6 +10,7 @@
 class CollapsibleSection;
 class QLabel;
 class QLineEdit;
+class QToolButton;
 class QVBoxLayout;
 
 class EMRTDWidget : public QWidget
@@ -25,10 +26,15 @@ public:
     // Progressive display: add one group at a time
     void addGroup(const plugin::CardFieldGroup& group);
 
+    Q_INVOKABLE void enablePrintButton();
+
     const plugin::CardData& cardData() const
     {
         return data;
     }
+
+signals:
+    void printRequested(const plugin::CardData& data);
 
 private:
     void showAuthRequired(const plugin::CardFieldGroup* group);
@@ -36,6 +42,7 @@ private:
     void showError(const plugin::CardFieldGroup* group);
 
     plugin::CardData data;
+    QToolButton* printBtn = nullptr;
 
     // Progressive-display state
     QVBoxLayout* outerLayout = nullptr;

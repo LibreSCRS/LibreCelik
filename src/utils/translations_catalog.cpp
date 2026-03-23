@@ -583,6 +583,35 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-emrtd-authenticate");
     //% "Authenticating..."
     QT_TRID_NOOP("lc-emrtd-authenticating");
+
+    //% "Travel Document"
+    QT_TRID_NOOP("lc-emrtd-travel-document");
+    //% "Signature / Mark"
+    QT_TRID_NOOP("lc-emrtd-signature");
+    //% "Issuing Authority"
+    QT_TRID_NOOP("lc-emrtd-issuing-authority");
+    //% "Date of Issue"
+    QT_TRID_NOOP("lc-emrtd-date-of-issue");
+    //% "Endorsements"
+    QT_TRID_NOOP("lc-emrtd-endorsements");
+    //% "Tax/Exit Requirements"
+    QT_TRID_NOOP("lc-emrtd-tax-exit");
+    //% "Full Name"
+    QT_TRID_NOOP("lc-emrtd-full-name");
+    //% "Other Names"
+    QT_TRID_NOOP("lc-emrtd-other-names");
+    //% "Place of Birth"
+    QT_TRID_NOOP("lc-emrtd-place-of-birth");
+    //% "Address"
+    QT_TRID_NOOP("lc-emrtd-address");
+    //% "Telephone"
+    QT_TRID_NOOP("lc-emrtd-telephone");
+    //% "Profession"
+    QT_TRID_NOOP("lc-emrtd-profession");
+    //% "Title"
+    QT_TRID_NOOP("lc-emrtd-title");
+    //% "Custody Information"
+    QT_TRID_NOOP("lc-emrtd-custody-info");
 }
 
 QT_WARNING_POP

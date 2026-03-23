@@ -1036,6 +1036,62 @@
         <source>Authenticating...</source>
         <translation>Аутентификација...</translation>
     </message>
+    <message id="lc-emrtd-travel-document">
+        <source>Travel Document</source>
+        <translation>Путна исправа</translation>
+    </message>
+    <message id="lc-emrtd-signature">
+        <source>Signature / Mark</source>
+        <translation>Потпис / Ознака</translation>
+    </message>
+    <message id="lc-emrtd-issuing-authority">
+        <source>Issuing Authority</source>
+        <translation>Орган издавања</translation>
+    </message>
+    <message id="lc-emrtd-date-of-issue">
+        <source>Date of Issue</source>
+        <translation>Датум издавања</translation>
+    </message>
+    <message id="lc-emrtd-endorsements">
+        <source>Endorsements</source>
+        <translation>Овлашћења</translation>
+    </message>
+    <message id="lc-emrtd-tax-exit">
+        <source>Tax/Exit Requirements</source>
+        <translation>Порески/излазни захтеви</translation>
+    </message>
+    <message id="lc-emrtd-full-name">
+        <source>Full Name</source>
+        <translation>Пуно име</translation>
+    </message>
+    <message id="lc-emrtd-other-names">
+        <source>Other Names</source>
+        <translation>Друга имена</translation>
+    </message>
+    <message id="lc-emrtd-place-of-birth">
+        <source>Place of Birth</source>
+        <translation>Место рођења</translation>
+    </message>
+    <message id="lc-emrtd-address">
+        <source>Address</source>
+        <translation>Адреса</translation>
+    </message>
+    <message id="lc-emrtd-telephone">
+        <source>Telephone</source>
+        <translation>Телефон</translation>
+    </message>
+    <message id="lc-emrtd-profession">
+        <source>Profession</source>
+        <translation>Занимање</translation>
+    </message>
+    <message id="lc-emrtd-title">
+        <source>Title</source>
+        <translation>Титула</translation>
+    </message>
+    <message id="lc-emrtd-custody-info">
+        <source>Custody Information</source>
+        <translation>Информације о старатељству</translation>
+    </message>
     <message id="lc-pkcs15-smart-card">
         <source></source>
         <translation type="unfinished"></translation>

@@ -1036,6 +1036,62 @@
         <source>Authenticating...</source>
         <translation>Authenticating...</translation>
     </message>
+    <message id="lc-emrtd-travel-document">
+        <source>Travel Document</source>
+        <translation>Travel Document</translation>
+    </message>
+    <message id="lc-emrtd-signature">
+        <source>Signature / Mark</source>
+        <translation>Signature / Mark</translation>
+    </message>
+    <message id="lc-emrtd-issuing-authority">
+        <source>Issuing Authority</source>
+        <translation>Issuing Authority</translation>
+    </message>
+    <message id="lc-emrtd-date-of-issue">
+        <source>Date of Issue</source>
+        <translation>Date of Issue</translation>
+    </message>
+    <message id="lc-emrtd-endorsements">
+        <source>Endorsements</source>
+        <translation>Endorsements</translation>
+    </message>
+    <message id="lc-emrtd-tax-exit">
+        <source>Tax/Exit Requirements</source>
+        <translation>Tax/Exit Requirements</translation>
+    </message>
+    <message id="lc-emrtd-full-name">
+        <source>Full Name</source>
+        <translation>Full Name</translation>
+    </message>
+    <message id="lc-emrtd-other-names">
+        <source>Other Names</source>
+        <translation>Other Names</translation>
+    </message>
+    <message id="lc-emrtd-place-of-birth">
+        <source>Place of Birth</source>
+        <translation>Place of Birth</translation>
+    </message>
+    <message id="lc-emrtd-address">
+        <source>Address</source>
+        <translation>Address</translation>
+    </message>
+    <message id="lc-emrtd-telephone">
+        <source>Telephone</source>
+        <translation>Telephone</translation>
+    </message>
+    <message id="lc-emrtd-profession">
+        <source>Profession</source>
+        <translation>Profession</translation>
+    </message>
+    <message id="lc-emrtd-title">
+        <source>Title</source>
+        <translation>Title</translation>
+    </message>
+    <message id="lc-emrtd-custody-info">
+        <source>Custody Information</source>
+        <translation>Custody Information</translation>
+    </message>
     <message id="lc-pkcs15-smart-card">
         <source></source>
         <translation type="unfinished"></translation>

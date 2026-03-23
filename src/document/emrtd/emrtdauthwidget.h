@@ -6,15 +6,18 @@
 #include <QMap>
 #include <QWidget>
 
+class QDateEdit;
 class QLabel;
 class QLineEdit;
 class QPushButton;
+class QTabWidget;
 
 class EMRTDAuthWidget : public QWidget
 {
     Q_OBJECT
 public:
     explicit EMRTDAuthWidget(QWidget* parent = nullptr);
+    void setDefaultTab(bool paceSupported);
 
 signals:
     void credentialsEntered(const QMap<QString, QString>& credentials);
@@ -27,7 +30,11 @@ private slots:
     void validateForm();
 
 private:
+    QTabWidget* tabWidget;
     QLineEdit* canEdit;
+    QLineEdit* docNumberEdit;
+    QDateEdit* dobEdit;
+    QDateEdit* expiryEdit;
     QPushButton* authButton;
     QLabel* statusLabel;
 };

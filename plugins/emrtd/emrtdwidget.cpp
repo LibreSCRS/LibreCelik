@@ -22,15 +22,18 @@ namespace {
 
 // Translation maps — readable English fallbacks for now (Task 10 will add qtTrId calls)
 const std::map<std::string, QString> documentTranslationMap = {
-    {"document_number", "Document Number"}, {"document_code", "Document Code"},     {"issuing_state", "Issuing State"},
-    {"date_of_expiry", "Date of Expiry"},   {"personal_number", "Personal Number"},
+    {"document_number", qtTrId("lc-emrtd-doc-number")},
+    {"document_code", qtTrId("lc-emrtd-doc-code")},
+    {"issuing_state", qtTrId("lc-emrtd-issuing-state")},
+    {"date_of_expiry", qtTrId("lc-emrtd-date-of-expiry")},
+    {"personal_number", qtTrId("lc-emrtd-personal-number")},
 };
 
 const std::map<std::string, QString> documentExtraTranslationMap = {
-    {"issuing_authority", "Issuing Authority"},
-    {"date_of_issue", "Date of Issue"},
-    {"endorsements", "Endorsements"},
-    {"tax_exit", "Tax/Exit Requirements"},
+    {"issuing_authority", qtTrId("lc-emrtd-issuing-authority")},
+    {"date_of_issue", qtTrId("lc-emrtd-date-of-issue")},
+    {"endorsements", qtTrId("lc-emrtd-endorsements")},
+    {"tax_exit", qtTrId("lc-emrtd-tax-exit")},
 };
 
 const std::map<std::string, QString> personalTranslationMap = {
@@ -41,15 +44,15 @@ const std::map<std::string, QString> personalTranslationMap = {
 };
 
 const std::map<std::string, QString> additionalTranslationMap = {
-    {"full_name", "Full Name"},
-    {"other_names", "Other Names"},
-    {"personal_number", "Personal Number"},
-    {"place_of_birth", "Place of Birth"},
-    {"address", "Address"},
-    {"telephone", "Telephone"},
-    {"profession", "Profession"},
-    {"title", "Title"},
-    {"custody_info", "Custody Information"},
+    {"full_name", qtTrId("lc-emrtd-full-name")},
+    {"other_names", qtTrId("lc-emrtd-other-names")},
+    {"personal_number", qtTrId("lc-emrtd-personal-number")},
+    {"place_of_birth", qtTrId("lc-emrtd-place-of-birth")},
+    {"address", qtTrId("lc-emrtd-address")},
+    {"telephone", qtTrId("lc-emrtd-telephone")},
+    {"profession", qtTrId("lc-emrtd-profession")},
+    {"title", qtTrId("lc-emrtd-title")},
+    {"custody_info", qtTrId("lc-emrtd-custody-info")},
 };
 
 } // namespace
@@ -82,7 +85,7 @@ EMRTDWidget::EMRTDWidget(QWidget* parent) : QWidget(parent)
 
     // Navy outer CollapsibleSection — shell for Phase 2 travel document display
     static const QColor navy(34, 86, 117);
-    outerSection = new CollapsibleSection("Travel Document", navy, this);
+    outerSection = new CollapsibleSection(qtTrId("lc-emrtd-travel-document"), navy, this);
     outerSection->setHeaderHeight(56);
 
     sectionLayout = new QVBoxLayout();
@@ -128,7 +131,7 @@ void EMRTDWidget::addGroup(const plugin::CardFieldGroup& group)
 
         sectionLayout->insertLayout(0, photoRow);
     } else if (key == "document") {
-        auto* docSection = LibreSCRS::FieldSectionBuilder::build("Document Data", group, documentTranslationMap);
+        auto* docSection = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-document-data"), group, documentTranslationMap);
         LibreSCRS::FieldSectionBuilder::highlightExpiredDates(docSection, group, {"date_of_expiry"});
         sectionLayout->addWidget(docSection);
     } else if (key == "photo") {
@@ -143,7 +146,7 @@ void EMRTDWidget::addGroup(const plugin::CardFieldGroup& group)
         }
     } else if (key == "signature") {
         if (!group.fields.empty() && !group.fields[0].value.empty()) {
-            auto* sigSection = new CollapsibleSection("Signature / Mark", outerSection);
+            auto* sigSection = new CollapsibleSection(qtTrId("lc-emrtd-signature"), outerSection);
             auto* sigLayout = new QVBoxLayout();
             auto* sigLabel = new QLabel();
             QPixmap sigPixmap;
@@ -163,11 +166,11 @@ void EMRTDWidget::addGroup(const plugin::CardFieldGroup& group)
         bool hasAdditional = data.findGroup("additional") != nullptr;
         if (hasAdditional) {
             auto* extraSection =
-                LibreSCRS::FieldSectionBuilder::build("Issuing Information", group, documentExtraTranslationMap);
+                LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-issuing-info"), group, documentExtraTranslationMap);
             sectionLayout->addWidget(extraSection);
         } else {
             auto* extraSection =
-                LibreSCRS::FieldSectionBuilder::build("Additional", group, documentExtraTranslationMap);
+                LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-additional"), group, documentExtraTranslationMap);
             sectionLayout->addWidget(extraSection);
         }
     }
@@ -204,7 +207,7 @@ void EMRTDWidget::showPersonalData(const plugin::CardData& data)
 
     // Navy outer CollapsibleSection
     static const QColor navy(34, 86, 117);
-    auto* travelDocSection = new CollapsibleSection("Travel Document", navy, this);
+    auto* travelDocSection = new CollapsibleSection(qtTrId("lc-emrtd-travel-document"), navy, this);
     travelDocSection->setHeaderHeight(56);
     auto* sectionLayout = new QVBoxLayout();
     sectionLayout->setSpacing(6);
@@ -253,7 +256,7 @@ void EMRTDWidget::showPersonalData(const plugin::CardData& data)
     // Document Data, Additional — stacked vertically
     const auto* docGroup = data.findGroup("document");
     if (docGroup) {
-        auto* docSection = LibreSCRS::FieldSectionBuilder::build("Document Data", *docGroup, documentTranslationMap);
+        auto* docSection = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-document-data"), *docGroup, documentTranslationMap);
         LibreSCRS::FieldSectionBuilder::highlightExpiredDates(docSection, *docGroup, {"date_of_expiry"});
         sectionLayout->addWidget(docSection);
     }
@@ -264,25 +267,25 @@ void EMRTDWidget::showPersonalData(const plugin::CardData& data)
 
     if (additionalGroup) {
         auto* additionalSection =
-            LibreSCRS::FieldSectionBuilder::build("Additional", *additionalGroup, additionalTranslationMap);
+            LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-additional"), *additionalGroup, additionalTranslationMap);
         sectionLayout->addWidget(additionalSection);
     } else if (docExtraGroup) {
         auto* extraSection =
-            LibreSCRS::FieldSectionBuilder::build("Additional", *docExtraGroup, documentExtraTranslationMap);
+            LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-additional"), *docExtraGroup, documentExtraTranslationMap);
         sectionLayout->addWidget(extraSection);
     }
 
     // Document extra as separate section if both additional and document_extra exist
     if (docExtraGroup && additionalGroup) {
         auto* extraSection =
-            LibreSCRS::FieldSectionBuilder::build("Issuing Information", *docExtraGroup, documentExtraTranslationMap);
+            LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-issuing-info"), *docExtraGroup, documentExtraTranslationMap);
         sectionLayout->addWidget(extraSection);
     }
 
     // Signature image (DG7) — teal CollapsibleSection, full width
     if (const auto* sigGroup = data.findGroup("signature")) {
         if (!sigGroup->fields.empty() && !sigGroup->fields[0].value.empty()) {
-            auto* sigSection = new CollapsibleSection("Signature / Mark", travelDocSection);
+            auto* sigSection = new CollapsibleSection(qtTrId("lc-emrtd-signature"), travelDocSection);
             auto* sigLayout = new QVBoxLayout();
             auto* sigLabel = new QLabel();
             QPixmap sigPixmap;

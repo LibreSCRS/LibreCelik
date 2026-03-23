@@ -187,3 +187,20 @@ target_link_libraries(EIdTextDocumentTests
 )
 set_target_properties(EIdTextDocumentTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(EIdTextDocumentTests)
+
+add_executable(EMRTDAuthWidgetTests
+    emrtdauthwidget_test.cpp
+    ../src/document/emrtd/emrtdauthwidget.h
+    ../src/document/emrtd/emrtdauthwidget.cpp
+)
+target_include_directories(EMRTDAuthWidgetTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+target_link_libraries(EMRTDAuthWidgetTests
+    GTest::gtest
+    Qt6::Core
+    Qt6::Widgets
+    Qt6::Test
+)
+set_target_properties(EMRTDAuthWidgetTests PROPERTIES AUTOMOC ON)
+gtest_discover_tests(EMRTDAuthWidgetTests)

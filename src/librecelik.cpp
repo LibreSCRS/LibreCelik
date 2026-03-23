@@ -287,6 +287,8 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                     }
 
                     auto* authWidget = new EMRTDAuthWidget(this);
+                    auto paceFlag = plugin::getFieldValue(data.findGroup("auth_required"), "pace_supported");
+                    authWidget->setDefaultTab(paceFlag == "true");
 
                     connect(authWidget, &EMRTDAuthWidget::credentialsEntered, asyncReader,
                             &AsyncCardReader::requestDataWithCredentials);

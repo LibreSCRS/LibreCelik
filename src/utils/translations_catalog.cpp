@@ -279,6 +279,20 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Certificate revoked"
     QT_TRID_NOOP("lc-cert-verify-revoked");
 
+    // --- Error messages ---
+    //% "No card connection available"
+    QT_TRID_NOOP("lc-error-no-connection");
+    //% "No plugin could read this card."
+    QT_TRID_NOOP("lc-error-no-plugin");
+    //% "Authentication failed"
+    QT_TRID_NOOP("lc-error-auth-failed");
+
+    // --- eMRTD ---
+    //% "Insert the MRZ data from the bottom of the document"
+    QT_TRID_NOOP("lc-emrtd-insert-mrz-hint");
+    //% "Smart Card"
+    QT_TRID_NOOP("lc-pkcs15-smart-card");
+
     // --- Health insurance card ---
     //% "Health Insurance Card"
     QT_TRID_NOOP("lc-health-title");

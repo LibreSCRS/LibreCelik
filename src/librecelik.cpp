@@ -281,7 +281,7 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                     if (auto* existing = qobject_cast<EMRTDAuthWidget*>(it->second.widget)) {
                         if (data.findGroup("error")) {
                             auto errMsg = plugin::getFieldValue(data.findGroup("error"), "error");
-                            existing->onAuthFailed(errMsg.isEmpty() ? QObject::tr("Authentication failed") : errMsg);
+                            existing->onAuthFailed(errMsg.isEmpty() ? qtTrId("lc-error-auth-failed") : errMsg);
                         }
                         return;
                     }

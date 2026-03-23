@@ -133,10 +133,9 @@ QString CertificateHierarchyModel::translateVerificationResult(int error)
     case X509_V_ERR_CERT_REVOKED:
         return qtTrId("lc-cert-verify-revoked");
     default: {
-        verificationError = X509_V_OK;
-        qCDebug(libreCelikCertificates) << "Info cert error: "
+        qCDebug(libreCelikCertificates) << "Unhandled cert error: "
                                         << QString::fromUtf8(X509_verify_cert_error_string(error));
-        return qtTrId("lc-cert-verify-valid");
+        return qtTrId("lc-cert-verify-unspecified-error");
     }
     }
 }

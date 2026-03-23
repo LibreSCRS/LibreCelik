@@ -62,7 +62,7 @@ void AsyncCardReader::requestData()
                 [this, self]() {
                     if (!self)
                         return;
-                    emit errorOccurred(tr("No card connection available"));
+                    emit errorOccurred(qtTrId("lc-error-no-connection"));
                     emit readingFinished();
                 },
                 Qt::QueuedConnection);
@@ -123,7 +123,7 @@ void AsyncCardReader::requestData()
             [this, self]() {
                 if (!self)
                     return;
-                emit errorOccurred(tr("No plugin could read this card."));
+                emit errorOccurred(qtTrId("lc-error-no-plugin"));
                 emit readingFinished();
             },
             Qt::QueuedConnection);

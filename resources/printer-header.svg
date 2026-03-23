@@ -1,5 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-opacity="0.9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Paper input (top) -->
   <path d="M6 9V2h12v7"/>
+  <!-- Printer body -->
   <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-  <rect x="6" y="14" width="12" height="8"/>
+  <!-- Output paper -->
+  <rect x="6" y="14" width="12" height="8" rx="1"/>
+  <!-- Paper lines -->
+  <line x1="9" y1="17" x2="15" y2="17"/>
+  <line x1="9" y1="20" x2="13" y2="20"/>
+  <!-- Status indicator dot -->
+  <circle cx="18" cy="12.5" r="1" fill="white" fill-opacity="0.7" stroke="none"/>
 </svg>

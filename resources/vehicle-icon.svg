@@ -1,9 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <path d="M10 36l4-14c1-3 4-5 7-5h22c3 0 6 2 7 5l4 14" fill="none" stroke="#3D8C95" stroke-width="3" stroke-linecap="round"/>
-  <rect x="6" y="36" width="52" height="14" rx="4" fill="#3D8C95"/>
-  <circle cx="18" cy="50" r="5" fill="#2A6068" stroke="#fff" stroke-width="2"/>
-  <circle cx="46" cy="50" r="5" fill="#2A6068" stroke="#fff" stroke-width="2"/>
-  <rect x="12" y="40" width="8" height="4" rx="1" fill="#B0DDE2"/>
-  <rect x="44" y="40" width="8" height="4" rx="1" fill="#B0DDE2"/>
-  <rect x="24" y="40" width="16" height="4" rx="1" fill="#B0DDE2"/>
+  <!-- Car body -->
+  <path d="M8 38 L14 24 C15 21 18 19 21 19 L43 19 C46 19 49 21 50 24 L56 38" fill="#3D8C95"/>
+  <rect x="4" y="34" width="56" height="16" rx="4" fill="#3D8C95"/>
+  <!-- Windshield -->
+  <path d="M18 24 L22 19.5 L42 19.5 L46 24 Z" fill="#fff" opacity="0.9"/>
+  <!-- Side windows -->
+  <rect x="20" y="25" width="10" height="7" rx="1" fill="#fff" opacity="0.9"/>
+  <rect x="32" y="25" width="12" height="7" rx="1" fill="#fff" opacity="0.9"/>
+  <!-- Headlights -->
+  <rect x="6" y="37" width="6" height="3" rx="1.5" fill="#fff" opacity="0.8"/>
+  <rect x="52" y="37" width="6" height="3" rx="1.5" fill="#fff" opacity="0.8"/>
+  <!-- Wheels -->
+  <circle cx="18" cy="50" r="6" fill="#2A6068"/>
+  <circle cx="18" cy="50" r="2.5" fill="#fff"/>
+  <circle cx="46" cy="50" r="6" fill="#2A6068"/>
+  <circle cx="46" cy="50" r="2.5" fill="#fff"/>
 </svg>

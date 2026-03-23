@@ -68,7 +68,7 @@ void PksWidget::buildHeader()
         headerFields.push_back({qtTrId("lc-pks-card-type"), QStringLiteral("PKS")}); // "Card Type"
     }
 
-    auto* headerCard = new LibreSCRS::CardHeaderCard(QIcon(":/images/certificate-icon.png"), QSize(80, 80),
+    auto* headerCard = new LibreSCRS::CardHeaderCard(QIcon(":/images/certificate-icon.svg"), QSize(80, 80),
                                                      headerFields, headerSection);
     auto* sectionLayout = new QVBoxLayout();
     sectionLayout->addWidget(headerCard);

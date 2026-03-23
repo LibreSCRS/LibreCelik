@@ -26,7 +26,6 @@ signals:
     void changePINRequested(uint8_t pinReference, const QString& pinLabel, bool isTransport);
 
 private slots:
-    void onCertsButtonClicked();
     void onContextMenu(const QPoint& pos);
 
 private:

@@ -281,15 +281,6 @@ void TokenSection::updateTreeMinimumHeight()
     updateGeometry();
 }
 
-void TokenSection::onCertsButtonClicked()
-{
-    if (certificateList.empty())
-        return;
-
-    auto dlg = std::make_unique<CertificateViewerDlg>(certificateList, certFolderPath, this);
-    dlg->exec();
-}
-
 void TokenSection::onContextMenu(const QPoint& pos)
 {
     QTreeWidgetItem* item = treeWidget->itemAt(pos);

@@ -278,7 +278,7 @@ void AsyncCardReader::requestChangePIN(const QString& oldPin, const QString& new
                     if (!self)
                         return;
                     emit self->pinChangeResult(result.success, result.retriesLeft,
-                                               result.success ? QString() : self->tr("PIN change failed."));
+                                               result.success ? QString() : qtTrId("lc-changepin-failed"));
                 },
                 Qt::QueuedConnection);
         } catch (const std::exception& e) {

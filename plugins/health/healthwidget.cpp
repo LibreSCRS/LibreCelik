@@ -173,8 +173,8 @@ void HealthWidget::addCarrierGroup(const plugin::CardFieldGroup& group)
     bool showCarrier = hasData || familyMember == "true";
 
     if (showCarrier) {
-        carrierSection = LibreSCRS::FieldSectionBuilder::build("Insurance Carrier", group, carrierTranslationMap(), {},
-                                                               outerSection);
+        auto* carrierSection = LibreSCRS::FieldSectionBuilder::build(
+            "Insurance Carrier", group, carrierTranslationMap(), {}, outerSection);
         contentLayout->addWidget(carrierSection);
     }
 }
@@ -282,8 +282,8 @@ void HealthWidget::buildLayout()
     }
 
     if (showCarrier) {
-        carrierSection = LibreSCRS::FieldSectionBuilder::build("Insurance Carrier", *carrier, carrierTranslationMap(),
-                                                               {}, outerSection);
+        auto* carrierSection = LibreSCRS::FieldSectionBuilder::build(
+            "Insurance Carrier", *carrier, carrierTranslationMap(), {}, outerSection);
         contentLayout->addWidget(carrierSection);
     }
 

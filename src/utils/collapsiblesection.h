@@ -79,7 +79,6 @@ private:
 
     bool expanded = true;
     bool animated = true;
-    int expandedHeight = -1;
     QPropertyAnimation* animation = nullptr;
     QList<QWidget*> headerWidgets;
     QColor headerBg{61, 140, 149};

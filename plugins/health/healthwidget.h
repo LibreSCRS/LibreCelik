@@ -48,6 +48,5 @@ private:
     plugin::CardData data;
     CollapsibleSection* outerSection = nullptr;
     QVBoxLayout* contentLayout = nullptr;
-    CollapsibleSection* carrierSection = nullptr;
     QToolButton* printBtn = nullptr;
 };

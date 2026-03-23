@@ -126,7 +126,6 @@ void CollapsibleSection::setChildrenVisible(bool visible)
 
 void CollapsibleSection::applyCollapsed()
 {
-    expandedHeight = sizeHint().height();
     setChildrenVisible(false);
     setMaximumHeight(headerHeight);
 }

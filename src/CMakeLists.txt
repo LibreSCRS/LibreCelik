@@ -10,7 +10,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets LingistTools PrintSupport)
+find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets LinguistTools PrintSupport)
 find_package(Qt6 REQUIRED COMPONENTS Widgets LinguistTools PrintSupport)
 # PCSC is found by LibreMiddleware; UUID is used directly by the app
 find_package(UUID)
@@ -33,7 +33,6 @@ set(PROJECT_SOURCES
         librecelik.cpp
         librecelik.h
         librecelik.ui
-        libreceliktypes.h
         utils/libreceliklog.h
         utils/libreceliklog.cpp
         utils/printmanager.h
@@ -75,8 +74,8 @@ set(PROJECT_SOURCES
         asynccardreader.cpp
 )
 
-set(RESOURSE_SOURCES
-        ${RESOURSE_FILE}
+set(RESOURCE_SOURCES
+        ${RESOURCE_FILE}
         ${TS_PROJECT_FILES}
         ${APP_ICON}
         ${APP_ICON_MACOS}
@@ -89,7 +88,7 @@ add_subdirectory(document/printing)
 qt_add_executable(${PROJECT_NAME}
     MANUAL_FINALIZATION
     ${PROJECT_SOURCES}
-    ${RESOURSE_SOURCES}
+    ${RESOURCE_SOURCES}
 )
 
 qt_add_translations(${PROJECT_NAME}

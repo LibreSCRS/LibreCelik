@@ -320,6 +320,8 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                                     auto* ts = new TokenSection(LIBRECELIK_CERTIFICATES_DIR, this);
                                     ts->setHeaderColor(QColor(230, 135, 60));
                                     ts->setHeaderHeight(56);
+                                    if (guiPlugin->cardType() == QStringLiteral("rs-pks"))
+                                        ts->setExpanded(true);
                                     pkiWidget = ts;
                                 }
                                 connectPKISignals(asyncReader, pkiWidget);
@@ -339,6 +341,8 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                         auto* ts = new TokenSection(LIBRECELIK_CERTIFICATES_DIR, this);
                         ts->setHeaderColor(QColor(230, 135, 60));
                         ts->setHeaderHeight(56);
+                        if (guiPlugin->cardType() == QStringLiteral("rs-pks"))
+                            ts->setExpanded(true);
                         pkiWidget = ts;
                     }
                     connectPKISignals(asyncReader, pkiWidget);

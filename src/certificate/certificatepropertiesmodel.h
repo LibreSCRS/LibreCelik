@@ -27,7 +27,6 @@ private:
 
     static QString nameToString(X509_NAME* name);
     static QString asnTimeToString(const ASN1_TIME* time);
-    static QString toHexString(const unsigned char* data, int len);
 };
 
 #endif // CERTIFICATEPROPERTIESMODEL_H

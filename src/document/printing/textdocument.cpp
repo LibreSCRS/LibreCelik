@@ -48,8 +48,3 @@ bool TextDocument::isMacOS()
 {
     return LIBRECELIK_SYSTEM_NAME == MACOS;
 }
-
-bool TextDocument::isLinux()
-{
-    return LIBRECELIK_SYSTEM_NAME == LINUX;
-}

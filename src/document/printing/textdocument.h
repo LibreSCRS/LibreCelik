@@ -28,10 +28,8 @@ protected:
     QString getPreparedValue(const QString& data) const;
 
     static bool isMacOS();
-    static bool isLinux();
 
     inline static const std::string MACOS = "Darwin";
-    inline static const std::string LINUX = "Linux";
     inline static const int MACOS_FONTSIZE = 12;
     inline static const int LINUX_FONTSIZE = 8;
 };

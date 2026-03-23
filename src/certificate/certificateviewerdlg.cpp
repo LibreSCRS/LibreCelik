@@ -17,7 +17,7 @@
 #include <QFile>
 
 CertificateViewerDlg::CertificateViewerDlg(const std::vector<plugin::CertificateData>& certs,
-                                           const std::string& certFolderPath, QWidget* parent)
+                                           const std::string& certFolderPath, QWidget* parent, int initialIndex)
     : QDialog(parent)
 {
     setWindowTitle(qtTrId("lc-cert-dialog-title"));
@@ -25,6 +25,12 @@ CertificateViewerDlg::CertificateViewerDlg(const std::vector<plugin::Certificate
 
     buildStore(certFolderPath);
     buildUI(certs);
+
+    if (initialIndex > 0 && stack && certCombo) {
+        certCombo->setCurrentIndex(initialIndex);
+    } else if (initialIndex > 0 && stack) {
+        stack->setCurrentIndex(initialIndex);
+    }
 }
 
 CertificateViewerDlg::~CertificateViewerDlg()

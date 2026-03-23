@@ -17,7 +17,7 @@ QVariant CertificateTreeViewModel::data(const QModelIndex& index, int role) cons
     if (!index.isValid())
         return QVariant();
 
-    if (role != Qt::DisplayRole && role != Qt::UserRole /*&& role != Qt::FontRole*/)
+    if (role != Qt::DisplayRole && role != Qt::UserRole && role != Qt::FontRole)
         return QVariant();
 
     auto* item = static_cast<CertificateInfoItem*>(index.internalPointer());
@@ -25,13 +25,12 @@ QVariant CertificateTreeViewModel::data(const QModelIndex& index, int role) cons
     if (role == Qt::UserRole)
         return item->data(1);
 
-    // // Retrun bold, similar to windows cert viewer
-    // if (role == Qt::FontRole && item->isCritical())
-    // {
-    //     QFont fnt = QApplication::font();
-    //     fnt.setBold(true);
-    //     return QVariant::fromValue(fnt);
-    // }
+    // Bold critical extensions, similar to Windows certificate viewer
+    if (role == Qt::FontRole && item->isCritical()) {
+        QFont fnt = QApplication::font();
+        fnt.setBold(true);
+        return QVariant::fromValue(fnt);
+    }
 
     return item->data(index.column());
 }

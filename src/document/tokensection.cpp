@@ -170,11 +170,6 @@ TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
     });
 }
 
-void TokenSection::setPINVisible(bool visible)
-{
-    tokenPinItem->setHidden(!visible);
-}
-
 void TokenSection::setCertificates(const std::vector<plugin::CertificateData>& certList)
 {
     certificateList = certList;
@@ -306,8 +301,15 @@ void TokenSection::onContextMenu(const QPoint& pos)
     bool isCertItem = (item->parent() == tokenCertsItem);
     bool isCertChild = (item->parent() && item->parent()->parent() == tokenCertsItem);
     if (isCertItem || isCertChild) {
+        QTreeWidgetItem* certItem = isCertItem ? item : item->parent();
+        int certIndex = tokenCertsItem->indexOfChild(certItem);
         QAction* viewAction = menu.addAction(qtTrId("lc-eid-menu-view-cert"));
-        connect(viewAction, &QAction::triggered, this, &TokenSection::onCertsButtonClicked);
+        connect(viewAction, &QAction::triggered, this, [this, certIndex]() {
+            if (certificateList.empty())
+                return;
+            auto dlg = std::make_unique<CertificateViewerDlg>(certificateList, certFolderPath, this, certIndex);
+            dlg->exec();
+        });
     }
 
     if (item->parent() == tokenPinItem) {
@@ -316,17 +318,15 @@ void TokenSection::onContextMenu(const QPoint& pos)
         uint8_t pinRef = static_cast<uint8_t>(item->data(0, PinReferenceRole).toUInt());
         QString pinLabel = item->data(0, PinLabelRole).toString();
 
-        QString actionText = isTransport ? qtTrId("lc-eid-menu-initialize-pin")
-                                         : qtTrId("lc-eid-menu-change-pin");
+        QString actionText = isTransport ? qtTrId("lc-eid-menu-initialize-pin") : qtTrId("lc-eid-menu-change-pin");
         QAction* pinAction = menu.addAction(actionText);
 
         if (isBlocked) {
             pinAction->setEnabled(false);
         } else {
-            connect(pinAction, &QAction::triggered, this,
-                    [this, pinRef, pinLabel, isTransport]() {
-                        emit changePINRequested(pinRef, pinLabel, isTransport);
-                    });
+            connect(pinAction, &QAction::triggered, this, [this, pinRef, pinLabel, isTransport]() {
+                emit changePINRequested(pinRef, pinLabel, isTransport);
+            });
         }
     }
 

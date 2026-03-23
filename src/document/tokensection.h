@@ -18,8 +18,6 @@ class TokenSection : public CollapsibleSection
 public:
     explicit TokenSection(std::string certFolderPath, QWidget* parent = nullptr);
 
-    void setPINVisible(bool visible);
-
 public slots:
     void setCertificates(const std::vector<plugin::CertificateData>& certList);
     void setPINStatus(int triesLeft, bool blocked);

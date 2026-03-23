@@ -197,14 +197,3 @@ QString CertificatePropertiesModel::asnTimeToString(const ASN1_TIME* time)
     BIO_free(bio);
     return result;
 }
-
-QString CertificatePropertiesModel::toHexString(const unsigned char* data, int len)
-{
-    QString result;
-    for (int i = 0; i < len; i++) {
-        if (i > 0)
-            result += ':';
-        result += QString("%1").arg(data[i], 2, 16, QChar('0')).toUpper();
-    }
-    return result;
-}

@@ -121,8 +121,8 @@ void EMRTDWidget::addGroup(const plugin::CardFieldGroup& group)
         photoLabel->setFixedSize(190, 250);
         photoRow->addWidget(photoLabel, 0, Qt::AlignTop);
 
-        auto* personalSec = LibreSCRS::FieldSectionBuilder::build(
-            qtTrId("lc-personal-data-title"), group, personalTranslationMap, {}, outerSection);
+        auto* personalSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-personal-data-title"), group,
+                                                                  personalTranslationMap, {}, outerSection);
         personalSec->setCollapsible(false);
         photoRow->addWidget(personalSec, 1);
 
@@ -242,8 +242,8 @@ void EMRTDWidget::showPersonalData(const plugin::CardData& data)
 
     const auto* personalGroup = data.findGroup("personal");
     if (personalGroup) {
-        auto* personalSec = LibreSCRS::FieldSectionBuilder::build(
-            qtTrId("lc-personal-data-title"), *personalGroup, personalTranslationMap, {}, travelDocSection);
+        auto* personalSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-personal-data-title"), *personalGroup,
+                                                                  personalTranslationMap, {}, travelDocSection);
         personalSec->setCollapsible(false);
         photoRow->addWidget(personalSec, 1);
     }

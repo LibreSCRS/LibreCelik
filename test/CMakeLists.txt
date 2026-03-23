@@ -28,7 +28,6 @@ include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}/../src")
 set(SOURCE_FILES
     ../src/utils/libreceliklog.h
     ../src/utils/libreceliklog.cpp
-    ../src/libreceliktypes.h
 )
 
 add_executable(

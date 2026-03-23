@@ -34,11 +34,26 @@ TEST(AsyncCardReaderTest, EmitErrorWhenNoConnection)
     class MockPlugin : public plugin::CardPlugin
     {
     public:
-        std::string pluginId() const override { return "mock"; }
-        std::string displayName() const override { return "Mock"; }
-        int probePriority() const override { return 100; }
-        bool canHandle(const std::vector<uint8_t>&) const override { return true; }
-        plugin::CardData readCard(smartcard::PCSCConnection&) const override { return {}; }
+        std::string pluginId() const override
+        {
+            return "mock";
+        }
+        std::string displayName() const override
+        {
+            return "Mock";
+        }
+        int probePriority() const override
+        {
+            return 100;
+        }
+        bool canHandle(const std::vector<uint8_t>&) const override
+        {
+            return true;
+        }
+        plugin::CardData readCard(smartcard::PCSCConnection&) const override
+        {
+            return {};
+        }
     };
 
     MockPlugin mockPlugin;
@@ -96,11 +111,26 @@ TEST(CardPluginTest, MinimalPluginDoesNotSupportPKI)
     class MinimalPlugin : public plugin::CardPlugin
     {
     public:
-        std::string pluginId() const override { return "minimal"; }
-        std::string displayName() const override { return "Minimal"; }
-        int probePriority() const override { return 100; }
-        bool canHandle(const std::vector<uint8_t>&) const override { return false; }
-        plugin::CardData readCard(smartcard::PCSCConnection&) const override { return {}; }
+        std::string pluginId() const override
+        {
+            return "minimal";
+        }
+        std::string displayName() const override
+        {
+            return "Minimal";
+        }
+        int probePriority() const override
+        {
+            return 100;
+        }
+        bool canHandle(const std::vector<uint8_t>&) const override
+        {
+            return false;
+        }
+        plugin::CardData readCard(smartcard::PCSCConnection&) const override
+        {
+            return {};
+        }
     };
 
     MinimalPlugin plugin;

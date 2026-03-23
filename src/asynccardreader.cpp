@@ -51,6 +51,7 @@ void AsyncCardReader::requestData()
     }
 
     stopRequested = false;
+    certsAlreadyQueued = false;
     emit readingStarted();
 
     QPointer<AsyncCardReader> self = this;
@@ -143,16 +144,28 @@ void AsyncCardReader::requestCertificates()
     if (futurePKI.valid())
         futurePKI.wait();
 
-    futurePKI = std::async(std::launch::async, [this, pki]() {
+    QPointer<AsyncCardReader> self = this;
+    futurePKI = std::async(std::launch::async, [this, self, pki]() {
         if (stopRequested)
             return;
         try {
             auto certs = pki->readCertificates(*conn);
             QMetaObject::invokeMethod(
-                this, [this, certs = std::move(certs)]() { emit certificatesReady(certs); }, Qt::QueuedConnection);
+                self,
+                [self, certs = std::move(certs)]() {
+                    if (!self)
+                        return;
+                    emit self->certificatesReady(certs);
+                },
+                Qt::QueuedConnection);
         } catch (const std::exception& e) {
             QMetaObject::invokeMethod(
-                this, [this, msg = QString::fromStdString(e.what())]() { emit errorOccurred(msg); },
+                self,
+                [self, msg = QString::fromStdString(e.what())]() {
+                    if (!self)
+                        return;
+                    emit self->errorOccurred(msg);
+                },
                 Qt::QueuedConnection);
         }
     });
@@ -167,16 +180,28 @@ void AsyncCardReader::requestPINTriesLeft()
     if (futurePKI.valid())
         futurePKI.wait();
 
-    futurePKI = std::async(std::launch::async, [this, pki]() {
+    QPointer<AsyncCardReader> self = this;
+    futurePKI = std::async(std::launch::async, [this, self, pki]() {
         if (stopRequested)
             return;
         try {
             int tries = pki->getPINTriesLeft(*conn);
             QMetaObject::invokeMethod(
-                this, [this, tries]() { emit pinStatusReady(tries, tries == 0); }, Qt::QueuedConnection);
+                self,
+                [self, tries]() {
+                    if (!self)
+                        return;
+                    emit self->pinStatusReady(tries, tries == 0);
+                },
+                Qt::QueuedConnection);
         } catch (const std::exception& e) {
             QMetaObject::invokeMethod(
-                this, [this, msg = QString::fromStdString(e.what())]() { emit errorOccurred(msg); },
+                self,
+                [self, msg = QString::fromStdString(e.what())]() {
+                    if (!self)
+                        return;
+                    emit self->errorOccurred(msg);
+                },
                 Qt::QueuedConnection);
         }
     });
@@ -191,7 +216,8 @@ void AsyncCardReader::requestPINTriesLeft(uint8_t pinReference)
     if (futurePKI.valid())
         futurePKI.wait();
 
-    futurePKI = std::async(std::launch::async, [this, pki, pinReference]() {
+    QPointer<AsyncCardReader> self = this;
+    futurePKI = std::async(std::launch::async, [this, self, pki, pinReference]() {
         if (stopRequested)
             return;
         try {
@@ -208,10 +234,21 @@ void AsyncCardReader::requestPINTriesLeft(uint8_t pinReference)
                 tries = pki->getPINTriesLeft(*conn);
             }
             QMetaObject::invokeMethod(
-                this, [this, tries]() { emit pinStatusReady(tries, tries == 0); }, Qt::QueuedConnection);
+                self,
+                [self, tries]() {
+                    if (!self)
+                        return;
+                    emit self->pinStatusReady(tries, tries == 0);
+                },
+                Qt::QueuedConnection);
         } catch (const std::exception& e) {
             QMetaObject::invokeMethod(
-                this, [this, msg = QString::fromStdString(e.what())]() { emit errorOccurred(msg); },
+                self,
+                [self, msg = QString::fromStdString(e.what())]() {
+                    if (!self)
+                        return;
+                    emit self->errorOccurred(msg);
+                },
                 Qt::QueuedConnection);
         }
     });
@@ -229,21 +266,29 @@ void AsyncCardReader::requestChangePIN(const QString& oldPin, const QString& new
     auto oldPinStd = oldPin.toStdString();
     auto newPinStd = newPin.toStdString();
 
-    futurePKI = std::async(std::launch::async, [this, pki, oldPinStd, newPinStd]() {
+    QPointer<AsyncCardReader> self = this;
+    futurePKI = std::async(std::launch::async, [this, self, pki, oldPinStd, newPinStd]() {
         if (stopRequested)
             return;
         try {
             auto result = pki->changePIN(*conn, oldPinStd, newPinStd);
             QMetaObject::invokeMethod(
-                this,
-                [this, result]() {
-                    emit pinChangeResult(result.success, result.retriesLeft,
-                                         result.success ? QString() : tr("PIN change failed."));
+                self,
+                [self, result]() {
+                    if (!self)
+                        return;
+                    emit self->pinChangeResult(result.success, result.retriesLeft,
+                                               result.success ? QString() : self->tr("PIN change failed."));
                 },
                 Qt::QueuedConnection);
         } catch (const std::exception& e) {
             QMetaObject::invokeMethod(
-                this, [this, msg = QString::fromStdString(e.what())]() { emit pinChangeResult(false, -1, msg); },
+                self,
+                [self, msg = QString::fromStdString(e.what())]() {
+                    if (!self)
+                        return;
+                    emit self->pinChangeResult(false, -1, msg);
+                },
                 Qt::QueuedConnection);
         }
     });
@@ -258,22 +303,40 @@ void AsyncCardReader::requestPINList()
     if (futurePKI.valid())
         futurePKI.wait();
 
-    futurePKI = std::async(std::launch::async, [this, pki]() {
+    QPointer<AsyncCardReader> self = this;
+    futurePKI = std::async(std::launch::async, [this, self, pki]() {
         if (stopRequested)
             return;
         try {
             auto pins = pki->getPINList(*conn);
             if (!pins.empty()) {
                 QMetaObject::invokeMethod(
-                    this, [this, pins = std::move(pins)]() { emit pinListReady(pins); }, Qt::QueuedConnection);
+                    self,
+                    [self, pins = std::move(pins)]() {
+                        if (!self)
+                            return;
+                        emit self->pinListReady(pins);
+                    },
+                    Qt::QueuedConnection);
             } else {
                 int tries = pki->getPINTriesLeft(*conn);
                 QMetaObject::invokeMethod(
-                    this, [this, tries]() { emit pinStatusReady(tries, tries == 0); }, Qt::QueuedConnection);
+                    self,
+                    [self, tries]() {
+                        if (!self)
+                            return;
+                        emit self->pinStatusReady(tries, tries == 0);
+                    },
+                    Qt::QueuedConnection);
             }
         } catch (const std::exception& e) {
             QMetaObject::invokeMethod(
-                this, [this, msg = QString::fromStdString(e.what())]() { emit errorOccurred(msg); },
+                self,
+                [self, msg = QString::fromStdString(e.what())]() {
+                    if (!self)
+                        return;
+                    emit self->errorOccurred(msg);
+                },
                 Qt::QueuedConnection);
         }
     });
@@ -291,7 +354,8 @@ void AsyncCardReader::requestChangePIN(uint8_t pinReference, const QString& oldP
     auto oldPinStd = oldPin.toStdString();
     auto newPinStd = newPin.toStdString();
 
-    futurePKI = std::async(std::launch::async, [this, pki, pinReference, oldPinStd, newPinStd]() {
+    QPointer<AsyncCardReader> self = this;
+    futurePKI = std::async(std::launch::async, [this, self, pki, pinReference, oldPinStd, newPinStd]() {
         if (stopRequested)
             return;
         try {
@@ -301,15 +365,22 @@ void AsyncCardReader::requestChangePIN(uint8_t pinReference, const QString& oldP
             }
 
             QMetaObject::invokeMethod(
-                this,
-                [this, result]() {
-                    emit pinChangeResult(result.success, result.retriesLeft,
-                                         result.success ? QString() : qtTrId("lc-changepin-failed"));
+                self,
+                [self, result]() {
+                    if (!self)
+                        return;
+                    emit self->pinChangeResult(result.success, result.retriesLeft,
+                                               result.success ? QString() : qtTrId("lc-changepin-failed"));
                 },
                 Qt::QueuedConnection);
         } catch (const std::exception& e) {
             QMetaObject::invokeMethod(
-                this, [this, msg = QString::fromStdString(e.what())]() { emit pinChangeResult(false, -1, msg); },
+                self,
+                [self, msg = QString::fromStdString(e.what())]() {
+                    if (!self)
+                        return;
+                    emit self->pinChangeResult(false, -1, msg);
+                },
                 Qt::QueuedConnection);
         }
     });
@@ -326,17 +397,28 @@ void AsyncCardReader::requestVerifyPIN(const QString& pin)
 
     auto pinStd = pin.toStdString();
 
-    futurePKI = std::async(std::launch::async, [this, pki, pinStd]() {
+    QPointer<AsyncCardReader> self = this;
+    futurePKI = std::async(std::launch::async, [this, self, pki, pinStd]() {
         if (stopRequested)
             return;
         try {
             auto result = pki->verifyPIN(*conn, pinStd);
             QMetaObject::invokeMethod(
-                this, [this, result]() { emit pinVerifyResult(result.success, result.retriesLeft); },
+                self,
+                [self, result]() {
+                    if (!self)
+                        return;
+                    emit self->pinVerifyResult(result.success, result.retriesLeft);
+                },
                 Qt::QueuedConnection);
         } catch (const std::exception& e) {
             QMetaObject::invokeMethod(
-                this, [this, msg = QString::fromStdString(e.what())]() { emit errorOccurred(msg); },
+                self,
+                [self, msg = QString::fromStdString(e.what())]() {
+                    if (!self)
+                        return;
+                    emit self->errorOccurred(msg);
+                },
                 Qt::QueuedConnection);
         }
     });
@@ -413,7 +495,8 @@ void AsyncCardReader::requestDataWithCredentials(const QMap<QString, QString>& c
                     // have a chance to call connectPKISignals before the signal fires.
                     if (!certs.empty()) {
                         QMetaObject::invokeMethod(
-                            self2, [this, self2, certs]() {
+                            self2,
+                            [this, self2, certs]() {
                                 if (!self2)
                                     return;
                                 emit certificatesReady(certs);

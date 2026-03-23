@@ -32,23 +32,12 @@ class CardHeaderCard : public QWidget
 {
     Q_OBJECT
 public:
-    // Photo variant (eID, eMRTD)
-    explicit CardHeaderCard(const QPixmap& photo, const QSize& photoSize, const std::vector<HeaderField>& fields,
-                            QWidget* parent = nullptr);
-
     // Icon variant (Vehicle, Health, PKS)
     explicit CardHeaderCard(const QIcon& icon, const QSize& iconSize, const std::vector<HeaderField>& fields,
                             QWidget* parent = nullptr);
 
-    // Add verification indicators below the fields on the right side.
-    void setVerificationResults(const std::vector<VerificationStatus>& results);
-
-    // Replace the photo pixmap (for progressive display).
-    void setPhoto(const QPixmap& photo, const QSize& photoSize);
-
 private:
     void buildLayout(QWidget* leftWidget, const std::vector<HeaderField>& fields);
-    QLabel* photoLabel = nullptr;
     QGridLayout* fieldsGrid = nullptr;
     QVBoxLayout* rightColumnLayout = nullptr;
 };

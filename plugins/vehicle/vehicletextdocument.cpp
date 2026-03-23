@@ -78,8 +78,7 @@ void VehicleTextDocument::prepareDocumentData(QString& html, const plugin::CardD
     html.replace("${owner_name_value}", getPreparedValue(getFieldValue(cardData, "owner_name")));
     html.replace("${owner_address_value}", getPreparedValue(getFieldValue(cardData, "owner_address")));
     html.replace("${owner_personal_no_value}", getPreparedValue(getFieldValue(cardData, "owners_personal_no")));
-    html.replace("${user_surname_value}",
-                 getPreparedValue(getFieldValue(cardData, "users_surname_or_business_name")));
+    html.replace("${user_surname_value}", getPreparedValue(getFieldValue(cardData, "users_surname_or_business_name")));
     html.replace("${user_name_value}", getPreparedValue(getFieldValue(cardData, "users_name")));
     html.replace("${user_address_value}", getPreparedValue(getFieldValue(cardData, "users_address")));
     html.replace("${user_personal_no_value}", getPreparedValue(getFieldValue(cardData, "users_personal_no")));

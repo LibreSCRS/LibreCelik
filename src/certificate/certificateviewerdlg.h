@@ -20,7 +20,7 @@ class CertificateViewerDlg : public QDialog
     Q_OBJECT
 public:
     explicit CertificateViewerDlg(const std::vector<plugin::CertificateData>& certs, const std::string& certFolderPath,
-                                  QWidget* parent = nullptr);
+                                  QWidget* parent = nullptr, int initialIndex = 0);
     ~CertificateViewerDlg();
 
 private:

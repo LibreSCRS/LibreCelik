@@ -5,6 +5,8 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QDate>
+#include <QPalette>
 #include <QVBoxLayout>
 
 namespace LibreSCRS {
@@ -43,6 +45,7 @@ CollapsibleSection* FieldSectionBuilder::build(const QString& title, const plugi
 
         auto* value = new QLineEdit(QString::fromStdString(field.asString()), section);
         value->setReadOnly(true);
+        value->setCursorPosition(0);
 
         cellLayout->addWidget(label);
         cellLayout->addWidget(value);
@@ -58,6 +61,37 @@ CollapsibleSection* FieldSectionBuilder::build(const QString& title, const plugi
     // QGroupBox::setLayout respects the top margin reserved for the header
     section->setLayout(grid);
     return section;
+}
+
+void FieldSectionBuilder::highlightExpiredDates(CollapsibleSection* section, const plugin::CardFieldGroup& group,
+                                                const std::set<std::string>& dateFieldKeys)
+{
+    if (!section || dateFieldKeys.empty())
+        return;
+
+    // Collect values of date fields that are expired
+    std::set<QString> expiredValues;
+    for (const auto& field : group.fields) {
+        if (!dateFieldKeys.count(field.key))
+            continue;
+        auto val = QString::fromStdString(field.asString());
+        auto date = QDate::fromString(val, "dd.MM.yyyy");
+        if (date.isValid() && date < QDate::currentDate())
+            expiredValues.insert(val);
+    }
+
+    if (expiredValues.empty())
+        return;
+
+    // Find QLineEdits with matching text and apply red palette
+    auto lineEdits = section->findChildren<QLineEdit*>();
+    for (auto* edit : lineEdits) {
+        if (expiredValues.contains(edit->text())) {
+            auto palette = edit->palette();
+            palette.setColor(QPalette::Text, QColor(211, 47, 47)); // Material Red 700
+            edit->setPalette(palette);
+        }
+    }
 }
 
 } // namespace LibreSCRS

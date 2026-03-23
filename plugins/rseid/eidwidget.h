@@ -8,11 +8,8 @@
 #include <QWidget>
 
 class CollapsibleSection;
+class QLabel;
 class QVBoxLayout;
-
-namespace LibreSCRS {
-class CardHeaderCard;
-}
 
 class EidWidget : public QWidget
 {
@@ -38,6 +35,8 @@ private:
     QPixmap loadPhoto() const;
     CollapsibleSection* buildAddressSection(QWidget* parent) const;
     CollapsibleSection* buildDocumentSection(QWidget* parent) const;
+    CollapsibleSection* buildPersonalSection(QWidget* parent) const;
+    void addVerificationBadges(CollapsibleSection* section, const plugin::CardFieldGroup* source = nullptr);
 
     plugin::CardData data;
 
@@ -45,7 +44,8 @@ private:
     QVBoxLayout* outerLayout = nullptr;
     CollapsibleSection* outerSection = nullptr;
     QVBoxLayout* sectionLayout = nullptr;
-    LibreSCRS::CardHeaderCard* headerCard = nullptr;
+    QLabel* photoLabel = nullptr;
+    CollapsibleSection* personalSection = nullptr;
 };
 
 #endif // EIDWIDGET_H

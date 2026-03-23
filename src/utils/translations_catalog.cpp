@@ -174,6 +174,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-eid-pin-transport");
     //% "Print Document"
     QT_TRID_NOOP("lc-eid-print-title");
+    //% "Status of Foreigner"
+    QT_TRID_NOOP("lc-eid-label-status-of-foreigner");
 
     // --- Change PIN dialog ---
     //% "Initialize %1"
@@ -516,7 +518,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Authentication Failed"
     QT_TRID_NOOP("lc-emrtd-auth-failed");
     //% "Personal Data"
-    QT_TRID_NOOP("lc-emrtd-personal-data");
+    QT_TRID_NOOP("lc-personal-data-title");
     //% "Surname"
     QT_TRID_NOOP("lc-emrtd-surname");
     //% "Given Names"

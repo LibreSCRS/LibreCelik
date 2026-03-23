@@ -13,10 +13,6 @@ class QLabel;
 class QLineEdit;
 class QVBoxLayout;
 
-namespace LibreSCRS {
-class CardHeaderCard;
-}
-
 class EMRTDWidget : public QWidget
 {
     Q_OBJECT
@@ -46,7 +42,7 @@ private:
     QVBoxLayout* outerLayout = nullptr;
     CollapsibleSection* outerSection = nullptr;
     QVBoxLayout* sectionLayout = nullptr;
-    LibreSCRS::CardHeaderCard* headerCard = nullptr;
+    QLabel* photoLabel = nullptr;
 };
 
 #endif // EMRTDWIDGET_H

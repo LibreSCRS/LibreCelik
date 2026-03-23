@@ -627,6 +627,10 @@
         <source>Vehicle Registration</source>
         <translation>Vehicle Registration</translation>
     </message>
+    <message id="lc-eid-label-status-of-foreigner">
+        <source>Status of Foreigner</source>
+        <translation>Status of Foreigner</translation>
+    </message>
     <message id="lc-changepin-failed">
         <source>PIN change failed.</source>
         <translation>PIN change failed.</translation>
@@ -857,7 +861,7 @@
     </message>
     <message id="lc-emrtd-personal-data">
         <source>Personal Data</source>
-        <translation>Personal Data</translation>
+        <translation type="vanished">Personal Data</translation>
     </message>
     <message id="lc-emrtd-surname">
         <source>Surname</source>
@@ -978,6 +982,10 @@
     <message id="lc-print-button">
         <source>Print</source>
         <translation>Print</translation>
+    </message>
+    <message id="lc-personal-data-title">
+        <source>Personal Data</source>
+        <translation>Personal Data</translation>
     </message>
     <message id="lc-emrtd-auth-dlg-title">
         <source>Electronic Passport Authentication</source>

@@ -23,6 +23,10 @@ public:
     static CollapsibleSection* build(const QString& title, const plugin::CardFieldGroup& group,
                                      const std::map<std::string, QString>& translationMap,
                                      const std::set<std::string>& hiddenFields = {}, QWidget* parent = nullptr);
+
+    // Post-process: highlight fields whose date (dd.MM.yyyy) is in the past.
+    static void highlightExpiredDates(CollapsibleSection* section, const plugin::CardFieldGroup& group,
+                                      const std::set<std::string>& dateFieldKeys);
 };
 
 } // namespace LibreSCRS

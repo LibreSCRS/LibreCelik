@@ -3,14 +3,16 @@
 
 #include "emrtdwidget.h"
 
-#include "utils/cardheadercard.h"
 #include "utils/collapsiblesection.h"
 #include "utils/fieldsectionbuilder.h"
+
+#include <QHBoxLayout>
 
 #include <plugin/carddatautils.h>
 
 #include <QLabel>
 #include <QLineEdit>
+#include <QPainter>
 #include <QPixmap>
 #include <QVBoxLayout>
 
@@ -29,6 +31,13 @@ const std::map<std::string, QString> documentExtraTranslationMap = {
     {"date_of_issue", "Date of Issue"},
     {"endorsements", "Endorsements"},
     {"tax_exit", "Tax/Exit Requirements"},
+};
+
+const std::map<std::string, QString> personalTranslationMap = {
+    {"given_names", qtTrId("lc-emrtd-given-names")},
+    {"surname", qtTrId("lc-emrtd-surname")},
+    {"nationality", qtTrId("lc-emrtd-nationality")},
+    {"date_of_birth", qtTrId("lc-emrtd-date-of-birth")},
 };
 
 const std::map<std::string, QString> additionalTranslationMap = {
@@ -96,32 +105,41 @@ void EMRTDWidget::addGroup(const plugin::CardFieldGroup& group)
     data.groups.push_back(group);
 
     if (key == "personal") {
-        // Create CardHeaderCard with placeholder photo + personal fields
-        std::vector<LibreSCRS::HeaderField> headerFields;
-        headerFields.push_back({"Given Names", getFieldValue(&group, "given_names")});
-        headerFields.push_back({"Surname", getFieldValue(&group, "surname")});
-        headerFields.push_back({"Nationality", getFieldValue(&group, "nationality")});
-        headerFields.push_back({"Date of Birth", getFieldValue(&group, "date_of_birth")});
+        auto* photoRow = new QHBoxLayout();
+        photoRow->setSpacing(10);
 
+        photoLabel = new QLabel(outerSection);
         QPixmap placeholder(190, 250);
         placeholder.fill(QColor(220, 220, 220));
-        headerCard = new LibreSCRS::CardHeaderCard(placeholder, QSize(190, 250), headerFields, outerSection);
-        sectionLayout->insertWidget(0, headerCard);
-    } else if (key == "document") {
-        // Add document number / expiry to header card if it exists
-        if (headerCard) {
-            // Header card already built — we cannot add fields to it after construction,
-            // but we stored the group so showPersonalData/cardData can access it.
+        {
+            QPixmap userIcon(QStringLiteral(":/images/user.png"));
+            auto scaled = userIcon.scaled(QSize(95, 125), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            QPainter painter(&placeholder);
+            painter.drawPixmap((190 - scaled.width()) / 2, (250 - scaled.height()) / 2, scaled);
         }
+        photoLabel->setPixmap(placeholder);
+        photoLabel->setFixedSize(190, 250);
+        photoRow->addWidget(photoLabel, 0, Qt::AlignTop);
+
+        auto* personalSec = LibreSCRS::FieldSectionBuilder::build(
+            qtTrId("lc-personal-data-title"), group, personalTranslationMap, {}, outerSection);
+        personalSec->setCollapsible(false);
+        photoRow->addWidget(personalSec, 1);
+
+        sectionLayout->insertLayout(0, photoRow);
+    } else if (key == "document") {
         auto* docSection = LibreSCRS::FieldSectionBuilder::build("Document Data", group, documentTranslationMap);
+        LibreSCRS::FieldSectionBuilder::highlightExpiredDates(docSection, group, {"date_of_expiry"});
         sectionLayout->addWidget(docSection);
     } else if (key == "photo") {
-        // Replace placeholder photo in the header card
-        if (headerCard && !group.fields.empty() && !group.fields[0].value.empty()) {
-            QPixmap photo;
-            photo.loadFromData(group.fields[0].value.data(), static_cast<uint>(group.fields[0].value.size()));
-            if (!photo.isNull())
-                headerCard->setPhoto(photo, QSize(190, 250));
+        if (!photoLabel || group.fields.empty() || group.fields[0].value.empty())
+            return;
+        QPixmap photo;
+        photo.loadFromData(group.fields[0].value.data(), static_cast<uint>(group.fields[0].value.size()));
+        if (!photo.isNull()) {
+            auto scaledPhoto = photo.scaledToHeight(250, Qt::SmoothTransformation);
+            photoLabel->setFixedSize(scaledPhoto.size());
+            photoLabel->setPixmap(scaledPhoto);
         }
     } else if (key == "signature") {
         if (!group.fields.empty() && !group.fields[0].value.empty()) {
@@ -191,7 +209,10 @@ void EMRTDWidget::showPersonalData(const plugin::CardData& data)
     auto* sectionLayout = new QVBoxLayout();
     sectionLayout->setSpacing(6);
 
-    // CardHeaderCard — photo + key fields
+    // Photo + Personal section in HBoxLayout
+    auto* photoRow = new QHBoxLayout();
+    photoRow->setSpacing(10);
+
     QPixmap photo;
     if (const auto* photoGroup = data.findGroup("photo")) {
         if (!photoGroup->fields.empty() && !photoGroup->fields[0].value.empty()) {
@@ -200,35 +221,40 @@ void EMRTDWidget::showPersonalData(const plugin::CardData& data)
         }
     }
 
-    const auto* personalGroup = data.findGroup("personal");
-    const auto* docGroup = data.findGroup("document");
-
-    std::vector<LibreSCRS::HeaderField> headerFields;
-    if (personalGroup) {
-        headerFields.push_back({"Given Names", getFieldValue(personalGroup, "given_names")});
-        headerFields.push_back({"Surname", getFieldValue(personalGroup, "surname")});
-        headerFields.push_back({"Nationality", getFieldValue(personalGroup, "nationality")});
-        headerFields.push_back({"Date of Birth", getFieldValue(personalGroup, "date_of_birth")});
-    }
-    if (docGroup) {
-        headerFields.push_back({"Document No.", getFieldValue(docGroup, "document_number")});
-        headerFields.push_back({"Expiry", getFieldValue(docGroup, "date_of_expiry")});
-    }
-
-    if (!photo.isNull()) {
-        auto* headerCard = new LibreSCRS::CardHeaderCard(photo, QSize(190, 250), headerFields, travelDocSection);
-        sectionLayout->addWidget(headerCard);
-    } else if (!headerFields.empty()) {
-        // No photo — show fields only with a placeholder
+    auto* photoLbl = new QLabel(travelDocSection);
+    if (photo.isNull()) {
         QPixmap placeholder(190, 250);
         placeholder.fill(QColor(220, 220, 220));
-        auto* headerCard = new LibreSCRS::CardHeaderCard(placeholder, QSize(190, 250), headerFields, travelDocSection);
-        sectionLayout->addWidget(headerCard);
+        {
+            QPixmap userIcon(QStringLiteral(":/images/user.png"));
+            auto scaled = userIcon.scaled(QSize(95, 125), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            QPainter painter(&placeholder);
+            painter.drawPixmap((190 - scaled.width()) / 2, (250 - scaled.height()) / 2, scaled);
+        }
+        photoLbl->setPixmap(placeholder);
+        photoLbl->setFixedSize(190, 250);
+    } else {
+        auto scaledPhoto = photo.scaledToHeight(250, Qt::SmoothTransformation);
+        photoLbl->setFixedSize(scaledPhoto.size());
+        photoLbl->setPixmap(scaledPhoto);
+    }
+    photoRow->addWidget(photoLbl, 0, Qt::AlignTop);
+
+    const auto* personalGroup = data.findGroup("personal");
+    if (personalGroup) {
+        auto* personalSec = LibreSCRS::FieldSectionBuilder::build(
+            qtTrId("lc-personal-data-title"), *personalGroup, personalTranslationMap, {}, travelDocSection);
+        personalSec->setCollapsible(false);
+        photoRow->addWidget(personalSec, 1);
     }
 
+    sectionLayout->addLayout(photoRow);
+
     // Document Data, Additional — stacked vertically
+    const auto* docGroup = data.findGroup("document");
     if (docGroup) {
         auto* docSection = LibreSCRS::FieldSectionBuilder::build("Document Data", *docGroup, documentTranslationMap);
+        LibreSCRS::FieldSectionBuilder::highlightExpiredDates(docSection, *docGroup, {"date_of_expiry"});
         sectionLayout->addWidget(docSection);
     }
 

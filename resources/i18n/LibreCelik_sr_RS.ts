@@ -627,6 +627,10 @@
         <source>Vehicle Registration</source>
         <translation>Саобраћајна дозвола</translation>
     </message>
+    <message id="lc-eid-label-status-of-foreigner">
+        <source>Status of Foreigner</source>
+        <translation>Статус странца</translation>
+    </message>
     <message id="lc-changepin-failed">
         <source>PIN change failed.</source>
         <translation>Промена PIN-а неуспешна.</translation>
@@ -857,7 +861,7 @@
     </message>
     <message id="lc-emrtd-personal-data">
         <source>Personal Data</source>
-        <translation>Лични подаци</translation>
+        <translation type="vanished">Лични подаци</translation>
     </message>
     <message id="lc-emrtd-surname">
         <source>Surname</source>
@@ -978,6 +982,10 @@
     <message id="lc-print-button">
         <source>Print</source>
         <translation>Штампај</translation>
+    </message>
+    <message id="lc-personal-data-title">
+        <source>Personal Data</source>
+        <translation>Лични подаци</translation>
     </message>
     <message id="lc-emrtd-auth-dlg-title">
         <source>Electronic Passport Authentication</source>

@@ -58,6 +58,9 @@ public:
     // Disable animation for instant collapse/expand (avoids flicker in nested sections).
     void setAnimated(bool animated);
 
+    // When false, the section is always expanded — no arrow, no toggle on click.
+    void setCollapsible(bool enabled);
+
 signals:
     void sectionExpanded();
 
@@ -84,4 +87,5 @@ private:
 
     static constexpr int HEADER_HEIGHT = 30;
     int headerHeight = HEADER_HEIGHT;
+    bool collapsible = true;
 };

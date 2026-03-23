@@ -59,6 +59,7 @@ void CardHeaderCard::buildLayout(QWidget* leftWidget, const std::vector<HeaderFi
         label->setStyleSheet("color: #777; font-size: 10px;");
         auto* value = new QLineEdit(field.value, this);
         value->setReadOnly(true);
+        value->setCursorPosition(0);
         cellLayout->addWidget(label);
         cellLayout->addWidget(value);
 

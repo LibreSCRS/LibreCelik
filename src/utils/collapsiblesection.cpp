@@ -136,6 +136,12 @@ void CollapsibleSection::setAnimated(bool value)
     animated = value;
 }
 
+void CollapsibleSection::setCollapsible(bool enabled)
+{
+    collapsible = enabled;
+    update();
+}
+
 void CollapsibleSection::setExpanded(bool exp)
 {
     if (expanded == exp)
@@ -177,13 +183,17 @@ void CollapsibleSection::paintEvent(QPaintEvent*)
     // Header background
     p.fillRect(0, 0, width(), headerHeight, headerBg);
 
-    // Arrow glyph
-    p.setPen(Qt::white);
-    QFont af = font();
-    af.setPointSizeF(af.pointSizeF() * 0.85);
-    p.setFont(af);
-    p.drawText(QRect(8, 0, 18, headerHeight), Qt::AlignVCenter | Qt::AlignHCenter,
-               expanded ? QStringLiteral("▼") : QStringLiteral("▶"));
+    // Arrow glyph (only when collapsible)
+    int titleLeft = 8;
+    if (collapsible) {
+        p.setPen(Qt::white);
+        QFont af = font();
+        af.setPointSizeF(af.pointSizeF() * 0.85);
+        p.setFont(af);
+        p.drawText(QRect(8, 0, 18, headerHeight), Qt::AlignVCenter | Qt::AlignHCenter,
+                   expanded ? QStringLiteral("▼") : QStringLiteral("▶"));
+        titleLeft = 30;
+    }
 
     // Title — leave room for header widgets on the right
     int titleRight = width() - 4;
@@ -191,8 +201,9 @@ void CollapsibleSection::paintEvent(QPaintEvent*)
         titleRight -= (w->width() + 4);
     QFont tf = font();
     tf.setBold(true);
+    p.setPen(Qt::white);
     p.setFont(tf);
-    p.drawText(QRect(30, 0, titleRight - 30, headerHeight), Qt::AlignVCenter | Qt::AlignLeft, title());
+    p.drawText(QRect(titleLeft, 0, titleRight - titleLeft, headerHeight), Qt::AlignVCenter | Qt::AlignLeft, title());
 
     // Subtle border around content area
     p.setPen(QPen(frameBorder, 1));
@@ -201,6 +212,10 @@ void CollapsibleSection::paintEvent(QPaintEvent*)
 
 void CollapsibleSection::mousePressEvent(QMouseEvent* event)
 {
+    if (!collapsible) {
+        QGroupBox::mousePressEvent(event);
+        return;
+    }
     if (event->position().y() <= headerHeight)
         setExpanded(!expanded);
     else

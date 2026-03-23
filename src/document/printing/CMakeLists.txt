@@ -4,6 +4,8 @@
 add_library(LibreCelikPrinting STATIC
     textdocument.h
     textdocument.cpp
+    ${PROJECT_SOURCE_DIR}/src/utils/libreceliklog.h
+    ${PROJECT_SOURCE_DIR}/src/utils/libreceliklog.cpp
 )
 target_include_directories(LibreCelikPrinting
     PUBLIC

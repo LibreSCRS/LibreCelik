@@ -3,15 +3,27 @@
 
 #include "healthwidgetplugin.h"
 #include "healthwidget.h"
+#include "healthtextdocument.h"
+#include "utils/printmanager.h"
 
 QWidget* HealthWidgetPlugin::createWidget(const plugin::CardData& data, QWidget* parent) const
 {
-    return new HealthWidget(data, parent);
+    auto* w = new HealthWidget(data, parent);
+    connect(w, &HealthWidget::printRequested, this, [this](const plugin::CardData& d) { print(d, nullptr); });
+    return w;
 }
 
 QWidget* HealthWidgetPlugin::createEmptyWidget(QWidget* parent) const
 {
-    return new HealthWidget(parent);
+    auto* w = new HealthWidget(parent);
+    connect(w, &HealthWidget::printRequested, this, [this](const plugin::CardData& d) { print(d, nullptr); });
+    return w;
+}
+
+void HealthWidgetPlugin::print(const plugin::CardData& data, QPrinter* /*printer*/) const
+{
+    HealthTextDocument doc(data);
+    PrintManager::printDocument(doc, qtTrId("lc-health-print-title"));
 }
 
 void HealthWidgetPlugin::addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const

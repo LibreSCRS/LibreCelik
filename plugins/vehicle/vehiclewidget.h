@@ -7,6 +7,7 @@
 #include <QWidget>
 
 class CollapsibleSection;
+class QToolButton;
 class QVBoxLayout;
 
 class VehicleWidget : public QWidget
@@ -27,6 +28,11 @@ public:
         return data;
     }
 
+    Q_INVOKABLE void enablePrintButton();
+
+signals:
+    void printRequested(const plugin::CardData& data);
+
 private:
     void buildLayout();
     void buildShell();
@@ -43,4 +49,5 @@ private:
     plugin::CardData data;
     QVBoxLayout* contentLayout = nullptr; // inner layout of the outer CollapsibleSection
     CollapsibleSection* outerSection = nullptr;
+    QToolButton* printBtn = nullptr;
 };

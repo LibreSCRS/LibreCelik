@@ -6,8 +6,8 @@ project(LibreCelikTests)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Core Widgets Test)
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Test)
+find_package(QT NAMES Qt6 Core Widgets Test PrintSupport)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Test PrintSupport)
 # PCSC is found by LibreMiddleware; UUID is used directly by tests
 find_package(UUID)
 
@@ -116,3 +116,75 @@ target_include_directories(QSmartCardMonitorTests PRIVATE
     ${libremiddleware_SOURCE_DIR}/test
 )
 gtest_discover_tests(QSmartCardMonitorTests)
+
+add_executable(VehicleTextDocumentTests
+    vehicletextdocument_test.cpp
+    ../plugins/vehicle/vehicletextdocument.h
+    ../plugins/vehicle/vehicletextdocument.cpp
+    ../src/utils/libreceliklog.h
+    ../src/utils/libreceliklog.cpp
+    ${CMAKE_SOURCE_DIR}/resources/librecelik.qrc
+)
+target_include_directories(VehicleTextDocumentTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/document/printing
+    ${CMAKE_SOURCE_DIR}/plugins/vehicle
+    ${PROJECT_BINARY_DIR}/../src
+)
+target_link_libraries(VehicleTextDocumentTests
+    GTest::gtest
+    CardPlugin
+    LibreCelikPrinting
+    Qt6::Widgets
+    Qt6::PrintSupport
+)
+set_target_properties(VehicleTextDocumentTests PROPERTIES AUTOMOC ON)
+gtest_discover_tests(VehicleTextDocumentTests)
+
+add_executable(HealthTextDocumentTests
+    healthtextdocument_test.cpp
+    ../plugins/health/healthtextdocument.h
+    ../plugins/health/healthtextdocument.cpp
+    ../src/utils/libreceliklog.h
+    ../src/utils/libreceliklog.cpp
+    ${CMAKE_SOURCE_DIR}/resources/librecelik.qrc
+)
+target_include_directories(HealthTextDocumentTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/document/printing
+    ${CMAKE_SOURCE_DIR}/plugins/health
+    ${PROJECT_BINARY_DIR}/../src
+)
+target_link_libraries(HealthTextDocumentTests
+    GTest::gtest
+    CardPlugin
+    LibreCelikPrinting
+    Qt6::Widgets
+    Qt6::PrintSupport
+)
+set_target_properties(HealthTextDocumentTests PROPERTIES AUTOMOC ON)
+gtest_discover_tests(HealthTextDocumentTests)
+
+add_executable(EIdTextDocumentTests
+    eidtextdocument_test.cpp
+    ../plugins/rseid/eidtextdocument.h
+    ../plugins/rseid/eidtextdocument.cpp
+    ../src/utils/libreceliklog.h
+    ../src/utils/libreceliklog.cpp
+    ${CMAKE_SOURCE_DIR}/resources/librecelik.qrc
+)
+target_include_directories(EIdTextDocumentTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/document/printing
+    ${CMAKE_SOURCE_DIR}/plugins/rseid
+    ${PROJECT_BINARY_DIR}/../src
+)
+target_link_libraries(EIdTextDocumentTests
+    GTest::gtest
+    CardPlugin
+    LibreCelikPrinting
+    Qt6::Widgets
+    Qt6::PrintSupport
+)
+set_target_properties(EIdTextDocumentTests PROPERTIES AUTOMOC ON)
+gtest_discover_tests(EIdTextDocumentTests)

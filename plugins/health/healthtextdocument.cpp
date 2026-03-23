@@ -4,14 +4,16 @@
 #include <QCoreApplication>
 #include <QDate>
 #include "healthtextdocument.h"
+#include <plugin/carddatautils.h>
 
-HealthTextDocument::HealthTextDocument(const healthcard::HealthDocumentData& healthData, QString documentPath,
-                                       QString cssPath)
+using plugin::getFieldValue;
+
+HealthTextDocument::HealthTextDocument(const plugin::CardData& cardData, QString documentPath, QString cssPath)
 {
     auto data = loadFile(documentPath);
 
     translateDocumentData(data);
-    prepareDocumentData(data, healthData);
+    prepareDocumentData(data, cardData);
 
     setupDocument(data, cssPath);
 }
@@ -61,43 +63,34 @@ void HealthTextDocument::translateDocumentData(QString& data) const
     data.replace("${taxpayer_act}", qtTrId("lc-health-label-taxpayer-act"));
 }
 
-void HealthTextDocument::prepareDocumentData(QString& data, const healthcard::HealthDocumentData& healthData) const
+void HealthTextDocument::prepareDocumentData(QString& html, const plugin::CardData& cardData) const
 {
-    auto s = [](const std::string& v) { return QString::fromStdString(v); };
-
-    // Personal
-    data.replace("${given_name_value}", getPreparedValue(s(healthData.givenName)));
-    data.replace("${family_name_value}", getPreparedValue(s(healthData.familyName)));
-    data.replace("${given_name_lat_value}", getPreparedValue(s(healthData.givenNameLatin)));
-    data.replace("${family_name_lat_value}", getPreparedValue(s(healthData.familyNameLatin)));
-    data.replace("${parent_name_value}", getPreparedValue(s(healthData.parentName)));
-    data.replace("${dob_value}", getPreparedValue(s(healthData.dateOfBirth)));
-    data.replace("${gender_value}", getPreparedValue(s(healthData.gender)));
-    data.replace("${jmbg_value}", getPreparedValue(s(healthData.personalNumber)));
-    data.replace("${lbo_value}", getPreparedValue(s(healthData.insurantNumber)));
-
-    // Insurance
-    data.replace("${insurer_value}", getPreparedValue(s(healthData.insurerName)));
-    data.replace("${insurer_id_value}", getPreparedValue(s(healthData.insurerId)));
-    data.replace("${card_id_value}", getPreparedValue(s(healthData.cardId)));
-    data.replace("${issue_date_value}", getPreparedValue(s(healthData.dateOfIssue)));
-    data.replace("${expiry_value}", getPreparedValue(s(healthData.dateOfExpiry)));
-    data.replace("${valid_until_value}", getPreparedValue(s(healthData.validUntil)));
-    data.replace("${insurance_basis_value}", getPreparedValue(s(healthData.insuranceBasisRzzo)));
-    data.replace("${insurance_desc_value}", getPreparedValue(s(healthData.insuranceDescription)));
-    data.replace("${insurance_start_value}", getPreparedValue(s(healthData.insuranceStartDate)));
-
-    // Address
-    data.replace("${street_value}", getPreparedValue(s(healthData.street)));
-    data.replace("${address_number_value}", getPreparedValue(s(healthData.addressNumber)));
-    data.replace("${apartment_value}", getPreparedValue(s(healthData.apartment)));
-    data.replace("${place_value}", getPreparedValue(s(healthData.place)));
-    data.replace("${municipality_value}", getPreparedValue(s(healthData.municipality)));
-    data.replace("${country_value}", getPreparedValue(s(healthData.country)));
-
-    // Taxpayer
-    data.replace("${taxpayer_name_value}", getPreparedValue(s(healthData.taxpayerName)));
-    data.replace("${taxpayer_id_value}", getPreparedValue(s(healthData.taxpayerIdNumber)));
-    data.replace("${taxpayer_res_value}", getPreparedValue(s(healthData.taxpayerResidence)));
-    data.replace("${taxpayer_act_value}", getPreparedValue(s(healthData.taxpayerActivityCode)));
+    html.replace("${given_name_value}", getPreparedValue(getFieldValue(cardData, "given_name")));
+    html.replace("${family_name_value}", getPreparedValue(getFieldValue(cardData, "family_name")));
+    html.replace("${given_name_lat_value}", getPreparedValue(getFieldValue(cardData, "given_name_latin")));
+    html.replace("${family_name_lat_value}", getPreparedValue(getFieldValue(cardData, "family_name_latin")));
+    html.replace("${parent_name_value}", getPreparedValue(getFieldValue(cardData, "parent_name")));
+    html.replace("${dob_value}", getPreparedValue(getFieldValue(cardData, "date_of_birth")));
+    html.replace("${gender_value}", getPreparedValue(getFieldValue(cardData, "gender")));
+    html.replace("${jmbg_value}", getPreparedValue(getFieldValue(cardData, "personal_number")));
+    html.replace("${lbo_value}", getPreparedValue(getFieldValue(cardData, "insurant_number")));
+    html.replace("${insurer_value}", getPreparedValue(getFieldValue(cardData, "insurer_name")));
+    html.replace("${insurer_id_value}", getPreparedValue(getFieldValue(cardData, "insurer_id")));
+    html.replace("${card_id_value}", getPreparedValue(getFieldValue(cardData, "card_id")));
+    html.replace("${issue_date_value}", getPreparedValue(getFieldValue(cardData, "date_of_issue")));
+    html.replace("${expiry_value}", getPreparedValue(getFieldValue(cardData, "date_of_expiry")));
+    html.replace("${valid_until_value}", getPreparedValue(getFieldValue(cardData, "valid_until")));
+    html.replace("${insurance_basis_value}", getPreparedValue(getFieldValue(cardData, "insurance_basis_rzzo")));
+    html.replace("${insurance_desc_value}", getPreparedValue(getFieldValue(cardData, "insurance_description")));
+    html.replace("${insurance_start_value}", getPreparedValue(getFieldValue(cardData, "insurance_start_date")));
+    html.replace("${street_value}", getPreparedValue(getFieldValue(cardData, "street")));
+    html.replace("${address_number_value}", getPreparedValue(getFieldValue(cardData, "address_number")));
+    html.replace("${apartment_value}", getPreparedValue(getFieldValue(cardData, "apartment")));
+    html.replace("${place_value}", getPreparedValue(getFieldValue(cardData, "place")));
+    html.replace("${municipality_value}", getPreparedValue(getFieldValue(cardData, "municipality")));
+    html.replace("${country_value}", getPreparedValue(getFieldValue(cardData, "country")));
+    html.replace("${taxpayer_name_value}", getPreparedValue(getFieldValue(cardData, "taxpayer_name")));
+    html.replace("${taxpayer_id_value}", getPreparedValue(getFieldValue(cardData, "taxpayer_id_number")));
+    html.replace("${taxpayer_res_value}", getPreparedValue(getFieldValue(cardData, "taxpayer_residence")));
+    html.replace("${taxpayer_act_value}", getPreparedValue(getFieldValue(cardData, "taxpayer_activity_code")));
 }

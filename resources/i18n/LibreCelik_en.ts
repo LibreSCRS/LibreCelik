@@ -851,6 +851,10 @@
         <source>Card Type</source>
         <translation>Card Type</translation>
     </message>
+    <message id="lc-print-tooltip">
+        <source>Print</source>
+        <translation type="unfinished">Print</translation>
+    </message>
     <message id="lc-emrtd-auth-required">
         <source>Authentication Required</source>
         <translation>Authentication Required</translation>

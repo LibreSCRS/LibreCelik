@@ -5,7 +5,7 @@
 #define VEHICLETEXTDOCUMENT_H
 
 #include <QCoreApplication>
-#include <vehiclecard/vehicletypes.h>
+#include <plugin/card_data.h>
 #include "textdocument.h"
 
 class VehicleTextDocument : public TextDocument
@@ -13,12 +13,12 @@ class VehicleTextDocument : public TextDocument
     Q_DECLARE_TR_FUNCTIONS(VehicleTextDocument);
 
 public:
-    VehicleTextDocument(const vehiclecard::VehicleDocumentData& vehicleData,
-                        QString documentPath = ":/html/vehiclecard.html", QString cssPath = ":/html/vehiclecard.css");
+    explicit VehicleTextDocument(const plugin::CardData& data, QString documentPath = ":/html/vehiclecard.html",
+                                 QString cssPath = ":/html/vehiclecard.css");
 
 private:
     void translateDocumentData(QString& data) const;
-    void prepareDocumentData(QString& data, const vehiclecard::VehicleDocumentData& vehicleData) const;
+    void prepareDocumentData(QString& html, const plugin::CardData& cardData) const;
 };
 
 #endif // VEHICLETEXTDOCUMENT_H

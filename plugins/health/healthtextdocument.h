@@ -5,7 +5,7 @@
 #define HEALTHTEXTDOCUMENT_H
 
 #include <QCoreApplication>
-#include <healthcard/healthtypes.h>
+#include <plugin/card_data.h>
 #include "textdocument.h"
 
 class HealthTextDocument : public TextDocument
@@ -13,12 +13,12 @@ class HealthTextDocument : public TextDocument
     Q_DECLARE_TR_FUNCTIONS(HealthTextDocument);
 
 public:
-    HealthTextDocument(const healthcard::HealthDocumentData& healthData,
-                       QString documentPath = ":/html/healthcard.html", QString cssPath = ":/html/healthcard.css");
+    explicit HealthTextDocument(const plugin::CardData& data, QString documentPath = ":/html/healthcard.html",
+                                QString cssPath = ":/html/healthcard.css");
 
 private:
     void translateDocumentData(QString& data) const;
-    void prepareDocumentData(QString& data, const healthcard::HealthDocumentData& healthData) const;
+    void prepareDocumentData(QString& html, const plugin::CardData& cardData) const;
 };
 
 #endif // HEALTHTEXTDOCUMENT_H

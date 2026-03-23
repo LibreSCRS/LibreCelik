@@ -425,6 +425,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     // --- Shared UI ---
     //% "Print"
     QT_TRID_NOOP("lc-print-button");
+    //% "Print"
+    QT_TRID_NOOP("lc-print-tooltip");
 
     // --- Vehicle registration ---
     //% "Vehicle Registration"

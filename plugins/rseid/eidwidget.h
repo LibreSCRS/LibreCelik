@@ -9,6 +9,7 @@
 
 class CollapsibleSection;
 class QLabel;
+class QToolButton;
 class QVBoxLayout;
 
 class EidWidget : public QWidget
@@ -24,10 +25,15 @@ public:
     // Progressive display: add one group at a time
     void addGroup(const plugin::CardFieldGroup& group);
 
+    Q_INVOKABLE void enablePrintButton();
+
     const plugin::CardData& cardData() const
     {
         return data;
     }
+
+signals:
+    void printRequested(const plugin::CardData& data);
 
 private:
     void buildLayout();
@@ -46,6 +52,7 @@ private:
     QVBoxLayout* sectionLayout = nullptr;
     QLabel* photoLabel = nullptr;
     CollapsibleSection* personalSection = nullptr;
+    QToolButton* printBtn = nullptr;
 };
 
 #endif // EIDWIDGET_H

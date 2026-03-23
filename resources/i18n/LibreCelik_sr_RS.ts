@@ -189,7 +189,7 @@
     </message>
     <message id="lc-eid-label-address-date">
         <source>Date of Address Change</source>
-        <translation>Датум пријаве адресе</translation>
+        <translation>Датум промене адресе</translation>
     </message>
     <message id="lc-eid-label-document-type">
         <source>Document Type</source>
@@ -850,6 +850,10 @@
     <message id="lc-pks-card-type">
         <source>Card Type</source>
         <translation>Тип картице</translation>
+    </message>
+    <message id="lc-print-tooltip">
+        <source>Print</source>
+        <translation>Штампај</translation>
     </message>
     <message id="lc-emrtd-auth-required">
         <source>Authentication Required</source>

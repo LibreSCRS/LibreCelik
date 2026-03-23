@@ -1,13 +1,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright hirashix0@proton.me
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets PrintSupport)
 
 add_library(rseid-gui-plugin MODULE
     rseidwidgetplugin.h
     rseidwidgetplugin.cpp
     eidwidget.h
     eidwidget.cpp
+    eidtextdocument.h
+    eidtextdocument.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.h
     ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/cardheadercard.h
@@ -21,6 +23,7 @@ target_include_directories(rseid-gui-plugin PRIVATE
 target_link_libraries(rseid-gui-plugin PRIVATE
     Qt6::Widgets
     CardPlugin
+    LibreCelikPrinting
 )
 set_target_properties(rseid-gui-plugin PROPERTIES
     AUTOMOC ON

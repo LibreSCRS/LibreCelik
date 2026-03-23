@@ -12,9 +12,12 @@
 #include <QDate>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPainter>
+#include <QGraphicsOpacityEffect>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 using plugin::getFieldValue;
@@ -48,6 +51,19 @@ void EidWidget::addGroup(const plugin::CardFieldGroup& group)
         outerSection->setLayout(sectionLayout);
         outerSection->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
         outerLayout->addWidget(outerSection);
+
+        // Print button — disabled (dimmed) until all data arrives
+        printBtn = new QToolButton(this);
+        printBtn->setIcon(QIcon(":/images/printer-header.svg"));
+        printBtn->setIconSize(QSize(24, 24));
+        printBtn->setToolTip(qtTrId("lc-print-tooltip"));
+        printBtn->setAutoRaise(true);
+        printBtn->setEnabled(false);
+        auto* dimEffect = new QGraphicsOpacityEffect(printBtn);
+        dimEffect->setOpacity(0.3);
+        printBtn->setGraphicsEffect(dimEffect);
+        connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
+        outerSection->addHeaderWidget(printBtn);
 
     } else if (key == QLatin1String("personal")) {
         if (!outerSection)
@@ -96,6 +112,14 @@ void EidWidget::addGroup(const plugin::CardFieldGroup& group)
         if (!personalSection)
             return;
         addVerificationBadges(personalSection, &group);
+    }
+}
+
+void EidWidget::enablePrintButton()
+{
+    if (printBtn) {
+        printBtn->setGraphicsEffect(nullptr);
+        printBtn->setEnabled(true);
     }
 }
 
@@ -161,7 +185,9 @@ CollapsibleSection* EidWidget::buildPersonalSection(QWidget* parent) const
         pobParts.removeAll(QString());
         auto pobValue = pobParts.join(", ").toStdString();
         if (!pobValue.empty()) {
-            modifiedGroup.fields.push_back({"place_of_birth_composite", "Place of Birth", plugin::FieldType::Text,
+            modifiedGroup.fields.push_back({"place_of_birth_composite",
+                                            "Place of Birth",
+                                            plugin::FieldType::Text,
                                             {pobValue.begin(), pobValue.end()}});
             translationMap["place_of_birth_composite"] = qtTrId("lc-eid-label-place-of-birth");
         }
@@ -252,6 +278,15 @@ void EidWidget::buildLayout()
     auto* outerSection = new CollapsibleSection(
         isForeigner() ? qtTrId("lc-eid-title-foreigner") : qtTrId("lc-eid-title"), QColor(34, 86, 117), this);
     outerSection->setHeaderHeight(56);
+
+    // Print button — immediately enabled (all data present)
+    printBtn = new QToolButton(this);
+    printBtn->setIcon(QIcon(":/images/printer-header.svg"));
+    printBtn->setIconSize(QSize(24, 24));
+    printBtn->setToolTip(qtTrId("lc-print-tooltip"));
+    printBtn->setAutoRaise(true);
+    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
+    outerSection->addHeaderWidget(printBtn);
 
     auto* sectionLayout = new QVBoxLayout();
     sectionLayout->setSpacing(6);
@@ -367,7 +402,7 @@ CollapsibleSection* EidWidget::buildDocumentSection(QWidget* parent) const
     }
 
     auto* section = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-eid-label-document"), *docGroup, translationMap,
-                                                         hiddenFields, parent);
+                                                          hiddenFields, parent);
     LibreSCRS::FieldSectionBuilder::highlightExpiredDates(section, *docGroup, {"expiry_date"});
     return section;
 }

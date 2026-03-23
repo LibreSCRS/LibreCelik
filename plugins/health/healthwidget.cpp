@@ -7,9 +7,11 @@
 #include "utils/collapsiblesection.h"
 #include "utils/fieldsectionbuilder.h"
 
+#include <QGraphicsOpacityEffect>
 #include <plugin/carddatautils.h>
 
 #include <QIcon>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 using plugin::getFieldValue;
@@ -90,6 +92,19 @@ void HealthWidget::buildEmptyShell()
     outerSection->setLayout(contentLayout);
 
     outerLayout->addWidget(outerSection);
+
+    // Print button — disabled until all data arrives
+    printBtn = new QToolButton(this);
+    printBtn->setIcon(QIcon(":/images/printer-header.svg"));
+    printBtn->setIconSize(QSize(24, 24));
+    printBtn->setToolTip(qtTrId("lc-print-tooltip"));
+    printBtn->setAutoRaise(true);
+    printBtn->setEnabled(false);
+    auto* dimEffect = new QGraphicsOpacityEffect(printBtn);
+    dimEffect->setOpacity(0.3);
+    printBtn->setGraphicsEffect(dimEffect);
+    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
+    outerSection->addHeaderWidget(printBtn);
 }
 
 void HealthWidget::addGroup(const plugin::CardFieldGroup& group)
@@ -108,6 +123,14 @@ void HealthWidget::addGroup(const plugin::CardFieldGroup& group)
         addCarrierGroup(group);
     } else if (key == "taxpayer") {
         addTaxpayerGroup(group);
+    }
+}
+
+void HealthWidget::enablePrintButton()
+{
+    if (printBtn) {
+        printBtn->setGraphicsEffect(nullptr);
+        printBtn->setEnabled(true);
     }
 }
 
@@ -205,6 +228,15 @@ void HealthWidget::buildLayout()
     auto* outerSection = new CollapsibleSection(qtTrId("lc-health-title"), navy, this);
     outerSection->setHeaderHeight(56);
     outerSection->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+
+    // Print button — immediately enabled (all data present)
+    printBtn = new QToolButton(this);
+    printBtn->setIcon(QIcon(":/images/printer-header.svg"));
+    printBtn->setIconSize(QSize(24, 24));
+    printBtn->setToolTip(qtTrId("lc-print-tooltip"));
+    printBtn->setAutoRaise(true);
+    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
+    outerSection->addHeaderWidget(printBtn);
 
     auto* contentLayout = new QVBoxLayout();
 

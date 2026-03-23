@@ -20,6 +20,12 @@ inline QString getFieldValue(const CardFieldGroup* group, const std::string& key
     return {};
 }
 
+inline QString getFieldValue(const CardData& data, const std::string& key)
+{
+    const auto* field = data.findField(key);
+    return field ? QString::fromStdString(field->asString()) : QString();
+}
+
 } // namespace plugin
 
 #endif // CARDDATAUTILS_H

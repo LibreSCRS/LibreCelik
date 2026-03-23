@@ -4,19 +4,25 @@
 #include <QCoreApplication>
 #include <QDate>
 #include "eidtextdocument.h"
+#include <plugin/carddatautils.h>
 
-EIdTextDocument::EIdTextDocument(const eidcard::FixedPersonalData& fixedPersonalData,
-                                 const eidcard::VariablePersonalData& variablePersonalData,
-                                 const eidcard::DocumentData& documentData, const QString& address,
-                                 const QString& placeOfBirth, const QString& photo, QString documentPath,
-                                 QString cssPath)
+using plugin::getFieldValue;
+
+EIdTextDocument::EIdTextDocument(const plugin::CardData& cardData, QString documentPath, QString cssPath)
 {
+    // Foreigner detection — matches EidWidget::isForeigner()
+    const auto* cardTypeField = cardData.findField("card_type");
+    isForeigner = cardTypeField && cardTypeField->asString() == "ForeignerIF2020";
+
+    if (documentPath.isEmpty())
+        documentPath = isForeigner ? QStringLiteral(":/html/idcardIF2020.html") : QStringLiteral(":/html/idcard.html");
+    if (cssPath.isEmpty())
+        cssPath = QStringLiteral(":/html/idcard.css");
+
     auto data = loadFile(documentPath);
 
-    isForeigner = documentPath.contains("/idcardIF20", Qt::CaseInsensitive);
-
     translateDocumentData(data);
-    prepareDocumentData(data, fixedPersonalData, variablePersonalData, documentData, address, placeOfBirth, photo);
+    prepareDocumentData(data, cardData);
 
     setupDocument(data, cssPath);
 }
@@ -54,30 +60,59 @@ void EIdTextDocument::translateDocumentData(QString& data) const
     data.replace("${validity_date}", qtTrId("lc-eid-doc-valid-to"));
 }
 
-void EIdTextDocument::prepareDocumentData(QString& data, const eidcard::FixedPersonalData& fixedPersonalData,
-                                          const eidcard::VariablePersonalData& variablePersonalData,
-                                          const eidcard::DocumentData& documentData, const QString& address,
-                                          const QString& placeOfBirth, const QString& photo) const
+void EIdTextDocument::prepareDocumentData(QString& html, const plugin::CardData& cardData) const
 {
-    data.replace("${last_name_value}", getPreparedValue(QString::fromStdString(fixedPersonalData.surname)));
-    data.replace("${first_name_value}", getPreparedValue(QString::fromStdString(fixedPersonalData.givenName)));
-    data.replace("${parent_name_value}", getPreparedValue(QString::fromStdString(fixedPersonalData.parentGivenName)));
-    data.replace("${nationality_value}", getPreparedValue(QString::fromStdString(fixedPersonalData.nationalityFull)));
-    data.replace("${date_of_birth_value}", getPreparedValue(QString::fromStdString(fixedPersonalData.dateOfBirth)));
-    data.replace("${place_of_birth_value}", getPreparedValue(placeOfBirth));
-    data.replace("${status_of_foreigner_value}",
-                 getPreparedValue(QString::fromStdString(fixedPersonalData.statusOfForeigner)));
-    data.replace("${adress_value}", getPreparedValue(address));
-    data.replace("${date_of_address_change_value}",
-                 getPreparedValue(QString::fromStdString(variablePersonalData.addressDate)));
-    data.replace("${jmbg_value}", getPreparedValue(QString::fromStdString(fixedPersonalData.personalNumber)));
-    data.replace("${gender_value}", getPreparedValue(QString::fromStdString(fixedPersonalData.sex)));
+    html.replace("${last_name_value}", getPreparedValue(getFieldValue(cardData, "surname")));
+    html.replace("${first_name_value}", getPreparedValue(getFieldValue(cardData, "given_name")));
+    html.replace("${parent_name_value}", getPreparedValue(getFieldValue(cardData, "parent_given_name")));
+    html.replace("${nationality_value}", getPreparedValue(getFieldValue(cardData, "nationality")));
+    html.replace("${date_of_birth_value}", getPreparedValue(getFieldValue(cardData, "date_of_birth")));
 
-    data.replace("${document_issuer_value}", getPreparedValue(QString::fromStdString(documentData.issuingAuthority)));
-    data.replace("${document_number_value}", getPreparedValue(QString::fromStdString(documentData.docRegNo)));
-    data.replace("${issuance_date_value}", getPreparedValue(QString::fromStdString(documentData.issuingDate)));
-    data.replace("${validity_date_value}", getPreparedValue(QString::fromStdString(documentData.expiryDate)));
+    // Composite: place of birth
+    QStringList pobParts;
+    pobParts << getFieldValue(cardData, "place_of_birth") << getFieldValue(cardData, "community_of_birth")
+             << getFieldValue(cardData, "state_of_birth");
+    pobParts.removeAll(QString());
+    html.replace("${place_of_birth_value}", getPreparedValue(pobParts.join(", ")));
 
-    QString str = "data:image/png;base64, " + photo;
-    data.replace(":/images/user.png", str);
+    html.replace("${status_of_foreigner_value}", getPreparedValue(getFieldValue(cardData, "status_of_foreigner")));
+
+    // Composite: address (same assembly as EidWidget::buildAddressSection)
+    QStringList addrParts;
+    addrParts << getFieldValue(cardData, "state") << getFieldValue(cardData, "community")
+              << getFieldValue(cardData, "place") << getFieldValue(cardData, "street")
+              << getFieldValue(cardData, "house_number");
+    auto houseLetter = getFieldValue(cardData, "house_letter");
+    if (!houseLetter.isEmpty())
+        addrParts << houseLetter;
+    addrParts.removeAll(QString());
+    auto address = addrParts.join(", ");
+    auto entrance = getFieldValue(cardData, "entrance");
+    auto floor = getFieldValue(cardData, "floor");
+    auto apartment = getFieldValue(cardData, "apartment_number");
+    if (!entrance.isEmpty())
+        address += "/" + entrance;
+    if (!floor.isEmpty())
+        address += "/" + floor;
+    if (!apartment.isEmpty())
+        address += "/" + apartment;
+    html.replace("${adress_value}", getPreparedValue(address));
+
+    html.replace("${date_of_address_change_value}", getPreparedValue(getFieldValue(cardData, "address_date")));
+    html.replace("${jmbg_value}", getPreparedValue(getFieldValue(cardData, "personal_number")));
+    html.replace("${gender_value}", getPreparedValue(getFieldValue(cardData, "sex")));
+
+    html.replace("${document_issuer_value}", getPreparedValue(getFieldValue(cardData, "issuing_authority")));
+    html.replace("${document_number_value}", getPreparedValue(getFieldValue(cardData, "doc_reg_no")));
+    html.replace("${issuance_date_value}", getPreparedValue(getFieldValue(cardData, "issuing_date")));
+    html.replace("${validity_date_value}", getPreparedValue(getFieldValue(cardData, "expiry_date")));
+
+    // Photo — raw bytes to base64 data URI
+    const auto* photoField = cardData.findField("photo");
+    if (photoField && !photoField->value.empty()) {
+        QByteArray raw(reinterpret_cast<const char*>(photoField->value.data()),
+                       static_cast<qsizetype>(photoField->value.size()));
+        QString dataUri = "data:image/png;base64, " + raw.toBase64();
+        html.replace(":/images/user.png", dataUri);
+    }
 }

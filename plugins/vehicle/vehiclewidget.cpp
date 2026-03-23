@@ -10,9 +10,11 @@
 #include <plugin/carddatautils.h>
 
 #include <QDate>
+#include <QGraphicsOpacityEffect>
 #include <QIcon>
 #include <QLabel>
 #include <QLineEdit>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 using plugin::getFieldValue;
@@ -43,6 +45,19 @@ void VehicleWidget::buildShell()
     outerSection->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
     outerLayout->addWidget(outerSection);
+
+    // Print button — disabled until all data arrives
+    printBtn = new QToolButton(this);
+    printBtn->setIcon(QIcon(":/images/printer-header.svg"));
+    printBtn->setIconSize(QSize(24, 24));
+    printBtn->setToolTip(qtTrId("lc-print-tooltip"));
+    printBtn->setAutoRaise(true);
+    printBtn->setEnabled(false);
+    auto* dimEffect = new QGraphicsOpacityEffect(printBtn);
+    dimEffect->setOpacity(0.3);
+    printBtn->setGraphicsEffect(dimEffect);
+    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
+    outerSection->addHeaderWidget(printBtn);
 }
 
 void VehicleWidget::addGroup(const plugin::CardFieldGroup& group)
@@ -56,6 +71,14 @@ void VehicleWidget::addGroup(const plugin::CardFieldGroup& group)
         addOwnerGroup(group);
     else if (group.groupKey == "user")
         addUserGroup(group);
+}
+
+void VehicleWidget::enablePrintButton()
+{
+    if (printBtn) {
+        printBtn->setGraphicsEffect(nullptr);
+        printBtn->setEnabled(true);
+    }
 }
 
 void VehicleWidget::addVehicleGroup(const plugin::CardFieldGroup& group)
@@ -136,6 +159,15 @@ void VehicleWidget::buildLayout()
     // Navy outer CollapsibleSection
     outerSection = new CollapsibleSection(qtTrId("lc-vehicle-title"), QColor(34, 86, 117), this);
     outerSection->setHeaderHeight(56);
+
+    // Print button — immediately enabled (all data present)
+    printBtn = new QToolButton(this);
+    printBtn->setIcon(QIcon(":/images/printer-header.svg"));
+    printBtn->setIconSize(QSize(24, 24));
+    printBtn->setToolTip(qtTrId("lc-print-tooltip"));
+    printBtn->setAutoRaise(true);
+    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
+    outerSection->addHeaderWidget(printBtn);
 
     contentLayout = new QVBoxLayout();
     contentLayout->setContentsMargins(8, 8, 8, 8);

@@ -281,8 +281,7 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                     if (auto* existing = qobject_cast<EMRTDAuthWidget*>(it->second.widget)) {
                         if (data.findGroup("error")) {
                             auto errMsg = plugin::getFieldValue(data.findGroup("error"), "error");
-                            existing->onAuthFailed(
-                                errMsg.isEmpty() ? QObject::tr("Authentication failed") : errMsg);
+                            existing->onAuthFailed(errMsg.isEmpty() ? QObject::tr("Authentication failed") : errMsg);
                         }
                         return;
                     }
@@ -292,8 +291,7 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                     connect(authWidget, &EMRTDAuthWidget::credentialsEntered, asyncReader,
                             &AsyncCardReader::requestDataWithCredentials);
 
-                    connect(asyncReader, &AsyncCardReader::errorOccurred, authWidget,
-                            &EMRTDAuthWidget::onAuthFailed);
+                    connect(asyncReader, &AsyncCardReader::errorOccurred, authWidget, &EMRTDAuthWidget::onAuthFailed);
 
                     replaceWidget(authWidget);
                     return;
@@ -301,6 +299,17 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
 
                 // Streaming already built the card widget — just append TokenSection
                 if (streamedWidget) {
+                    // Enable print button now that all data has arrived
+                    if (guiPlugin->supportsPrinting()) {
+                        auto* scrollArea = qobject_cast<QScrollArea*>(it->second.widget);
+                        if (scrollArea && scrollArea->widget()) {
+                            auto* containerLayout = qobject_cast<QVBoxLayout*>(scrollArea->widget()->layout());
+                            if (containerLayout && containerLayout->count() > 0) {
+                                auto* cardWidget = containerLayout->itemAt(0)->widget();
+                                QMetaObject::invokeMethod(cardWidget, "enablePrintButton");
+                            }
+                        }
+                    }
                     if (asyncReader->hasPKI()) {
                         auto* scrollArea = qobject_cast<QScrollArea*>(it->second.widget);
                         if (scrollArea && scrollArea->widget()) {
@@ -465,8 +474,7 @@ void LibreCelik::connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget)
                         [reader, pinRef](const QString& oldPin, const QString& newPin) {
                             reader->requestChangePIN(pinRef, oldPin, newPin);
                         });
-                connect(reader, &AsyncCardReader::pinStatusReady, dlg.get(),
-                        &ChangePinDlg::onPinTriesLeftRead);
+                connect(reader, &AsyncCardReader::pinStatusReady, dlg.get(), &ChangePinDlg::onPinTriesLeftRead);
                 connect(reader, &AsyncCardReader::pinChangeResult, dlg.get(),
                         [dlg = dlg.get()](bool success, int triesLeft, const QString& errorMessage) {
                             if (success)

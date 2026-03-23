@@ -26,6 +26,11 @@ public:
     QWidget* createWidget(const plugin::CardData& data, QWidget* parent) const override;
     QWidget* createEmptyWidget(QWidget* parent) const override;
     void addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const override;
+    bool supportsPrinting() const override
+    {
+        return true;
+    }
+    void print(const plugin::CardData& data, QPrinter* printer) const override;
 };
 
 #endif // HEALTHWIDGETPLUGIN_H

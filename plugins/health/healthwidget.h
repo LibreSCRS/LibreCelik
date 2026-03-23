@@ -8,6 +8,7 @@
 #include <QWidget>
 
 class CollapsibleSection;
+class QToolButton;
 class QVBoxLayout;
 
 class HealthWidget : public QWidget
@@ -28,6 +29,11 @@ public:
         return data;
     }
 
+    Q_INVOKABLE void enablePrintButton();
+
+signals:
+    void printRequested(const plugin::CardData& data);
+
 private:
     void buildLayout();
     void buildEmptyShell();
@@ -44,6 +50,7 @@ private:
     CollapsibleSection* outerSection = nullptr;
     QVBoxLayout* contentLayout = nullptr;
     CollapsibleSection* carrierSection = nullptr;
+    QToolButton* printBtn = nullptr;
 };
 
 #endif // HEALTHWIDGET_H

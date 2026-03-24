@@ -78,6 +78,29 @@ mkdir -p "$STAGING_DIR"
 cp -R "$APP_SRC" "$APP_STAGING"
 
 # ---------------------------------------------------------------------------
+# Copy LibreSCRS plugins (middleware + GUI) into the app bundle.
+#
+# The app resolves these at runtime via ../PlugIns/ relative to the binary
+# (i.e. Contents/PlugIns/).
+# ---------------------------------------------------------------------------
+MW_PLUGIN_DIR="$BUILD_DIR/plugins"
+GUI_PLUGIN_DIR="$BUILD_DIR/gui-plugins"
+
+echo "Copying middleware plugins..."
+mkdir -p "$APP_STAGING/Contents/PlugIns/middleware-plugins"
+for f in "$MW_PLUGIN_DIR"/librescrs-plugin-*.dylib; do
+    [[ -f "$f" ]] && cp "$f" "$APP_STAGING/Contents/PlugIns/middleware-plugins/"
+done
+ls "$APP_STAGING/Contents/PlugIns/middleware-plugins/"
+
+echo "Copying GUI plugins..."
+mkdir -p "$APP_STAGING/Contents/PlugIns/gui-plugins"
+for f in "$GUI_PLUGIN_DIR"/*-gui-plugin.dylib; do
+    [[ -f "$f" ]] && cp "$f" "$APP_STAGING/Contents/PlugIns/gui-plugins/"
+done
+ls "$APP_STAGING/Contents/PlugIns/gui-plugins/"
+
+# ---------------------------------------------------------------------------
 # Run macdeployqt — bundles Qt frameworks, plugins, and .qm translations
 # ---------------------------------------------------------------------------
 echo "Running macdeployqt..."

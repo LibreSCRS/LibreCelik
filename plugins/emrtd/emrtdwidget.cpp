@@ -174,7 +174,7 @@ void EMRTDWidget::addGroup(const plugin::CardFieldGroup& group)
             sectionLayout->addWidget(sigSection);
         }
     } else if (key == "additional") {
-        auto* additionalSection = LibreSCRS::FieldSectionBuilder::build("Additional", group, additionalTranslationMap);
+        auto* additionalSection = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-additional"), group, additionalTranslationMap);
         sectionLayout->addWidget(additionalSection);
     } else if (key == "document_extra") {
         // If "additional" already added, show as separate "Issuing Information" section

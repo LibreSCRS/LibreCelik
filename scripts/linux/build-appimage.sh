@@ -246,6 +246,28 @@ if [[ $DEPLOY_EXIT -ne 0 ]] && [[ -z "$KDE_PLUGINS" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
+# Phase 2b — Copy LibreSCRS plugins (middleware + GUI) into AppDir.
+#
+# The app resolves these at runtime via ../lib/ relative to the binary.
+# ---------------------------------------------------------------------------
+MW_PLUGIN_DIR="$BUILD_DIR/plugins"
+GUI_PLUGIN_DIR="$BUILD_DIR/gui-plugins"
+
+echo "Copying middleware plugins..."
+mkdir -p "$APPDIR/usr/lib/middleware-plugins"
+for f in "$MW_PLUGIN_DIR"/librescrs-plugin-*.so; do
+    [[ -f "$f" ]] && cp "$f" "$APPDIR/usr/lib/middleware-plugins/"
+done
+ls "$APPDIR/usr/lib/middleware-plugins/"
+
+echo "Copying GUI plugins..."
+mkdir -p "$APPDIR/usr/lib/gui-plugins"
+for f in "$GUI_PLUGIN_DIR"/*-gui-plugin.so; do
+    [[ -f "$f" ]] && cp "$f" "$APPDIR/usr/lib/gui-plugins/"
+done
+ls "$APPDIR/usr/lib/gui-plugins/"
+
+# ---------------------------------------------------------------------------
 # Phase 3 — Package with appimagetool.
 # ---------------------------------------------------------------------------
 echo ""

@@ -17,7 +17,7 @@
     </message>
     <message id="lc-error-auth-failed">
         <source>Authentication failed</source>
-        <translation type="unfinished">Аутентификација неуспешна</translation>
+        <translation>Аутентификација неуспешна</translation>
     </message>
     <message id="lc-doc-unavailable">
         <source>Unavailable</source>
@@ -641,11 +641,11 @@
     </message>
     <message id="lc-error-no-connection">
         <source>No card connection available</source>
-        <translation type="unfinished">Нема везе са картицом</translation>
+        <translation>Нема везе са картицом</translation>
     </message>
     <message id="lc-error-no-plugin">
         <source>No plugin could read this card.</source>
-        <translation type="unfinished">Ниједан додатак не може да прочита ову картицу.</translation>
+        <translation>Ниједан додатак не може да прочита ову картицу.</translation>
     </message>
     <message id="lc-vehicle-print-title">
         <source>Print Document</source>
@@ -941,7 +941,7 @@
     </message>
     <message id="lc-emrtd-issuing-info">
         <source>Issuing Information</source>
-        <translation>Информације о издавању</translation>
+        <translation>Подаци о издавацу</translation>
     </message>
     <message id="lc-pks-title">
         <source>PKS Qualified Signature</source>
@@ -1017,8 +1017,7 @@
     </message>
     <message id="lc-emrtd-auth-dlg-title">
         <source>Electronic Passport Authentication</source>
-        <oldsource>eMRTD Authentication</oldsource>
-        <translation type="unfinished">eMRTD Аутентификација</translation>
+        <translation>Аутентификација електронског пасоша</translation>
     </message>
     <message id="lc-emrtd-auth-dlg-subtitle">
         <source>Foreigner ID Card</source>
@@ -1118,11 +1117,11 @@
     </message>
     <message id="lc-pkcs15-smart-card">
         <source>Smart Card</source>
-        <translation type="unfinished"></translation>
+        <translation>Смарт картица</translation>
     </message>
     <message id="lc-emrtd-insert-mrz-hint">
         <source>Insert the MRZ data from the bottom of the document</source>
-        <translation type="unfinished"></translation>
+        <translation>Унесите MRZ податке са дна документа</translation>
     </message>
 </context>
 <context>

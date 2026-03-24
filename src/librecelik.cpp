@@ -15,6 +15,7 @@
 
 #include <QApplication>
 #include <QColor>
+#include <QDir>
 #include <QEvent>
 #include <QLabel>
 #include <QLocale>
@@ -54,11 +55,25 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
     ui->setupUi(this);
     uiReady = true;
 
-    // Load middleware card plugins
-    middlewarePluginRegistry.loadPluginsFromDirectory(LIBREMIDDLEWARE_PLUGIN_DIR);
+    // Load card plugins. In deployed packages (AppImage, DMG) the plugins live
+    // next to the executable; fall back to the build-tree paths for development.
+    auto resolvePluginDir = [](const QString& subdir, const char* buildFallback) -> QString {
+        QDir appDir(QCoreApplication::applicationDirPath());
+#ifdef Q_OS_MACOS
+        // .app/Contents/MacOS/../PlugIns/<subdir>
+        QDir bundleDir(appDir.filePath("../PlugIns/" + subdir));
+#else
+        // AppImage: usr/bin/../lib/<subdir>
+        QDir bundleDir(appDir.filePath("../lib/" + subdir));
+#endif
+        if (bundleDir.exists())
+            return bundleDir.absolutePath();
+        return QString::fromUtf8(buildFallback);
+    };
 
-    // Load GUI widget plugins
-    guiPluginRegistry.loadPluginsFromDirectory(LIBRECELIK_GUI_PLUGIN_DIR);
+    middlewarePluginRegistry.loadPluginsFromDirectory(
+        resolvePluginDir("middleware-plugins", LIBREMIDDLEWARE_PLUGIN_DIR).toStdString());
+    guiPluginRegistry.loadPluginsFromDirectory(resolvePluginDir("gui-plugins", LIBRECELIK_GUI_PLUGIN_DIR));
 
     ui->stackedWidget->setCurrentIndex(0);
 

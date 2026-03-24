@@ -15,6 +15,10 @@
         <oldsource>&lt;b&gt;LibreMiddleware&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html&quot;&gt;LGPL-2.1-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt;</oldsource>
         <translation>&lt;b&gt;LibreMiddleware&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html&quot;&gt;LGPL-2.1-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt;</translation>
     </message>
+    <message id="lc-error-auth-failed">
+        <source>Authentication failed</source>
+        <translation>Authentication failed</translation>
+    </message>
     <message id="lc-doc-unavailable">
         <source>Unavailable</source>
         <translation>Unavailable</translation>
@@ -635,6 +639,14 @@
         <source>PIN change failed.</source>
         <translation>PIN change failed.</translation>
     </message>
+    <message id="lc-error-no-connection">
+        <source>No card connection available</source>
+        <translation>No card connection available</translation>
+    </message>
+    <message id="lc-error-no-plugin">
+        <source>No plugin could read this card.</source>
+        <translation>No plugin could read this card.</translation>
+    </message>
     <message id="lc-vehicle-print-title">
         <source>Print Document</source>
         <translation>Print Document</translation>
@@ -853,7 +865,7 @@
     </message>
     <message id="lc-print-tooltip">
         <source>Print</source>
-        <translation type="unfinished">Print</translation>
+        <translation>Print</translation>
     </message>
     <message id="lc-emrtd-auth-required">
         <source>Authentication Required</source>
@@ -862,6 +874,18 @@
     <message id="lc-emrtd-auth-failed">
         <source>Authentication Failed</source>
         <translation>Authentication Failed</translation>
+    </message>
+    <message id="lc-emrtd-doc-title">
+        <source>TRAVEL DOCUMENT: DATA PRINTING</source>
+        <translation>TRAVEL DOCUMENT: DATA PRINTING</translation>
+    </message>
+    <message id="lc-emrtd-doc-printing-date">
+        <source>Printing date</source>
+        <translation>Printing date</translation>
+    </message>
+    <message id="lc-emrtd-doc-sex">
+        <source>Sex</source>
+        <translation>Sex</translation>
     </message>
     <message id="lc-emrtd-personal-data">
         <source>Personal Data</source>
@@ -993,8 +1017,7 @@
     </message>
     <message id="lc-emrtd-auth-dlg-title">
         <source>Electronic Passport Authentication</source>
-        <oldsource>eMRTD Authentication</oldsource>
-        <translation type="unfinished">eMRTD Authentication</translation>
+        <translation>Electronic Passport Authentication</translation>
     </message>
     <message id="lc-emrtd-auth-dlg-subtitle">
         <source>Foreigner ID Card</source>
@@ -1093,27 +1116,27 @@
         <translation>Custody Information</translation>
     </message>
     <message id="lc-pkcs15-smart-card">
-        <source></source>
-        <translation type="unfinished"></translation>
+        <source>Smart Card</source>
+        <translation>Smart Card</translation>
     </message>
     <message id="lc-emrtd-insert-mrz-hint">
-        <source></source>
-        <translation type="unfinished"></translation>
+        <source>Insert the MRZ data from the bottom of the document</source>
+        <translation>Insert the MRZ data from the bottom of the document</translation>
     </message>
 </context>
 <context>
     <name>AsyncCardReader</name>
     <message>
         <source>No card connection available</source>
-        <translation>No card connection available</translation>
+        <translation type="vanished">No card connection available</translation>
     </message>
     <message>
         <source>No plugin could read this card.</source>
-        <translation>No plugin could read this card.</translation>
+        <translation type="vanished">No plugin could read this card.</translation>
     </message>
     <message>
         <source>PIN change failed.</source>
-        <translation>PIN change failed.</translation>
+        <translation type="vanished">PIN change failed.</translation>
     </message>
 </context>
 <context>
@@ -1229,7 +1252,7 @@
     <name>QObject</name>
     <message>
         <source>Authentication failed</source>
-        <translation type="unfinished">Authentication failed</translation>
+        <translation type="obsolete">Authentication failed</translation>
     </message>
 </context>
 </TS>

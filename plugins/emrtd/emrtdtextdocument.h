@@ -9,7 +9,7 @@
 
 class EMRTDTextDocument : public TextDocument
 {
-    Q_DECLARE_TR_FUNCTIONS(EMRTDTextDocument);
+    Q_DECLARE_TR_FUNCTIONS(EMRTDTextDocument)
 
 public:
     explicit EMRTDTextDocument(const plugin::CardData& data, QString documentPath = {}, QString cssPath = {});

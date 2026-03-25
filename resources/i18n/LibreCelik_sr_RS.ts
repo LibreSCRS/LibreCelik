@@ -651,6 +651,494 @@
         <source>Print Document</source>
         <translation>Штампај документ</translation>
     </message>
+    <message id="lc-euvrc-title">
+        <source>Vehicle Registration</source>
+        <translation>Саобраћајна дозвола</translation>
+    </message>
+    <message id="lc-euvrc-print-title">
+        <source>Print Document</source>
+        <translation>Штампај документ</translation>
+    </message>
+    <message id="lc-euvrc-section-registration">
+        <source>Registration</source>
+        <translation>Регистрација</translation>
+    </message>
+    <message id="lc-euvrc-section-vehicle">
+        <source>Vehicle</source>
+        <translation>Возило</translation>
+    </message>
+    <message id="lc-euvrc-section-engine">
+        <source>Engine &amp; Technical</source>
+        <translation>Мотор и технички подаци</translation>
+    </message>
+    <message id="lc-euvrc-section-holder">
+        <source>Holder</source>
+        <translation>Власник</translation>
+    </message>
+    <message id="lc-euvrc-section-user">
+        <source>User</source>
+        <translation>Корисник</translation>
+    </message>
+    <message id="lc-euvrc-section-national">
+        <source>National Extensions</source>
+        <translation>Национална проширења</translation>
+    </message>
+    <message id="lc-euvrc-section-owner">
+        <source>Owner</source>
+        <translation>Власник</translation>
+    </message>
+    <message id="lc-euvrc-owner-name">
+        <source>Surname or business name (C.2)</source>
+        <translation>Презиме или пословно име (C.2)</translation>
+    </message>
+    <message id="lc-euvrc-hdr-registration">
+        <source>Registration (A)</source>
+        <translation>Регистарска ознака (A)</translation>
+    </message>
+    <message id="lc-euvrc-hdr-make">
+        <source>Make (D.1)</source>
+        <translation>Марка (D.1)</translation>
+    </message>
+    <message id="lc-euvrc-hdr-member-state">
+        <source>Member State</source>
+        <translation>Држава чланица</translation>
+    </message>
+    <message id="lc-euvrc-hdr-valid-to">
+        <source>Valid to (H)</source>
+        <translation>Важи до (H)</translation>
+    </message>
+    <message id="lc-euvrc-reg-number">
+        <source>Registration number (A)</source>
+        <translation>Регистарски број (A)</translation>
+    </message>
+    <message id="lc-euvrc-reg-first-date">
+        <source>Date of first registration (B)</source>
+        <translation>Датум прве регистрације (B)</translation>
+    </message>
+    <message id="lc-euvrc-reg-date">
+        <source>Registration date (I)</source>
+        <translation>Датум регистрације (I)</translation>
+    </message>
+    <message id="lc-euvrc-reg-expiry">
+        <source>Expiry date (H)</source>
+        <translation>Датум истека (H)</translation>
+    </message>
+    <message id="lc-euvrc-reg-doc-number">
+        <source>Document number</source>
+        <translation>Број документа</translation>
+    </message>
+    <message id="lc-euvrc-reg-issuing-auth">
+        <source>Issuing authority</source>
+        <translation>Орган који је издао</translation>
+    </message>
+    <message id="lc-euvrc-reg-competent-auth">
+        <source>Competent authority</source>
+        <translation>Надлежни орган</translation>
+    </message>
+    <message id="lc-euvrc-reg-member-state">
+        <source>Member state</source>
+        <translation>Држава чланица</translation>
+    </message>
+    <message id="lc-euvrc-reg-type-approval">
+        <source>Type approval number (K)</source>
+        <translation>Број хомологације (K)</translation>
+    </message>
+    <message id="lc-euvrc-reg-ownership-status">
+        <source>Ownership status (C.4)</source>
+        <translation>Статус власништва (C.4)</translation>
+    </message>
+    <message id="lc-euvrc-reg-previous-document">
+        <source>Previous document</source>
+        <translation>Претходни документ</translation>
+    </message>
+    <message id="lc-euvrc-veh-make">
+        <source>Make (D.1)</source>
+        <translation>Марка (D.1)</translation>
+    </message>
+    <message id="lc-euvrc-veh-type">
+        <source>Type (D.2)</source>
+        <translation>Тип (D.2)</translation>
+    </message>
+    <message id="lc-euvrc-veh-commercial-desc">
+        <source>Commercial description (D.3)</source>
+        <translation>Комерцијални опис (D.3)</translation>
+    </message>
+    <message id="lc-euvrc-veh-vin">
+        <source>VIN (E)</source>
+        <translation>Број шасије (E)</translation>
+    </message>
+    <message id="lc-euvrc-veh-category">
+        <source>Category (J)</source>
+        <translation>Категорија (J)</translation>
+    </message>
+    <message id="lc-euvrc-veh-colour">
+        <source>Colour (R)</source>
+        <translation>Боја (R)</translation>
+    </message>
+    <message id="lc-euvrc-veh-max-speed">
+        <source>Maximum speed (T)</source>
+        <translation>Највећа брзина (T)</translation>
+    </message>
+    <message id="lc-euvrc-eng-capacity">
+        <source>Engine capacity (P.1)</source>
+        <translation>Запремина мотора (P.1)</translation>
+    </message>
+    <message id="lc-euvrc-eng-max-power">
+        <source>Maximum net power (P.2)</source>
+        <translation>Највећа нето снага (P.2)</translation>
+    </message>
+    <message id="lc-euvrc-eng-fuel-type">
+        <source>Type of fuel (P.3)</source>
+        <translation>Врста горива (P.3)</translation>
+    </message>
+    <message id="lc-euvrc-eng-id-number">
+        <source>Engine ID number (P.5)</source>
+        <translation>Број мотора (P.5)</translation>
+    </message>
+    <message id="lc-euvrc-eng-vehicle-mass">
+        <source>Vehicle mass (G)</source>
+        <translation>Маса возила (G)</translation>
+    </message>
+    <message id="lc-euvrc-eng-max-laden-mass">
+        <source>Max permissible laden mass (F.1)</source>
+        <translation>Највећа дозвољена маса (F.1)</translation>
+    </message>
+    <message id="lc-euvrc-eng-power-weight">
+        <source>Power/weight ratio (Q)</source>
+        <translation>Однос снага/маса (Q)</translation>
+    </message>
+    <message id="lc-euvrc-eng-seats">
+        <source>Number of seats (S.1)</source>
+        <translation>Број седишта (S.1)</translation>
+    </message>
+    <message id="lc-euvrc-eng-standing">
+        <source>Standing places (S.2)</source>
+        <translation>Стајаћа места (S.2)</translation>
+    </message>
+    <message id="lc-euvrc-eng-axles">
+        <source>Number of axles (L)</source>
+        <translation>Број осовина (L)</translation>
+    </message>
+    <message id="lc-euvrc-eng-wheelbase">
+        <source>Wheelbase (M)</source>
+        <translation>Међуосовинско растојање (M)</translation>
+    </message>
+    <message id="lc-euvrc-eng-max-laden-mass-service">
+        <source>Max laden mass in service (F.2)</source>
+        <translation>Највећа допуштена маса у употреби (F.2)</translation>
+    </message>
+    <message id="lc-euvrc-eng-max-laden-mass-whole">
+        <source>Max laden mass whole vehicle (F.3)</source>
+        <translation>Највећа допуштена маса целог возила (F.3)</translation>
+    </message>
+    <message id="lc-euvrc-eng-braked-trailer">
+        <source>Max braked trailer mass (O.1)</source>
+        <translation>Највећа маса кочене приколице (O.1)</translation>
+    </message>
+    <message id="lc-euvrc-eng-unbraked-trailer">
+        <source>Max unbraked trailer mass (O.2)</source>
+        <translation>Највећа маса некочене приколице (O.2)</translation>
+    </message>
+    <message id="lc-euvrc-eng-rated-engine-speed">
+        <source>Rated engine speed (P.4)</source>
+        <translation>Називна брзина мотора (P.4)</translation>
+    </message>
+    <message id="lc-euvrc-eng-stationary-sound">
+        <source>Stationary sound level (U.1)</source>
+        <translation>Ниво буке у мировању (U.1)</translation>
+    </message>
+    <message id="lc-euvrc-eng-engine-speed-ref">
+        <source>Engine speed for sound ref (U.2)</source>
+        <translation>Брзина мотора за буку (U.2)</translation>
+    </message>
+    <message id="lc-euvrc-eng-drive-by-sound">
+        <source>Drive-by sound level (U.3)</source>
+        <translation>Ниво буке у пролазу (U.3)</translation>
+    </message>
+    <message id="lc-euvrc-eng-fuel-consumption">
+        <source>Fuel consumption (V.7)</source>
+        <translation>Потрошња горива (V.7)</translation>
+    </message>
+    <message id="lc-euvrc-eng-co2">
+        <source>CO2 emissions (V.7)</source>
+        <translation>Емисија CO2 (V.7)</translation>
+    </message>
+    <message id="lc-euvrc-eng-env-category">
+        <source>Environmental category (V.9)</source>
+        <translation>Еколошка категорија (V.9)</translation>
+    </message>
+    <message id="lc-euvrc-eng-fuel-tank">
+        <source>Fuel tank capacity (W)</source>
+        <translation>Запремина резервоара (W)</translation>
+    </message>
+    <message id="lc-euvrc-holder-name">
+        <source>Surname or business name (C.1.1)</source>
+        <translation>Презиме или пословно име (C.1.1)</translation>
+    </message>
+    <message id="lc-euvrc-holder-other-names">
+        <source>Other names (C.1.2)</source>
+        <translation>Остала имена (C.1.2)</translation>
+    </message>
+    <message id="lc-euvrc-holder-address">
+        <source>Address (C.1.3)</source>
+        <translation>Адреса (C.1.3)</translation>
+    </message>
+    <message id="lc-euvrc-user-name">
+        <source>Surname or business name (C.3)</source>
+        <translation>Презиме или пословно име (C.3)</translation>
+    </message>
+    <message id="lc-euvrc-user-other-names">
+        <source>Other names (C.3)</source>
+        <translation>Остала имена (C.3)</translation>
+    </message>
+    <message id="lc-euvrc-user-address">
+        <source>Address (C.3)</source>
+        <translation>Адреса (C.3)</translation>
+    </message>
+    <message id="lc-euvrc-nat-owners-personal-no">
+        <source>Owner Personal Number</source>
+        <translation>ЈМБГ власника</translation>
+    </message>
+    <message id="lc-euvrc-nat-users-personal-no">
+        <source>User Personal Number</source>
+        <translation>ЈМБГ корисника</translation>
+    </message>
+    <message id="lc-euvrc-nat-vehicle-load">
+        <source>Vehicle Load</source>
+        <translation>Носивост возила</translation>
+    </message>
+    <message id="lc-euvrc-nat-year-of-production">
+        <source>Year of Production</source>
+        <translation>Година производње</translation>
+    </message>
+    <message id="lc-euvrc-nat-serial-number">
+        <source>Serial Number</source>
+        <translation>Серијски број</translation>
+    </message>
+    <message id="lc-euvrc-doc-title">
+        <source>EU Vehicle Registration Certificate</source>
+        <translation>ЕУ саобраћајна дозвола</translation>
+    </message>
+    <message id="lc-euvrc-doc-printing-date">
+        <source>Printing date</source>
+        <translation>Датум штампе</translation>
+    </message>
+    <message id="lc-euvrc-doc-reg-number">
+        <source>Registration number (A)</source>
+        <translation>Регистарски број (A)</translation>
+    </message>
+    <message id="lc-euvrc-doc-first-reg-date">
+        <source>Date of first registration (B)</source>
+        <translation>Датум прве регистрације (B)</translation>
+    </message>
+    <message id="lc-euvrc-doc-reg-date">
+        <source>Registration date (I)</source>
+        <translation>Датум регистрације (I)</translation>
+    </message>
+    <message id="lc-euvrc-doc-expiry-date">
+        <source>Expiry date (H)</source>
+        <translation>Датум истека (H)</translation>
+    </message>
+    <message id="lc-euvrc-doc-member-state">
+        <source>Member state</source>
+        <translation>Држава чланица</translation>
+    </message>
+    <message id="lc-euvrc-doc-document-number">
+        <source>Document number</source>
+        <translation>Број документа</translation>
+    </message>
+    <message id="lc-euvrc-doc-competent-authority">
+        <source>Competent authority</source>
+        <translation>Надлежни орган</translation>
+    </message>
+    <message id="lc-euvrc-doc-issuing-authority">
+        <source>Issuing authority</source>
+        <translation>Орган који је издао</translation>
+    </message>
+    <message id="lc-euvrc-doc-type-approval-no">
+        <source>Type approval number (K)</source>
+        <translation>Број хомологације (K)</translation>
+    </message>
+    <message id="lc-euvrc-doc-vehicle-data">
+        <source>Vehicle Data</source>
+        <translation>Подаци о возилу</translation>
+    </message>
+    <message id="lc-euvrc-doc-make">
+        <source>Make (D.1)</source>
+        <translation>Марка (D.1)</translation>
+    </message>
+    <message id="lc-euvrc-doc-type">
+        <source>Type (D.2)</source>
+        <translation>Тип (D.2)</translation>
+    </message>
+    <message id="lc-euvrc-doc-commercial-desc">
+        <source>Commercial description (D.3)</source>
+        <translation>Комерцијални опис (D.3)</translation>
+    </message>
+    <message id="lc-euvrc-doc-vin">
+        <source>VIN (E)</source>
+        <translation>Број шасије (E)</translation>
+    </message>
+    <message id="lc-euvrc-doc-category">
+        <source>Category (J)</source>
+        <translation>Категорија (J)</translation>
+    </message>
+    <message id="lc-euvrc-doc-colour">
+        <source>Colour (R)</source>
+        <translation>Боја (R)</translation>
+    </message>
+    <message id="lc-euvrc-doc-max-speed">
+        <source>Maximum speed (T)</source>
+        <translation>Највећа брзина (T)</translation>
+    </message>
+    <message id="lc-euvrc-doc-engine-technical">
+        <source>Engine &amp; Technical</source>
+        <translation>Мотор и технички подаци</translation>
+    </message>
+    <message id="lc-euvrc-doc-capacity">
+        <source>Engine capacity (P.1)</source>
+        <translation>Запремина мотора (P.1)</translation>
+    </message>
+    <message id="lc-euvrc-doc-power">
+        <source>Maximum net power (P.2)</source>
+        <translation>Највећа нето снага (P.2)</translation>
+    </message>
+    <message id="lc-euvrc-doc-fuel-type">
+        <source>Type of fuel (P.3)</source>
+        <translation>Врста горива (P.3)</translation>
+    </message>
+    <message id="lc-euvrc-doc-engine-number">
+        <source>Engine ID number (P.5)</source>
+        <translation>Број мотора (P.5)</translation>
+    </message>
+    <message id="lc-euvrc-doc-mass">
+        <source>Vehicle mass (G)</source>
+        <translation>Маса возила (G)</translation>
+    </message>
+    <message id="lc-euvrc-doc-max-laden-mass">
+        <source>Max permissible laden mass (F.1)</source>
+        <translation>Највећа дозвољена маса (F.1)</translation>
+    </message>
+    <message id="lc-euvrc-doc-power-weight">
+        <source>Power/weight ratio (Q)</source>
+        <translation>Однос снага/маса (Q)</translation>
+    </message>
+    <message id="lc-euvrc-doc-axles">
+        <source>Number of axles (L)</source>
+        <translation>Број осовина (L)</translation>
+    </message>
+    <message id="lc-euvrc-doc-seats">
+        <source>Number of seats (S.1)</source>
+        <translation>Број седишта (S.1)</translation>
+    </message>
+    <message id="lc-euvrc-doc-standing-places">
+        <source>Standing places (S.2)</source>
+        <translation>Стајаћа места (S.2)</translation>
+    </message>
+    <message id="lc-euvrc-doc-wheelbase">
+        <source>Wheelbase (M)</source>
+        <translation>Међуосовинско растојање (M)</translation>
+    </message>
+    <message id="lc-euvrc-doc-holder-data">
+        <source>Holder Data</source>
+        <translation>Подаци о власнику</translation>
+    </message>
+    <message id="lc-euvrc-doc-holder-name">
+        <source>Surname or business name (C.1.1)</source>
+        <translation>Презиме или пословно име (C.1.1)</translation>
+    </message>
+    <message id="lc-euvrc-doc-holder-other-names">
+        <source>Other names (C.1.2)</source>
+        <translation>Остала имена (C.1.2)</translation>
+    </message>
+    <message id="lc-euvrc-doc-holder-address">
+        <source>Address (C.1.3)</source>
+        <translation>Адреса (C.1.3)</translation>
+    </message>
+    <message id="lc-euvrc-doc-user-data">
+        <source>User Data</source>
+        <translation>Подаци о кориснику</translation>
+    </message>
+    <message id="lc-euvrc-doc-user-name">
+        <source>Surname or business name (C.3)</source>
+        <translation>Презиме или пословно име (C.3)</translation>
+    </message>
+    <message id="lc-euvrc-doc-user-other-names">
+        <source>Other names (C.3)</source>
+        <translation>Остала имена (C.3)</translation>
+    </message>
+    <message id="lc-euvrc-doc-user-address">
+        <source>Address (C.3)</source>
+        <translation>Адреса (C.3)</translation>
+    </message>
+    <message id="lc-euvrc-doc-ownership-status">
+        <source>Ownership status (C.4)</source>
+        <translation>Статус власништва (C.4)</translation>
+    </message>
+    <message id="lc-euvrc-doc-previous-document">
+        <source>Previous document</source>
+        <translation>Претходни документ</translation>
+    </message>
+    <message id="lc-euvrc-doc-owner-data">
+        <source>Owner Data</source>
+        <translation>Подаци о власнику</translation>
+    </message>
+    <message id="lc-euvrc-doc-owner-name">
+        <source>Surname or business name (C.2)</source>
+        <translation>Презиме или пословно име (C.2)</translation>
+    </message>
+    <message id="lc-euvrc-doc-national-data">
+        <source>National Extensions</source>
+        <translation>Национална проширења</translation>
+    </message>
+    <message id="lc-euvrc-doc-max-laden-mass-service">
+        <source>Max laden mass in service (F.2)</source>
+        <translation>Највећа допуштена маса у употреби (F.2)</translation>
+    </message>
+    <message id="lc-euvrc-doc-max-laden-mass-whole">
+        <source>Max laden mass whole vehicle (F.3)</source>
+        <translation>Највећа допуштена маса целог возила (F.3)</translation>
+    </message>
+    <message id="lc-euvrc-doc-braked-trailer">
+        <source>Max braked trailer mass (O.1)</source>
+        <translation>Највећа маса кочене приколице (O.1)</translation>
+    </message>
+    <message id="lc-euvrc-doc-unbraked-trailer">
+        <source>Max unbraked trailer mass (O.2)</source>
+        <translation>Највећа маса некочене приколице (O.2)</translation>
+    </message>
+    <message id="lc-euvrc-doc-rated-engine-speed">
+        <source>Rated engine speed (P.4)</source>
+        <translation>Називна брзина мотора (P.4)</translation>
+    </message>
+    <message id="lc-euvrc-doc-stationary-sound">
+        <source>Stationary sound level (U.1)</source>
+        <translation>Ниво буке у мировању (U.1)</translation>
+    </message>
+    <message id="lc-euvrc-doc-engine-speed-ref">
+        <source>Engine speed for sound ref (U.2)</source>
+        <translation>Брзина мотора за буку (U.2)</translation>
+    </message>
+    <message id="lc-euvrc-doc-drive-by-sound">
+        <source>Drive-by sound level (U.3)</source>
+        <translation>Ниво буке у пролазу (U.3)</translation>
+    </message>
+    <message id="lc-euvrc-doc-fuel-consumption">
+        <source>Fuel consumption (V.7)</source>
+        <translation>Потрошња горива (V.7)</translation>
+    </message>
+    <message id="lc-euvrc-doc-co2">
+        <source>CO2 emissions (V.7)</source>
+        <translation>Емисија CO2 (V.7)</translation>
+    </message>
+    <message id="lc-euvrc-doc-env-category">
+        <source>Environmental category (V.9)</source>
+        <translation>Еколошка категорија (V.9)</translation>
+    </message>
+    <message id="lc-euvrc-doc-fuel-tank">
+        <source>Fuel tank capacity (W)</source>
+        <translation>Запремина резервоара (W)</translation>
+    </message>
     <message id="lc-reader-unsupported-card">
         <source>Card in reader is not supported.</source>
         <translation>Kartica u čitaču nije podržana.</translation>
@@ -838,6 +1326,10 @@
     <message id="lc-health-label-insurance-start">
         <source>Insurance start</source>
         <translation>Почетак осигурања</translation>
+    </message>
+    <message id="lc-health-label-family-member">
+        <source>Family member</source>
+        <translation>Члан породице</translation>
     </message>
     <message id="lc-health-val-yes">
         <source>Yes</source>
@@ -1058,6 +1550,14 @@
     <message id="lc-emrtd-authenticating">
         <source>Authenticating...</source>
         <translation>Аутентификација...</translation>
+    </message>
+    <message id="lc-emrtd-auth-can-tab">
+        <source>CAN</source>
+        <translation>CAN</translation>
+    </message>
+    <message id="lc-emrtd-auth-mrz-tab">
+        <source>MRZ</source>
+        <translation>MRZ</translation>
     </message>
     <message id="lc-emrtd-travel-document">
         <source>Travel Document</source>

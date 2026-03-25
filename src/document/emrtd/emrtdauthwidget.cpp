@@ -54,7 +54,7 @@ EMRTDAuthWidget::EMRTDAuthWidget(QWidget* parent)
     canEdit->setMaximumWidth(240);
     canLayout->addWidget(canEdit, 0, Qt::AlignCenter);
 
-    tabWidget->addTab(canPage, "CAN");
+    tabWidget->addTab(canPage, qtTrId("lc-emrtd-auth-can-tab"));
 
     // MRZ tab
     auto* mrzPage = new QWidget();
@@ -105,7 +105,7 @@ EMRTDAuthWidget::EMRTDAuthWidget(QWidget* parent)
 
     mrzLayout->addWidget(formWidget, 0, Qt::AlignCenter);
 
-    tabWidget->addTab(mrzPage, "MRZ");
+    tabWidget->addTab(mrzPage, qtTrId("lc-emrtd-auth-mrz-tab"));
 
     layout->addWidget(tabWidget);
 

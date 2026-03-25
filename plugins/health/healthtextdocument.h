@@ -9,7 +9,7 @@
 
 class HealthTextDocument : public TextDocument
 {
-    Q_DECLARE_TR_FUNCTIONS(HealthTextDocument);
+    Q_DECLARE_TR_FUNCTIONS(HealthTextDocument)
 
 public:
     explicit HealthTextDocument(const plugin::CardData& data, QString documentPath = ":/html/healthcard.html",

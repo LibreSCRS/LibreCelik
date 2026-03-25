@@ -384,6 +384,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-health-label-insurance-desc");
     //% "Insurance start"
     QT_TRID_NOOP("lc-health-label-insurance-start");
+    //% "Family member"
+    QT_TRID_NOOP("lc-health-label-family-member");
     //% "Yes"
     QT_TRID_NOOP("lc-health-val-yes");
     //% "No"
@@ -447,6 +449,269 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-vehicle-title");
     //% "Print Document"
     QT_TRID_NOOP("lc-vehicle-print-title");
+
+    // --- EU VRC (Vehicle Registration Certificate) ---
+    //% "Vehicle Registration"
+    QT_TRID_NOOP("lc-euvrc-title");
+    //% "Print Document"
+    QT_TRID_NOOP("lc-euvrc-print-title");
+    //% "Registration"
+    QT_TRID_NOOP("lc-euvrc-section-registration");
+    //% "Vehicle"
+    QT_TRID_NOOP("lc-euvrc-section-vehicle");
+    //% "Engine & Technical"
+    QT_TRID_NOOP("lc-euvrc-section-engine");
+    //% "Holder"
+    QT_TRID_NOOP("lc-euvrc-section-holder");
+    //% "User"
+    QT_TRID_NOOP("lc-euvrc-section-user");
+    //% "National Extensions"
+    QT_TRID_NOOP("lc-euvrc-section-national");
+    //% "Owner"
+    QT_TRID_NOOP("lc-euvrc-section-owner");
+    //% "Surname or business name (C.2)"
+    QT_TRID_NOOP("lc-euvrc-owner-name");
+
+    // --- EU VRC header fields ---
+    //% "Registration (A)"
+    QT_TRID_NOOP("lc-euvrc-hdr-registration");
+    //% "Make (D.1)"
+    QT_TRID_NOOP("lc-euvrc-hdr-make");
+    //% "Member State"
+    QT_TRID_NOOP("lc-euvrc-hdr-member-state");
+    //% "Valid to (H)"
+    QT_TRID_NOOP("lc-euvrc-hdr-valid-to");
+
+    // --- EU VRC registration field labels ---
+    //% "Registration number (A)"
+    QT_TRID_NOOP("lc-euvrc-reg-number");
+    //% "Date of first registration (B)"
+    QT_TRID_NOOP("lc-euvrc-reg-first-date");
+    //% "Registration date (I)"
+    QT_TRID_NOOP("lc-euvrc-reg-date");
+    //% "Expiry date (H)"
+    QT_TRID_NOOP("lc-euvrc-reg-expiry");
+    //% "Document number"
+    QT_TRID_NOOP("lc-euvrc-reg-doc-number");
+    //% "Issuing authority"
+    QT_TRID_NOOP("lc-euvrc-reg-issuing-auth");
+    //% "Competent authority"
+    QT_TRID_NOOP("lc-euvrc-reg-competent-auth");
+    //% "Member state"
+    QT_TRID_NOOP("lc-euvrc-reg-member-state");
+    //% "Type approval number (K)"
+    QT_TRID_NOOP("lc-euvrc-reg-type-approval");
+    //% "Ownership status (C.4)"
+    QT_TRID_NOOP("lc-euvrc-reg-ownership-status");
+    //% "Previous document"
+    QT_TRID_NOOP("lc-euvrc-reg-previous-document");
+
+    // --- EU VRC vehicle field labels ---
+    //% "Make (D.1)"
+    QT_TRID_NOOP("lc-euvrc-veh-make");
+    //% "Type (D.2)"
+    QT_TRID_NOOP("lc-euvrc-veh-type");
+    //% "Commercial description (D.3)"
+    QT_TRID_NOOP("lc-euvrc-veh-commercial-desc");
+    //% "VIN (E)"
+    QT_TRID_NOOP("lc-euvrc-veh-vin");
+    //% "Category (J)"
+    QT_TRID_NOOP("lc-euvrc-veh-category");
+    //% "Colour (R)"
+    QT_TRID_NOOP("lc-euvrc-veh-colour");
+    //% "Maximum speed (T)"
+    QT_TRID_NOOP("lc-euvrc-veh-max-speed");
+
+    // --- EU VRC engine & technical field labels ---
+    //% "Engine capacity (P.1)"
+    QT_TRID_NOOP("lc-euvrc-eng-capacity");
+    //% "Maximum net power (P.2)"
+    QT_TRID_NOOP("lc-euvrc-eng-max-power");
+    //% "Type of fuel (P.3)"
+    QT_TRID_NOOP("lc-euvrc-eng-fuel-type");
+    //% "Engine ID number (P.5)"
+    QT_TRID_NOOP("lc-euvrc-eng-id-number");
+    //% "Vehicle mass (G)"
+    QT_TRID_NOOP("lc-euvrc-eng-vehicle-mass");
+    //% "Max permissible laden mass (F.1)"
+    QT_TRID_NOOP("lc-euvrc-eng-max-laden-mass");
+    //% "Power/weight ratio (Q)"
+    QT_TRID_NOOP("lc-euvrc-eng-power-weight");
+    //% "Number of seats (S.1)"
+    QT_TRID_NOOP("lc-euvrc-eng-seats");
+    //% "Standing places (S.2)"
+    QT_TRID_NOOP("lc-euvrc-eng-standing");
+    //% "Number of axles (L)"
+    QT_TRID_NOOP("lc-euvrc-eng-axles");
+    //% "Wheelbase (M)"
+    QT_TRID_NOOP("lc-euvrc-eng-wheelbase");
+    //% "Max laden mass in service (F.2)"
+    QT_TRID_NOOP("lc-euvrc-eng-max-laden-mass-service");
+    //% "Max laden mass whole vehicle (F.3)"
+    QT_TRID_NOOP("lc-euvrc-eng-max-laden-mass-whole");
+    //% "Max braked trailer mass (O.1)"
+    QT_TRID_NOOP("lc-euvrc-eng-braked-trailer");
+    //% "Max unbraked trailer mass (O.2)"
+    QT_TRID_NOOP("lc-euvrc-eng-unbraked-trailer");
+    //% "Rated engine speed (P.4)"
+    QT_TRID_NOOP("lc-euvrc-eng-rated-engine-speed");
+    //% "Stationary sound level (U.1)"
+    QT_TRID_NOOP("lc-euvrc-eng-stationary-sound");
+    //% "Engine speed for sound ref (U.2)"
+    QT_TRID_NOOP("lc-euvrc-eng-engine-speed-ref");
+    //% "Drive-by sound level (U.3)"
+    QT_TRID_NOOP("lc-euvrc-eng-drive-by-sound");
+    //% "Fuel consumption (V.7)"
+    QT_TRID_NOOP("lc-euvrc-eng-fuel-consumption");
+    //% "CO2 emissions (V.7)"
+    QT_TRID_NOOP("lc-euvrc-eng-co2");
+    //% "Environmental category (V.9)"
+    QT_TRID_NOOP("lc-euvrc-eng-env-category");
+    //% "Fuel tank capacity (W)"
+    QT_TRID_NOOP("lc-euvrc-eng-fuel-tank");
+
+    // --- EU VRC holder field labels ---
+    //% "Surname or business name (C.1.1)"
+    QT_TRID_NOOP("lc-euvrc-holder-name");
+    //% "Other names (C.1.2)"
+    QT_TRID_NOOP("lc-euvrc-holder-other-names");
+    //% "Address (C.1.3)"
+    QT_TRID_NOOP("lc-euvrc-holder-address");
+
+    // --- EU VRC user field labels ---
+    //% "Surname or business name (C.3)"
+    QT_TRID_NOOP("lc-euvrc-user-name");
+    //% "Other names (C.3)"
+    QT_TRID_NOOP("lc-euvrc-user-other-names");
+    //% "Address (C.3)"
+    QT_TRID_NOOP("lc-euvrc-user-address");
+
+    // --- EU VRC national extension labels (Serbian) ---
+    //% "Owner Personal Number"
+    QT_TRID_NOOP("lc-euvrc-nat-owners-personal-no");
+    //% "User Personal Number"
+    QT_TRID_NOOP("lc-euvrc-nat-users-personal-no");
+    //% "Vehicle Load"
+    QT_TRID_NOOP("lc-euvrc-nat-vehicle-load");
+    //% "Year of Production"
+    QT_TRID_NOOP("lc-euvrc-nat-year-of-production");
+    //% "Serial Number"
+    QT_TRID_NOOP("lc-euvrc-nat-serial-number");
+
+    // --- EU VRC print document labels ---
+    //% "EU Vehicle Registration Certificate"
+    QT_TRID_NOOP("lc-euvrc-doc-title");
+    //% "Printing date"
+    QT_TRID_NOOP("lc-euvrc-doc-printing-date");
+    //% "Registration number (A)"
+    QT_TRID_NOOP("lc-euvrc-doc-reg-number");
+    //% "Date of first registration (B)"
+    QT_TRID_NOOP("lc-euvrc-doc-first-reg-date");
+    //% "Registration date (I)"
+    QT_TRID_NOOP("lc-euvrc-doc-reg-date");
+    //% "Expiry date (H)"
+    QT_TRID_NOOP("lc-euvrc-doc-expiry-date");
+    //% "Member state"
+    QT_TRID_NOOP("lc-euvrc-doc-member-state");
+    //% "Document number"
+    QT_TRID_NOOP("lc-euvrc-doc-document-number");
+    //% "Competent authority"
+    QT_TRID_NOOP("lc-euvrc-doc-competent-authority");
+    //% "Issuing authority"
+    QT_TRID_NOOP("lc-euvrc-doc-issuing-authority");
+    //% "Type approval number (K)"
+    QT_TRID_NOOP("lc-euvrc-doc-type-approval-no");
+    //% "Vehicle Data"
+    QT_TRID_NOOP("lc-euvrc-doc-vehicle-data");
+    //% "Make (D.1)"
+    QT_TRID_NOOP("lc-euvrc-doc-make");
+    //% "Type (D.2)"
+    QT_TRID_NOOP("lc-euvrc-doc-type");
+    //% "Commercial description (D.3)"
+    QT_TRID_NOOP("lc-euvrc-doc-commercial-desc");
+    //% "VIN (E)"
+    QT_TRID_NOOP("lc-euvrc-doc-vin");
+    //% "Category (J)"
+    QT_TRID_NOOP("lc-euvrc-doc-category");
+    //% "Colour (R)"
+    QT_TRID_NOOP("lc-euvrc-doc-colour");
+    //% "Maximum speed (T)"
+    QT_TRID_NOOP("lc-euvrc-doc-max-speed");
+    //% "Engine & Technical"
+    QT_TRID_NOOP("lc-euvrc-doc-engine-technical");
+    //% "Engine capacity (P.1)"
+    QT_TRID_NOOP("lc-euvrc-doc-capacity");
+    //% "Maximum net power (P.2)"
+    QT_TRID_NOOP("lc-euvrc-doc-power");
+    //% "Type of fuel (P.3)"
+    QT_TRID_NOOP("lc-euvrc-doc-fuel-type");
+    //% "Engine ID number (P.5)"
+    QT_TRID_NOOP("lc-euvrc-doc-engine-number");
+    //% "Vehicle mass (G)"
+    QT_TRID_NOOP("lc-euvrc-doc-mass");
+    //% "Max permissible laden mass (F.1)"
+    QT_TRID_NOOP("lc-euvrc-doc-max-laden-mass");
+    //% "Power/weight ratio (Q)"
+    QT_TRID_NOOP("lc-euvrc-doc-power-weight");
+    //% "Number of axles (L)"
+    QT_TRID_NOOP("lc-euvrc-doc-axles");
+    //% "Number of seats (S.1)"
+    QT_TRID_NOOP("lc-euvrc-doc-seats");
+    //% "Standing places (S.2)"
+    QT_TRID_NOOP("lc-euvrc-doc-standing-places");
+    //% "Wheelbase (M)"
+    QT_TRID_NOOP("lc-euvrc-doc-wheelbase");
+    //% "Holder Data"
+    QT_TRID_NOOP("lc-euvrc-doc-holder-data");
+    //% "Surname or business name (C.1.1)"
+    QT_TRID_NOOP("lc-euvrc-doc-holder-name");
+    //% "Other names (C.1.2)"
+    QT_TRID_NOOP("lc-euvrc-doc-holder-other-names");
+    //% "Address (C.1.3)"
+    QT_TRID_NOOP("lc-euvrc-doc-holder-address");
+    //% "User Data"
+    QT_TRID_NOOP("lc-euvrc-doc-user-data");
+    //% "Surname or business name (C.3)"
+    QT_TRID_NOOP("lc-euvrc-doc-user-name");
+    //% "Other names (C.3)"
+    QT_TRID_NOOP("lc-euvrc-doc-user-other-names");
+    //% "Address (C.3)"
+    QT_TRID_NOOP("lc-euvrc-doc-user-address");
+    //% "Ownership status (C.4)"
+    QT_TRID_NOOP("lc-euvrc-doc-ownership-status");
+    //% "Previous document"
+    QT_TRID_NOOP("lc-euvrc-doc-previous-document");
+    //% "Owner Data"
+    QT_TRID_NOOP("lc-euvrc-doc-owner-data");
+    //% "Surname or business name (C.2)"
+    QT_TRID_NOOP("lc-euvrc-doc-owner-name");
+    //% "National Extensions"
+    QT_TRID_NOOP("lc-euvrc-doc-national-data");
+    //% "Max laden mass in service (F.2)"
+    QT_TRID_NOOP("lc-euvrc-doc-max-laden-mass-service");
+    //% "Max laden mass whole vehicle (F.3)"
+    QT_TRID_NOOP("lc-euvrc-doc-max-laden-mass-whole");
+    //% "Max braked trailer mass (O.1)"
+    QT_TRID_NOOP("lc-euvrc-doc-braked-trailer");
+    //% "Max unbraked trailer mass (O.2)"
+    QT_TRID_NOOP("lc-euvrc-doc-unbraked-trailer");
+    //% "Rated engine speed (P.4)"
+    QT_TRID_NOOP("lc-euvrc-doc-rated-engine-speed");
+    //% "Stationary sound level (U.1)"
+    QT_TRID_NOOP("lc-euvrc-doc-stationary-sound");
+    //% "Engine speed for sound ref (U.2)"
+    QT_TRID_NOOP("lc-euvrc-doc-engine-speed-ref");
+    //% "Drive-by sound level (U.3)"
+    QT_TRID_NOOP("lc-euvrc-doc-drive-by-sound");
+    //% "Fuel consumption (V.7)"
+    QT_TRID_NOOP("lc-euvrc-doc-fuel-consumption");
+    //% "CO2 emissions (V.7)"
+    QT_TRID_NOOP("lc-euvrc-doc-co2");
+    //% "Environmental category (V.9)"
+    QT_TRID_NOOP("lc-euvrc-doc-env-category");
+    //% "Fuel tank capacity (W)"
+    QT_TRID_NOOP("lc-euvrc-doc-fuel-tank");
+
     //% "Vehicle registration card reader"
     QT_TRID_NOOP("lc-vehicle-doc-title");
     //% "Printing date"
@@ -583,6 +848,10 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-emrtd-authenticate");
     //% "Authenticating..."
     QT_TRID_NOOP("lc-emrtd-authenticating");
+    //% "CAN"
+    QT_TRID_NOOP("lc-emrtd-auth-can-tab");
+    //% "MRZ"
+    QT_TRID_NOOP("lc-emrtd-auth-mrz-tab");
 
     //% "Travel Document"
     QT_TRID_NOOP("lc-emrtd-travel-document");

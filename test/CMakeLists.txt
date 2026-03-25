@@ -116,29 +116,42 @@ target_include_directories(QSmartCardMonitorTests PRIVATE
 )
 gtest_discover_tests(QSmartCardMonitorTests)
 
-add_executable(VehicleTextDocumentTests
-    vehicletextdocument_test.cpp
-    ../plugins/vehicle/vehicletextdocument.h
-    ../plugins/vehicle/vehicletextdocument.cpp
+add_executable(EuVrcTextDocumentTests
+    euvrctextdocument_test.cpp
+    ../plugins/eu-vrc/euvrctextdocument.h
+    ../plugins/eu-vrc/euvrctextdocument.cpp
     ../src/utils/libreceliklog.h
     ../src/utils/libreceliklog.cpp
     ${CMAKE_SOURCE_DIR}/resources/librecelik.qrc
 )
-target_include_directories(VehicleTextDocumentTests PRIVATE
+target_include_directories(EuVrcTextDocumentTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/document/printing
-    ${CMAKE_SOURCE_DIR}/plugins/vehicle
+    ${CMAKE_SOURCE_DIR}/plugins/eu-vrc
     ${PROJECT_BINARY_DIR}/../src
 )
-target_link_libraries(VehicleTextDocumentTests
+target_link_libraries(EuVrcTextDocumentTests
     GTest::gtest
     CardPlugin
     LibreCelikPrinting
     Qt6::Widgets
     Qt6::PrintSupport
 )
-set_target_properties(VehicleTextDocumentTests PROPERTIES AUTOMOC ON)
-gtest_discover_tests(VehicleTextDocumentTests)
+set_target_properties(EuVrcTextDocumentTests PROPERTIES AUTOMOC ON)
+gtest_discover_tests(EuVrcTextDocumentTests)
+
+add_executable(StringUtilsTests
+    stringutils_test.cpp
+)
+target_include_directories(StringUtilsTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+target_link_libraries(StringUtilsTests
+    GTest::gtest
+    Qt6::Widgets
+)
+set_target_properties(StringUtilsTests PROPERTIES AUTOMOC ON)
+gtest_discover_tests(StringUtilsTests)
 
 add_executable(HealthTextDocumentTests
     healthtextdocument_test.cpp

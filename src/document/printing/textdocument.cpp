@@ -10,7 +10,7 @@
 void TextDocument::print(QPrinter* printer) const
 {
     qCDebug(libreCelikPrinting) << "Printer page rect: " << printer->pageRect(QPrinter::Unit::Point).size();
-    QMarginsF margins(21, 29.7, 21, 29.7);
+    QMarginsF margins(15, 15, 15, 15);
     printer->setPageMargins(margins, QPageLayout::Millimeter);
     document.print(printer);
 }

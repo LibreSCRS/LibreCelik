@@ -23,3 +23,7 @@ p {
 p#small {
   font-size: small;
 }
+td.expired {
+  color: #e65100;
+  font-weight: bold;
+}

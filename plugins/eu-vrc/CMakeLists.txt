@@ -3,29 +3,30 @@
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets PrintSupport)
 
-add_library(vehicle-gui-plugin MODULE
-    vehiclewidgetplugin.h
-    vehiclewidgetplugin.cpp
-    vehiclewidget.h
-    vehiclewidget.cpp
-    vehicletextdocument.h
-    vehicletextdocument.cpp
+add_library(eu-vrc-gui-plugin MODULE
+    euvrcwidgetplugin.h
+    euvrcwidgetplugin.cpp
+    euvrcwidget.h
+    euvrcwidget.cpp
+    euvrctextdocument.h
+    euvrctextdocument.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.h
     ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/cardheadercard.h
     ${CMAKE_SOURCE_DIR}/src/utils/cardheadercard.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.h
     ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/stringutils.h
 )
-target_include_directories(vehicle-gui-plugin PRIVATE
+target_include_directories(eu-vrc-gui-plugin PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
-target_link_libraries(vehicle-gui-plugin PRIVATE
+target_link_libraries(eu-vrc-gui-plugin PRIVATE
     Qt6::Widgets
     CardPlugin
     LibreCelikPrinting
 )
-set_target_properties(vehicle-gui-plugin PROPERTIES
+set_target_properties(eu-vrc-gui-plugin PROPERTIES
     AUTOMOC ON
     PREFIX ""
     LIBRARY_OUTPUT_DIRECTORY "${LIBRECELIK_GUI_PLUGIN_DIR}"

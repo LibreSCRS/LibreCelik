@@ -7,20 +7,20 @@
 #include <QObject>
 #include <QtPlugin>
 
-class VehicleWidgetPlugin : public QObject, public CardWidgetPlugin
+class EuVrcWidgetPlugin : public QObject, public CardWidgetPlugin
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.librescrs.CardWidgetPlugin/1.0" FILE "vehicle.json")
+    Q_PLUGIN_METADATA(IID "org.librescrs.CardWidgetPlugin/1.0" FILE "eu-vrc.json")
     Q_INTERFACES(CardWidgetPlugin)
 
 public:
     QString cardType() const override
     {
-        return QStringLiteral("vehicle");
+        return QStringLiteral("eu-vrc");
     }
     QString displayName() const override
     {
-        return qtTrId("lc-vehicle-title");
+        return qtTrId("lc-euvrc-title");
     }
     QWidget* createWidget(const plugin::CardData& data, QWidget* parent) const override;
     QWidget* createEmptyWidget(QWidget* parent) const override;

@@ -24,7 +24,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-set(MIDDLEWARE_VERSION main)
+set(MIDDLEWARE_VERSION 1.5.1)
 
 # Fetch LibreMiddleware (smartcard, eidcard, vehiclecard libraries)
 include(FetchContent)

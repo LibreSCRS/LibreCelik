@@ -9,7 +9,7 @@
 
 class EIdTextDocument : public TextDocument
 {
-    Q_DECLARE_TR_FUNCTIONS(EIdTextDocument);
+    Q_DECLARE_TR_FUNCTIONS(EIdTextDocument)
 
 public:
     explicit EIdTextDocument(const plugin::CardData& data, QString documentPath = {}, QString cssPath = {});

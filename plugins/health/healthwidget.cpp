@@ -16,54 +16,54 @@
 
 using plugin::getFieldValue;
 
-// Translation maps: field key -> readable English fallback label.
-// Final translations will be added in Task 10 via translations_catalog.cpp.
-
-static const std::map<std::string, QString>& insuranceTranslationMap()
+static std::map<std::string, QString> insuranceTranslationMap()
 {
-    static const std::map<std::string, QString> map = {
-        {"insurer_name", "Insurer"},
-        {"insurer_id", "Insurer ID"},
-        {"card_id", "Card ID"},
-        {"date_of_issue", "Issue date"},
-        {"date_of_expiry", "Expiry date"},
-        {"valid_until", "Valid until"},
-        {"permanently_valid", "Permanently valid"},
-        {"insurance_basis_rzzo", "Insurance basis"},
-        {"insurance_description", "Insurance description"},
-        {"insurance_start_date", "Insurance start"},
+    return {
+        {"insurer_name", qtTrId("lc-health-label-insurer")},
+        {"insurer_id", qtTrId("lc-health-label-insurer-id")},
+        {"card_id", qtTrId("lc-health-label-card-id")},
+        {"date_of_issue", qtTrId("lc-health-label-issue-date")},
+        {"date_of_expiry", qtTrId("lc-health-label-expiry")},
+        {"valid_until", qtTrId("lc-health-label-valid-until")},
+        {"permanently_valid", qtTrId("lc-health-label-permanently")},
+        {"insurance_basis_rzzo", qtTrId("lc-health-label-insurance-basis")},
+        {"insurance_description", qtTrId("lc-health-label-insurance-desc")},
+        {"insurance_start_date", qtTrId("lc-health-label-insurance-start")},
     };
-    return map;
 }
 
-static const std::map<std::string, QString>& addressTranslationMap()
+static std::map<std::string, QString> addressTranslationMap()
 {
-    static const std::map<std::string, QString> map = {
-        {"street", "Street"}, {"address_number", "Number"},     {"apartment", "Apartment"},
-        {"place", "Place"},   {"municipality", "Municipality"}, {"country", "Country"},
+    return {
+        {"street", qtTrId("lc-health-label-street")},
+        {"address_number", qtTrId("lc-health-label-number")},
+        {"apartment", qtTrId("lc-health-label-apartment")},
+        {"place", qtTrId("lc-health-label-place")},
+        {"municipality", qtTrId("lc-health-label-municipality")},
+        {"country", qtTrId("lc-health-label-country")},
     };
-    return map;
 }
 
-static const std::map<std::string, QString>& carrierTranslationMap()
+static std::map<std::string, QString> carrierTranslationMap()
 {
-    static const std::map<std::string, QString> map = {
-        {"carrier_given_name", "Carrier name"},     {"carrier_family_name", "Carrier surname"},
-        {"carrier_relationship", "Relationship"},   {"carrier_id_number", "Carrier ID"},
-        {"carrier_insurant_number", "Carrier LBO"}, {"carrier_family_member", "Family member"},
+    return {
+        {"carrier_given_name", qtTrId("lc-health-label-carrier-name")},
+        {"carrier_family_name", qtTrId("lc-health-label-carrier-family-name")},
+        {"carrier_relationship", qtTrId("lc-health-label-carrier-relation")},
+        {"carrier_id_number", qtTrId("lc-health-label-carrier-id")},
+        {"carrier_insurant_number", qtTrId("lc-health-label-carrier-lbo")},
+        {"carrier_family_member", qtTrId("lc-health-label-family-member")},
     };
-    return map;
 }
 
-static const std::map<std::string, QString>& taxpayerTranslationMap()
+static std::map<std::string, QString> taxpayerTranslationMap()
 {
-    static const std::map<std::string, QString> map = {
-        {"taxpayer_name", "Employer name"},
-        {"taxpayer_id_number", "Employer ID (PIB)"},
-        {"taxpayer_residence", "Employer residence"},
-        {"taxpayer_activity_code", "Activity code"},
+    return {
+        {"taxpayer_name", qtTrId("lc-health-label-taxpayer-name")},
+        {"taxpayer_id_number", qtTrId("lc-health-label-taxpayer-id")},
+        {"taxpayer_residence", qtTrId("lc-health-label-taxpayer-res")},
+        {"taxpayer_activity_code", qtTrId("lc-health-label-taxpayer-act")},
     };
-    return map;
 }
 
 HealthWidget::HealthWidget(const plugin::CardData& cardData, QWidget* parent) : QWidget(parent), data(cardData)
@@ -139,10 +139,10 @@ void HealthWidget::addPersonalGroup(const plugin::CardFieldGroup& group)
     // Build CardHeaderCard with health icon and key personal fields.
     // Insurance fields are not yet available, so only personal fields appear in header.
     std::vector<LibreSCRS::HeaderField> headerFields;
-    headerFields.push_back({"Name", getFieldValue(&group, "given_name")});
-    headerFields.push_back({"Surname", getFieldValue(&group, "family_name")});
-    headerFields.push_back({"Personal number (JMBG)", getFieldValue(&group, "personal_number")});
-    headerFields.push_back({"Insurant number (LBO)", getFieldValue(&group, "insurant_number")});
+    headerFields.push_back({qtTrId("lc-health-label-given-name"), getFieldValue(&group, "given_name")});
+    headerFields.push_back({qtTrId("lc-health-label-family-name"), getFieldValue(&group, "family_name")});
+    headerFields.push_back({qtTrId("lc-health-label-jmbg"), getFieldValue(&group, "personal_number")});
+    headerFields.push_back({qtTrId("lc-health-label-lbo"), getFieldValue(&group, "insurant_number")});
 
     QIcon healthIcon(QStringLiteral(":/images/health-icon.svg"));
     auto* headerCard = new LibreSCRS::CardHeaderCard(healthIcon, QSize(80, 80), headerFields, outerSection);
@@ -154,7 +154,7 @@ void HealthWidget::addInsuranceGroup(const plugin::CardFieldGroup& /*group*/)
     // Transform permanently_valid in accumulated data
     transformPermanentlyValid(data.groups.back());
 
-    auto* insuranceSec = LibreSCRS::FieldSectionBuilder::build("Insurance", data.groups.back(),
+    auto* insuranceSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-insurance"), data.groups.back(),
                                                                insuranceTranslationMap(), {}, outerSection);
     contentLayout->addWidget(insuranceSec);
 }
@@ -162,7 +162,7 @@ void HealthWidget::addInsuranceGroup(const plugin::CardFieldGroup& /*group*/)
 void HealthWidget::addAddressGroup(const plugin::CardFieldGroup& group)
 {
     auto* addressSec =
-        LibreSCRS::FieldSectionBuilder::build("Address", group, addressTranslationMap(), {}, outerSection);
+        LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-address"), group, addressTranslationMap(), {}, outerSection);
     contentLayout->addWidget(addressSec);
 }
 
@@ -174,7 +174,7 @@ void HealthWidget::addCarrierGroup(const plugin::CardFieldGroup& group)
 
     if (showCarrier) {
         auto* carrierSection = LibreSCRS::FieldSectionBuilder::build(
-            "Insurance Carrier", group, carrierTranslationMap(), {}, outerSection);
+            qtTrId("lc-health-section-carrier"), group, carrierTranslationMap(), {}, outerSection);
         contentLayout->addWidget(carrierSection);
     }
 }
@@ -182,7 +182,7 @@ void HealthWidget::addCarrierGroup(const plugin::CardFieldGroup& group)
 void HealthWidget::addTaxpayerGroup(const plugin::CardFieldGroup& group)
 {
     auto* taxpayerSec =
-        LibreSCRS::FieldSectionBuilder::build("Employer / Taxpayer", group, taxpayerTranslationMap(), {}, outerSection);
+        LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-taxpayer"), group, taxpayerTranslationMap(), {}, outerSection);
     contentLayout->addWidget(taxpayerSec);
 }
 
@@ -246,14 +246,14 @@ void HealthWidget::buildLayout()
 
     std::vector<LibreSCRS::HeaderField> headerFields;
     if (personal) {
-        headerFields.push_back({"Name", getFieldValue(personal, "given_name")});
-        headerFields.push_back({"Surname", getFieldValue(personal, "family_name")});
-        headerFields.push_back({"Personal number (JMBG)", getFieldValue(personal, "personal_number")});
-        headerFields.push_back({"Insurant number (LBO)", getFieldValue(personal, "insurant_number")});
+        headerFields.push_back({qtTrId("lc-health-label-given-name"), getFieldValue(personal, "given_name")});
+        headerFields.push_back({qtTrId("lc-health-label-family-name"), getFieldValue(personal, "family_name")});
+        headerFields.push_back({qtTrId("lc-health-label-jmbg"), getFieldValue(personal, "personal_number")});
+        headerFields.push_back({qtTrId("lc-health-label-lbo"), getFieldValue(personal, "insurant_number")});
     }
     if (insurance) {
-        headerFields.push_back({"Card ID", getFieldValue(insurance, "card_id")});
-        headerFields.push_back({"Valid until", getFieldValue(insurance, "valid_until")});
+        headerFields.push_back({qtTrId("lc-health-label-card-id"), getFieldValue(insurance, "card_id")});
+        headerFields.push_back({qtTrId("lc-health-label-valid-until"), getFieldValue(insurance, "valid_until")});
     }
 
     QIcon healthIcon(QStringLiteral(":/images/health-icon.svg"));
@@ -263,12 +263,12 @@ void HealthWidget::buildLayout()
     // --- Insurance, Address — stacked vertically ---
     if (insurance) {
         auto* insuranceSec =
-            LibreSCRS::FieldSectionBuilder::build("Insurance", *insurance, insuranceTranslationMap(), {}, outerSection);
+            LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-insurance"), *insurance, insuranceTranslationMap(), {}, outerSection);
         contentLayout->addWidget(insuranceSec);
     }
     if (const auto* address = data.findGroup("address")) {
         auto* addressSec =
-            LibreSCRS::FieldSectionBuilder::build("Address", *address, addressTranslationMap(), {}, outerSection);
+            LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-address"), *address, addressTranslationMap(), {}, outerSection);
         contentLayout->addWidget(addressSec);
     }
 
@@ -283,12 +283,12 @@ void HealthWidget::buildLayout()
 
     if (showCarrier) {
         auto* carrierSection = LibreSCRS::FieldSectionBuilder::build(
-            "Insurance Carrier", *carrier, carrierTranslationMap(), {}, outerSection);
+            qtTrId("lc-health-section-carrier"), *carrier, carrierTranslationMap(), {}, outerSection);
         contentLayout->addWidget(carrierSection);
     }
 
     if (const auto* taxpayer = data.findGroup("taxpayer")) {
-        auto* taxpayerSec = LibreSCRS::FieldSectionBuilder::build("Employer / Taxpayer", *taxpayer,
+        auto* taxpayerSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-taxpayer"), *taxpayer,
                                                                   taxpayerTranslationMap(), {}, outerSection);
         contentLayout->addWidget(taxpayerSec);
     }

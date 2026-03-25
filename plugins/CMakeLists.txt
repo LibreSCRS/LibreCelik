@@ -4,7 +4,7 @@
 # LIBRECELIK_GUI_PLUGIN_DIR is defined in root CMakeLists.txt
 
 add_subdirectory(rseid)
-add_subdirectory(vehicle)
+add_subdirectory(eu-vrc)
 add_subdirectory(health)
 add_subdirectory(pks)
 add_subdirectory(emrtd)

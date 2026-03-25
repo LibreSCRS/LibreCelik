@@ -5,6 +5,7 @@
 
 #include "utils/collapsiblesection.h"
 #include "utils/fieldsectionbuilder.h"
+#include "utils/securitystatuswidget.h"
 
 #include <QGraphicsOpacityEffect>
 #include <QHBoxLayout>
@@ -12,6 +13,7 @@
 #include <QToolButton>
 
 #include <plugin/carddatautils.h>
+#include <plugin/security_check.h>
 
 #include <QLabel>
 #include <QLineEdit>
@@ -58,6 +60,17 @@ const std::map<std::string, QString> additionalTranslationMap = {
     {"custody_info", qtTrId("lc-emrtd-custody-info")},
 };
 
+const std::map<std::string, QString> contactsTranslationMap = {
+    {"name", qtTrId("lc-emrtd-contact-name")},
+    {"telephone", qtTrId("lc-emrtd-telephone")},
+    {"address", qtTrId("lc-emrtd-address")},
+};
+
+const std::map<std::string, QString> nationalTranslationMap = {
+    {"tag", qtTrId("lc-emrtd-national-tag")},
+    {"value", qtTrId("lc-emrtd-national-value")},
+};
+
 } // namespace
 
 EMRTDWidget::EMRTDWidget(const plugin::CardData& cardData, QWidget* parent) : QWidget(parent), data(cardData)
@@ -85,6 +98,11 @@ EMRTDWidget::EMRTDWidget(QWidget* parent) : QWidget(parent)
 {
     outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
+
+    // Security status widget at top — updated when security_status group arrives
+    securityStatusWidget = new SecurityStatusWidget(this);
+    securityStatusWidget->setVisible(false);
+    outerLayout->addWidget(securityStatusWidget);
 
     // Navy outer CollapsibleSection — shell for Phase 2 travel document display
     static const QColor navy(34, 86, 117);
@@ -189,6 +207,82 @@ void EMRTDWidget::addGroup(const plugin::CardFieldGroup& group)
                 LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-additional"), group, documentExtraTranslationMap);
             sectionLayout->addWidget(extraSection);
         }
+    } else if (key == "presence") {
+        // Presence group — informational, no widget needed
+    } else if (key == "portrait") {
+        // DG5 portrait image — similar to signature display
+        if (!group.fields.empty() && !group.fields[0].value.empty()) {
+            auto* portraitSection = new CollapsibleSection(qtTrId("lc-emrtd-portrait"), outerSection);
+            auto* portraitLayout = new QVBoxLayout();
+            auto* portraitLabel = new QLabel();
+            QPixmap portraitPixmap;
+            portraitPixmap.loadFromData(group.fields[0].value.data(),
+                                       static_cast<uint>(group.fields[0].value.size()));
+            if (!portraitPixmap.isNull()) {
+                portraitLabel->setPixmap(
+                    portraitPixmap.scaled(200, 250, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+            }
+            portraitLabel->setAlignment(Qt::AlignCenter);
+            portraitLayout->addWidget(portraitLabel);
+            portraitSection->setLayout(portraitLayout);
+            sectionLayout->addWidget(portraitSection);
+        }
+    } else if (key == "contacts") {
+        auto* contactsSection =
+            LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-contacts"), group, contactsTranslationMap);
+        sectionLayout->addWidget(contactsSection);
+    } else if (key == "biometric_fingerprint" || key == "biometric_iris") {
+        QString title = (key == "biometric_fingerprint") ? qtTrId("lc-emrtd-biometric-fingerprint")
+                                                         : qtTrId("lc-emrtd-biometric-iris");
+        auto* bioSection = new CollapsibleSection(title, outerSection);
+        auto* bioLayout = new QVBoxLayout();
+        auto* bioLabel = new QLabel(qtTrId("lc-emrtd-biometric-eac-required"));
+        bioLabel->setStyleSheet("color: #E6873C; font-style: italic; padding: 8px;");
+        bioLabel->setWordWrap(true);
+        bioLayout->addWidget(bioLabel);
+        bioSection->setLayout(bioLayout);
+        sectionLayout->addWidget(bioSection);
+    } else if (key == "security_status") {
+        // Parse fields back into SecurityStatus struct
+        plugin::SecurityStatus secStatus;
+        for (const auto& field : group.fields) {
+            if (field.key == "overall_integrity") {
+                secStatus.overallIntegrity = plugin::statusFromString(field.asString());
+            } else if (field.key == "overall_authenticity") {
+                secStatus.overallAuthenticity = plugin::statusFromString(field.asString());
+            } else if (field.key == "overall_genuineness") {
+                secStatus.overallGenuineness = plugin::statusFromString(field.asString());
+            } else if (field.key.starts_with("check_")) {
+                // Individual check fields: check_N_id, check_N_category, etc.
+                // Parse grouped by index
+                auto suffix = field.key.substr(field.key.find('_', 6) + 1);
+                auto idxStr = field.key.substr(6, field.key.find('_', 6) - 6);
+                size_t idx = std::stoul(idxStr);
+                while (secStatus.checks.size() <= idx)
+                    secStatus.checks.emplace_back();
+                auto& check = secStatus.checks[idx];
+                if (suffix == "id")
+                    check.checkId = field.asString();
+                else if (suffix == "category")
+                    check.category = field.asString();
+                else if (suffix == "status")
+                    check.status = plugin::statusFromString(field.asString());
+                else if (suffix == "label")
+                    check.label = field.asString();
+                else if (suffix == "detail")
+                    check.detail = field.asString();
+                else if (suffix == "error")
+                    check.errorDetail = field.asString();
+            }
+        }
+        if (securityStatusWidget) {
+            securityStatusWidget->setSecurityStatus(secStatus);
+            securityStatusWidget->setVisible(true);
+        }
+    } else if (key == "national") {
+        auto* nationalSection =
+            LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-national-data"), group, nationalTranslationMap);
+        sectionLayout->addWidget(nationalSection);
     }
 }
 

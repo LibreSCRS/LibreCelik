@@ -42,6 +42,9 @@ add_executable(
     fieldsectionbuilder_test.cpp
     ../src/utils/fieldsectionbuilder.h
     ../src/utils/fieldsectionbuilder.cpp
+    securitystatuswidget_test.cpp
+    ../src/utils/securitystatuswidget.h
+    ../src/utils/securitystatuswidget.cpp
 )
 target_link_libraries(
     ${PROJECT_NAME}

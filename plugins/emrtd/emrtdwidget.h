@@ -12,6 +12,7 @@ class QLabel;
 class QLineEdit;
 class QToolButton;
 class QVBoxLayout;
+class SecurityStatusWidget;
 
 class EMRTDWidget : public QWidget
 {
@@ -49,4 +50,5 @@ private:
     CollapsibleSection* outerSection = nullptr;
     QVBoxLayout* sectionLayout = nullptr;
     QLabel* photoLabel = nullptr;
+    SecurityStatusWidget* securityStatusWidget = nullptr;
 };

@@ -10,6 +10,16 @@
     </p>
     <h1>${title}</h1>
     <img src=":/images/line.png" width="600" height="1" />
+    <!-- SECURITY_START -->
+    <table class="security-status">
+        <tr>
+            <td class="security-cell"><span class="security-dot" style="background:${security_integrity_color};">&#x25CF;</span> ${security_integrity_label}: ${security_integrity_value}</td>
+            <td class="security-cell"><span class="security-dot" style="background:${security_authenticity_color};">&#x25CF;</span> ${security_authenticity_label}: ${security_authenticity_value}</td>
+            <td class="security-cell"><span class="security-dot" style="background:${security_genuineness_color};">&#x25CF;</span> ${security_genuineness_label}: ${security_genuineness_value}</td>
+        </tr>
+    </table>
+    <img src=":/images/line.png" width="600" height="1" />
+    <!-- SECURITY_END -->
     <p>
     <img src=":/images/user.png" width="120" height="160" />
     </p>
@@ -135,6 +145,39 @@
         </tr>
     </table>
     <!-- DG12_END -->
+    <!-- DG5_START -->
+    <p>
+    <img src=":/images/line.png" width="600" height="1" />
+    </p>
+    <h2>${portrait_label}</h2>
+    <p>
+    <img src="${portrait_image}" width="160" height="200" />
+    </p>
+    <!-- DG5_END -->
+    <!-- DG16_START -->
+    <p>
+    <img src=":/images/line.png" width="600" height="1" />
+    </p>
+    <h2>${contacts_label}</h2>
+    <img src=":/images/line.png" width="600" height="1" />
+    <table>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td width="25%">${contact_name}:</td>
+            <td>${contact_name_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td>${contact_telephone}:</td>
+            <td>${contact_telephone_value}</td>
+        </tr>
+        <tr>
+            <td width="0"><img src=":/images/transparent_1x20.png" width="1" height="20"></td>
+            <td>${contact_address}:</td>
+            <td>${contact_address_value}</td>
+        </tr>
+    </table>
+    <!-- DG16_END -->
     <!-- DG7_START -->
     <p>
     <img src=":/images/line.png" width="600" height="1" />

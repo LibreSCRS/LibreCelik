@@ -5,6 +5,7 @@
 #include <QDate>
 #include "emrtdtextdocument.h"
 #include <plugin/carddatautils.h>
+#include <plugin/security_check.h>
 
 using plugin::getFieldValue;
 
@@ -61,10 +62,55 @@ void EMRTDTextDocument::translateDocumentData(QString& data) const
 
     // DG7 section
     data.replace("${signature_label}", qtTrId("lc-emrtd-signature"));
+
+    // Security status header
+    data.replace("${security_integrity_label}", qtTrId("lc-emrtd-security-integrity"));
+    data.replace("${security_authenticity_label}", qtTrId("lc-emrtd-security-authenticity"));
+    data.replace("${security_genuineness_label}", qtTrId("lc-emrtd-security-genuineness"));
+
+    // DG5 section
+    data.replace("${portrait_label}", qtTrId("lc-emrtd-portrait"));
+
+    // DG16 section
+    data.replace("${contacts_label}", qtTrId("lc-emrtd-contacts"));
+    data.replace("${contact_name}", qtTrId("lc-emrtd-contact-name"));
+    data.replace("${contact_telephone}", qtTrId("lc-emrtd-telephone"));
+    data.replace("${contact_address}", qtTrId("lc-emrtd-address"));
 }
 
 void EMRTDTextDocument::prepareDocumentData(QString& html, const plugin::CardData& cardData) const
 {
+    // Security status — parse from security_status group
+    const auto* secGroup = cardData.findGroup("security_status");
+    if (secGroup) {
+        auto statusColor = [](const QString& statusStr) -> QString {
+            if (statusStr == "PASSED") return QStringLiteral("#4CAF50");
+            if (statusStr == "FAILED") return QStringLiteral("#F44336");
+            if (statusStr == "NOT_SUPPORTED" || statusStr == "SKIPPED") return QStringLiteral("#FFC107");
+            return QStringLiteral("#9E9E9E");
+        };
+        auto statusLabel = [](const QString& statusStr) -> QString {
+            if (statusStr == "PASSED") return qtTrId("lc-emrtd-security-passed");
+            if (statusStr == "FAILED") return qtTrId("lc-emrtd-security-failed");
+            if (statusStr == "NOT_SUPPORTED") return qtTrId("lc-emrtd-security-not-supported");
+            if (statusStr == "SKIPPED") return qtTrId("lc-emrtd-security-skipped");
+            return qtTrId("lc-emrtd-security-not-performed");
+        };
+
+        auto integrityStr = getFieldValue(secGroup, "overall_integrity");
+        auto authenticityStr = getFieldValue(secGroup, "overall_authenticity");
+        auto genuinenessStr = getFieldValue(secGroup, "overall_genuineness");
+
+        html.replace("${security_integrity_color}", statusColor(integrityStr));
+        html.replace("${security_integrity_value}", statusLabel(integrityStr));
+        html.replace("${security_authenticity_color}", statusColor(authenticityStr));
+        html.replace("${security_authenticity_value}", statusLabel(authenticityStr));
+        html.replace("${security_genuineness_color}", statusColor(genuinenessStr));
+        html.replace("${security_genuineness_value}", statusLabel(genuinenessStr));
+    } else {
+        removeConditionalBlock(html, "SECURITY");
+    }
+
     // Personal fields
     html.replace("${surname_value}", getPreparedValue(getFieldValue(cardData, "surname")));
     html.replace("${given_names_value}", getPreparedValue(getFieldValue(cardData, "given_names")));
@@ -108,6 +154,27 @@ void EMRTDTextDocument::prepareDocumentData(QString& html, const plugin::CardDat
         html.replace("${endorsements_value}", getPreparedValue(getFieldValue(dg12, "endorsements")));
     } else {
         removeConditionalBlock(html, "DG12");
+    }
+
+    // DG5 — Portrait (optional)
+    const auto* portraitGroup = cardData.findGroup("portrait");
+    if (portraitGroup && !portraitGroup->fields.empty() && !portraitGroup->fields[0].value.empty()) {
+        QByteArray portraitRaw(reinterpret_cast<const char*>(portraitGroup->fields[0].value.data()),
+                               static_cast<qsizetype>(portraitGroup->fields[0].value.size()));
+        QString portraitUri = "data:image/png;base64, " + portraitRaw.toBase64();
+        html.replace("${portrait_image}", portraitUri);
+    } else {
+        removeConditionalBlock(html, "DG5");
+    }
+
+    // DG16 — Contacts (optional)
+    const auto* contactsGroup = cardData.findGroup("contacts");
+    if (contactsGroup) {
+        html.replace("${contact_name_value}", getPreparedValue(getFieldValue(contactsGroup, "name")));
+        html.replace("${contact_telephone_value}", getPreparedValue(getFieldValue(contactsGroup, "telephone")));
+        html.replace("${contact_address_value}", getPreparedValue(getFieldValue(contactsGroup, "address")));
+    } else {
+        removeConditionalBlock(html, "DG16");
     }
 
     // DG7 — Signature (optional)

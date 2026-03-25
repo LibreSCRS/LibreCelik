@@ -19,3 +19,17 @@ p {
 p#small {
   font-size: small;
 }
+table.security-status {
+  width: 100%;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+td.security-cell {
+  font-size: small;
+  padding: 2px 8px;
+  text-align: center;
+}
+span.security-dot {
+  font-size: 12px;
+  margin-right: 4px;
+}

@@ -889,6 +889,48 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-emrtd-doc-printing-date");
     //% "Sex"
     QT_TRID_NOOP("lc-emrtd-doc-sex");
+
+    // --- eMRTD security status ---
+    //% "Security Status"
+    QT_TRID_NOOP("lc-emrtd-security-status");
+    //% "Data Integrity"
+    QT_TRID_NOOP("lc-emrtd-security-integrity");
+    //% "Data Authenticity"
+    QT_TRID_NOOP("lc-emrtd-security-authenticity");
+    //% "Chip Genuineness"
+    QT_TRID_NOOP("lc-emrtd-security-genuineness");
+    //% "Passed"
+    QT_TRID_NOOP("lc-emrtd-security-passed");
+    //% "Failed"
+    QT_TRID_NOOP("lc-emrtd-security-failed");
+    //% "Not Supported"
+    QT_TRID_NOOP("lc-emrtd-security-not-supported");
+    //% "Skipped"
+    QT_TRID_NOOP("lc-emrtd-security-skipped");
+    //% "Not Performed"
+    QT_TRID_NOOP("lc-emrtd-security-not-performed");
+    //% "Detailed Checks"
+    QT_TRID_NOOP("lc-emrtd-security-details");
+
+    // --- eMRTD new DG sections ---
+    //% "Portrait"
+    QT_TRID_NOOP("lc-emrtd-portrait");
+    //% "Contacts"
+    QT_TRID_NOOP("lc-emrtd-contacts");
+    //% "Contact Name"
+    QT_TRID_NOOP("lc-emrtd-contact-name");
+    //% "Fingerprint Biometrics"
+    QT_TRID_NOOP("lc-emrtd-biometric-fingerprint");
+    //% "Iris Biometrics"
+    QT_TRID_NOOP("lc-emrtd-biometric-iris");
+    //% "Access restricted (EAC required)"
+    QT_TRID_NOOP("lc-emrtd-biometric-eac-required");
+    //% "National Data"
+    QT_TRID_NOOP("lc-emrtd-national-data");
+    //% "Tag"
+    QT_TRID_NOOP("lc-emrtd-national-tag");
+    //% "Value"
+    QT_TRID_NOOP("lc-emrtd-national-value");
 }
 
 QT_WARNING_POP

@@ -1443,6 +1443,10 @@
         <source>Authentication Failed</source>
         <translation>Аутентификација неуспешна</translation>
     </message>
+    <message id="lc-emrtd-no-data-message">
+        <source>Authentication failed — travel document data could not be read. Check CAN or MRZ and reinsert the card to try again.</source>
+        <translation>Аутентификација неуспешна — подаци путне исправе нису могли бити прочитани. Проверите CAN или MRZ и поново убаците картицу.</translation>
+    </message>
     <message id="lc-emrtd-doc-title">
         <source>TRAVEL DOCUMENT: DATA PRINTING</source>
         <translation>ПУТНА ИСПРАВА: ШТАМПА ПОДАТАКА</translation>

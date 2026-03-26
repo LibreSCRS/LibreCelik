@@ -11,8 +11,9 @@
 #include <QPointer>
 
 AsyncCardReader::AsyncCardReader(std::vector<plugin::CardPlugin*> candidates,
+                                 std::vector<plugin::CardPlugin*> allPlugins,
                                  std::unique_ptr<smartcard::PCSCConnection> conn, QObject* parent)
-    : QObject(parent), candidates(std::move(candidates)), conn(std::move(conn))
+    : QObject(parent), candidates(std::move(candidates)), allPlugins(std::move(allPlugins)), conn(std::move(conn))
 {
     qRegisterMetaType<plugin::CardData>("plugin::CardData");
     qRegisterMetaType<plugin::CardFieldGroup>("plugin::CardFieldGroup");
@@ -27,7 +28,16 @@ AsyncCardReader::~AsyncCardReader()
 void AsyncCardReader::cancel()
 {
     stopRequested = true;
+    if (conn)
+        conn->cancel();
     waitForPendingAsync();
+}
+
+void AsyncCardReader::initiateCancel()
+{
+    stopRequested = true;
+    if (conn)
+        conn->cancel();
 }
 
 void AsyncCardReader::waitForPendingAsync()
@@ -464,22 +474,34 @@ void AsyncCardReader::requestDataWithCredentials(const QMap<QString, QString>& c
 
             auto data = activePlugin->readCardStreaming(*conn, callback);
 
-            // Clear SM filter before PKI fallback — eMRTD SM wrapping
-            // may interfere with VERIFY and PKCS#15 operations on contact.
-            // Safe: this runs on the sole worker thread using conn (waitForPendingAsync
-            // ensures no other thread is accessing conn concurrently).
-            conn->clearTransmitFilter();
+            // PKI fallback — SM filter stays active (installed by eMRTD plugin
+            // after PACE). Re-probe for PKI plugins that require authentication
+            // (e.g., PKCS#15 on contactless needs PACE before AID SELECT).
+            if (!pkiPlugin && !activePlugin->supportsPKI()) {
+                for (auto* p : allPlugins) {
+                    if (p == activePlugin)
+                        continue;
+                    try {
+                        if (p->supportsPKI() && p->canHandleConnection(*conn)) {
+                            pkiPlugin = p;
+                            break;
+                        }
+                    } catch (...) {
+                    }
+                }
+            }
 
-            // PKI fallback — pkiPlugin was discovered during Phase 1 requestData().
-            // Read certificates inline while the connection is still live.
-            // PIN tries are NOT read here — connectPKISignals chains
-            // certificatesReady → requestPINTriesLeft to avoid double-read.
             std::vector<plugin::CertificateData> certs;
             auto* pki = pkiPlugin ? pkiPlugin : (activePlugin->supportsPKI() ? activePlugin : nullptr);
             if (pki && pki->supportsPKI()) {
                 try {
                     certs = pki->readCertificates(*conn);
                 } catch (...) {
+                    // Certificate reading failed (e.g. CL without PACE/SM).
+                    // Clear pkiPlugin so hasPKI() returns false — avoids
+                    // showing an empty token section and spurious errors.
+                    if (pkiPlugin == pki)
+                        pkiPlugin = nullptr;
                 }
             }
 
@@ -491,9 +513,6 @@ void AsyncCardReader::requestDataWithCredentials(const QMap<QString, QString>& c
                     certsAlreadyQueued = !certs.empty();
                     emit cardDataReady(data);
                     emit readingFinished();
-                    // Emit certificatesReady in a separate queued invocation so that
-                    // cardDataReady handlers (which may themselves be QueuedConnection)
-                    // have a chance to call connectPKISignals before the signal fires.
                     if (!certs.empty()) {
                         QMetaObject::invokeMethod(
                             self2,

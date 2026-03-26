@@ -39,6 +39,12 @@ void EMRTDWidgetPlugin::addGroup(const plugin::CardFieldGroup& group, QWidget* w
         w->addGroup(group);
 }
 
+void EMRTDWidgetPlugin::showNoDataMessage(QWidget* widget) const
+{
+    if (auto* w = qobject_cast<EMRTDWidget*>(widget))
+        w->showNoDataMessage();
+}
+
 void EMRTDWidgetPlugin::print(const plugin::CardData& data) const
 {
     EMRTDTextDocument doc(data);

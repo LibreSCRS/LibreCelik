@@ -1443,6 +1443,10 @@
         <source>Authentication Failed</source>
         <translation>Authentication Failed</translation>
     </message>
+    <message id="lc-emrtd-no-data-message">
+        <source>Authentication failed — travel document data could not be read. Check CAN or MRZ and reinsert the card to try again.</source>
+        <translation>Authentication failed — travel document data could not be read. Check CAN or MRZ and reinsert the card to try again.</translation>
+    </message>
     <message id="lc-emrtd-doc-title">
         <source>TRAVEL DOCUMENT: DATA PRINTING</source>
         <translation>TRAVEL DOCUMENT: DATA PRINTING</translation>

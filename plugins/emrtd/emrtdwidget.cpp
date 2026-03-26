@@ -335,6 +335,14 @@ void EMRTDWidget::showError(const plugin::CardFieldGroup* group)
     layout->addStretch();
 }
 
+void EMRTDWidget::showNoDataMessage()
+{
+    auto* msgLabel = new QLabel(qtTrId("lc-emrtd-no-data-message"), outerSection);
+    msgLabel->setWordWrap(true);
+    msgLabel->setStyleSheet("color: #CC3333; font-size: 13px; padding: 12px;");
+    sectionLayout->addWidget(msgLabel);
+}
+
 void EMRTDWidget::enablePrintButton()
 {
     if (printBtn) {

@@ -798,6 +798,10 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-emrtd-auth-required");
     //% "Authentication Failed"
     QT_TRID_NOOP("lc-emrtd-auth-failed");
+    // clang-format off
+    //% "Authentication failed — travel document data could not be read. Check CAN or MRZ and reinsert the card to try again."
+    // clang-format on
+    QT_TRID_NOOP("lc-emrtd-no-data-message");
     //% "Personal Data"
     QT_TRID_NOOP("lc-personal-data-title");
     //% "Surname"

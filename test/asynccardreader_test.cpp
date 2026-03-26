@@ -20,7 +20,7 @@ TEST(AsyncCardReaderTest, EmitErrorWhenNoCandidateReads)
 {
     std::vector<plugin::CardPlugin*> candidates; // empty
 
-    AsyncCardReader reader(candidates, std::unique_ptr<smartcard::PCSCConnection>());
+    AsyncCardReader reader(candidates, {}, std::unique_ptr<smartcard::PCSCConnection>());
     QSignalSpy errorSpy(&reader, &AsyncCardReader::errorOccurred);
 
     reader.requestData();
@@ -59,7 +59,7 @@ TEST(AsyncCardReaderTest, EmitErrorWhenNoConnection)
     MockPlugin mockPlugin;
     std::vector<plugin::CardPlugin*> candidates = {&mockPlugin};
 
-    AsyncCardReader reader(candidates, std::unique_ptr<smartcard::PCSCConnection>());
+    AsyncCardReader reader(candidates, {}, std::unique_ptr<smartcard::PCSCConnection>());
     QSignalSpy errorSpy(&reader, &AsyncCardReader::errorOccurred);
 
     reader.requestData();
@@ -70,7 +70,7 @@ TEST(AsyncCardReaderTest, EmitErrorWhenNoConnection)
 
 TEST(AsyncCardReaderTest, CurrentPluginNullBeforeData)
 {
-    AsyncCardReader reader({}, std::unique_ptr<smartcard::PCSCConnection>());
+    AsyncCardReader reader({}, {}, std::unique_ptr<smartcard::PCSCConnection>());
     EXPECT_EQ(reader.currentPlugin(), nullptr);
 }
 

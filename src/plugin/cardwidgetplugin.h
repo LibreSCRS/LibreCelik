@@ -63,6 +63,13 @@ public:
         Q_UNUSED(data);
     }
 
+    // Called when card data streaming completed with no visible field groups.
+    // Override to show an informative message in the widget.
+    virtual void showNoDataMessage(QWidget* widget) const
+    {
+        Q_UNUSED(widget);
+    }
+
     // Enable the print button on a card widget created by this plugin.
     // Default uses string-based QMetaObject::invokeMethod; override for type safety.
     virtual void enablePrintButton(QWidget* widget) const

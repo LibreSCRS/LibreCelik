@@ -28,6 +28,7 @@ public:
     void addGroup(const plugin::CardFieldGroup& group);
 
     Q_INVOKABLE void enablePrintButton();
+    void showNoDataMessage();
 
     const plugin::CardData& cardData() const
     {

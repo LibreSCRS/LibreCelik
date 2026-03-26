@@ -24,6 +24,11 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+# Apple Clang ships <stop_token> behind an experimental flag.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    add_compile_options(-fexperimental-library)
+endif()
+
 set(MIDDLEWARE_VERSION main)
 
 # Fetch LibreMiddleware (smartcard, eidcard, vehiclecard libraries)

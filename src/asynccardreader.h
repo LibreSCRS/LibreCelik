@@ -23,8 +23,8 @@ class AsyncCardReader : public QObject
 public:
     // candidates: middleware plugins sorted by priority (caller retains ownership)
     // conn: ownership transferred to AsyncCardReader
-    AsyncCardReader(std::vector<plugin::CardPlugin*> candidates, std::unique_ptr<smartcard::PCSCConnection> conn,
-                    QObject* parent = nullptr);
+    AsyncCardReader(std::vector<plugin::CardPlugin*> candidates, std::vector<plugin::CardPlugin*> allPlugins,
+                    std::unique_ptr<smartcard::PCSCConnection> conn, QObject* parent = nullptr);
     ~AsyncCardReader();
 
     void requestData();
@@ -40,6 +40,13 @@ public:
     // Signal async threads to stop and block until they finish.
     // Safe to call multiple times. Called automatically by the destructor.
     void cancel();
+
+    // Signal async threads to stop without blocking. The caller must ensure
+    // the object stays alive until workers finish (e.g. via background cleanup).
+    void initiateCancel();
+
+    // Block until async workers complete. Used by background cleanup threads.
+    void waitForPendingAsync();
 
     plugin::CardPlugin* currentPlugin() const;
     bool hasPKI() const;
@@ -58,11 +65,8 @@ signals:
     void readingFinished();
 
 private:
-    // Ensure no async operations are using conn before launching a new one.
-    // Only ONE thread may access conn at a time (PCSCConnection has no internal synchronization).
-    void waitForPendingAsync();
-
     std::vector<plugin::CardPlugin*> candidates;
+    std::vector<plugin::CardPlugin*> allPlugins;
 
     // Plugin pointers are safe to capture in async lambdas because plugin objects
     // are owned by CardPluginRegistry/CardWidgetPluginRegistry and live for the

@@ -15,6 +15,8 @@ struct MonitorEvent;
 #include <QMainWindow>
 #include <QTranslator>
 
+#include <stop_token>
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class LibreCelik;
@@ -56,6 +58,7 @@ private:
         QWidget* widget = nullptr;
     };
     std::map<std::string, ActiveReader> activeReaders;
+    std::map<std::string, std::stop_source> readerStopSource;
 
     QTranslator translator;
     bool uiReady = false;

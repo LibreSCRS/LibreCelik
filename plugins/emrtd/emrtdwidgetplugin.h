@@ -30,6 +30,7 @@ public:
     QWidget* createWidget(const plugin::CardData& data, QWidget* parent) const override;
     QWidget* createEmptyWidget(QWidget* parent) const override;
     void addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const override;
+    void showNoDataMessage(QWidget* widget) const override;
     bool supportsPrinting() const override
     {
         return true;

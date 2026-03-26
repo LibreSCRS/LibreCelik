@@ -20,7 +20,10 @@ class TestableEuVrcTextDocument : public EuVrcTextDocument
 {
 public:
     using EuVrcTextDocument::EuVrcTextDocument;
-    QString toHtml() const { return document.toHtml(); }
+    QString toHtml() const
+    {
+        return document.toHtml();
+    }
 };
 
 auto addText = [](plugin::CardFieldGroup& g, const std::string& key, const std::string& val) {
@@ -119,8 +122,8 @@ TEST(EuVrcTextDocumentTest, RegistrationOnlyDoesNotCrash)
 
     plugin::CardFieldGroup reg;
     reg.groupKey = "registration";
-    reg.fields.push_back({"registration_number", "registration_number", plugin::FieldType::Text,
-                          {'B', 'G', ' ', '1', '2', '3'}});
+    reg.fields.push_back(
+        {"registration_number", "registration_number", plugin::FieldType::Text, {'B', 'G', ' ', '1', '2', '3'}});
     data.groups.push_back(std::move(reg));
 
     EXPECT_NO_THROW({ EuVrcTextDocument doc(data); });

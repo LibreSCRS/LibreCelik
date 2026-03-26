@@ -34,7 +34,9 @@ QString EuVrcTextDocument::buildHtml(const plugin::CardData& cardData) const
     QString html;
     html += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
             "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">\n"
-            "<head><title>" + qtTrId("lc-euvrc-doc-title") + "</title>\n"
+            "<head><title>" +
+            qtTrId("lc-euvrc-doc-title") +
+            "</title>\n"
             "<link rel=\"stylesheet\" type=\"text/css\" href=\":/html/euvrccard.css\" title=\"Style\"/>\n"
             "</head>\n<body>\n";
 
@@ -56,8 +58,12 @@ QString EuVrcTextDocument::buildHtml(const plugin::CardData& cardData) const
     // Printing date
     html += "<table style=\"margin-top:20px;\"><tr>"
             "<td width=\"0\"><img src=\":/images/transparent_1x20.png\" width=\"1\" height=\"8\"></td>"
-            "<td width=\"25%\">" + qtTrId("lc-euvrc-doc-printing-date") + ":</td>"
-            "<td>" + QDate::currentDate().toString("dd.MM.yyyy") + "</td>"
+            "<td width=\"25%\">" +
+            qtTrId("lc-euvrc-doc-printing-date") +
+            ":</td>"
+            "<td>" +
+            QDate::currentDate().toString("dd.MM.yyyy") +
+            "</td>"
             "</tr></table>\n";
 
     html += "</body>\n</html>\n";
@@ -66,7 +72,11 @@ QString EuVrcTextDocument::buildHtml(const plugin::CardData& cardData) const
 
 QString EuVrcTextDocument::buildRegistrationSection(const plugin::CardData& cardData) const
 {
-    struct Field { const char* key; QString label; };
+    struct Field
+    {
+        const char* key;
+        QString label;
+    };
     std::vector<Field> fields = {
         {"date_of_first_registration", qtTrId("lc-euvrc-doc-first-reg-date")},
         {"registration_date", qtTrId("lc-euvrc-doc-reg-date")},
@@ -100,7 +110,11 @@ QString EuVrcTextDocument::buildRegistrationSection(const plugin::CardData& card
 
 QString EuVrcTextDocument::buildVehicleSection(const plugin::CardData& cardData) const
 {
-    struct Field { const char* key; QString label; };
+    struct Field
+    {
+        const char* key;
+        QString label;
+    };
     std::vector<Field> fields = {
         {"vehicle_make", qtTrId("lc-euvrc-doc-make")},
         {"vehicle_type", qtTrId("lc-euvrc-doc-type")},
@@ -123,7 +137,11 @@ QString EuVrcTextDocument::buildVehicleSection(const plugin::CardData& cardData)
 
 QString EuVrcTextDocument::buildEngineTechnicalSection(const plugin::CardData& cardData) const
 {
-    struct Field { const char* key; QString label; };
+    struct Field
+    {
+        const char* key;
+        QString label;
+    };
     std::vector<Field> fields = {
         {"engine_capacity", qtTrId("lc-euvrc-doc-capacity")},
         {"maximum_net_power", qtTrId("lc-euvrc-doc-power")},
@@ -162,7 +180,12 @@ QString EuVrcTextDocument::buildEngineTechnicalSection(const plugin::CardData& c
 
 QString EuVrcTextDocument::buildHolderSection(const plugin::CardData& cardData) const
 {
-    struct Field { const char* key; QString label; bool isAddress; };
+    struct Field
+    {
+        const char* key;
+        QString label;
+        bool isAddress;
+    };
     std::vector<Field> fields = {
         {"holder_name", qtTrId("lc-euvrc-doc-holder-name"), false},
         {"holder_other_names", qtTrId("lc-euvrc-doc-holder-other-names"), false},
@@ -195,7 +218,12 @@ QString EuVrcTextDocument::buildOwnerSection(const plugin::CardData& cardData) c
 
 QString EuVrcTextDocument::buildUserSection(const plugin::CardData& cardData) const
 {
-    struct Field { const char* key; QString label; bool isAddress; };
+    struct Field
+    {
+        const char* key;
+        QString label;
+        bool isAddress;
+    };
     std::vector<Field> fields = {
         {"user_name", qtTrId("lc-euvrc-doc-user-name"), false},
         {"user_other_names", qtTrId("lc-euvrc-doc-user-other-names"), false},
@@ -238,8 +266,7 @@ QString EuVrcTextDocument::buildNationalSection(const plugin::CardData& cardData
             continue;
 
         auto it = knownLabels.find(field.key);
-        QString label = (it != knownLabels.end()) ? it->second
-                                                  : QString::fromStdString(field.label);
+        QString label = (it != knownLabels.end()) ? it->second : QString::fromStdString(field.label);
         if (label.isEmpty())
             label = QString::fromStdString(field.key);
 

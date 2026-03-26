@@ -84,16 +84,23 @@ void EMRTDTextDocument::prepareDocumentData(QString& html, const plugin::CardDat
     const auto* secGroup = cardData.findGroup("security_status");
     if (secGroup) {
         auto statusColor = [](const QString& statusStr) -> QString {
-            if (statusStr == "PASSED") return QStringLiteral("#4CAF50");
-            if (statusStr == "FAILED") return QStringLiteral("#F44336");
-            if (statusStr == "NOT_SUPPORTED" || statusStr == "SKIPPED") return QStringLiteral("#FFC107");
+            if (statusStr == "PASSED")
+                return QStringLiteral("#4CAF50");
+            if (statusStr == "FAILED")
+                return QStringLiteral("#F44336");
+            if (statusStr == "NOT_SUPPORTED" || statusStr == "SKIPPED")
+                return QStringLiteral("#FFC107");
             return QStringLiteral("#9E9E9E");
         };
         auto statusLabel = [](const QString& statusStr) -> QString {
-            if (statusStr == "PASSED") return qtTrId("lc-emrtd-security-passed");
-            if (statusStr == "FAILED") return qtTrId("lc-emrtd-security-failed");
-            if (statusStr == "NOT_SUPPORTED") return qtTrId("lc-emrtd-security-not-supported");
-            if (statusStr == "SKIPPED") return qtTrId("lc-emrtd-security-skipped");
+            if (statusStr == "PASSED")
+                return qtTrId("lc-emrtd-security-passed");
+            if (statusStr == "FAILED")
+                return qtTrId("lc-emrtd-security-failed");
+            if (statusStr == "NOT_SUPPORTED")
+                return qtTrId("lc-emrtd-security-not-supported");
+            if (statusStr == "SKIPPED")
+                return qtTrId("lc-emrtd-security-skipped");
             return qtTrId("lc-emrtd-security-not-performed");
         };
 

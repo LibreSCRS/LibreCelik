@@ -9,18 +9,18 @@
 QWidget* RsEidWidgetPlugin::createWidget(const plugin::CardData& data, QWidget* parent) const
 {
     auto* w = new EidWidget(data, parent);
-    connect(w, &EidWidget::printRequested, this, [this](const plugin::CardData& d) { print(d, nullptr); });
+    connect(w, &EidWidget::printRequested, this, [this](const plugin::CardData& d) { print(d); });
     return w;
 }
 
 QWidget* RsEidWidgetPlugin::createEmptyWidget(QWidget* parent) const
 {
     auto* w = new EidWidget(parent);
-    connect(w, &EidWidget::printRequested, this, [this](const plugin::CardData& d) { print(d, nullptr); });
+    connect(w, &EidWidget::printRequested, this, [this](const plugin::CardData& d) { print(d); });
     return w;
 }
 
-void RsEidWidgetPlugin::print(const plugin::CardData& data, QPrinter* /*printer*/) const
+void RsEidWidgetPlugin::print(const plugin::CardData& data) const
 {
     EIdTextDocument doc(data);
     PrintManager::printDocument(doc, qtTrId("lc-eid-print-title"));

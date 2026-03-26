@@ -3,6 +3,7 @@
 
 #include "collapsiblesection.h"
 
+#include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPushButton>
@@ -16,12 +17,14 @@ CollapsibleSection::CollapsibleSection(QWidget* parent) : QGroupBox(parent)
 
 CollapsibleSection::CollapsibleSection(const QString& title, QWidget* parent) : QGroupBox(title, parent)
 {
+    setAccessibleName(title);
     init();
 }
 
 CollapsibleSection::CollapsibleSection(const QString& title, const QColor& headerColor, QWidget* parent)
     : QGroupBox(title, parent)
 {
+    setAccessibleName(title);
     init();
     setHeaderColor(headerColor);
 }
@@ -52,6 +55,7 @@ void CollapsibleSection::init()
 {
     setCheckable(false);
     setMinimumHeight(0);
+    setFocusPolicy(Qt::TabFocus);
     setContentsMargins(2, headerHeight + 4, 2, 4);
 
     animation = new QPropertyAnimation(this, "sectionHeight", this);
@@ -209,6 +213,16 @@ void CollapsibleSection::paintEvent(QPaintEvent*)
     p.drawRect(0, headerHeight, width() - 1, height() - headerHeight - 1);
 }
 
+void CollapsibleSection::keyPressEvent(QKeyEvent* event)
+{
+    if (collapsible && (event->key() == Qt::Key_Return || event->key() == Qt::Key_Space)) {
+        setExpanded(!expanded);
+        event->accept();
+        return;
+    }
+    QGroupBox::keyPressEvent(event);
+}
+
 void CollapsibleSection::mousePressEvent(QMouseEvent* event)
 {
     if (!collapsible) {
@@ -230,6 +244,7 @@ void CollapsibleSection::mousePressEvent(QMouseEvent* event)
 void CollapsibleSection::setTitle(const QString& title)
 {
     QGroupBox::setTitle(title);
+    setAccessibleName(title);
     setContentsMargins(2, headerHeight + 4, 2, 4);
 }
 

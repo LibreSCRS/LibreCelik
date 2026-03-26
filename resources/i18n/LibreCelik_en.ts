@@ -1139,6 +1139,82 @@
         <source>Fuel tank capacity (W)</source>
         <translation>Fuel tank capacity (W)</translation>
     </message>
+    <message id="lc-emrtd-security-status">
+        <source>Security Status</source>
+        <translation>Security Status</translation>
+    </message>
+    <message id="lc-emrtd-security-integrity">
+        <source>Data Integrity</source>
+        <translation>Data Integrity</translation>
+    </message>
+    <message id="lc-emrtd-security-authenticity">
+        <source>Data Authenticity</source>
+        <translation>Data Authenticity</translation>
+    </message>
+    <message id="lc-emrtd-security-genuineness">
+        <source>Chip Genuineness</source>
+        <translation>Chip Genuineness</translation>
+    </message>
+    <message id="lc-emrtd-security-passed">
+        <source>Passed</source>
+        <translation>Passed</translation>
+    </message>
+    <message id="lc-emrtd-security-failed">
+        <source>Failed</source>
+        <translation>Failed</translation>
+    </message>
+    <message id="lc-emrtd-security-not-supported">
+        <source>Not Supported</source>
+        <translation>Not Supported</translation>
+    </message>
+    <message id="lc-emrtd-security-skipped">
+        <source>Skipped</source>
+        <translation>Skipped</translation>
+    </message>
+    <message id="lc-emrtd-security-not-performed">
+        <source>Not Performed</source>
+        <translation>Not Performed</translation>
+    </message>
+    <message id="lc-emrtd-security-details">
+        <source>Detailed Checks</source>
+        <translation>Detailed Checks</translation>
+    </message>
+    <message id="lc-emrtd-portrait">
+        <source>Portrait</source>
+        <translation>Portrait</translation>
+    </message>
+    <message id="lc-emrtd-contacts">
+        <source>Contacts</source>
+        <translation>Contacts</translation>
+    </message>
+    <message id="lc-emrtd-contact-name">
+        <source>Contact Name</source>
+        <translation>Contact Name</translation>
+    </message>
+    <message id="lc-emrtd-biometric-fingerprint">
+        <source>Fingerprint Biometrics</source>
+        <translation>Fingerprint Biometrics</translation>
+    </message>
+    <message id="lc-emrtd-biometric-iris">
+        <source>Iris Biometrics</source>
+        <translation>Iris Biometrics</translation>
+    </message>
+    <message id="lc-emrtd-biometric-eac-required">
+        <source>Access restricted (EAC required)</source>
+        <translation>Access restricted (EAC required)</translation>
+    </message>
+    <message id="lc-emrtd-national-data">
+        <source>National Data</source>
+        <translation>National Data</translation>
+    </message>
+    <message id="lc-emrtd-national-tag">
+        <source>Tag</source>
+        <translation>Tag</translation>
+    </message>
+    <message id="lc-emrtd-national-value">
+        <source>Value</source>
+        <translation>Value</translation>
+    </message>
     <message id="lc-reader-unsupported-card">
         <source>Card in reader is not supported.</source>
         <translation>Card in reader is not supported.</translation>

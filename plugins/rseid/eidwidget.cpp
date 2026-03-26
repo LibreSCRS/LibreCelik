@@ -22,9 +22,18 @@
 
 using plugin::getFieldValue;
 
-EidWidget::EidWidget(const plugin::CardData& cardData, QWidget* parent) : QWidget(parent), data(cardData)
+EidWidget::EidWidget(const plugin::CardData& cardData, QWidget* parent) : EidWidget(parent)
 {
-    buildLayout();
+    data.cardType = cardData.cardType;
+    for (const auto& group : cardData.groups)
+        addGroup(group);
+    // Non-streaming: verification data may be in "meta" group rather than a
+    // separate "verification" group. Apply if streaming didn't handle it.
+    if (personalSection && !data.findGroup("verification")) {
+        const auto* meta = data.findGroup("meta");
+        if (meta)
+            addVerificationBadges(personalSection, meta);
+    }
 }
 
 EidWidget::EidWidget(QWidget* parent) : QWidget(parent)
@@ -268,60 +277,6 @@ void EidWidget::addVerificationBadges(CollapsibleSection* section, const plugin:
     // Append badge container below the grid — FieldSectionBuilder uses QGridLayout
     if (auto* grid = qobject_cast<QGridLayout*>(section->layout()))
         grid->addWidget(badgeContainer, grid->rowCount(), 0, 1, 2);
-}
-
-void EidWidget::buildLayout()
-{
-    auto* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(0, 0, 0, 0);
-
-    auto* outerSection = new CollapsibleSection(
-        isForeigner() ? qtTrId("lc-eid-title-foreigner") : qtTrId("lc-eid-title"), QColor(34, 86, 117), this);
-    outerSection->setHeaderHeight(56);
-
-    // Print button — immediately enabled (all data present)
-    printBtn = new QToolButton(this);
-    printBtn->setIcon(QIcon(":/images/printer-header.svg"));
-    printBtn->setIconSize(QSize(24, 24));
-    printBtn->setToolTip(qtTrId("lc-print-tooltip"));
-    printBtn->setAutoRaise(true);
-    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
-    outerSection->addHeaderWidget(printBtn);
-
-    auto* sectionLayout = new QVBoxLayout();
-    sectionLayout->setSpacing(6);
-
-    // Photo + Personal section in HBoxLayout
-    auto* photoRow = new QHBoxLayout();
-    photoRow->setSpacing(10);
-
-    auto* photoLbl = new QLabel(outerSection);
-    QPixmap photo = loadPhoto();
-    photoLbl->setPixmap(photo);
-    photoLbl->setFixedSize(photo.size());
-    photoLbl->setAlignment(Qt::AlignTop);
-    photoRow->addWidget(photoLbl, 0, Qt::AlignTop);
-
-    auto* personalSec = buildPersonalSection(outerSection);
-
-    const auto* meta = data.findGroup("meta");
-    if (meta)
-        addVerificationBadges(personalSec, meta);
-
-    photoRow->addWidget(personalSec, 1);
-    sectionLayout->addLayout(photoRow);
-
-    // Address + Document sections
-    auto* addressSection = buildAddressSection(outerSection);
-    auto* documentSection = buildDocumentSection(outerSection);
-
-    sectionLayout->addWidget(addressSection);
-    sectionLayout->addWidget(documentSection);
-
-    outerSection->setLayout(sectionLayout);
-    outerSection->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-
-    layout->addWidget(outerSection);
 }
 
 CollapsibleSection* EidWidget::buildAddressSection(QWidget* parent) const

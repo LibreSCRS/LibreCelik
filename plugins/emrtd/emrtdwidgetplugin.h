@@ -34,5 +34,5 @@ public:
     {
         return true;
     }
-    void print(const plugin::CardData& data, QPrinter* printer) const override;
+    void print(const plugin::CardData& data) const override;
 };

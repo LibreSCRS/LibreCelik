@@ -6,7 +6,9 @@
 #include <plugin/card_data.h>
 #include <QWidget>
 
-namespace LibreSCRS { class CardHeaderCard; }
+namespace LibreSCRS {
+class CardHeaderCard;
+}
 
 class CollapsibleSection;
 class QToolButton;
@@ -36,7 +38,6 @@ signals:
     void printRequested(const plugin::CardData& data);
 
 private:
-    void buildLayout();
     void buildShell();
     void addRegistrationGroup(const plugin::CardFieldGroup& group);
     void addVehicleGroup(const plugin::CardFieldGroup& group);

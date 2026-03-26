@@ -34,9 +34,7 @@ signals:
     void printRequested(const plugin::CardData& data);
 
 private:
-    void buildLayout();
     void buildEmptyShell();
-    void transformPermanentlyValid();
     void transformPermanentlyValid(plugin::CardFieldGroup& group);
 
     void addPersonalGroup(const plugin::CardFieldGroup& group);

@@ -27,10 +27,21 @@ AsyncCardReader::~AsyncCardReader()
 void AsyncCardReader::cancel()
 {
     stopRequested = true;
+    waitForPendingAsync();
+}
+
+void AsyncCardReader::waitForPendingAsync()
+{
     if (futureData.valid())
         futureData.wait();
     if (futurePKI.valid())
         futurePKI.wait();
+}
+
+void AsyncCardReader::clearPluginCredentials()
+{
+    if (activePlugin && conn)
+        activePlugin->clearCredentials(*conn);
 }
 
 plugin::CardPlugin* AsyncCardReader::currentPlugin() const
@@ -45,10 +56,8 @@ bool AsyncCardReader::hasPKI() const
 
 void AsyncCardReader::requestData()
 {
-    if (futureData.valid()) {
-        futureData.wait();
-        futureData = {};
-    }
+    waitForPendingAsync();
+    futureData = {};
 
     stopRequested = false;
     certsAlreadyQueued = false;
@@ -141,8 +150,7 @@ void AsyncCardReader::requestCertificates()
     if (!pki || !pki->supportsPKI())
         return;
 
-    if (futurePKI.valid())
-        futurePKI.wait();
+    waitForPendingAsync();
 
     QPointer<AsyncCardReader> self = this;
     futurePKI = std::async(std::launch::async, [this, self, pki]() {
@@ -177,8 +185,7 @@ void AsyncCardReader::requestPINTriesLeft()
     if (!pki || !pki->supportsPKI())
         return;
 
-    if (futurePKI.valid())
-        futurePKI.wait();
+    waitForPendingAsync();
 
     QPointer<AsyncCardReader> self = this;
     futurePKI = std::async(std::launch::async, [this, self, pki]() {
@@ -213,8 +220,7 @@ void AsyncCardReader::requestPINTriesLeft(uint8_t pinReference)
     if (!pki || !pki->supportsPKI())
         return;
 
-    if (futurePKI.valid())
-        futurePKI.wait();
+    waitForPendingAsync();
 
     QPointer<AsyncCardReader> self = this;
     futurePKI = std::async(std::launch::async, [this, self, pki, pinReference]() {
@@ -260,8 +266,7 @@ void AsyncCardReader::requestChangePIN(const QString& oldPin, const QString& new
     if (!pki || !pki->supportsPKI())
         return;
 
-    if (futurePKI.valid())
-        futurePKI.wait();
+    waitForPendingAsync();
 
     auto oldPinStd = oldPin.toStdString();
     auto newPinStd = newPin.toStdString();
@@ -300,8 +305,7 @@ void AsyncCardReader::requestPINList()
     if (!pki || !pki->supportsPKI())
         return;
 
-    if (futurePKI.valid())
-        futurePKI.wait();
+    waitForPendingAsync();
 
     QPointer<AsyncCardReader> self = this;
     futurePKI = std::async(std::launch::async, [this, self, pki]() {
@@ -348,8 +352,7 @@ void AsyncCardReader::requestChangePIN(uint8_t pinReference, const QString& oldP
     if (!pki || !pki->supportsPKI())
         return;
 
-    if (futurePKI.valid())
-        futurePKI.wait();
+    waitForPendingAsync();
 
     auto oldPinStd = oldPin.toStdString();
     auto newPinStd = newPin.toStdString();
@@ -392,8 +395,7 @@ void AsyncCardReader::requestVerifyPIN(const QString& pin)
     if (!pki || !pki->supportsPKI())
         return;
 
-    if (futurePKI.valid())
-        futurePKI.wait();
+    waitForPendingAsync();
 
     auto pinStd = pin.toStdString();
 
@@ -429,15 +431,12 @@ void AsyncCardReader::requestDataWithCredentials(const QMap<QString, QString>& c
     if (!activePlugin)
         return;
 
-    if (futureData.valid())
-        futureData.wait();
-    if (futurePKI.valid())
-        futurePKI.wait();
+    waitForPendingAsync();
 
     stopRequested = false;
 
     for (auto it = credentials.constBegin(); it != credentials.constEnd(); ++it) {
-        activePlugin->setCredentials(it.key().toStdString(), it.value().toStdString());
+        activePlugin->setCredentials(*conn, it.key().toStdString(), it.value().toStdString());
     }
 
     futureData = {};
@@ -467,6 +466,8 @@ void AsyncCardReader::requestDataWithCredentials(const QMap<QString, QString>& c
 
             // Clear SM filter before PKI fallback — eMRTD SM wrapping
             // may interfere with VERIFY and PKCS#15 operations on contact.
+            // Safe: this runs on the sole worker thread using conn (waitForPendingAsync
+            // ensures no other thread is accessing conn concurrently).
             conn->clearTransmitFilter();
 
             // PKI fallback — pkiPlugin was discovered during Phase 1 requestData().

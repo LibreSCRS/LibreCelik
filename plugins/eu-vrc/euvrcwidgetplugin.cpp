@@ -9,18 +9,18 @@
 QWidget* EuVrcWidgetPlugin::createWidget(const plugin::CardData& data, QWidget* parent) const
 {
     auto* w = new EuVrcWidget(data, parent);
-    connect(w, &EuVrcWidget::printRequested, this, [this](const plugin::CardData& d) { print(d, nullptr); });
+    connect(w, &EuVrcWidget::printRequested, this, [this](const plugin::CardData& d) { print(d); });
     return w;
 }
 
 QWidget* EuVrcWidgetPlugin::createEmptyWidget(QWidget* parent) const
 {
     auto* w = new EuVrcWidget(parent);
-    connect(w, &EuVrcWidget::printRequested, this, [this](const plugin::CardData& d) { print(d, nullptr); });
+    connect(w, &EuVrcWidget::printRequested, this, [this](const plugin::CardData& d) { print(d); });
     return w;
 }
 
-void EuVrcWidgetPlugin::print(const plugin::CardData& data, QPrinter* /*printer*/) const
+void EuVrcWidgetPlugin::print(const plugin::CardData& data) const
 {
     EuVrcTextDocument doc(data);
     PrintManager::printDocument(doc, qtTrId("lc-euvrc-print-title"));

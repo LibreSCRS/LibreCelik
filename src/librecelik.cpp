@@ -229,6 +229,7 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
 
     // Show loading spinner immediately
     auto* spinnerWidget = new QWidget(this);
+    spinnerWidget->setProperty("isSpinner", true);
     {
         auto* layout = new QVBoxLayout(spinnerWidget);
         layout->setAlignment(Qt::AlignCenter);
@@ -250,7 +251,7 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
     ui->stackedWidget->setCurrentIndex(1);
 
     // Helper: detect if current widget is the loading spinner
-    auto isSpinner = [](QWidget* w) { return w && w->findChild<QProgressBar*>() != nullptr; };
+    auto isSpinner = [](QWidget* w) { return w && w->property("isSpinner").toBool(); };
 
     // Helper: replace the current widget for a reader with a new one
     auto replaceWidget = [this, reader](QWidget* newWidget) {
@@ -286,7 +287,7 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                 }
 
                 // eMRTD two-phase auth: show inline CAN widget in the reader tab.
-                // The auth widget contains a QProgressBar so isSpinner() returns true.
+                // The auth widget sets the "isSpinner" property so isSpinner() returns true.
                 // When PACE succeeds, cardGroupReady detects this and replaces the auth
                 // widget with the streaming card data widget — no explicit success handler needed.
                 if (data.findGroup("auth_required")) {
@@ -323,7 +324,7 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                             auto* containerLayout = qobject_cast<QVBoxLayout*>(scrollArea->widget()->layout());
                             if (containerLayout && containerLayout->count() > 0) {
                                 auto* cardWidget = containerLayout->itemAt(0)->widget();
-                                QMetaObject::invokeMethod(cardWidget, "enablePrintButton");
+                                guiPlugin->enablePrintButton(cardWidget);
                             }
                         }
                     }
@@ -351,6 +352,10 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                 }
 
                 QWidget* topWidget = guiPlugin->createWidget(data, this);
+
+                // Enable print button for the non-streaming (full-data) path
+                if (guiPlugin->supportsPrinting())
+                    guiPlugin->enablePrintButton(topWidget);
 
                 if (asyncReader->hasPKI()) {
                     auto* pkiWidget = guiPlugin->createPKIWidget(this);
@@ -397,7 +402,7 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
 
     connect(asyncReader, &AsyncCardReader::errorOccurred, this, [this](const QString& msg) {
         ui->statusbar->show();
-        ui->statusbar->showMessage(msg, 5000);
+        ui->statusbar->showMessage(msg);
     });
 
     // Progressive display: replace spinner with empty widget on first group, then add groups
@@ -465,6 +470,9 @@ void LibreCelik::removeReader(std::string reader)
     // Synchronously stop async threads so the PC/SC connection is released
     // before any new reader on the same physical card tries to connect.
     asyncReader->cancel();
+    // Clear per-connection credentials after threads are stopped so the plugin
+    // doesn't reuse stale credentials when a different card is inserted.
+    asyncReader->clearPluginCredentials();
     asyncReader->disconnect();
     asyncReader->deleteLater();
     activeReaders.erase(it);

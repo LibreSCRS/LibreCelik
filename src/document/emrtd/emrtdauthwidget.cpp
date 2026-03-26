@@ -121,8 +121,9 @@ EMRTDAuthWidget::EMRTDAuthWidget(QWidget* parent)
     authButton->setDefault(true);
     layout->addWidget(authButton, 0, Qt::AlignCenter);
 
-    // Progress bar — must exist for isSpinner() detection in addNewReader().
-    // isSpinner() checks findChild<QProgressBar*>() != nullptr.
+    // Mark this widget as a spinner for isSpinner() detection in addNewReader().
+    setProperty("isSpinner", true);
+
     auto* spinnerSection = new QWidget(this);
     auto* spinnerLayout = new QVBoxLayout(spinnerSection);
     spinnerLayout->setContentsMargins(0, 16, 0, 0);

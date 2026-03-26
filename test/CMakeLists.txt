@@ -57,7 +57,7 @@ target_link_libraries(
 )
 
 include(GoogleTest)
-gtest_discover_tests(${PROJECT_NAME})
+gtest_discover_tests(${PROJECT_NAME} PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 add_subdirectory(mock_widget_plugin)
 
@@ -80,7 +80,7 @@ target_compile_definitions(CardWidgetPluginRegistryTests PRIVATE
 )
 set_target_properties(CardWidgetPluginRegistryTests PROPERTIES AUTOMOC ON)
 add_dependencies(CardWidgetPluginRegistryTests mock-widget-plugin)
-gtest_discover_tests(CardWidgetPluginRegistryTests)
+gtest_discover_tests(CardWidgetPluginRegistryTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 add_executable(AsyncCardReaderTests
     asynccardreader_test.cpp
@@ -98,7 +98,7 @@ target_link_libraries(AsyncCardReaderTests
     Qt6::Test
 )
 set_target_properties(AsyncCardReaderTests PROPERTIES AUTOMOC ON)
-gtest_discover_tests(AsyncCardReaderTests)
+gtest_discover_tests(AsyncCardReaderTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 add_executable(QSmartCardMonitorTests
     qsmartcardmonitor_test.cpp
@@ -117,7 +117,7 @@ target_include_directories(QSmartCardMonitorTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${libremiddleware_SOURCE_DIR}/test
 )
-gtest_discover_tests(QSmartCardMonitorTests)
+gtest_discover_tests(QSmartCardMonitorTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 add_executable(EuVrcTextDocumentTests
     euvrctextdocument_test.cpp
@@ -141,7 +141,7 @@ target_link_libraries(EuVrcTextDocumentTests
     Qt6::PrintSupport
 )
 set_target_properties(EuVrcTextDocumentTests PROPERTIES AUTOMOC ON)
-gtest_discover_tests(EuVrcTextDocumentTests)
+gtest_discover_tests(EuVrcTextDocumentTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 add_executable(StringUtilsTests
     stringutils_test.cpp
@@ -154,7 +154,7 @@ target_link_libraries(StringUtilsTests
     Qt6::Widgets
 )
 set_target_properties(StringUtilsTests PROPERTIES AUTOMOC ON)
-gtest_discover_tests(StringUtilsTests)
+gtest_discover_tests(StringUtilsTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 add_executable(HealthTextDocumentTests
     healthtextdocument_test.cpp
@@ -178,7 +178,7 @@ target_link_libraries(HealthTextDocumentTests
     Qt6::PrintSupport
 )
 set_target_properties(HealthTextDocumentTests PROPERTIES AUTOMOC ON)
-gtest_discover_tests(HealthTextDocumentTests)
+gtest_discover_tests(HealthTextDocumentTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 add_executable(EIdTextDocumentTests
     eidtextdocument_test.cpp
@@ -202,7 +202,7 @@ target_link_libraries(EIdTextDocumentTests
     Qt6::PrintSupport
 )
 set_target_properties(EIdTextDocumentTests PROPERTIES AUTOMOC ON)
-gtest_discover_tests(EIdTextDocumentTests)
+gtest_discover_tests(EIdTextDocumentTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 add_executable(EMRTDAuthWidgetTests
     emrtdauthwidget_test.cpp
@@ -219,4 +219,4 @@ target_link_libraries(EMRTDAuthWidgetTests
     Qt6::Test
 )
 set_target_properties(EMRTDAuthWidgetTests PROPERTIES AUTOMOC ON)
-gtest_discover_tests(EMRTDAuthWidgetTests)
+gtest_discover_tests(EMRTDAuthWidgetTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

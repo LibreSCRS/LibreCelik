@@ -20,9 +20,11 @@
 
 using plugin::getFieldValue;
 
-EuVrcWidget::EuVrcWidget(const plugin::CardData& cardData, QWidget* parent) : QWidget(parent), data(cardData)
+EuVrcWidget::EuVrcWidget(const plugin::CardData& cardData, QWidget* parent) : EuVrcWidget(parent)
 {
-    buildLayout();
+    data.cardType = cardData.cardType;
+    for (const auto& group : cardData.groups)
+        addGroup(group);
 }
 
 EuVrcWidget::EuVrcWidget(QWidget* parent) : QWidget(parent)
@@ -126,8 +128,8 @@ void EuVrcWidget::addVehicleGroup(const plugin::CardFieldGroup& group)
                 {qtTrId("lc-euvrc-hdr-valid-to"), expiry},
             };
 
-            auto* newHeader = new LibreSCRS::CardHeaderCard(
-                QIcon(":/images/vehicle-icon.svg"), QSize(80, 80), headerFields, outerSection);
+            auto* newHeader = new LibreSCRS::CardHeaderCard(QIcon(":/images/vehicle-icon.svg"), QSize(80, 80),
+                                                            headerFields, outerSection);
             delete contentLayout->replaceWidget(headerCard, newHeader);
             headerCard->deleteLater();
             headerCard = newHeader;
@@ -174,108 +176,6 @@ void EuVrcWidget::addNationalGroup(const plugin::CardFieldGroup& group)
 {
     if (!group.fields.empty())
         contentLayout->addWidget(buildNationalSection(&group));
-}
-
-void EuVrcWidget::buildLayout()
-{
-    auto* outerLayout = new QVBoxLayout(this);
-    outerLayout->setContentsMargins(0, 0, 0, 0);
-
-    // Navy outer CollapsibleSection
-    outerSection = new CollapsibleSection(qtTrId("lc-euvrc-title"), QColor(34, 86, 117), this);
-    outerSection->setHeaderHeight(56);
-
-    // Print button — immediately enabled (all data present)
-    printBtn = new QToolButton(this);
-    printBtn->setIcon(QIcon(":/images/printer-header.svg"));
-    printBtn->setIconSize(QSize(24, 24));
-    printBtn->setToolTip(qtTrId("lc-print-tooltip"));
-    printBtn->setAutoRaise(true);
-    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
-    outerSection->addHeaderWidget(printBtn);
-
-    contentLayout = new QVBoxLayout();
-    contentLayout->setContentsMargins(8, 8, 8, 8);
-    contentLayout->setSpacing(8);
-
-    const auto* regGroup = data.findGroup("registration");
-    const auto* vehicleGroup = data.findGroup("vehicle");
-    const auto* holderGroup = data.findGroup("holder");
-    const auto* userGroup = data.findGroup("user");
-    const auto* nationalGroup = data.findGroup("national");
-
-    // CardHeaderCard: icon + key fields
-    if (regGroup) {
-        auto regNumber = getFieldValue(regGroup, "registration_number");
-        auto expiry = getFieldValue(regGroup, "expiry_date");
-        auto memberState = getFieldValue(regGroup, "member_state");
-
-        // Try to get make from vehicle group for the header
-        QString make;
-        if (vehicleGroup)
-            make = getFieldValue(vehicleGroup, "vehicle_make");
-
-        std::vector<LibreSCRS::HeaderField> headerFields = {
-            {qtTrId("lc-euvrc-hdr-registration"), regNumber, 2},
-            {qtTrId("lc-euvrc-hdr-make"), make},
-            {qtTrId("lc-euvrc-hdr-member-state"), memberState},
-            {qtTrId("lc-euvrc-hdr-valid-to"), expiry},
-        };
-
-        headerCard = new LibreSCRS::CardHeaderCard(QIcon(":/images/vehicle-icon.svg"), QSize(80, 80), headerFields,
-                                                    outerSection);
-        contentLayout->addWidget(headerCard);
-    }
-
-    // Registration section
-    if (regGroup)
-        contentLayout->addWidget(buildRegistrationSection(regGroup));
-
-    // Vehicle section
-    if (vehicleGroup) {
-        contentLayout->addWidget(buildVehicleSection(vehicleGroup));
-        contentLayout->addWidget(buildEngineTechnicalSection(vehicleGroup));
-    }
-
-    // Holder section
-    if (holderGroup)
-        contentLayout->addWidget(buildHolderSection(holderGroup));
-
-    // Owner section (conditional)
-    const auto* ownerGroup = data.findGroup("owner");
-    if (ownerGroup) {
-        bool hasValues = false;
-        for (const auto& field : ownerGroup->fields) {
-            if (!field.asString().empty()) {
-                hasValues = true;
-                break;
-            }
-        }
-        if (hasValues)
-            contentLayout->addWidget(buildOwnerSection(ownerGroup));
-    }
-
-    // User section (conditional)
-    if (userGroup) {
-        bool hasValues = false;
-        for (const auto& field : userGroup->fields) {
-            if (!field.asString().empty()) {
-                hasValues = true;
-                break;
-            }
-        }
-        if (hasValues)
-            contentLayout->addWidget(buildUserSection(userGroup));
-    }
-
-    // National Extensions section (conditional)
-    if (nationalGroup && !nationalGroup->fields.empty())
-        contentLayout->addWidget(buildNationalSection(nationalGroup));
-
-    outerSection->setLayout(contentLayout);
-    outerSection->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-
-    outerLayout->addWidget(outerSection);
 }
 
 CollapsibleSection* EuVrcWidget::buildRegistrationSection(const plugin::CardFieldGroup* group)
@@ -449,9 +349,10 @@ CollapsibleSection* EuVrcWidget::buildHolderSection(const plugin::CardFieldGroup
         if (!val.isEmpty()) {
             val = cleanAddress(val);
             auto bytes = val.toUtf8();
-            holderGroup.fields.push_back(
-                {"holder_address", "holder_address", plugin::FieldType::Text,
-                 {bytes.constData(), bytes.constData() + bytes.size()}});
+            holderGroup.fields.push_back({"holder_address",
+                                          "holder_address",
+                                          plugin::FieldType::Text,
+                                          {bytes.constData(), bytes.constData() + bytes.size()}});
         }
     }
 
@@ -508,9 +409,10 @@ CollapsibleSection* EuVrcWidget::buildUserSection(const plugin::CardFieldGroup* 
         if (!val.isEmpty()) {
             val = cleanAddress(val);
             auto bytes = val.toUtf8();
-            userGroup.fields.push_back(
-                {"user_address", "user_address", plugin::FieldType::Text,
-                 {bytes.constData(), bytes.constData() + bytes.size()}});
+            userGroup.fields.push_back({"user_address",
+                                        "user_address",
+                                        plugin::FieldType::Text,
+                                        {bytes.constData(), bytes.constData() + bytes.size()}});
         }
     }
 

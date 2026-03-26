@@ -69,11 +69,11 @@
     </message>
     <message id="lc-eid-doc-name">
         <source>Name</source>
-        <translation>Ime</translation>
+        <translation>Име</translation>
     </message>
     <message id="lc-eid-doc-parent-name">
         <source>Parent name</source>
-        <translation>Ime родитеља</translation>
+        <translation>Име родитеља</translation>
     </message>
     <message id="lc-eid-doc-nationality">
         <source>Nationality</source>
@@ -517,7 +517,7 @@
     </message>
     <message id="lc-vehicle-doc-owner-name">
         <source>Name</source>
-        <translation>Ime</translation>
+        <translation>Име</translation>
     </message>
     <message id="lc-vehicle-doc-owner-address">
         <source>Address</source>
@@ -533,7 +533,7 @@
     </message>
     <message id="lc-vehicle-doc-user-name">
         <source>Name</source>
-        <translation>Ime</translation>
+        <translation>Име</translation>
     </message>
     <message id="lc-vehicle-doc-user-address">
         <source>Address</source>
@@ -1139,9 +1139,85 @@
         <source>Fuel tank capacity (W)</source>
         <translation>Запремина резервоара (W)</translation>
     </message>
+    <message id="lc-emrtd-security-status">
+        <source>Security Status</source>
+        <translation>Безбедносни статус</translation>
+    </message>
+    <message id="lc-emrtd-security-integrity">
+        <source>Data Integrity</source>
+        <translation>Интегритет података</translation>
+    </message>
+    <message id="lc-emrtd-security-authenticity">
+        <source>Data Authenticity</source>
+        <translation>Аутентичност података</translation>
+    </message>
+    <message id="lc-emrtd-security-genuineness">
+        <source>Chip Genuineness</source>
+        <translation>Аутентичност чипа</translation>
+    </message>
+    <message id="lc-emrtd-security-passed">
+        <source>Passed</source>
+        <translation>Успешно</translation>
+    </message>
+    <message id="lc-emrtd-security-failed">
+        <source>Failed</source>
+        <translation>Неуспешно</translation>
+    </message>
+    <message id="lc-emrtd-security-not-supported">
+        <source>Not Supported</source>
+        <translation>Није подржано</translation>
+    </message>
+    <message id="lc-emrtd-security-skipped">
+        <source>Skipped</source>
+        <translation>Прескочено</translation>
+    </message>
+    <message id="lc-emrtd-security-not-performed">
+        <source>Not Performed</source>
+        <translation>Није извршено</translation>
+    </message>
+    <message id="lc-emrtd-security-details">
+        <source>Detailed Checks</source>
+        <translation>Детаљне провере</translation>
+    </message>
+    <message id="lc-emrtd-portrait">
+        <source>Portrait</source>
+        <translation>Фотографија</translation>
+    </message>
+    <message id="lc-emrtd-contacts">
+        <source>Contacts</source>
+        <translation>Контакти</translation>
+    </message>
+    <message id="lc-emrtd-contact-name">
+        <source>Contact Name</source>
+        <translation>Име контакта</translation>
+    </message>
+    <message id="lc-emrtd-biometric-fingerprint">
+        <source>Fingerprint Biometrics</source>
+        <translation>Биометрија отисака прстију</translation>
+    </message>
+    <message id="lc-emrtd-biometric-iris">
+        <source>Iris Biometrics</source>
+        <translation>Биометрија ириса</translation>
+    </message>
+    <message id="lc-emrtd-biometric-eac-required">
+        <source>Access restricted (EAC required)</source>
+        <translation>Приступ ограничен (потребан EAC)</translation>
+    </message>
+    <message id="lc-emrtd-national-data">
+        <source>National Data</source>
+        <translation>Национални подаци</translation>
+    </message>
+    <message id="lc-emrtd-national-tag">
+        <source>Tag</source>
+        <translation>Ознака</translation>
+    </message>
+    <message id="lc-emrtd-national-value">
+        <source>Value</source>
+        <translation>Вредност</translation>
+    </message>
     <message id="lc-reader-unsupported-card">
         <source>Card in reader is not supported.</source>
-        <translation>Kartica u čitaču nije podržana.</translation>
+        <translation>Картица у читачу није подржана.</translation>
     </message>
     <message id="lc-reading-card">
         <source>Reading card...</source>
@@ -1189,11 +1265,11 @@
     </message>
     <message id="lc-health-label-given-name">
         <source>Name</source>
-        <translation>Имe</translation>
+        <translation>Име</translation>
     </message>
     <message id="lc-health-label-given-name-lat">
         <source>Name (Latin)</source>
-        <translation>Имe (лат.)</translation>
+        <translation>Име (лат.)</translation>
     </message>
     <message id="lc-health-label-family-name">
         <source>Surname</source>
@@ -1205,11 +1281,11 @@
     </message>
     <message id="lc-health-label-parent-name">
         <source>Parent name</source>
-        <translation>Имe родитеља</translation>
+        <translation>Име родитеља</translation>
     </message>
     <message id="lc-health-label-parent-name-lat">
         <source>Parent name (Latin)</source>
-        <translation>Имe родитеља (лат.)</translation>
+        <translation>Име родитеља (лат.)</translation>
     </message>
     <message id="lc-health-label-dob">
         <source>Date of birth</source>
@@ -1281,7 +1357,7 @@
     </message>
     <message id="lc-health-label-carrier-name">
         <source>Carrier name</source>
-        <translation>Имe носиоца осигурања</translation>
+        <translation>Име носиоца осигурања</translation>
     </message>
     <message id="lc-health-label-carrier-family-name">
         <source>Carrier surname</source>
@@ -2111,7 +2187,7 @@
     </message>
     <message>
         <source>Name</source>
-        <translation type="vanished">Имe</translation>
+        <translation type="vanished">Име</translation>
     </message>
     <message>
         <source>Surname</source>
@@ -2119,7 +2195,7 @@
     </message>
     <message>
         <source>Name (Latin)</source>
-        <translation type="vanished">Имe (лат.)</translation>
+        <translation type="vanished">Име (лат.)</translation>
     </message>
     <message>
         <source>Surname (Latin)</source>
@@ -2127,11 +2203,11 @@
     </message>
     <message>
         <source>Parent name</source>
-        <translation type="vanished">Имe родитеља</translation>
+        <translation type="vanished">Име родитеља</translation>
     </message>
     <message>
         <source>Parent name (Latin)</source>
-        <translation type="vanished">Имe родитеља (лат.)</translation>
+        <translation type="vanished">Име родитеља (лат.)</translation>
     </message>
     <message>
         <source>Date of birth</source>
@@ -2227,7 +2303,7 @@
     </message>
     <message>
         <source>Carrier name</source>
-        <translation type="vanished">Имe носиоца осигурања</translation>
+        <translation type="vanished">Име носиоца осигурања</translation>
     </message>
     <message>
         <source>Carrier surname</source>

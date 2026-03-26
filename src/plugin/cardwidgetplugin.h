@@ -10,8 +10,6 @@
 #include <QStringList>
 #include <QWidget>
 
-class QPrinter;
-
 class CardWidgetPlugin
 {
 public:
@@ -60,10 +58,16 @@ public:
     {
         return false;
     }
-    virtual void print(const plugin::CardData& data, QPrinter* printer) const
+    virtual void print(const plugin::CardData& data) const
     {
         Q_UNUSED(data);
-        Q_UNUSED(printer);
+    }
+
+    // Enable the print button on a card widget created by this plugin.
+    // Default uses string-based QMetaObject::invokeMethod; override for type safety.
+    virtual void enablePrintButton(QWidget* widget) const
+    {
+        QMetaObject::invokeMethod(widget, "enablePrintButton");
     }
 };
 

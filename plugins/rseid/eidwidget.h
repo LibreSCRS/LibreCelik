@@ -35,7 +35,6 @@ signals:
     void printRequested(const plugin::CardData& data);
 
 private:
-    void buildLayout();
     bool isForeigner() const;
     QPixmap loadPhoto() const;
     CollapsibleSection* buildAddressSection(QWidget* parent) const;

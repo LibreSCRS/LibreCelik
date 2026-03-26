@@ -9,18 +9,18 @@
 QWidget* HealthWidgetPlugin::createWidget(const plugin::CardData& data, QWidget* parent) const
 {
     auto* w = new HealthWidget(data, parent);
-    connect(w, &HealthWidget::printRequested, this, [this](const plugin::CardData& d) { print(d, nullptr); });
+    connect(w, &HealthWidget::printRequested, this, [this](const plugin::CardData& d) { print(d); });
     return w;
 }
 
 QWidget* HealthWidgetPlugin::createEmptyWidget(QWidget* parent) const
 {
     auto* w = new HealthWidget(parent);
-    connect(w, &HealthWidget::printRequested, this, [this](const plugin::CardData& d) { print(d, nullptr); });
+    connect(w, &HealthWidget::printRequested, this, [this](const plugin::CardData& d) { print(d); });
     return w;
 }
 
-void HealthWidgetPlugin::print(const plugin::CardData& data, QPrinter* /*printer*/) const
+void HealthWidgetPlugin::print(const plugin::CardData& data) const
 {
     HealthTextDocument doc(data);
     PrintManager::printDocument(doc, qtTrId("lc-health-print-title"));

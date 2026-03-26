@@ -39,7 +39,6 @@ signals:
 
 private:
     void showAuthRequired(const plugin::CardFieldGroup* group);
-    void showPersonalData(const plugin::CardData& cardData);
     void showError(const plugin::CardFieldGroup* group);
 
     plugin::CardData data;

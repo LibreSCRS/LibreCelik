@@ -43,6 +43,7 @@ public:
 
     plugin::CardPlugin* currentPlugin() const;
     bool hasPKI() const;
+    void clearPluginCredentials();
 
 signals:
     void cardGroupReady(const QString& cardType, const plugin::CardFieldGroup& group);
@@ -57,7 +58,15 @@ signals:
     void readingFinished();
 
 private:
+    // Ensure no async operations are using conn before launching a new one.
+    // Only ONE thread may access conn at a time (PCSCConnection has no internal synchronization).
+    void waitForPendingAsync();
+
     std::vector<plugin::CardPlugin*> candidates;
+
+    // Plugin pointers are safe to capture in async lambdas because plugin objects
+    // are owned by CardPluginRegistry/CardWidgetPluginRegistry and live for the
+    // application's lifetime. They are never unloaded or deallocated during runtime.
     plugin::CardPlugin* activePlugin = nullptr;
     plugin::CardPlugin* pkiPlugin = nullptr;
     std::unique_ptr<smartcard::PCSCConnection> conn;

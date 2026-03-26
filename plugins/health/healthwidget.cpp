@@ -66,10 +66,11 @@ static std::map<std::string, QString> taxpayerTranslationMap()
     };
 }
 
-HealthWidget::HealthWidget(const plugin::CardData& cardData, QWidget* parent) : QWidget(parent), data(cardData)
+HealthWidget::HealthWidget(const plugin::CardData& cardData, QWidget* parent) : HealthWidget(parent)
 {
-    transformPermanentlyValid();
-    buildLayout();
+    data.cardType = cardData.cardType;
+    for (const auto& group : cardData.groups)
+        addGroup(group);
 }
 
 HealthWidget::HealthWidget(QWidget* parent) : QWidget(parent)
@@ -154,15 +155,15 @@ void HealthWidget::addInsuranceGroup(const plugin::CardFieldGroup& /*group*/)
     // Transform permanently_valid in accumulated data
     transformPermanentlyValid(data.groups.back());
 
-    auto* insuranceSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-insurance"), data.groups.back(),
-                                                               insuranceTranslationMap(), {}, outerSection);
+    auto* insuranceSec = LibreSCRS::FieldSectionBuilder::build(
+        qtTrId("lc-health-section-insurance"), data.groups.back(), insuranceTranslationMap(), {}, outerSection);
     contentLayout->addWidget(insuranceSec);
 }
 
 void HealthWidget::addAddressGroup(const plugin::CardFieldGroup& group)
 {
-    auto* addressSec =
-        LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-address"), group, addressTranslationMap(), {}, outerSection);
+    auto* addressSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-address"), group,
+                                                             addressTranslationMap(), {}, outerSection);
     contentLayout->addWidget(addressSec);
 }
 
@@ -173,31 +174,17 @@ void HealthWidget::addCarrierGroup(const plugin::CardFieldGroup& group)
     bool showCarrier = hasData || familyMember == "true";
 
     if (showCarrier) {
-        auto* carrierSection = LibreSCRS::FieldSectionBuilder::build(
-            qtTrId("lc-health-section-carrier"), group, carrierTranslationMap(), {}, outerSection);
+        auto* carrierSection = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-carrier"), group,
+                                                                     carrierTranslationMap(), {}, outerSection);
         contentLayout->addWidget(carrierSection);
     }
 }
 
 void HealthWidget::addTaxpayerGroup(const plugin::CardFieldGroup& group)
 {
-    auto* taxpayerSec =
-        LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-taxpayer"), group, taxpayerTranslationMap(), {}, outerSection);
+    auto* taxpayerSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-taxpayer"), group,
+                                                              taxpayerTranslationMap(), {}, outerSection);
     contentLayout->addWidget(taxpayerSec);
-}
-
-void HealthWidget::transformPermanentlyValid()
-{
-    if (auto* field = data.findField("permanently_valid")) {
-        auto val = field->asString();
-        if (val == "true") {
-            std::string yes = qtTrId("lc-health-val-yes").toStdString();
-            field->value.assign(yes.begin(), yes.end());
-        } else if (val == "false") {
-            std::string no = qtTrId("lc-health-val-no").toStdString();
-            field->value.assign(no.begin(), no.end());
-        }
-    }
 }
 
 void HealthWidget::transformPermanentlyValid(plugin::CardFieldGroup& group)
@@ -217,83 +204,4 @@ void HealthWidget::transformPermanentlyValid(plugin::CardFieldGroup& group)
     }
 }
 
-void HealthWidget::buildLayout()
-{
-    static const QColor navy(34, 86, 117);
-
-    auto* outerLayout = new QVBoxLayout(this);
-    outerLayout->setContentsMargins(0, 0, 0, 0);
-
-    // Outer navy CollapsibleSection
-    auto* outerSection = new CollapsibleSection(qtTrId("lc-health-title"), navy, this);
-    outerSection->setHeaderHeight(56);
-    outerSection->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-
-    // Print button — immediately enabled (all data present)
-    printBtn = new QToolButton(this);
-    printBtn->setIcon(QIcon(":/images/printer-header.svg"));
-    printBtn->setIconSize(QSize(24, 24));
-    printBtn->setToolTip(qtTrId("lc-print-tooltip"));
-    printBtn->setAutoRaise(true);
-    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
-    outerSection->addHeaderWidget(printBtn);
-
-    auto* contentLayout = new QVBoxLayout();
-
-    // --- CardHeaderCard with health icon and key personal fields ---
-    const auto* personal = data.findGroup("personal");
-    const auto* insurance = data.findGroup("insurance");
-
-    std::vector<LibreSCRS::HeaderField> headerFields;
-    if (personal) {
-        headerFields.push_back({qtTrId("lc-health-label-given-name"), getFieldValue(personal, "given_name")});
-        headerFields.push_back({qtTrId("lc-health-label-family-name"), getFieldValue(personal, "family_name")});
-        headerFields.push_back({qtTrId("lc-health-label-jmbg"), getFieldValue(personal, "personal_number")});
-        headerFields.push_back({qtTrId("lc-health-label-lbo"), getFieldValue(personal, "insurant_number")});
-    }
-    if (insurance) {
-        headerFields.push_back({qtTrId("lc-health-label-card-id"), getFieldValue(insurance, "card_id")});
-        headerFields.push_back({qtTrId("lc-health-label-valid-until"), getFieldValue(insurance, "valid_until")});
-    }
-
-    QIcon healthIcon(QStringLiteral(":/images/health-icon.svg"));
-    auto* headerCard = new LibreSCRS::CardHeaderCard(healthIcon, QSize(80, 80), headerFields, outerSection);
-    contentLayout->addWidget(headerCard);
-
-    // --- Insurance, Address — stacked vertically ---
-    if (insurance) {
-        auto* insuranceSec =
-            LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-insurance"), *insurance, insuranceTranslationMap(), {}, outerSection);
-        contentLayout->addWidget(insuranceSec);
-    }
-    if (const auto* address = data.findGroup("address")) {
-        auto* addressSec =
-            LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-address"), *address, addressTranslationMap(), {}, outerSection);
-        contentLayout->addWidget(addressSec);
-    }
-
-    // --- Carrier, Taxpayer — stacked vertically ---
-    const auto* carrier = data.findGroup("carrier");
-    bool showCarrier = false;
-    if (carrier) {
-        auto familyMember = getFieldValue(carrier, "carrier_family_member");
-        bool hasData = !carrier->fields.empty();
-        showCarrier = hasData || familyMember == "true";
-    }
-
-    if (showCarrier) {
-        auto* carrierSection = LibreSCRS::FieldSectionBuilder::build(
-            qtTrId("lc-health-section-carrier"), *carrier, carrierTranslationMap(), {}, outerSection);
-        contentLayout->addWidget(carrierSection);
-    }
-
-    if (const auto* taxpayer = data.findGroup("taxpayer")) {
-        auto* taxpayerSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-taxpayer"), *taxpayer,
-                                                                  taxpayerTranslationMap(), {}, outerSection);
-        contentLayout->addWidget(taxpayerSec);
-    }
-
-    outerSection->setLayout(contentLayout);
-
-    outerLayout->addWidget(outerSection);
-}
+// buildLayout() removed — full-data constructor now delegates to empty + addGroup loop

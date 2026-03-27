@@ -446,11 +446,16 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                 replaceWidget(topWidget);
             });
 
-    connect(asyncReader, &AsyncCardReader::errorOccurred, this, [this, reader](const QString& msg) {
-        if (activeReaders.find(reader) == activeReaders.end())
+    connect(asyncReader, &AsyncCardReader::errorOccurred, this, [this, reader, isSpinner](const QString& msg) {
+        auto it = activeReaders.find(reader);
+        if (it == activeReaders.end())
             return; // reader was removed — stale queued signal
         ui->statusbar->show();
         ui->statusbar->showMessage(msg);
+        // If we're still showing the spinner, all candidates failed during
+        // initial read — remove the stuck reader entry so the UI resets.
+        if (isSpinner(it->second.widget))
+            removeReader(reader);
     });
 
     // Progressive display: replace spinner with empty widget on first group, then add groups
@@ -542,8 +547,10 @@ void LibreCelik::removeReader(std::string reader)
     cleanupThread->start();
 
     ui->readerComboBox->setVisible(ui->readerComboBox->count() > 1);
-    if (activeReaders.empty())
+    if (activeReaders.empty()) {
         ui->stackedWidget->setCurrentIndex(0);
+        ui->statusbar->clearMessage();
+    }
 }
 
 void LibreCelik::connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget)

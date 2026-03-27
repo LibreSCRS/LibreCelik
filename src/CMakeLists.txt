@@ -43,8 +43,8 @@ set(PROJECT_SOURCES
         smartcard/smartcardreaderlistener.cpp
         document/tokensection.h
         document/tokensection.cpp
-        document/eid/changepindlg.h
-        document/eid/changepindlg.cpp
+        document/rs-eid/changepindlg.h
+        document/rs-eid/changepindlg.cpp
         document/emrtd/emrtdauthwidget.h
         document/emrtd/emrtdauthwidget.cpp
         certificate/certificateinfoitem.h

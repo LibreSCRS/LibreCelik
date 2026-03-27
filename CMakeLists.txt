@@ -31,7 +31,7 @@ endif()
 
 set(MIDDLEWARE_VERSION main)
 
-# Fetch LibreMiddleware (smartcard, eidcard, vehiclecard libraries)
+# Fetch LibreMiddleware (smartcard, rs-eid, rs-health, eu-vrc, emrtd, piv, pkcs15 libraries)
 include(FetchContent)
 FetchContent_Declare(LibreMiddleware
     GIT_REPOSITORY https://github.com/LibreSCRS/LibreMiddleware.git

@@ -3,7 +3,7 @@
 
 #include "librecelik.h"
 #include "config.h"
-#include "document/eid/changepindlg.h"
+#include "document/rs-eid/changepindlg.h"
 #include "document/emrtd/emrtdauthwidget.h"
 #include "document/tokensection.h"
 #include "plugin/carddatautils.h"

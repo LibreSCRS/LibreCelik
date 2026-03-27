@@ -3,7 +3,7 @@
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets PrintSupport)
 
-add_library(rseid-gui-plugin MODULE
+add_library(rs-eid-gui-plugin MODULE
     rseidwidgetplugin.h
     rseidwidgetplugin.cpp
     eidwidget.h
@@ -17,15 +17,15 @@ add_library(rseid-gui-plugin MODULE
     ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.h
     ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.cpp
 )
-target_include_directories(rseid-gui-plugin PRIVATE
+target_include_directories(rs-eid-gui-plugin PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
-target_link_libraries(rseid-gui-plugin PRIVATE
+target_link_libraries(rs-eid-gui-plugin PRIVATE
     Qt6::Widgets
     CardPlugin
     LibreCelikPrinting
 )
-set_target_properties(rseid-gui-plugin PROPERTIES
+set_target_properties(rs-eid-gui-plugin PROPERTIES
     AUTOMOC ON
     AUTOUIC ON
     PREFIX ""

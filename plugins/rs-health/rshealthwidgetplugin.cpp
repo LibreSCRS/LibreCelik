@@ -1,32 +1,32 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright hirashix0@proton.me
 
-#include "healthwidgetplugin.h"
+#include "rshealthwidgetplugin.h"
 #include "healthwidget.h"
 #include "healthtextdocument.h"
 #include "utils/printmanager.h"
 
-QWidget* HealthWidgetPlugin::createWidget(const plugin::CardData& data, QWidget* parent) const
+QWidget* RsHealthWidgetPlugin::createWidget(const plugin::CardData& data, QWidget* parent) const
 {
     auto* w = new HealthWidget(data, parent);
     connect(w, &HealthWidget::printRequested, this, [this](const plugin::CardData& d) { print(d); });
     return w;
 }
 
-QWidget* HealthWidgetPlugin::createEmptyWidget(QWidget* parent) const
+QWidget* RsHealthWidgetPlugin::createEmptyWidget(QWidget* parent) const
 {
     auto* w = new HealthWidget(parent);
     connect(w, &HealthWidget::printRequested, this, [this](const plugin::CardData& d) { print(d); });
     return w;
 }
 
-void HealthWidgetPlugin::print(const plugin::CardData& data) const
+void RsHealthWidgetPlugin::print(const plugin::CardData& data) const
 {
     HealthTextDocument doc(data);
     PrintManager::printDocument(doc, qtTrId("lc-health-print-title"));
 }
 
-void HealthWidgetPlugin::addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const
+void RsHealthWidgetPlugin::addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const
 {
     if (auto* hw = qobject_cast<HealthWidget*>(widget)) {
         hw->addGroup(group);

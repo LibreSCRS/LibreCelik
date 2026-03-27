@@ -7,7 +7,7 @@
 #include <QObject>
 #include <QtPlugin>
 
-class HealthWidgetPlugin : public QObject, public CardWidgetPlugin
+class RsHealthWidgetPlugin : public QObject, public CardWidgetPlugin
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "org.librescrs.CardWidgetPlugin/1.0" FILE "rs-health.json")

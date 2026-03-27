@@ -88,7 +88,7 @@ GUI_PLUGIN_DIR="$BUILD_DIR/gui-plugins"
 
 echo "Copying middleware plugins..."
 mkdir -p "$APP_STAGING/Contents/PlugIns/middleware-plugins"
-for f in "$MW_PLUGIN_DIR"/librescrs-plugin-*.dylib; do
+for f in "$MW_PLUGIN_DIR"/lib*-plugin.dylib; do
     [[ -f "$f" ]] && cp "$f" "$APP_STAGING/Contents/PlugIns/middleware-plugins/"
 done
 ls "$APP_STAGING/Contents/PlugIns/middleware-plugins/"

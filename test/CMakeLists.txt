@@ -50,7 +50,7 @@ target_link_libraries(
     ${PROJECT_NAME}
     GTest::gtest_main
     CardPlugin
-    EIdCard
+    RsEId
     UUID::UUID
     Qt6::Core
     Qt6::Widgets
@@ -159,8 +159,8 @@ gtest_discover_tests(StringUtilsTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=of
 
 add_executable(HealthTextDocumentTests
     healthtextdocument_test.cpp
-    ../plugins/rshealth/healthtextdocument.h
-    ../plugins/rshealth/healthtextdocument.cpp
+    ../plugins/rs-health/healthtextdocument.h
+    ../plugins/rs-health/healthtextdocument.cpp
     ../src/utils/libreceliklog.h
     ../src/utils/libreceliklog.cpp
     ${CMAKE_SOURCE_DIR}/resources/librecelik.qrc
@@ -168,7 +168,7 @@ add_executable(HealthTextDocumentTests
 target_include_directories(HealthTextDocumentTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/document/printing
-    ${CMAKE_SOURCE_DIR}/plugins/rshealth
+    ${CMAKE_SOURCE_DIR}/plugins/rs-health
     ${PROJECT_BINARY_DIR}/../src
 )
 target_link_libraries(HealthTextDocumentTests
@@ -183,8 +183,8 @@ gtest_discover_tests(HealthTextDocumentTests PROPERTIES ENVIRONMENT "QT_QPA_PLAT
 
 add_executable(EIdTextDocumentTests
     eidtextdocument_test.cpp
-    ../plugins/rseid/eidtextdocument.h
-    ../plugins/rseid/eidtextdocument.cpp
+    ../plugins/rs-eid/eidtextdocument.h
+    ../plugins/rs-eid/eidtextdocument.cpp
     ../src/utils/libreceliklog.h
     ../src/utils/libreceliklog.cpp
     ${CMAKE_SOURCE_DIR}/resources/librecelik.qrc
@@ -192,7 +192,7 @@ add_executable(EIdTextDocumentTests
 target_include_directories(EIdTextDocumentTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/document/printing
-    ${CMAKE_SOURCE_DIR}/plugins/rseid
+    ${CMAKE_SOURCE_DIR}/plugins/rs-eid
     ${PROJECT_BINARY_DIR}/../src
 )
 target_link_libraries(EIdTextDocumentTests

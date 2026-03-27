@@ -3,7 +3,7 @@
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets PrintSupport)
 
-add_library(health-gui-plugin MODULE
+add_library(rshealth-gui-plugin MODULE
     healthwidgetplugin.h
     healthwidgetplugin.cpp
     healthwidget.h
@@ -17,15 +17,15 @@ add_library(health-gui-plugin MODULE
     ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.h
     ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.cpp
 )
-target_include_directories(health-gui-plugin PRIVATE
+target_include_directories(rshealth-gui-plugin PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
-target_link_libraries(health-gui-plugin PRIVATE
+target_link_libraries(rshealth-gui-plugin PRIVATE
     Qt6::Widgets
     CardPlugin
     LibreCelikPrinting
 )
-set_target_properties(health-gui-plugin PROPERTIES
+set_target_properties(rshealth-gui-plugin PROPERTIES
     AUTOMOC ON
     AUTOUIC ON
     PREFIX ""

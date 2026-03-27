@@ -1687,6 +1687,98 @@
         <source>Insert the MRZ data from the bottom of the document</source>
         <translation>Insert the MRZ data from the bottom of the document</translation>
     </message>
+    <message id="lc-piv-widget-title">
+        <source>PIV (NIST SP 800-73)</source>
+        <translation>PIV (NIST SP 800-73)</translation>
+    </message>
+    <message id="lc-piv-print-title">
+        <source>Print PIV Card</source>
+        <translation>Print PIV Card</translation>
+    </message>
+    <message id="lc-piv-doc-title">
+        <source>PIV Card</source>
+        <translation>PIV Card</translation>
+    </message>
+    <message id="lc-piv-doc-printing-date">
+        <source>Printing date</source>
+        <translation>Printing date</translation>
+    </message>
+    <message id="lc-piv-section-chuid">
+        <source>CHUID</source>
+        <translation>CHUID</translation>
+    </message>
+    <message id="lc-piv-section-ccc">
+        <source>CCC</source>
+        <translation>CCC</translation>
+    </message>
+    <message id="lc-piv-section-printed">
+        <source>Printed Information</source>
+        <translation>Printed Information</translation>
+    </message>
+    <message id="lc-piv-section-discovery">
+        <source>Discovery</source>
+        <translation>Discovery</translation>
+    </message>
+    <message id="lc-piv-section-keyhistory">
+        <source>Key History</source>
+        <translation>Key History</translation>
+    </message>
+    <message id="lc-piv-field-guid">
+        <source>GUID</source>
+        <translation>GUID</translation>
+    </message>
+    <message id="lc-piv-field-fascn">
+        <source>FASC-N</source>
+        <translation>FASC-N</translation>
+    </message>
+    <message id="lc-piv-field-expiration">
+        <source>Expiration Date</source>
+        <translation>Expiration Date</translation>
+    </message>
+    <message id="lc-piv-field-cardid">
+        <source>Card Identifier</source>
+        <translation>Card Identifier</translation>
+    </message>
+    <message id="lc-piv-field-name">
+        <source>Name</source>
+        <translation>Name</translation>
+    </message>
+    <message id="lc-piv-field-affiliation">
+        <source>Employee Affiliation</source>
+        <translation>Employee Affiliation</translation>
+    </message>
+    <message id="lc-piv-field-org1">
+        <source>Organization (Line 1)</source>
+        <translation>Organization (Line 1)</translation>
+    </message>
+    <message id="lc-piv-field-org2">
+        <source>Organization (Line 2)</source>
+        <translation>Organization (Line 2)</translation>
+    </message>
+    <message id="lc-piv-field-serial">
+        <source>Agency Serial Number</source>
+        <translation>Agency Serial Number</translation>
+    </message>
+    <message id="lc-piv-field-issuer">
+        <source>Issuer Identification</source>
+        <translation>Issuer Identification</translation>
+    </message>
+    <message id="lc-piv-field-pinpolicy">
+        <source>PIN Policy</source>
+        <translation>PIN Policy</translation>
+    </message>
+    <message id="lc-piv-field-oncardcerts">
+        <source>On-Card Certificates</source>
+        <translation>On-Card Certificates</translation>
+    </message>
+    <message id="lc-piv-field-offcardcerts">
+        <source>Off-Card Certificates</source>
+        <translation>Off-Card Certificates</translation>
+    </message>
+    <message id="lc-piv-field-offcardurl">
+        <source>Off-Card URL</source>
+        <translation>Off-Card URL</translation>
+    </message>
 </context>
 <context>
     <name>AsyncCardReader</name>

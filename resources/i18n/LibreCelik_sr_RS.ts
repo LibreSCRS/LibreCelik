@@ -1687,6 +1687,98 @@
         <source>Insert the MRZ data from the bottom of the document</source>
         <translation>Унесите MRZ податке са дна документа</translation>
     </message>
+    <message id="lc-piv-widget-title">
+        <source>PIV (NIST SP 800-73)</source>
+        <translation>PIV (NIST SP 800-73)</translation>
+    </message>
+    <message id="lc-piv-print-title">
+        <source>Print PIV Card</source>
+        <translation>Штампај PIV картицу</translation>
+    </message>
+    <message id="lc-piv-doc-title">
+        <source>PIV Card</source>
+        <translation>PIV картица</translation>
+    </message>
+    <message id="lc-piv-doc-printing-date">
+        <source>Printing date</source>
+        <translation>Датум штампања</translation>
+    </message>
+    <message id="lc-piv-section-chuid">
+        <source>CHUID</source>
+        <translation>CHUID</translation>
+    </message>
+    <message id="lc-piv-section-ccc">
+        <source>CCC</source>
+        <translation>CCC</translation>
+    </message>
+    <message id="lc-piv-section-printed">
+        <source>Printed Information</source>
+        <translation>Одштампане информације</translation>
+    </message>
+    <message id="lc-piv-section-discovery">
+        <source>Discovery</source>
+        <translation>Discovery</translation>
+    </message>
+    <message id="lc-piv-section-keyhistory">
+        <source>Key History</source>
+        <translation>Историја кључева</translation>
+    </message>
+    <message id="lc-piv-field-guid">
+        <source>GUID</source>
+        <translation>GUID</translation>
+    </message>
+    <message id="lc-piv-field-fascn">
+        <source>FASC-N</source>
+        <translation>FASC-N</translation>
+    </message>
+    <message id="lc-piv-field-expiration">
+        <source>Expiration Date</source>
+        <translation>Датум истека</translation>
+    </message>
+    <message id="lc-piv-field-cardid">
+        <source>Card Identifier</source>
+        <translation>Идентификатор картице</translation>
+    </message>
+    <message id="lc-piv-field-name">
+        <source>Name</source>
+        <translation>Име</translation>
+    </message>
+    <message id="lc-piv-field-affiliation">
+        <source>Employee Affiliation</source>
+        <translation>Припадност запосленог</translation>
+    </message>
+    <message id="lc-piv-field-org1">
+        <source>Organization (Line 1)</source>
+        <translation>Организација (Ред 1)</translation>
+    </message>
+    <message id="lc-piv-field-org2">
+        <source>Organization (Line 2)</source>
+        <translation>Организација (Ред 2)</translation>
+    </message>
+    <message id="lc-piv-field-serial">
+        <source>Agency Serial Number</source>
+        <translation>Серијски број агенције</translation>
+    </message>
+    <message id="lc-piv-field-issuer">
+        <source>Issuer Identification</source>
+        <translation>Идентификација издаваоца</translation>
+    </message>
+    <message id="lc-piv-field-pinpolicy">
+        <source>PIN Policy</source>
+        <translation>PIN политика</translation>
+    </message>
+    <message id="lc-piv-field-oncardcerts">
+        <source>On-Card Certificates</source>
+        <translation>Сертификати на картици</translation>
+    </message>
+    <message id="lc-piv-field-offcardcerts">
+        <source>Off-Card Certificates</source>
+        <translation>Сертификати ван картице</translation>
+    </message>
+    <message id="lc-piv-field-offcardurl">
+        <source>Off-Card URL</source>
+        <translation>URL ван картице</translation>
+    </message>
 </context>
 <context>
     <name>AsyncCardReader</name>

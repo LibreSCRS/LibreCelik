@@ -21,6 +21,7 @@
         <file>smartcard-id-512.png</file>
         <file>vehicle-icon.svg</file>
         <file>health-icon.svg</file>
+        <file>piv-icon.svg</file>
     </qresource>
     <qresource prefix="/html">
         <file>idcard.html</file>
@@ -31,6 +32,7 @@
         <file>healthcard.css</file>
         <file>emrtdcard.html</file>
         <file>emrtdcard.css</file>
+        <file>pivcard.css</file>
     </qresource>
 
 </RCC>

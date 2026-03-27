@@ -5,6 +5,8 @@
 
 #include <smartcard/pcsc_connection.h>
 
+#include <openssl/crypto.h>
+
 #include <QMap>
 #include <QMetaObject>
 #include <QMetaType>
@@ -298,7 +300,7 @@ void AsyncCardReader::requestChangePIN(uint8_t pinReference, const QString& oldP
     auto newPinStd = newPin.toStdString();
 
     QPointer<AsyncCardReader> self = this;
-    futurePKI = std::async(std::launch::async, [this, self, pki, pinReference, oldPinStd, newPinStd]() {
+    futurePKI = std::async(std::launch::async, [this, self, pki, pinReference, oldPinStd, newPinStd]() mutable {
         if (stopRequested)
             return;
         try {
@@ -306,6 +308,8 @@ void AsyncCardReader::requestChangePIN(uint8_t pinReference, const QString& oldP
             if (!result.success && result.retriesLeft == -1 && !result.blocked) {
                 result = pki->changePIN(*conn, oldPinStd, newPinStd);
             }
+            OPENSSL_cleanse(oldPinStd.data(), oldPinStd.size());
+            OPENSSL_cleanse(newPinStd.data(), newPinStd.size());
 
             QMetaObject::invokeMethod(
                 self,
@@ -317,6 +321,8 @@ void AsyncCardReader::requestChangePIN(uint8_t pinReference, const QString& oldP
                 },
                 Qt::QueuedConnection);
         } catch (const std::exception& e) {
+            OPENSSL_cleanse(oldPinStd.data(), oldPinStd.size());
+            OPENSSL_cleanse(newPinStd.data(), newPinStd.size());
             QMetaObject::invokeMethod(
                 self,
                 [self, msg = QString::fromStdString(e.what())]() {
@@ -340,11 +346,12 @@ void AsyncCardReader::requestVerifyPIN(const QString& pin)
     auto pinStd = pin.toStdString();
 
     QPointer<AsyncCardReader> self = this;
-    futurePKI = std::async(std::launch::async, [this, self, pki, pinStd]() {
+    futurePKI = std::async(std::launch::async, [this, self, pki, pinStd]() mutable {
         if (stopRequested)
             return;
         try {
             auto result = pki->verifyPIN(*conn, pinStd);
+            OPENSSL_cleanse(pinStd.data(), pinStd.size());
             QMetaObject::invokeMethod(
                 self,
                 [self, result]() {
@@ -354,6 +361,7 @@ void AsyncCardReader::requestVerifyPIN(const QString& pin)
                 },
                 Qt::QueuedConnection);
         } catch (const std::exception& e) {
+            OPENSSL_cleanse(pinStd.data(), pinStd.size());
             QMetaObject::invokeMethod(
                 self,
                 [self, msg = QString::fromStdString(e.what())]() {

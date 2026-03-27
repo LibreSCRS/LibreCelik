@@ -925,6 +925,31 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-emrtd-national-tag");
     //% "Value"
     QT_TRID_NOOP("lc-emrtd-national-value");
+
+    // PIV
+    QT_TRID_NOOP("lc-piv-widget-title");
+    QT_TRID_NOOP("lc-piv-print-title");
+    QT_TRID_NOOP("lc-piv-doc-title");
+    QT_TRID_NOOP("lc-piv-doc-printing-date");
+    QT_TRID_NOOP("lc-piv-section-chuid");
+    QT_TRID_NOOP("lc-piv-section-ccc");
+    QT_TRID_NOOP("lc-piv-section-printed");
+    QT_TRID_NOOP("lc-piv-section-discovery");
+    QT_TRID_NOOP("lc-piv-section-keyhistory");
+    QT_TRID_NOOP("lc-piv-field-guid");
+    QT_TRID_NOOP("lc-piv-field-fascn");
+    QT_TRID_NOOP("lc-piv-field-expiration");
+    QT_TRID_NOOP("lc-piv-field-cardid");
+    QT_TRID_NOOP("lc-piv-field-name");
+    QT_TRID_NOOP("lc-piv-field-affiliation");
+    QT_TRID_NOOP("lc-piv-field-org1");
+    QT_TRID_NOOP("lc-piv-field-org2");
+    QT_TRID_NOOP("lc-piv-field-serial");
+    QT_TRID_NOOP("lc-piv-field-issuer");
+    QT_TRID_NOOP("lc-piv-field-pinpolicy");
+    QT_TRID_NOOP("lc-piv-field-oncardcerts");
+    QT_TRID_NOOP("lc-piv-field-offcardcerts");
+    QT_TRID_NOOP("lc-piv-field-offcardurl");
 }
 
 QT_WARNING_POP

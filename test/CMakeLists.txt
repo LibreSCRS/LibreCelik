@@ -93,6 +93,7 @@ target_link_libraries(AsyncCardReaderTests
     GTest::gtest_main
     CardPlugin
     SmartCard
+    OpenSSL_Crypto
     Qt6::Core
     Qt6::Widgets
     Qt6::Test
@@ -158,8 +159,8 @@ gtest_discover_tests(StringUtilsTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=of
 
 add_executable(HealthTextDocumentTests
     healthtextdocument_test.cpp
-    ../plugins/health/healthtextdocument.h
-    ../plugins/health/healthtextdocument.cpp
+    ../plugins/rshealth/healthtextdocument.h
+    ../plugins/rshealth/healthtextdocument.cpp
     ../src/utils/libreceliklog.h
     ../src/utils/libreceliklog.cpp
     ${CMAKE_SOURCE_DIR}/resources/librecelik.qrc
@@ -167,7 +168,7 @@ add_executable(HealthTextDocumentTests
 target_include_directories(HealthTextDocumentTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/document/printing
-    ${CMAKE_SOURCE_DIR}/plugins/health
+    ${CMAKE_SOURCE_DIR}/plugins/rshealth
     ${PROJECT_BINARY_DIR}/../src
 )
 target_link_libraries(HealthTextDocumentTests

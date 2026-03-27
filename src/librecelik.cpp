@@ -341,7 +341,8 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                 auto hasVisibleData = [&data]() {
                     return std::any_of(data.groups.begin(), data.groups.end(), [](const auto& g) {
                         return g.groupKey != "auth_required" && g.groupKey != "error" && g.groupKey != "presence" &&
-                               !g.fields.empty();
+                               g.groupKey != "token" && g.groupKey != "meta" && g.groupKey != "certificates" &&
+                               g.groupKey != "pins" && !g.fields.empty();
                     });
                 };
 
@@ -381,8 +382,7 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                                     auto* ts = new TokenSection(LIBRECELIK_CERTIFICATES_DIR, self);
                                     ts->setHeaderColor(QColor(230, 135, 60));
                                     ts->setHeaderHeight(56);
-                                    if (!visible || guiPlugin->cardType() == QStringLiteral("rs-pks"))
-                                        ts->setExpanded(true);
+                                    ts->setExpanded(!visible);
                                     pkiWidget = ts;
                                 }
                                 connectPKISignals(asyncReader, pkiWidget);
@@ -410,8 +410,7 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                         auto* ts = new TokenSection(LIBRECELIK_CERTIFICATES_DIR, self);
                         ts->setHeaderColor(QColor(230, 135, 60));
                         ts->setHeaderHeight(56);
-                        if (!visible2 || guiPlugin->cardType() == QStringLiteral("rs-pks"))
-                            ts->setExpanded(true);
+                        ts->setExpanded(!visible2);
                         pkiWidget = ts;
                     }
                     connectPKISignals(asyncReader, pkiWidget);
@@ -553,17 +552,14 @@ void LibreCelik::connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget)
     if (!tokenSection)
         return;
 
+    connect(reader, &AsyncCardReader::tokenInfoReady, tokenSection, &TokenSection::setTokenInfo);
     connect(reader, &AsyncCardReader::certificatesReady, tokenSection, &TokenSection::setCertificates);
-    // Chain PIN list request after certificates arrive
     connect(reader, &AsyncCardReader::certificatesReady, reader, &AsyncCardReader::requestPINList);
-    // Multi-PIN path
     connect(reader, &AsyncCardReader::pinListReady, tokenSection, &TokenSection::setPINList);
-    // Single-PIN fallback path (CardEdge)
-    connect(reader, &AsyncCardReader::pinStatusReady, tokenSection, &TokenSection::setPINStatus);
-
     connect(tokenSection, &TokenSection::changePINRequested, this,
-            [this, reader](uint8_t pinRef, const QString& pinLabel, bool isTransport) {
-                auto dlg = std::make_unique<ChangePinDlg>(pinLabel, isTransport, this);
+            [this, reader](uint8_t pinRef, const QString& pinLabel, bool isTransport, int minLength, int maxLength) {
+                QWidget* self = this;
+                auto dlg = std::make_unique<ChangePinDlg>(pinLabel, isTransport, minLength, maxLength, self);
                 connect(dlg.get(), &ChangePinDlg::pinChangeRequested, reader,
                         [reader, pinRef](const QString& oldPin, const QString& newPin) {
                             reader->requestChangePIN(pinRef, oldPin, newPin);

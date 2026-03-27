@@ -1415,21 +1415,21 @@
         <source>No</source>
         <translation>No</translation>
     </message>
-    <message id="lc-pks-header-title">
-        <source>Qualified Electronic Certificate</source>
-        <translation>Qualified Electronic Certificate</translation>
+    <message id="lc-pki-token-label">
+        <source>Label</source>
+        <translation>Label</translation>
     </message>
-    <message id="lc-pks-cert-count">
-        <source>Certificates</source>
-        <translation>Certificates</translation>
+    <message id="lc-pki-token-serial">
+        <source>Serial Number</source>
+        <translation>Serial Number</translation>
     </message>
-    <message id="lc-pks-cert-label">
-        <source>Certificate</source>
-        <translation>Certificate</translation>
+    <message id="lc-pki-token-manufacturer">
+        <source>Manufacturer</source>
+        <translation>Manufacturer</translation>
     </message>
-    <message id="lc-pks-card-type">
-        <source>Card Type</source>
-        <translation>Card Type</translation>
+    <message id="lc-token-widget-title">
+        <source>Smart Card Token</source>
+        <translation>Smart Card Token</translation>
     </message>
     <message id="lc-print-tooltip">
         <source>Print</source>
@@ -1515,10 +1515,6 @@
         <source>Issuing Information</source>
         <translation>Issuing Information</translation>
     </message>
-    <message id="lc-pks-title">
-        <source>PKS Qualified Signature</source>
-        <translation>PKS Qualified Signature</translation>
-    </message>
     <message id="lc-token-col-object">
         <source>Object</source>
         <translation>Object</translation>
@@ -1530,14 +1526,6 @@
     <message id="lc-token-title">
         <source>Token</source>
         <translation>Token</translation>
-    </message>
-    <message id="lc-token-certs-button">
-        <source>View Certificates</source>
-        <translation>View Certificates</translation>
-    </message>
-    <message id="lc-token-change-pin">
-        <source>Change PIN</source>
-        <translation>Change PIN</translation>
     </message>
     <message id="lc-token-key-subject">
         <source>Subject</source>
@@ -1694,10 +1682,6 @@
     <message id="lc-emrtd-custody-info">
         <source>Custody Information</source>
         <translation>Custody Information</translation>
-    </message>
-    <message id="lc-pkcs15-smart-card">
-        <source>Smart Card</source>
-        <translation>Smart Card</translation>
     </message>
     <message id="lc-emrtd-insert-mrz-hint">
         <source>Insert the MRZ data from the bottom of the document</source>

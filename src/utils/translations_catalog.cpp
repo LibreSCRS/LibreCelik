@@ -290,8 +290,14 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     // --- eMRTD ---
     //% "Insert the MRZ data from the bottom of the document"
     QT_TRID_NOOP("lc-emrtd-insert-mrz-hint");
-    //% "Smart Card"
-    QT_TRID_NOOP("lc-pkcs15-smart-card");
+    //% "Label"
+    QT_TRID_NOOP("lc-pki-token-label");
+    //% "Serial Number"
+    QT_TRID_NOOP("lc-pki-token-serial");
+    //% "Manufacturer"
+    QT_TRID_NOOP("lc-pki-token-manufacturer");
+    //% "Smart Card Token"
+    QT_TRID_NOOP("lc-token-widget-title");
 
     // --- Health insurance card ---
     //% "Health Insurance Card"
@@ -391,25 +397,9 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "No"
     QT_TRID_NOOP("lc-health-val-no");
 
-    // --- PKS card ---
-    //% "PKS Qualified Signature"
-    QT_TRID_NOOP("lc-pks-title");
-    //% "Qualified Electronic Certificate"
-    QT_TRID_NOOP("lc-pks-header-title");
-    //% "Certificates"
-    QT_TRID_NOOP("lc-pks-cert-count");
-    //% "Certificate"
-    QT_TRID_NOOP("lc-pks-cert-label");
-    //% "Card Type"
-    QT_TRID_NOOP("lc-pks-card-type");
-
-    // --- Token section (shared by eID, PKS, Health) ---
+    // --- Token section (shared by eID, Health, etc.) ---
     //% "Token"
     QT_TRID_NOOP("lc-token-title");
-    //% "View Certificates"
-    QT_TRID_NOOP("lc-token-certs-button");
-    //% "Change PIN"
-    QT_TRID_NOOP("lc-token-change-pin");
     // Tree column headers
     //% "Object"
     QT_TRID_NOOP("lc-token-col-object");

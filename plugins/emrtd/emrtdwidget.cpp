@@ -102,11 +102,6 @@ EMRTDWidget::EMRTDWidget(QWidget* parent) : QWidget(parent)
     outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
 
-    // Security status widget at top — updated when security_status group arrives
-    securityStatusWidget = new SecurityStatusWidget(this);
-    securityStatusWidget->setVisible(false);
-    outerLayout->addWidget(securityStatusWidget);
-
     // Navy outer CollapsibleSection — shell for Phase 2 travel document display
     static const QColor navy(34, 86, 117);
     outerSection = new CollapsibleSection(qtTrId("lc-emrtd-travel-document"), navy, this);
@@ -284,10 +279,13 @@ void EMRTDWidget::addGroup(const plugin::CardFieldGroup& group)
                     check.errorDetail = field.asString();
             }
         }
-        if (securityStatusWidget) {
-            securityStatusWidget->setSecurityStatus(secStatus);
-            securityStatusWidget->setVisible(true);
+        if (!securityStatusWidget) {
+            securityStatusWidget = new SecurityStatusWidget(outerSection);
         }
+        securityStatusWidget->setSecurityStatus(secStatus);
+        securityStatusWidget->setVisible(true);
+        // Always insert at top of section
+        sectionLayout->insertWidget(0, securityStatusWidget);
     } else if (key == "national") {
         auto* nationalSection =
             LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-national-data"), group, nationalTranslationMap());

@@ -15,7 +15,8 @@ class ChangePinDlg : public QDialog
 {
     Q_OBJECT
 public:
-    explicit ChangePinDlg(const QString& pinLabel, bool isTransport, QWidget* parent = nullptr);
+    explicit ChangePinDlg(const QString& pinLabel, bool isTransport, int minLen = 4, int maxLen = 8,
+                          QWidget* parent = nullptr);
     ~ChangePinDlg();
 
 signals:
@@ -40,4 +41,6 @@ private:
     QLabel* statusLabel;
     QDialogButtonBox* buttonBox;
     QPushButton* okButton;
+    int pinMinLength;
+    int pinMaxLength;
 };

@@ -6,7 +6,7 @@
 #include <QAction>
 #include <QDialogButtonBox>
 #include <QIcon>
-#include <QIntValidator>
+#include <QRegularExpressionValidator>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPainter>
@@ -38,7 +38,8 @@ static QIcon createEyeIcon(bool open)
     return QIcon(px);
 }
 
-ChangePinDlg::ChangePinDlg(const QString& pinLabel, bool isTransport, QWidget* parent) : QDialog(parent)
+ChangePinDlg::ChangePinDlg(const QString& pinLabel, bool isTransport, int minLen, int maxLen, QWidget* parent)
+    : QDialog(parent), pinMinLength(minLen > 0 ? minLen : 4), pinMaxLength(maxLen > 0 ? maxLen : 8)
 {
     setWindowTitle(isTransport ? qtTrId("lc-changepin-initialize-title").arg(pinLabel)
                                : qtTrId("lc-changepin-change-title").arg(pinLabel));
@@ -51,8 +52,8 @@ ChangePinDlg::ChangePinDlg(const QString& pinLabel, bool isTransport, QWidget* p
 
     currentPinEdit = new QLineEdit(this);
     currentPinEdit->setEchoMode(QLineEdit::Password);
-    currentPinEdit->setMaxLength(8);
-    currentPinEdit->setValidator(new QIntValidator(0, 99999999, this));
+    currentPinEdit->setMaxLength(pinMaxLength);
+    currentPinEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9]*"), this));
     currentPinEdit->setPlaceholderText(isTransport ? qtTrId("lc-changepin-transport-placeholder")
                                                    : qtTrId("lc-changepin-current"));
     addToggleVisibilityAction(currentPinEdit);
@@ -60,16 +61,16 @@ ChangePinDlg::ChangePinDlg(const QString& pinLabel, bool isTransport, QWidget* p
 
     newPinEdit = new QLineEdit(this);
     newPinEdit->setEchoMode(QLineEdit::Password);
-    newPinEdit->setMaxLength(8);
-    newPinEdit->setValidator(new QIntValidator(0, 99999999, this));
+    newPinEdit->setMaxLength(pinMaxLength);
+    newPinEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9]*"), this));
     newPinEdit->setPlaceholderText(qtTrId("lc-changepin-new"));
     addToggleVisibilityAction(newPinEdit);
     layout->addWidget(newPinEdit);
 
     confirmPinEdit = new QLineEdit(this);
     confirmPinEdit->setEchoMode(QLineEdit::Password);
-    confirmPinEdit->setMaxLength(8);
-    confirmPinEdit->setValidator(new QIntValidator(0, 99999999, this));
+    confirmPinEdit->setMaxLength(pinMaxLength);
+    confirmPinEdit->setValidator(new QRegularExpressionValidator(QRegularExpression("[0-9]*"), this));
     confirmPinEdit->setPlaceholderText(qtTrId("lc-changepin-confirm"));
     addToggleVisibilityAction(confirmPinEdit);
     layout->addWidget(confirmPinEdit);
@@ -148,7 +149,7 @@ void ChangePinDlg::validateForm()
                  isValidPinLength(confirmPinEdit->text()) && newPinEdit->text() == confirmPinEdit->text();
 
     // Show hint when confirm doesn't match and both are filled
-    if (isValidPinLength(newPinEdit->text()) && confirmPinEdit->text().length() >= 4 &&
+    if (isValidPinLength(newPinEdit->text()) && confirmPinEdit->text().length() >= pinMinLength &&
         newPinEdit->text() != confirmPinEdit->text()) {
         statusLabel->setStyleSheet("color: red;");
         statusLabel->setText(qtTrId("lc-changepin-mismatch"));
@@ -159,7 +160,7 @@ void ChangePinDlg::validateForm()
 
 bool ChangePinDlg::isValidPinLength(const QString& pin) const
 {
-    return pin.length() >= 4 && pin.length() <= 8;
+    return pin.length() >= pinMinLength && pin.length() <= pinMaxLength;
 }
 
 void ChangePinDlg::addToggleVisibilityAction(QLineEdit* edit)

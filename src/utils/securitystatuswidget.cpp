@@ -20,8 +20,7 @@ void SecurityStatusWidget::buildLayout()
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(4);
 
-    static const QColor headerColor(55, 71, 79); // blue-grey 800
-    section = new CollapsibleSection(qtTrId("lc-emrtd-security-status"), headerColor, this);
+    section = new CollapsibleSection(qtTrId("lc-emrtd-security-status"), this);
     section->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
     auto* contentLayout = new QVBoxLayout();

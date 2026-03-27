@@ -6,21 +6,8 @@
 #include "emrtdtextdocument.h"
 #include "utils/printmanager.h"
 
-#include <QLabel>
-#include <QVBoxLayout>
-
 QWidget* EMRTDWidgetPlugin::createWidget(const plugin::CardData& data, QWidget* parent) const
 {
-    if (data.cardType == "pkcs15") {
-        // PKI-only mode — minimal widget, TokenSection will be added by main window
-        auto* widget = new QWidget(parent);
-        auto* layout = new QVBoxLayout(widget);
-        auto* label = new QLabel(qtTrId("lc-pkcs15-smart-card"), widget);
-        label->setStyleSheet("font-size: 16px; font-weight: bold; color: #226E75;");
-        layout->addWidget(label);
-        layout->addStretch();
-        return widget;
-    }
     auto* w = new EMRTDWidget(data, parent);
     connect(w, &EMRTDWidget::printRequested, this, [this](const plugin::CardData& d) { print(d); });
     return w;

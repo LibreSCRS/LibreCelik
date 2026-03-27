@@ -1415,21 +1415,21 @@
         <source>No</source>
         <translation>Не</translation>
     </message>
-    <message id="lc-pks-header-title">
-        <source>Qualified Electronic Certificate</source>
-        <translation>Квалификовани електронски сертификат</translation>
+    <message id="lc-pki-token-label">
+        <source>Label</source>
+        <translation>Назив</translation>
     </message>
-    <message id="lc-pks-cert-count">
-        <source>Certificates</source>
-        <translation>Број сертификата</translation>
+    <message id="lc-pki-token-serial">
+        <source>Serial Number</source>
+        <translation>Серијски број</translation>
     </message>
-    <message id="lc-pks-cert-label">
-        <source>Certificate</source>
-        <translation>Сертификат</translation>
+    <message id="lc-pki-token-manufacturer">
+        <source>Manufacturer</source>
+        <translation>Произвођач</translation>
     </message>
-    <message id="lc-pks-card-type">
-        <source>Card Type</source>
-        <translation>Тип картице</translation>
+    <message id="lc-token-widget-title">
+        <source>Smart Card Token</source>
+        <translation>Токен паметне картице</translation>
     </message>
     <message id="lc-print-tooltip">
         <source>Print</source>
@@ -1515,10 +1515,6 @@
         <source>Issuing Information</source>
         <translation>Подаци о издавацу</translation>
     </message>
-    <message id="lc-pks-title">
-        <source>PKS Qualified Signature</source>
-        <translation>ПКС Квалификовани потпис</translation>
-    </message>
     <message id="lc-token-col-object">
         <source>Object</source>
         <translation>Објекат</translation>
@@ -1530,14 +1526,6 @@
     <message id="lc-token-title">
         <source>Token</source>
         <translation>Токен</translation>
-    </message>
-    <message id="lc-token-certs-button">
-        <source>View Certificates</source>
-        <translation>Прикажи сертификате</translation>
-    </message>
-    <message id="lc-token-change-pin">
-        <source>Change PIN</source>
-        <translation>Промени ПИН</translation>
     </message>
     <message id="lc-token-key-subject">
         <source>Subject</source>
@@ -1694,10 +1682,6 @@
     <message id="lc-emrtd-custody-info">
         <source>Custody Information</source>
         <translation>Информације о старатељству</translation>
-    </message>
-    <message id="lc-pkcs15-smart-card">
-        <source>Smart Card</source>
-        <translation>Смарт картица</translation>
     </message>
     <message id="lc-emrtd-insert-mrz-hint">
         <source>Insert the MRZ data from the bottom of the document</source>

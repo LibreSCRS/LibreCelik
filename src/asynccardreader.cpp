@@ -167,6 +167,22 @@ void AsyncCardReader::requestCertificates()
         if (stopRequested)
             return;
         try {
+            // Read token info first
+            auto tokenInfo = pki->readTokenInfo(*conn);
+            if (!tokenInfo.fields.empty()) {
+                QMetaObject::invokeMethod(
+                    self,
+                    [self, tokenInfo = std::move(tokenInfo)]() {
+                        if (!self)
+                            return;
+                        emit self->tokenInfoReady(tokenInfo);
+                    },
+                    Qt::QueuedConnection);
+            }
+
+            if (stopRequested)
+                return;
+
             auto certs = pki->readCertificates(*conn);
             QMetaObject::invokeMethod(
                 self,
@@ -174,41 +190,6 @@ void AsyncCardReader::requestCertificates()
                     if (!self)
                         return;
                     emit self->certificatesReady(certs);
-                },
-                Qt::QueuedConnection);
-        } catch (const std::exception& e) {
-            QMetaObject::invokeMethod(
-                self,
-                [self, msg = QString::fromStdString(e.what())]() {
-                    if (!self)
-                        return;
-                    emit self->errorOccurred(msg);
-                },
-                Qt::QueuedConnection);
-        }
-    });
-}
-
-void AsyncCardReader::requestPINTriesLeft()
-{
-    auto* pki = pkiPlugin ? pkiPlugin : activePlugin;
-    if (!pki || !pki->supportsPKI())
-        return;
-
-    waitForPendingAsync();
-
-    QPointer<AsyncCardReader> self = this;
-    futurePKI = std::async(std::launch::async, [this, self, pki]() {
-        if (stopRequested)
-            return;
-        try {
-            int tries = pki->getPINTriesLeft(*conn);
-            QMetaObject::invokeMethod(
-                self,
-                [self, tries]() {
-                    if (!self)
-                        return;
-                    emit self->pinStatusReady(tries, tries == 0);
                 },
                 Qt::QueuedConnection);
         } catch (const std::exception& e) {
@@ -270,45 +251,6 @@ void AsyncCardReader::requestPINTriesLeft(uint8_t pinReference)
     });
 }
 
-void AsyncCardReader::requestChangePIN(const QString& oldPin, const QString& newPin)
-{
-    auto* pki = pkiPlugin ? pkiPlugin : activePlugin;
-    if (!pki || !pki->supportsPKI())
-        return;
-
-    waitForPendingAsync();
-
-    auto oldPinStd = oldPin.toStdString();
-    auto newPinStd = newPin.toStdString();
-
-    QPointer<AsyncCardReader> self = this;
-    futurePKI = std::async(std::launch::async, [this, self, pki, oldPinStd, newPinStd]() {
-        if (stopRequested)
-            return;
-        try {
-            auto result = pki->changePIN(*conn, oldPinStd, newPinStd);
-            QMetaObject::invokeMethod(
-                self,
-                [self, result]() {
-                    if (!self)
-                        return;
-                    emit self->pinChangeResult(result.success, result.retriesLeft,
-                                               result.success ? QString() : qtTrId("lc-changepin-failed"));
-                },
-                Qt::QueuedConnection);
-        } catch (const std::exception& e) {
-            QMetaObject::invokeMethod(
-                self,
-                [self, msg = QString::fromStdString(e.what())]() {
-                    if (!self)
-                        return;
-                    emit self->pinChangeResult(false, -1, msg);
-                },
-                Qt::QueuedConnection);
-        }
-    });
-}
-
 void AsyncCardReader::requestPINList()
 {
     auto* pki = pkiPlugin ? pkiPlugin : activePlugin;
@@ -323,26 +265,14 @@ void AsyncCardReader::requestPINList()
             return;
         try {
             auto pins = pki->getPINList(*conn);
-            if (!pins.empty()) {
-                QMetaObject::invokeMethod(
-                    self,
-                    [self, pins = std::move(pins)]() {
-                        if (!self)
-                            return;
-                        emit self->pinListReady(pins);
-                    },
-                    Qt::QueuedConnection);
-            } else {
-                int tries = pki->getPINTriesLeft(*conn);
-                QMetaObject::invokeMethod(
-                    self,
-                    [self, tries]() {
-                        if (!self)
-                            return;
-                        emit self->pinStatusReady(tries, tries == 0);
-                    },
-                    Qt::QueuedConnection);
-            }
+            QMetaObject::invokeMethod(
+                self,
+                [self, pins = std::move(pins)]() {
+                    if (!self)
+                        return;
+                    emit self->pinListReady(pins);
+                },
+                Qt::QueuedConnection);
         } catch (const std::exception& e) {
             QMetaObject::invokeMethod(
                 self,
@@ -492,8 +422,13 @@ void AsyncCardReader::requestDataWithCredentials(const QMap<QString, QString>& c
             }
 
             std::vector<plugin::CertificateData> certs;
+            plugin::CardFieldGroup tokenInfo;
             auto* pki = pkiPlugin ? pkiPlugin : (activePlugin->supportsPKI() ? activePlugin : nullptr);
             if (pki && pki->supportsPKI()) {
+                try {
+                    tokenInfo = pki->readTokenInfo(*conn);
+                } catch (...) {
+                }
                 try {
                     certs = pki->readCertificates(*conn);
                 } catch (...) {
@@ -507,12 +442,15 @@ void AsyncCardReader::requestDataWithCredentials(const QMap<QString, QString>& c
 
             QMetaObject::invokeMethod(
                 self2,
-                [this, self2, data = std::move(data), certs = std::move(certs)]() {
+                [this, self2, data = std::move(data), certs = std::move(certs),
+                 tokenInfo = std::move(tokenInfo)]() {
                     if (!self2)
                         return;
                     certsAlreadyQueued = !certs.empty();
                     emit cardDataReady(data);
                     emit readingFinished();
+                    if (!tokenInfo.fields.empty())
+                        emit tokenInfoReady(tokenInfo);
                     if (!certs.empty()) {
                         QMetaObject::invokeMethod(
                             self2,

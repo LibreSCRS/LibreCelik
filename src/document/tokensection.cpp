@@ -6,6 +6,7 @@
 
 #include <QBrush>
 #include <QHeaderView>
+#include <QIcon>
 #include <QMenu>
 #include <QEasingCurve>
 #include <QPropertyAnimation>
@@ -104,15 +105,20 @@ constexpr int PinReferenceRole = Qt::UserRole;
 constexpr int PinTransportRole = Qt::UserRole + 1;
 constexpr int PinLabelRole = Qt::UserRole + 2;
 constexpr int PinBlockedRole = Qt::UserRole + 3;
+constexpr int PinMinLengthRole = Qt::UserRole + 4;
+constexpr int PinMaxLengthRole = Qt::UserRole + 5;
+constexpr int PinCanChangeRole = Qt::UserRole + 6;
 
 } // namespace
 
 TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
     : CollapsibleSection(qtTrId("lc-token-title"), parent), certFolderPath(std::move(certFolderPath))
 {
-    auto* layout = new QVBoxLayout(this);
-    layout->setSpacing(2);
-    layout->setContentsMargins(6, 4, 6, 4);
+    contentLayout = new QVBoxLayout(this);
+    contentLayout->setSpacing(2);
+    contentLayout->setContentsMargins(6, 4, 6, 4);
+
+    // Token info banner — inserted at index 0 by setTokenInfo() when data arrives
 
     // Tree widget
     treeWidget = new QTreeWidget(this);
@@ -142,7 +148,7 @@ TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
     tokenPinItem->setExpanded(true);
     tokenPinItem->setHidden(true);
 
-    layout->addWidget(treeWidget);
+    contentLayout->addWidget(treeWidget);
 
     connect(treeWidget, &QTreeWidget::customContextMenuRequested, this, &TokenSection::onContextMenu);
 
@@ -168,6 +174,58 @@ TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
             }
         }
     });
+}
+
+static QString formatSerialNumber(const plugin::CardField& field)
+{
+    bool printable = std::all_of(field.value.begin(), field.value.end(),
+                                  [](uint8_t c) { return c >= 0x20 && c < 0x7F; });
+    if (printable)
+        return QString::fromStdString(field.asString());
+
+    QStringList hexParts;
+    for (uint8_t b : field.value)
+        hexParts << QString("%1").arg(b, 2, 16, QChar('0')).toUpper();
+    return hexParts.join(':');
+}
+
+void TokenSection::setTokenInfo(const plugin::CardFieldGroup& tokenGroup)
+{
+    if (tokenGroup.fields.empty())
+        return;
+    if (headerCard)
+        return; // Already populated
+
+    std::vector<LibreSCRS::HeaderField> headerFields;
+
+    for (const auto& field : tokenGroup.fields) {
+        if (field.value.empty())
+            continue;
+
+        QString labelText;
+        if (field.key == "label")
+            labelText = qtTrId("lc-pki-token-label");
+        else if (field.key == "serial_number")
+            labelText = qtTrId("lc-pki-token-serial");
+        else if (field.key == "manufacturer")
+            labelText = qtTrId("lc-pki-token-manufacturer");
+        else
+            labelText = QString::fromStdString(field.key);
+
+        QString valueText = (field.key == "serial_number") ? formatSerialNumber(field)
+                                                           : QString::fromStdString(field.asString());
+
+        headerFields.push_back({labelText, valueText});
+    }
+
+    if (headerFields.empty())
+        return;
+
+    headerCard = new LibreSCRS::CardHeaderCard(
+        QIcon(":/images/certificate-icon.svg"), QSize(64, 64), headerFields, this);
+
+    contentLayout->insertWidget(0, headerCard);
+    updateTreeMinimumHeight();
 }
 
 void TokenSection::setCertificates(const std::vector<plugin::CertificateData>& certList)
@@ -207,35 +265,6 @@ void TokenSection::setCertificates(const std::vector<plugin::CertificateData>& c
     updateTreeMinimumHeight();
 }
 
-void TokenSection::setPINStatus(int triesLeft, bool blocked)
-{
-    // triesLeft == -2 means card type has no PIN (e.g. Apollo eID)
-    if (triesLeft == -2) {
-        tokenPinItem->setHidden(true);
-        return;
-    }
-
-    while (tokenPinItem->childCount() > 0)
-        delete tokenPinItem->takeChild(0);
-
-    auto* item = new QTreeWidgetItem(tokenPinItem);
-    item->setText(0, qtTrId("lc-eid-pin-user"));
-    item->setData(0, PinReferenceRole, static_cast<unsigned int>(0x80));
-    item->setData(0, PinTransportRole, false);
-    item->setData(0, PinLabelRole, qtTrId("lc-eid-pin-user"));
-    item->setData(0, PinBlockedRole, blocked);
-    if (blocked) {
-        item->setText(1, qtTrId("lc-eid-pin-blocked"));
-        item->setForeground(1, QBrush(Qt::red));
-    } else if (triesLeft >= 0)
-        item->setText(1, qtTrId("lc-eid-pin-tries-remaining").arg(triesLeft));
-    else
-        item->setText(1, qtTrId("lc-eid-pin-unknown"));
-    tokenPinItem->setHidden(false);
-    tokenPinItem->setExpanded(true);
-    updateTreeMinimumHeight();
-}
-
 void TokenSection::setPINList(const std::vector<plugin::PinStatusEntry>& pins)
 {
     if (pins.empty()) {
@@ -264,6 +293,9 @@ void TokenSection::setPINList(const std::vector<plugin::PinStatusEntry>& pins)
         item->setData(0, PinTransportRole, !pin.initialized);
         item->setData(0, PinLabelRole, QString::fromStdString(pin.label));
         item->setData(0, PinBlockedRole, pin.blocked);
+        item->setData(0, PinMinLengthRole, pin.minLength);
+        item->setData(0, PinMaxLengthRole, pin.maxLength);
+        item->setData(0, PinCanChangeRole, pin.canChange);
     }
 
     tokenPinItem->setHidden(false);
@@ -304,6 +336,10 @@ void TokenSection::onContextMenu(const QPoint& pos)
     }
 
     if (item->parent() == tokenPinItem) {
+        bool canChange = item->data(0, PinCanChangeRole).toBool();
+        if (!canChange)
+            return;
+
         bool isTransport = item->data(0, PinTransportRole).toBool();
         bool isBlocked = item->data(0, PinBlockedRole).toBool();
         uint8_t pinRef = static_cast<uint8_t>(item->data(0, PinReferenceRole).toUInt());
@@ -315,8 +351,10 @@ void TokenSection::onContextMenu(const QPoint& pos)
         if (isBlocked) {
             pinAction->setEnabled(false);
         } else {
-            connect(pinAction, &QAction::triggered, this, [this, pinRef, pinLabel, isTransport]() {
-                emit changePINRequested(pinRef, pinLabel, isTransport);
+            connect(pinAction, &QAction::triggered, this, [this, pinRef, pinLabel, isTransport, item]() {
+                int minLen = item->data(0, PinMinLengthRole).toInt();
+                int maxLen = item->data(0, PinMaxLengthRole).toInt();
+                emit changePINRequested(pinRef, pinLabel, isTransport, minLen, maxLen);
             });
         }
     }

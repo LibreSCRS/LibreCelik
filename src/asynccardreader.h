@@ -29,9 +29,7 @@ public:
 
     void requestData();
     void requestCertificates();
-    void requestPINTriesLeft();
     void requestPINTriesLeft(uint8_t pinReference);
-    void requestChangePIN(const QString& oldPin, const QString& newPin);
     void requestPINList();
     void requestChangePIN(uint8_t pinReference, const QString& oldPin, const QString& newPin);
     void requestVerifyPIN(const QString& pin);
@@ -56,6 +54,7 @@ signals:
     void cardGroupReady(const QString& cardType, const plugin::CardFieldGroup& group);
     void cardDataReady(const plugin::CardData& data);
     void certificatesReady(const std::vector<plugin::CertificateData>& certs);
+    void tokenInfoReady(const plugin::CardFieldGroup& tokenInfo);
     void pinStatusReady(int triesLeft, bool blocked);
     void pinChangeResult(bool success, int triesLeft, const QString& errorMessage);
     void pinVerifyResult(bool success, int triesLeft);

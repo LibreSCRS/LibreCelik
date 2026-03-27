@@ -4,25 +4,28 @@
 #pragma once
 
 #include "plugin/cardwidgetplugin.h"
+
 #include <QObject>
 #include <QtPlugin>
 
-class PksWidgetPlugin : public QObject, public CardWidgetPlugin
+class TokenWidgetPlugin : public QObject, public CardWidgetPlugin
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.librescrs.CardWidgetPlugin/1.0" FILE "rs-pks.json")
+    Q_PLUGIN_METADATA(IID "org.librescrs.CardWidgetPlugin/1.0" FILE "token.json")
     Q_INTERFACES(CardWidgetPlugin)
 
 public:
     QString cardType() const override
     {
-        return QStringLiteral("rs-pks");
+        return QStringLiteral("token");
     }
     QString displayName() const override
     {
-        return qtTrId("lc-pks-title");
+        return qtTrId("lc-token-widget-title");
+    }
+    QStringList additionalCardTypes() const override
+    {
+        return {QStringLiteral("pkcs15"), QStringLiteral("cardedge")};
     }
     QWidget* createWidget(const plugin::CardData& data, QWidget* parent) const override;
-    QWidget* createEmptyWidget(QWidget* parent) const override;
-    void addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const override;
 };

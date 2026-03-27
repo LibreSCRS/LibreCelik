@@ -35,12 +35,9 @@ static std::map<std::string, QString> cccTranslationMap()
 static std::map<std::string, QString> printedTranslationMap()
 {
     return {
-        {"name", qtTrId("lc-piv-field-name")},
-        {"employeeAffiliation", qtTrId("lc-piv-field-affiliation")},
-        {"org1", qtTrId("lc-piv-field-org1")},
-        {"org2", qtTrId("lc-piv-field-org2")},
-        {"expiry", qtTrId("lc-piv-field-expiration")},
-        {"serialNumber", qtTrId("lc-piv-field-serial")},
+        {"name", qtTrId("lc-piv-field-name")},         {"employeeAffiliation", qtTrId("lc-piv-field-affiliation")},
+        {"org1", qtTrId("lc-piv-field-org1")},         {"org2", qtTrId("lc-piv-field-org2")},
+        {"expiry", qtTrId("lc-piv-field-expiration")}, {"serialNumber", qtTrId("lc-piv-field-serial")},
         {"issuerId", qtTrId("lc-piv-field-issuer")},
     };
 }
@@ -142,22 +139,22 @@ void PIVWidget::addChuidGroup(const plugin::CardFieldGroup& group)
     contentLayout->addWidget(headerCard);
 
     // CHUID details section
-    auto* chuidSec = LibreSCRS::FieldSectionBuilder::build(
-        qtTrId("lc-piv-section-chuid"), group, chuidTranslationMap(), {}, outerSection);
+    auto* chuidSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-piv-section-chuid"), group, chuidTranslationMap(),
+                                                           {}, outerSection);
     contentLayout->addWidget(chuidSec);
 }
 
 void PIVWidget::addCccGroup(const plugin::CardFieldGroup& group)
 {
-    auto* cccSec = LibreSCRS::FieldSectionBuilder::build(
-        qtTrId("lc-piv-section-ccc"), group, cccTranslationMap(), {}, outerSection);
+    auto* cccSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-piv-section-ccc"), group, cccTranslationMap(), {},
+                                                         outerSection);
     contentLayout->addWidget(cccSec);
 }
 
 void PIVWidget::addPrintedGroup(const plugin::CardFieldGroup& group)
 {
-    auto* printedSec = LibreSCRS::FieldSectionBuilder::build(
-        qtTrId("lc-piv-section-printed"), group, printedTranslationMap(), {}, outerSection);
+    auto* printedSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-piv-section-printed"), group,
+                                                             printedTranslationMap(), {}, outerSection);
     contentLayout->addWidget(printedSec);
 
     // Rebuild header with name if available
@@ -168,15 +165,15 @@ void PIVWidget::addPrintedGroup(const plugin::CardFieldGroup& group)
 
 void PIVWidget::addDiscoveryGroup(const plugin::CardFieldGroup& group)
 {
-    auto* discoverySec = LibreSCRS::FieldSectionBuilder::build(
-        qtTrId("lc-piv-section-discovery"), group, discoveryTranslationMap(), {}, outerSection);
+    auto* discoverySec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-piv-section-discovery"), group,
+                                                               discoveryTranslationMap(), {}, outerSection);
     contentLayout->addWidget(discoverySec);
 }
 
 void PIVWidget::addKeyHistoryGroup(const plugin::CardFieldGroup& group)
 {
-    auto* keyHistorySec = LibreSCRS::FieldSectionBuilder::build(
-        qtTrId("lc-piv-section-keyhistory"), group, keyHistoryTranslationMap(), {}, outerSection);
+    auto* keyHistorySec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-piv-section-keyhistory"), group,
+                                                                keyHistoryTranslationMap(), {}, outerSection);
     contentLayout->addWidget(keyHistorySec);
 }
 
@@ -196,8 +193,8 @@ void PIVWidget::rebuildHeader()
     headerFields.push_back({qtTrId("lc-piv-field-guid"), guid});
     headerFields.push_back({qtTrId("lc-piv-field-expiration"), expiration});
 
-    auto* newHeader = new LibreSCRS::CardHeaderCard(
-        QIcon(":/images/piv-icon.svg"), QSize(80, 80), headerFields, outerSection);
+    auto* newHeader =
+        new LibreSCRS::CardHeaderCard(QIcon(":/images/piv-icon.svg"), QSize(80, 80), headerFields, outerSection);
 
     auto* item = contentLayout->replaceWidget(headerCard, newHeader);
     delete item;

@@ -450,8 +450,7 @@ void AsyncCardReader::requestDataWithCredentials(const QMap<QString, QString>& c
 
             QMetaObject::invokeMethod(
                 self2,
-                [this, self2, data = std::move(data), certs = std::move(certs),
-                 tokenInfo = std::move(tokenInfo)]() {
+                [this, self2, data = std::move(data), certs = std::move(certs), tokenInfo = std::move(tokenInfo)]() {
                     if (!self2)
                         return;
                     certsAlreadyQueued = !certs.empty();

@@ -96,12 +96,9 @@ QString PIVTextDocument::buildPrintedSection(const plugin::CardData& cardData) c
         QString label;
     };
     std::vector<Field> fields = {
-        {"name", qtTrId("lc-piv-field-name")},
-        {"employeeAffiliation", qtTrId("lc-piv-field-affiliation")},
-        {"org1", qtTrId("lc-piv-field-org1")},
-        {"org2", qtTrId("lc-piv-field-org2")},
-        {"expiry", qtTrId("lc-piv-field-expiration")},
-        {"serialNumber", qtTrId("lc-piv-field-serial")},
+        {"name", qtTrId("lc-piv-field-name")},         {"employeeAffiliation", qtTrId("lc-piv-field-affiliation")},
+        {"org1", qtTrId("lc-piv-field-org1")},         {"org2", qtTrId("lc-piv-field-org2")},
+        {"expiry", qtTrId("lc-piv-field-expiration")}, {"serialNumber", qtTrId("lc-piv-field-serial")},
         {"issuerId", qtTrId("lc-piv-field-issuer")},
     };
 

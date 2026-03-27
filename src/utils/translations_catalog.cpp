@@ -290,14 +290,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     // --- eMRTD ---
     //% "Insert the MRZ data from the bottom of the document"
     QT_TRID_NOOP("lc-emrtd-insert-mrz-hint");
-    //% "Label"
-    QT_TRID_NOOP("lc-pki-token-label");
-    //% "Serial Number"
-    QT_TRID_NOOP("lc-pki-token-serial");
-    //% "Manufacturer"
-    QT_TRID_NOOP("lc-pki-token-manufacturer");
-    //% "Smart Card Token"
-    QT_TRID_NOOP("lc-token-widget-title");
 
     // --- Health insurance card ---
     //% "Health Insurance Card"
@@ -398,8 +390,16 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-health-val-no");
 
     // --- Token section (shared by eID, Health, etc.) ---
+    //% "Smart Card Token"
+    QT_TRID_NOOP("lc-token-widget-title");
     //% "Token"
     QT_TRID_NOOP("lc-token-title");
+    //% "Label"
+    QT_TRID_NOOP("lc-pki-token-label");
+    //% "Serial Number"
+    QT_TRID_NOOP("lc-pki-token-serial");
+    //% "Manufacturer"
+    QT_TRID_NOOP("lc-pki-token-manufacturer");
     // Tree column headers
     //% "Object"
     QT_TRID_NOOP("lc-token-col-object");
@@ -926,29 +926,52 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Value"
     QT_TRID_NOOP("lc-emrtd-national-value");
 
-    // PIV
+    // --- PIV ---
+    //% "PIV (NIST SP 800-73)"
     QT_TRID_NOOP("lc-piv-widget-title");
+    //% "Print PIV Card"
     QT_TRID_NOOP("lc-piv-print-title");
+    //% "PIV Card"
     QT_TRID_NOOP("lc-piv-doc-title");
+    //% "Printing date"
     QT_TRID_NOOP("lc-piv-doc-printing-date");
+    //% "CHUID"
     QT_TRID_NOOP("lc-piv-section-chuid");
+    //% "CCC"
     QT_TRID_NOOP("lc-piv-section-ccc");
+    //% "Printed Information"
     QT_TRID_NOOP("lc-piv-section-printed");
+    //% "Discovery"
     QT_TRID_NOOP("lc-piv-section-discovery");
+    //% "Key History"
     QT_TRID_NOOP("lc-piv-section-keyhistory");
+    //% "GUID"
     QT_TRID_NOOP("lc-piv-field-guid");
+    //% "FASC-N"
     QT_TRID_NOOP("lc-piv-field-fascn");
+    //% "Expiration Date"
     QT_TRID_NOOP("lc-piv-field-expiration");
+    //% "Card Identifier"
     QT_TRID_NOOP("lc-piv-field-cardid");
+    //% "Name"
     QT_TRID_NOOP("lc-piv-field-name");
+    //% "Employee Affiliation"
     QT_TRID_NOOP("lc-piv-field-affiliation");
+    //% "Organization (Line 1)"
     QT_TRID_NOOP("lc-piv-field-org1");
+    //% "Organization (Line 2)"
     QT_TRID_NOOP("lc-piv-field-org2");
+    //% "Agency Serial Number"
     QT_TRID_NOOP("lc-piv-field-serial");
+    //% "Issuer Identification"
     QT_TRID_NOOP("lc-piv-field-issuer");
+    //% "PIN Policy"
     QT_TRID_NOOP("lc-piv-field-pinpolicy");
+    //% "On-Card Certificates"
     QT_TRID_NOOP("lc-piv-field-oncardcerts");
+    //% "Off-Card Certificates"
     QT_TRID_NOOP("lc-piv-field-offcardcerts");
+    //% "Off-Card URL"
     QT_TRID_NOOP("lc-piv-field-offcardurl");
 }
 

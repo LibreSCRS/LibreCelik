@@ -22,7 +22,7 @@ jobs:
 
       - name: Check clang-format
         run: |
-          find src test -name "*.cpp" -o -name "*.h" \
+          find src test plugins -name "*.cpp" -o -name "*.h" \
             | xargs clang-format-21 --dry-run --Werror
 
   build-linux:

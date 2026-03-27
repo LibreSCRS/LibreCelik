@@ -205,6 +205,30 @@ target_link_libraries(EIdTextDocumentTests
 set_target_properties(EIdTextDocumentTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(EIdTextDocumentTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+add_executable(PIVTextDocumentTests
+    pivtextdocument_test.cpp
+    ../plugins/piv/pivtextdocument.h
+    ../plugins/piv/pivtextdocument.cpp
+    ../src/utils/libreceliklog.h
+    ../src/utils/libreceliklog.cpp
+    ${CMAKE_SOURCE_DIR}/resources/librecelik.qrc
+)
+target_include_directories(PIVTextDocumentTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/document/printing
+    ${CMAKE_SOURCE_DIR}/plugins/piv
+    ${PROJECT_BINARY_DIR}/../src
+)
+target_link_libraries(PIVTextDocumentTests
+    GTest::gtest
+    CardPlugin
+    LibreCelikPrinting
+    Qt6::Widgets
+    Qt6::PrintSupport
+)
+set_target_properties(PIVTextDocumentTests PROPERTIES AUTOMOC ON)
+gtest_discover_tests(PIVTextDocumentTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
 add_executable(EMRTDAuthWidgetTests
     emrtdauthwidget_test.cpp
     ../src/document/emrtd/emrtdauthwidget.h

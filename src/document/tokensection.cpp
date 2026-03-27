@@ -178,8 +178,8 @@ TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
 
 static QString formatSerialNumber(const plugin::CardField& field)
 {
-    bool printable = std::all_of(field.value.begin(), field.value.end(),
-                                  [](uint8_t c) { return c >= 0x20 && c < 0x7F; });
+    bool printable =
+        std::all_of(field.value.begin(), field.value.end(), [](uint8_t c) { return c >= 0x20 && c < 0x7F; });
     if (printable)
         return QString::fromStdString(field.asString());
 
@@ -212,8 +212,8 @@ void TokenSection::setTokenInfo(const plugin::CardFieldGroup& tokenGroup)
         else
             labelText = QString::fromStdString(field.key);
 
-        QString valueText = (field.key == "serial_number") ? formatSerialNumber(field)
-                                                           : QString::fromStdString(field.asString());
+        QString valueText =
+            (field.key == "serial_number") ? formatSerialNumber(field) : QString::fromStdString(field.asString());
 
         headerFields.push_back({labelText, valueText});
     }
@@ -221,8 +221,8 @@ void TokenSection::setTokenInfo(const plugin::CardFieldGroup& tokenGroup)
     if (headerFields.empty())
         return;
 
-    headerCard = new LibreSCRS::CardHeaderCard(
-        QIcon(":/images/certificate-icon.svg"), QSize(64, 64), headerFields, this);
+    headerCard =
+        new LibreSCRS::CardHeaderCard(QIcon(":/images/certificate-icon.svg"), QSize(64, 64), headerFields, this);
 
     contentLayout->insertWidget(0, headerCard);
     updateTreeMinimumHeight();

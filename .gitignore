@@ -41,6 +41,9 @@ resources/i18n/*.qm
 # IDE
 .qtcreator/
 
+# Claude Code
+.claude/
+
 # Git
 .gitconfig
 

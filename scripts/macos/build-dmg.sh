@@ -95,7 +95,7 @@ ls "$APP_STAGING/Contents/PlugIns/middleware-plugins/"
 
 echo "Copying GUI plugins..."
 mkdir -p "$APP_STAGING/Contents/PlugIns/gui-plugins"
-for f in "$GUI_PLUGIN_DIR"/*-gui-plugin.dylib; do
+for f in "$GUI_PLUGIN_DIR"/*-gui-plugin.*; do
     [[ -f "$f" ]] && cp "$f" "$APP_STAGING/Contents/PlugIns/gui-plugins/"
 done
 ls "$APP_STAGING/Contents/PlugIns/gui-plugins/"

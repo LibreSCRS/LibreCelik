@@ -267,6 +267,14 @@ for f in "$GUI_PLUGIN_DIR"/*-gui-plugin.so; do
 done
 ls "$APPDIR/usr/lib/gui-plugins/"
 
+# Patch RPATH of GUI plugins so they find the bundled Qt libs at runtime.
+# Without this, plugins retain the CI build-tree RPATH (e.g. /home/runner/...)
+# and fall back to the system Qt, causing ABI mismatch failures.
+echo "Patching GUI plugin RPATHs..."
+for f in "$APPDIR/usr/lib/gui-plugins"/*.so; do
+    patchelf --set-rpath '$ORIGIN/..' "$f"
+done
+
 # ---------------------------------------------------------------------------
 # Phase 3 — Package with appimagetool.
 # ---------------------------------------------------------------------------

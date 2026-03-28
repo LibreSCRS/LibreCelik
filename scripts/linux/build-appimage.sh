@@ -275,6 +275,22 @@ for f in "$APPDIR/usr/lib/gui-plugins"/*.so; do
     patchelf --set-rpath '$ORIGIN/..' "$f"
 done
 
+# Bundle Qt libraries that GUI plugins need but the main binary doesn't link.
+# linuxdeploy only processes the main executable's dependencies, so plugin-only
+# deps like PrintSupport must be copied explicitly.
+QT_LIB_DIR="$("$QMAKE" -query QT_INSTALL_LIBS)"
+echo "Bundling extra Qt libs for GUI plugins..."
+for lib in libQt6PrintSupport.so.6; do
+    src="$QT_LIB_DIR/$lib"
+    if [[ -f "$src" ]]; then
+        cp "$src" "$APPDIR/usr/lib/"
+        patchelf --set-rpath '$ORIGIN' "$APPDIR/usr/lib/$lib"
+        echo "  copied $lib"
+    else
+        echo "  WARNING: $lib not found in $QT_LIB_DIR"
+    fi
+done
+
 # ---------------------------------------------------------------------------
 # Phase 3 — Package with appimagetool.
 # ---------------------------------------------------------------------------

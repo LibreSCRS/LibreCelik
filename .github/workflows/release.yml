@@ -33,6 +33,8 @@ jobs:
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
 
       - name: Build
+        env:
+          QT_QPA_PLATFORM: offscreen
         run: cmake --build build
 
       - name: Test (LibreCelik)
@@ -75,6 +77,8 @@ jobs:
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja -DCMAKE_OSX_ARCHITECTURES=arm64
 
       - name: Build
+        env:
+          QT_QPA_PLATFORM: offscreen
         run: cmake --build build
 
       - name: Test (LibreCelik)

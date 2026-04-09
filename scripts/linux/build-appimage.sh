@@ -291,6 +291,26 @@ for lib in libQt6PrintSupport.so.6; do
     fi
 done
 
+# Bundle JPEG2000 support for eMRTD travel documents.
+# eMRTD cards store facial images and signatures in JPEG2000 (JP2) format.
+# linuxdeploy-plugin-qt silently skips libqjp2.so when libjasper is missing
+# from its resolution path, so we must copy both explicitly.
+echo "Bundling JPEG2000 support (eMRTD images)..."
+JP2_PLUGIN="$QT_PLUGINS_SYSTEM/imageformats/libqjp2.so"
+JASPER_SO=$(ldconfig -p 2>/dev/null | grep -oP '/\S*libjasper\.so\.\d+' | head -1)
+if [[ -f "$JP2_PLUGIN" && -n "$JASPER_SO" && -f "$JASPER_SO" ]]; then
+    cp "$JP2_PLUGIN" "$APPDIR/usr/plugins/imageformats/"
+    patchelf --set-rpath '$ORIGIN/../../lib:$ORIGIN' "$APPDIR/usr/plugins/imageformats/libqjp2.so"
+    echo "  copied libqjp2.so"
+    cp "$JASPER_SO" "$APPDIR/usr/lib/"
+    patchelf --set-rpath '$ORIGIN' "$APPDIR/usr/lib/$(basename "$JASPER_SO")"
+    echo "  copied $(basename "$JASPER_SO")"
+else
+    echo "  WARNING: libqjp2.so or libjasper not found — JPEG2000 images (eMRTD) will not display"
+    [[ ! -f "$JP2_PLUGIN" ]] && echo "    missing: $JP2_PLUGIN"
+    [[ -z "$JASPER_SO" || ! -f "$JASPER_SO" ]] && echo "    missing: libjasper.so"
+fi
+
 # ---------------------------------------------------------------------------
 # Phase 3 — Package with appimagetool.
 # ---------------------------------------------------------------------------

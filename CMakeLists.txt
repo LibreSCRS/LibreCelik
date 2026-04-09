@@ -29,7 +29,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_compile_options(-fexperimental-library)
 endif()
 
-set(MIDDLEWARE_VERSION 2.0.0)
+set(MIDDLEWARE_VERSION 2.0.1)
 
 # Fetch LibreMiddleware (smartcard, rs-eid, rs-health, eu-vrc, emrtd, piv, pkcs15 libraries)
 include(FetchContent)

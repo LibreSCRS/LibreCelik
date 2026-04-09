@@ -68,10 +68,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Qt
-        run: |
-          brew install qt ninja
-          echo "/opt/homebrew/opt/qt/bin" >> $GITHUB_PATH
+      - name: Install build tools
+        run: brew install ninja
+
+      - name: Install Qt 6.10
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.10.*'
+          host: mac
+          target: desktop
+          arch: clang_64
+          modules: ''
+          cache: true
 
       - name: Configure
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja

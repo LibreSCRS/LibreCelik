@@ -74,7 +74,7 @@ jobs:
           echo "/opt/homebrew/opt/qt/bin" >> $GITHUB_PATH
 
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja -DCMAKE_OSX_ARCHITECTURES=arm64
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
 
       - name: Build
         env:

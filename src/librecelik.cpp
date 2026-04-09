@@ -115,7 +115,8 @@ void LibreCelik::updateAboutText()
 {
     ui->aboutLabel->setText(QString("<br><br>") + qtTrId("lc-main-about-librecelik").arg(LIBRECELIK_VERSION) +
                             QString("<br>") +
-                            qtTrId("lc-main-about-libremiddleware").arg(LIBRECELIK_MIDDLEWARE_VERSION));
+                            qtTrId("lc-main-about-libremiddleware").arg(LIBRECELIK_MIDDLEWARE_VERSION) +
+                            QString("<br>") + qtTrId("lc-main-about-donate"));
 }
 
 bool LibreCelik::loadLanguage(const QString& locale)

@@ -136,10 +136,23 @@ done
 
 # Remove KDE-specific imageformat extras — they have deps (e.g. libjxrglue,
 # libjasper) not installed on non-KDE systems.
-# LibreCelik uses the Qt resource system for all its images; it needs only the
-# standard Qt imageformat plugins (libq*.so).
 find "$FILTERED_PLUGINS/imageformats" -name "kimg_*.so" -delete
-echo "Filtered imageformats (libq* only):"
+
+# Remove imageformat plugins whose shared-library dependencies are missing on
+# this system. This avoids linuxdeploy-plugin-qt failing when e.g. libqtiff.so
+# links a libtiff version not present on the build host.
+echo "Checking imageformat plugin dependencies..."
+for plugin in "$FILTERED_PLUGINS/imageformats"/*.so; do
+    [[ -f "$plugin" ]] || continue
+    if ! ldd "$plugin" 2>/dev/null | grep -q "not found"; then
+        continue
+    fi
+    missing=$(ldd "$plugin" 2>/dev/null | grep "not found" | awk '{print $1}' | tr '\n' ' ')
+    echo "  removing $(basename "$plugin") (missing: $missing)"
+    rm "$plugin"
+done
+
+echo "Filtered imageformats:"
 ls "$FILTERED_PLUGINS/imageformats/"
 
 # ---------------------------------------------------------------------------
@@ -290,6 +303,50 @@ for lib in libQt6PrintSupport.so.6; do
         echo "  WARNING: $lib not found in $QT_LIB_DIR"
     fi
 done
+
+# Bundle JPEG2000 support for eMRTD travel documents.
+# eMRTD cards store facial images and signatures in JPEG2000 (JP2) format.
+# On macOS, Qt uses ImageIO (built-in JP2 support). On Linux, the libqjp2.so
+# plugin from Qt's qtimageformats module is needed. It links libopenjp2 (Qt's
+# official build) or libjasper (KDE's kimageformats).
+#
+# aqtinstall Qt does not ship libqjp2.so, so on CI we install the system
+# qt6-image-formats-plugins package and search both the aqtinstall path and
+# the system Qt plugin path (/usr/lib/*/qt6/plugins).
+echo "Bundling JPEG2000 support (eMRTD images)..."
+JP2_PLUGIN=""
+for search_dir in "$QT_PLUGINS_SYSTEM/imageformats" /usr/lib/*/qt6/plugins/imageformats; do
+    if [[ -f "$search_dir/libqjp2.so" ]]; then
+        JP2_PLUGIN="$search_dir/libqjp2.so"
+        break
+    fi
+done
+if [[ -n "$JP2_PLUGIN" ]]; then
+    if [[ ! -f "$APPDIR/usr/plugins/imageformats/libqjp2.so" ]]; then
+        cp "$JP2_PLUGIN" "$APPDIR/usr/plugins/imageformats/"
+        patchelf --set-rpath '$ORIGIN/../../lib:$ORIGIN' "$APPDIR/usr/plugins/imageformats/libqjp2.so"
+        echo "  copied libqjp2.so (from $JP2_PLUGIN)"
+    else
+        echo "  libqjp2.so already in AppDir"
+    fi
+    # Bundle JP2 codec libraries that the plugin needs at runtime
+    for pattern in 'libjasper\.so\.\d+' 'libopenjp2\.so\.\d+'; do
+        LIB_PATH=$(ldconfig -p 2>/dev/null | grep -oP "/\\S*${pattern}" | head -1 || true)
+        if [[ -n "$LIB_PATH" && -f "$LIB_PATH" ]]; then
+            LIB_NAME=$(basename "$LIB_PATH")
+            if [[ ! -f "$APPDIR/usr/lib/$LIB_NAME" ]]; then
+                cp "$LIB_PATH" "$APPDIR/usr/lib/"
+                patchelf --set-rpath '$ORIGIN' "$APPDIR/usr/lib/$LIB_NAME"
+                echo "  copied $LIB_NAME"
+            else
+                echo "  $LIB_NAME already in AppDir"
+            fi
+        fi
+    done
+else
+    echo "  WARNING: libqjp2.so not found — JPEG2000 images (eMRTD) will not display"
+    echo "  Install qt6-image-formats-plugins (system) or qtimageformats (aqtinstall)"
+fi
 
 # ---------------------------------------------------------------------------
 # Phase 3 — Package with appimagetool.

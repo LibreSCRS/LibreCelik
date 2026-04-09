@@ -29,6 +29,58 @@ jobs:
           modules: ''
           cache: true
 
+      - name: Build JasPer and qtimageformats for JPEG2000 support
+        run: |
+          # JasPer is not in Ubuntu repos; build from source
+          git clone --depth 1 https://github.com/jasper-software/jasper.git /tmp/jasper
+          cmake -B /tmp/jasper-build -S /tmp/jasper \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DJAS_ENABLE_PROGRAMS=OFF -DJAS_ENABLE_DOC=OFF -G Ninja
+          cmake --build /tmp/jasper-build
+          sudo cmake --install /tmp/jasper-build
+          sudo ldconfig
+
+          # Build qtimageformats against aqtinstall Qt + JasPer
+          QT_DIR="$(qmake6 -query QT_INSTALL_PREFIX)"
+          git clone --depth 1 --branch "$(qmake6 -query QT_VERSION)" \
+            https://code.qt.io/qt/qtimageformats.git /tmp/qtimageformats || \
+          git clone --depth 1 --branch "v$(qmake6 -query QT_VERSION)" \
+            https://code.qt.io/qt/qtimageformats.git /tmp/qtimageformats
+          # Verify JasPer is findable
+          echo "JasPer installed files:"
+          ls /usr/local/lib/libjasper* /usr/local/include/jasper/jasper.h 2>/dev/null || echo "WARNING: JasPer not found in /usr/local"
+
+          # Patch FindWrapJasper.cmake in BOTH source tree and Qt install
+          JASPER_FIND='if(TARGET WrapJasper::WrapJasper)\n  set(WrapJasper_FOUND TRUE)\n  return()\nendif()\nadd_library(WrapJasper::WrapJasper INTERFACE IMPORTED)\ntarget_link_libraries(WrapJasper::WrapJasper INTERFACE /usr/local/lib/libjasper.so)\ntarget_include_directories(WrapJasper::WrapJasper INTERFACE /usr/local/include)\nset(WrapJasper_FOUND TRUE)'
+          printf "$JASPER_FIND\n" > /tmp/qtimageformats/cmake/FindWrapJasper.cmake
+          printf "$JASPER_FIND\n" > "$QT_DIR/lib/cmake/Qt6/FindWrapJasper.cmake"
+          echo "Patched FindWrapJasper.cmake in source and Qt install"
+
+          cmake -B /tmp/qtimageformats-build -S /tmp/qtimageformats \
+            -DCMAKE_PREFIX_PATH="$QT_DIR" \
+            -DCMAKE_BUILD_TYPE=Release -G Ninja
+          cmake --build /tmp/qtimageformats-build
+          cmake --install /tmp/qtimageformats-build --prefix "$QT_DIR"
+          # Re-patch FindWrapJasper (cmake --install overwrites it)
+          printf '%s\n' \
+            'if(TARGET WrapJasper::WrapJasper)' \
+            '  set(WrapJasper_FOUND TRUE)' \
+            '  return()' \
+            'endif()' \
+            'add_library(WrapJasper::WrapJasper INTERFACE IMPORTED)' \
+            'target_link_libraries(WrapJasper::WrapJasper INTERFACE /usr/local/lib/libjasper.so)' \
+            'target_include_directories(WrapJasper::WrapJasper INTERFACE /usr/local/include)' \
+            'set(WrapJasper_FOUND TRUE)' \
+            > "$QT_DIR/lib/cmake/Qt6/FindWrapJasper.cmake"
+          echo "Installed imageformat plugins:"
+          ls "$QT_DIR/plugins/imageformats/"
+          # Verify JP2 plugin was built
+          if [[ ! -f "$QT_DIR/plugins/imageformats/libqjp2.so" ]]; then
+            echo "::error::libqjp2.so was NOT built — check config.summary:"
+            cat /tmp/qtimageformats-build/config.summary
+            exit 1
+          fi
+
       - name: Configure
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
 
@@ -78,7 +130,7 @@ jobs:
           host: mac
           target: desktop
           arch: clang_64
-          modules: ''
+          modules: 'qtimageformats'
           cache: true
 
       - name: Configure

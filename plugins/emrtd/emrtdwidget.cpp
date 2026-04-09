@@ -7,9 +7,9 @@
 #include "utils/fieldsectionbuilder.h"
 #include "utils/securitystatuswidget.h"
 
-#include <QGraphicsOpacityEffect>
 #include <QHBoxLayout>
 #include <QIcon>
+#include <QPainter>
 #include <QToolButton>
 
 #include <plugin/carddatautils.h>
@@ -116,14 +116,22 @@ EMRTDWidget::EMRTDWidget(QWidget* parent) : QWidget(parent)
 
     // Print button — disabled (dimmed) until all streaming completes
     printBtn = new QToolButton(this);
-    printBtn->setIcon(QIcon(":/images/printer-header.svg"));
+    {
+        QIcon icon(QStringLiteral(":/images/printer-header.svg"));
+        auto normalPix = icon.pixmap(24, 24);
+        QPixmap dimPix(normalPix.size());
+        dimPix.fill(Qt::transparent);
+        QPainter p(&dimPix);
+        p.setOpacity(0.3);
+        p.drawPixmap(0, 0, normalPix);
+        p.end();
+        icon.addPixmap(dimPix, QIcon::Disabled);
+        printBtn->setIcon(icon);
+    }
     printBtn->setIconSize(QSize(24, 24));
     printBtn->setToolTip(qtTrId("lc-print-tooltip"));
     printBtn->setAutoRaise(true);
     printBtn->setEnabled(false);
-    auto* dimEffect = new QGraphicsOpacityEffect(printBtn);
-    dimEffect->setOpacity(0.3);
-    printBtn->setGraphicsEffect(dimEffect);
     connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
     outerSection->addHeaderWidget(printBtn);
 }
@@ -344,7 +352,6 @@ void EMRTDWidget::showNoDataMessage()
 void EMRTDWidget::enablePrintButton()
 {
     if (printBtn) {
-        printBtn->setGraphicsEffect(nullptr);
         printBtn->setEnabled(true);
     }
 }

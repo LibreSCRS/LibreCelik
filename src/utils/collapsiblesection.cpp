@@ -8,6 +8,7 @@
 #include <QPainter>
 #include <QPushButton>
 #include <QResizeEvent>
+#include <QToolButton>
 #include <QShowEvent>
 
 CollapsibleSection::CollapsibleSection(QWidget* parent) : QGroupBox(parent)
@@ -96,6 +97,12 @@ void CollapsibleSection::addHeaderWidget(QWidget* w)
                          .arg(bg.name(), border.name(), hover.name(), pressed.name(), disabledText.name(),
                               headerBg.darker(110).name());
         btn->setStyleSheet(style);
+    } else if (auto* toolBtn = qobject_cast<QToolButton*>(w)) {
+        toolBtn->setAutoRaise(true);
+        toolBtn->setStyleSheet(
+            QStringLiteral("QToolButton { background: transparent; border: none; }"
+                           "QToolButton:hover { background: rgba(255,255,255,40); border-radius: 3px; }"
+                           "QToolButton:pressed { background: rgba(0,0,0,30); border-radius: 3px; }"));
     }
     headerWidgets.append(w);
     repositionHeaderWidgets();

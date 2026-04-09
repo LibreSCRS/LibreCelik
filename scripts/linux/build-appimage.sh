@@ -297,7 +297,7 @@ done
 # from its resolution path, so we must copy both explicitly.
 echo "Bundling JPEG2000 support (eMRTD images)..."
 JP2_PLUGIN="$QT_PLUGINS_SYSTEM/imageformats/libqjp2.so"
-JASPER_SO=$(ldconfig -p 2>/dev/null | grep -oP '/\S*libjasper\.so\.\d+' | head -1)
+JASPER_SO=$(ldconfig -p 2>/dev/null | grep -oP '/\S*libjasper\.so\.\d+' | head -1 || true)
 if [[ -f "$JP2_PLUGIN" && -n "$JASPER_SO" && -f "$JASPER_SO" ]]; then
     cp "$JP2_PLUGIN" "$APPDIR/usr/plugins/imageformats/"
     patchelf --set-rpath '$ORIGIN/../../lib:$ORIGIN' "$APPDIR/usr/plugins/imageformats/libqjp2.so"

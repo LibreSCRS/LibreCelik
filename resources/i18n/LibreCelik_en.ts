@@ -27,26 +27,6 @@
         <source>Unavailable</source>
         <translation>Unavailable</translation>
     </message>
-    <message id="lc-eidreader-failed-connect">
-        <source>Failed to connect to card.</source>
-        <translation>Failed to connect to card.</translation>
-    </message>
-    <message id="lc-eidreader-pin-blocked">
-        <source>PIN is blocked!</source>
-        <translation>PIN is blocked!</translation>
-    </message>
-    <message id="lc-eidreader-pin-incorrect">
-        <source>Incorrect PIN. Retries remaining: %1</source>
-        <translation>Incorrect PIN. Retries remaining: %1</translation>
-    </message>
-    <message id="lc-eidreader-pin-change-failed">
-        <source>PIN change failed.</source>
-        <translation>PIN change failed.</translation>
-    </message>
-    <message id="lc-eidreader-pin-change-exception">
-        <source>PIN change failed: %1</source>
-        <translation>PIN change failed: %1</translation>
-    </message>
     <message id="lc-eid-doc-title">
         <source>ELECTRONIC ID CARD READER: DATA PRINTING</source>
         <translation>ELECTRONIC ID CARD READER: DATA PRINTING</translation>
@@ -151,10 +131,6 @@
         <source>Serbian eID</source>
         <translation>Serbian eID</translation>
     </message>
-    <message id="lc-eid-label-identity-card">
-        <source>Identity card</source>
-        <translation>Identity card</translation>
-    </message>
     <message id="lc-eid-title-foreigner">
         <source>Serbian eID (Foreigner)</source>
         <translation>Serbian eID (Foreigner)</translation>
@@ -162,10 +138,6 @@
     <message id="lc-eid-label-ebs">
         <source>EBS</source>
         <translation>EBS</translation>
-    </message>
-    <message id="lc-eid-label-identity-foreigners">
-        <source>Identity card for foreigners</source>
-        <translation>Identity card for foreigners</translation>
     </message>
     <message id="lc-eid-label-given-name">
         <source>Given Name</source>
@@ -239,14 +211,6 @@
         <source>Variable Data</source>
         <translation>Variable Data</translation>
     </message>
-    <message id="lc-eid-cert-can-sign">
-        <source>can sign</source>
-        <translation>can sign</translation>
-    </message>
-    <message id="lc-eid-pin-user">
-        <source>User PIN</source>
-        <translation>User PIN</translation>
-    </message>
     <message id="lc-eid-pin-blocked">
         <source>BLOCKED</source>
         <translation>BLOCKED</translation>
@@ -267,6 +231,11 @@
         <source>View Certificate</source>
         <translation>View Certificate</translation>
     </message>
+    <message id="lc-sign-with-cert">
+        <source>Sign with this certificate</source>
+        <extracomment>Context menu action to sign with a specific certificate</extracomment>
+        <translation>Sign with this certificate</translation>
+    </message>
     <message id="lc-eid-menu-initialize-pin">
         <source>Initialize PIN</source>
         <translation>Initialize PIN</translation>
@@ -278,10 +247,6 @@
     <message id="lc-eid-print-title">
         <source>Print Document</source>
         <translation>Print Document</translation>
-    </message>
-    <message id="lc-changepin-title">
-        <source>Change PIN</source>
-        <translation type="vanished">Change PIN</translation>
     </message>
     <message id="lc-changepin-initialize-title">
         <source>Initialize %1</source>
@@ -471,170 +436,6 @@
         <source>No certificates available.</source>
         <translation>No certificates available.</translation>
     </message>
-    <message id="lc-vehicle-doc-title">
-        <source>Vehicle registration card reader</source>
-        <translation>Vehicle registration card reader</translation>
-    </message>
-    <message id="lc-vehicle-doc-printing-date">
-        <source>Printing date</source>
-        <translation>Printing date</translation>
-    </message>
-    <message id="lc-vehicle-doc-reg-number">
-        <source>Registration number</source>
-        <translation>Registration number</translation>
-    </message>
-    <message id="lc-vehicle-doc-issuance-date">
-        <source>Date of issuance</source>
-        <translation>Date of issuance</translation>
-    </message>
-    <message id="lc-vehicle-doc-valid-to">
-        <source>Valid to</source>
-        <translation>Valid to</translation>
-    </message>
-    <message id="lc-vehicle-doc-state-issuing">
-        <source>State issuing</source>
-        <translation>State issuing</translation>
-    </message>
-    <message id="lc-vehicle-doc-competent-authority">
-        <source>Competent authority</source>
-        <translation>Competent authority</translation>
-    </message>
-    <message id="lc-vehicle-doc-authority-issuing">
-        <source>Authority issuing</source>
-        <translation>Authority issuing</translation>
-    </message>
-    <message id="lc-vehicle-doc-unambiguous-no">
-        <source>Unambiguous number</source>
-        <translation>Unambiguous number</translation>
-    </message>
-    <message id="lc-vehicle-doc-serial-no">
-        <source>Serial number</source>
-        <translation>Serial number</translation>
-    </message>
-    <message id="lc-vehicle-doc-owner-data">
-        <source>Owner data</source>
-        <translation>Owner data</translation>
-    </message>
-    <message id="lc-vehicle-doc-owner-surname">
-        <source>Surname / Business name</source>
-        <translation>Surname / Business name</translation>
-    </message>
-    <message id="lc-vehicle-doc-owner-name">
-        <source>Name</source>
-        <translation>Name</translation>
-    </message>
-    <message id="lc-vehicle-doc-owner-address">
-        <source>Address</source>
-        <translation>Address</translation>
-    </message>
-    <message id="lc-vehicle-doc-owner-personal-no">
-        <source>Personal number</source>
-        <translation>Personal number</translation>
-    </message>
-    <message id="lc-vehicle-doc-user-surname">
-        <source>Surname / Business name</source>
-        <translation>Surname / Business name</translation>
-    </message>
-    <message id="lc-vehicle-doc-user-name">
-        <source>Name</source>
-        <translation>Name</translation>
-    </message>
-    <message id="lc-vehicle-doc-user-address">
-        <source>Address</source>
-        <translation>Address</translation>
-    </message>
-    <message id="lc-vehicle-doc-user-personal-no">
-        <source>Personal number</source>
-        <translation>Personal number</translation>
-    </message>
-    <message id="lc-vehicle-doc-vehicle-data">
-        <source>Vehicle data</source>
-        <translation>Vehicle data</translation>
-    </message>
-    <message id="lc-vehicle-doc-first-reg-date">
-        <source>Date of first registration</source>
-        <translation>Date of first registration</translation>
-    </message>
-    <message id="lc-vehicle-doc-production-year">
-        <source>Year of production</source>
-        <translation>Year of production</translation>
-    </message>
-    <message id="lc-vehicle-doc-make">
-        <source>Make</source>
-        <translation>Make</translation>
-    </message>
-    <message id="lc-vehicle-doc-type">
-        <source>Type</source>
-        <translation>Type</translation>
-    </message>
-    <message id="lc-vehicle-doc-commercial-desc">
-        <source>Commercial description</source>
-        <translation>Commercial description</translation>
-    </message>
-    <message id="lc-vehicle-doc-type-approval-no">
-        <source>Type approval number</source>
-        <translation>Type approval number</translation>
-    </message>
-    <message id="lc-vehicle-doc-colour">
-        <source>Colour</source>
-        <translation>Colour</translation>
-    </message>
-    <message id="lc-vehicle-doc-axles">
-        <source>Number of axles</source>
-        <translation>Number of axles</translation>
-    </message>
-    <message id="lc-vehicle-doc-vin">
-        <source>VIN</source>
-        <translation>VIN</translation>
-    </message>
-    <message id="lc-vehicle-doc-capacity">
-        <source>Capacity (cm3)</source>
-        <translation>Capacity (cm3)</translation>
-    </message>
-    <message id="lc-vehicle-doc-engine-number">
-        <source>Engine number</source>
-        <translation>Engine number</translation>
-    </message>
-    <message id="lc-vehicle-doc-mass">
-        <source>Mass (kg)</source>
-        <translation>Mass (kg)</translation>
-    </message>
-    <message id="lc-vehicle-doc-power">
-        <source>Power (kW)</source>
-        <translation>Power (kW)</translation>
-    </message>
-    <message id="lc-vehicle-doc-load">
-        <source>Load (kg)</source>
-        <translation>Load (kg)</translation>
-    </message>
-    <message id="lc-vehicle-doc-power-weight">
-        <source>Power/weight ratio</source>
-        <translation>Power/weight ratio</translation>
-    </message>
-    <message id="lc-vehicle-doc-max-laden-mass">
-        <source>Max laden mass (kg)</source>
-        <translation>Max laden mass (kg)</translation>
-    </message>
-    <message id="lc-vehicle-doc-category">
-        <source>Category</source>
-        <translation>Category</translation>
-    </message>
-    <message id="lc-vehicle-doc-fuel-type">
-        <source>Fuel type</source>
-        <translation>Fuel type</translation>
-    </message>
-    <message id="lc-vehicle-doc-seats">
-        <source>Seats</source>
-        <translation>Seats</translation>
-    </message>
-    <message id="lc-vehicle-doc-standing-places">
-        <source>Standing places</source>
-        <translation>Standing places</translation>
-    </message>
-    <message id="lc-vehicle-title">
-        <source>Vehicle Registration</source>
-        <translation>Vehicle Registration</translation>
-    </message>
     <message id="lc-eid-label-status-of-foreigner">
         <source>Status of Foreigner</source>
         <translation>Status of Foreigner</translation>
@@ -650,10 +451,6 @@
     <message id="lc-error-no-plugin">
         <source>No plugin could read this card.</source>
         <translation>No plugin could read this card.</translation>
-    </message>
-    <message id="lc-vehicle-print-title">
-        <source>Print Document</source>
-        <translation>Print Document</translation>
     </message>
     <message id="lc-euvrc-title">
         <source>Vehicle Registration</source>
@@ -1219,6 +1016,216 @@
         <source>Value</source>
         <translation>Value</translation>
     </message>
+    <message id="lc-sign-wizard-title">
+        <source>Sign Documents — %1</source>
+        <oldsource>Sign Document — %1</oldsource>
+        <translation>Sign Documents — %1</translation>
+    </message>
+    <message id="lc-sign-select-files">
+        <source>Select files</source>
+        <oldsource>Select Files to Sign</oldsource>
+        <translation>Select files</translation>
+    </message>
+    <message id="lc-sign-level-bb">
+        <source>B-B (Basic)</source>
+        <translation>B-B (Basic)</translation>
+    </message>
+    <message id="lc-sign-level-bt">
+        <source>B-T (with Timestamp)</source>
+        <translation>B-T (with Timestamp)</translation>
+    </message>
+    <message id="lc-sign-level-blt">
+        <source>B-LT (Long Term)</source>
+        <translation>B-LT (Long Term)</translation>
+    </message>
+    <message id="lc-sign-level-blta">
+        <source>B-LTA (Long Term with Archive)</source>
+        <translation>B-LTA (Long Term with Archive)</translation>
+    </message>
+    <message id="lc-sign-output-folder">
+        <source>Output folder:</source>
+        <oldsource>Output folder</oldsource>
+        <translation>Output folder:</translation>
+    </message>
+    <message id="lc-sign-change-folder">
+        <source>Change...</source>
+        <translation>Change...</translation>
+    </message>
+    <message id="lc-sign-page-of-total">
+        <source>of %1</source>
+        <translation>of %1</translation>
+    </message>
+    <message id="lc-sign-visual-sig">
+        <source>Add visual signature</source>
+        <translation>Add visual signature</translation>
+    </message>
+    <message id="lc-sign-pin-label">
+        <source>PIN:</source>
+        <oldsource>Enter PIN for signing key:</oldsource>
+        <translation>PIN:</translation>
+    </message>
+    <message id="lc-sign-can-label">
+        <source>CAN:</source>
+        <translation>CAN:</translation>
+    </message>
+    <message id="lc-sign-btn-sign">
+        <source>Sign</source>
+        <translation>Sign</translation>
+    </message>
+    <message id="lc-sign-btn-back">
+        <source>Back</source>
+        <translation>Back</translation>
+    </message>
+    <message id="lc-sign-btn-next">
+        <source>Next</source>
+        <translation>Next</translation>
+    </message>
+    <message id="lc-sign-preparing">
+        <source>Preparing to sign...</source>
+        <translation>Preparing to sign...</translation>
+    </message>
+    <message id="lc-sign-progress">
+        <source>Signing file %1 of %2: %3</source>
+        <translation>Signing file %1 of %2: %3</translation>
+    </message>
+    <message id="lc-sign-summary-cert">
+        <source>Certificate</source>
+        <oldsource>Certificate: %1</oldsource>
+        <translation>Certificate</translation>
+    </message>
+    <message id="lc-sign-summary-files">
+        <source>Files</source>
+        <oldsource>Files: %1</oldsource>
+        <translation>Files</translation>
+    </message>
+    <message id="lc-sign-wizard-header-title">
+        <source>Sign Documents</source>
+        <extracomment>Header title for the signing wizard</extracomment>
+        <translation>Sign Documents</translation>
+    </message>
+    <message id="lc-sign-step-files">
+        <source>Files</source>
+        <extracomment>Step 1 label in wizard header</extracomment>
+        <translation>Files</translation>
+    </message>
+    <message id="lc-sign-step-place">
+        <source>Place</source>
+        <extracomment>Step 2 label in wizard header</extracomment>
+        <translation>Place</translation>
+    </message>
+    <message id="lc-sign-step-sign">
+        <source>Sign</source>
+        <extracomment>Step 3 label in wizard header</extracomment>
+        <translation>Sign</translation>
+    </message>
+    <message id="lc-sign-drop-primary">
+        <source>Drop PDF or other files here</source>
+        <translation>Drop PDF or other files here</translation>
+    </message>
+    <message id="lc-sign-drop-or">
+        <source>or</source>
+        <translation>or</translation>
+    </message>
+    <message id="lc-sign-drop-browse">
+        <source>browse files</source>
+        <translation>browse files</translation>
+    </message>
+    <message id="lc-sign-summary-level">
+        <source>Level</source>
+        <translation>Level</translation>
+    </message>
+    <message id="lc-menu-edit">
+        <source>Edit</source>
+        <translation>Edit</translation>
+    </message>
+    <message id="lc-menu-settings">
+        <source>Settings...</source>
+        <translation>Settings...</translation>
+    </message>
+    <message id="lc-menu-help">
+        <source>Help</source>
+        <translation>Help</translation>
+    </message>
+    <message id="lc-menu-about">
+        <source>About LibreCelik</source>
+        <translation>About Libre Celik</translation>
+    </message>
+    <message id="lc-menu-about-qt">
+        <source>About Qt</source>
+        <translation>About Qt</translation>
+    </message>
+    <message id="lc-about-title">
+        <source>About LibreCelik</source>
+        <translation>About Libre Celik</translation>
+    </message>
+    <message id="lc-settings-title">
+        <source>Settings</source>
+        <translation>Settings</translation>
+    </message>
+    <message id="lc-settings-tab-general">
+        <source>General</source>
+        <translation>General</translation>
+    </message>
+    <message id="lc-settings-tab-signing">
+        <source>Signing</source>
+        <translation>Signing</translation>
+    </message>
+    <message id="lc-settings-tab-trust">
+        <source>Trust</source>
+        <translation>Trust</translation>
+    </message>
+    <message id="lc-settings-language">
+        <source>Language:</source>
+        <translation>Language:</translation>
+    </message>
+    <message id="lc-settings-default-level">
+        <source>Default signature level:</source>
+        <translation>Default signature level:</translation>
+    </message>
+    <message id="lc-settings-default-output">
+        <source>Default output folder:</source>
+        <translation>Default output folder:</translation>
+    </message>
+    <message id="lc-settings-output-placeholder">
+        <source>Same as input file</source>
+        <translation>Same as input file</translation>
+    </message>
+    <message id="lc-settings-tsa-servers">
+        <source>TSA servers:</source>
+        <translation>TSA servers:</translation>
+    </message>
+    <message id="lc-settings-tl-servers">
+        <source>Trusted Lists:</source>
+        <translation>Trusted Lists:</translation>
+    </message>
+    <message id="lc-settings-tl-add-item">
+        <source>+ Add Trusted List...</source>
+        <translation>+ Add Trusted List...</translation>
+    </message>
+    <message id="lc-settings-tl-add-title">
+        <source>Add Trusted List</source>
+        <translation>Add Trusted List</translation>
+    </message>
+    <message id="lc-settings-tl-type">
+        <source>Type:</source>
+        <translation>Type:</translation>
+    </message>
+    <message id="lc-settings-tl-loading">
+        <source>Loading:</source>
+        <translation>Loading:</translation>
+    </message>
+    <message id="lc-settings-cache-dir">
+        <source>Cache directory:</source>
+        <translation>Cache directory:</translation>
+    </message>
+    <message id="lc-settings-invalid-url-title">
+        <source>Invalid URL</source>
+        <translation>Invalid URL</translation>
+    </message>
+    <message id="lc-settings-invalid-url-msg">
+        <source>Please enter a valid URL.</source>
+        <translation>Please enter a valid URL.</translation>
+    </message>
     <message id="lc-reader-unsupported-card">
         <source>Card in reader is not supported.</source>
         <translation>Card in reader is not supported.</translation>
@@ -1230,10 +1237,6 @@
     <message id="lc-health-title">
         <source>Health Insurance Card</source>
         <translation>Health Insurance Card</translation>
-    </message>
-    <message id="lc-healthreader-failed-connect">
-        <source>Failed to connect to card.</source>
-        <translation>Failed to connect to card.</translation>
     </message>
     <message id="lc-health-print-title">
         <source>Print Document</source>
@@ -1271,25 +1274,13 @@
         <source>Name</source>
         <translation>Name</translation>
     </message>
-    <message id="lc-health-label-given-name-lat">
-        <source>Name (Latin)</source>
-        <translation>Name (Latin)</translation>
-    </message>
     <message id="lc-health-label-family-name">
         <source>Surname</source>
         <translation>Surname</translation>
     </message>
-    <message id="lc-health-label-family-name-lat">
-        <source>Surname (Latin)</source>
-        <translation>Surname (Latin)</translation>
-    </message>
     <message id="lc-health-label-parent-name">
         <source>Parent name</source>
         <translation>Parent name</translation>
-    </message>
-    <message id="lc-health-label-parent-name-lat">
-        <source>Parent name (Latin)</source>
-        <translation>Parent name (Latin)</translation>
     </message>
     <message id="lc-health-label-dob">
         <source>Date of birth</source>
@@ -1463,10 +1454,6 @@
         <source>Sex</source>
         <translation>Sex</translation>
     </message>
-    <message id="lc-emrtd-personal-data">
-        <source>Personal Data</source>
-        <translation type="vanished">Personal Data</translation>
-    </message>
     <message id="lc-emrtd-surname">
         <source>Surname</source>
         <translation>Surname</translation>
@@ -1482,10 +1469,6 @@
     <message id="lc-emrtd-date-of-birth">
         <source>Date of Birth</source>
         <translation>Date of Birth</translation>
-    </message>
-    <message id="lc-emrtd-sex">
-        <source>Sex</source>
-        <translation>Sex</translation>
     </message>
     <message id="lc-emrtd-document-data">
         <source>Document Data</source>
@@ -1531,6 +1514,10 @@
         <source>Token</source>
         <translation>Token</translation>
     </message>
+    <message id="lc-sign-button">
+        <source>Sign</source>
+        <translation>Sign</translation>
+    </message>
     <message id="lc-token-key-subject">
         <source>Subject</source>
         <translation>Subject</translation>
@@ -1571,21 +1558,9 @@
         <source>Key Agreement</source>
         <translation>Key Agreement</translation>
     </message>
-    <message id="lc-print-button">
-        <source>Print</source>
-        <translation>Print</translation>
-    </message>
     <message id="lc-personal-data-title">
         <source>Personal Data</source>
         <translation>Personal Data</translation>
-    </message>
-    <message id="lc-emrtd-auth-dlg-title">
-        <source>Electronic Passport Authentication</source>
-        <translation>Electronic Passport Authentication</translation>
-    </message>
-    <message id="lc-emrtd-auth-dlg-subtitle">
-        <source>Foreigner ID Card</source>
-        <translation>Foreigner ID Card</translation>
     </message>
     <message id="lc-emrtd-auth-can-title">
         <source>CAN</source>
@@ -1783,6 +1758,150 @@
         <source>Off-Card URL</source>
         <translation>Off-Card URL</translation>
     </message>
+    <message id="lc-sign-formats-desc">
+        <source>Formats: %1</source>
+        <translation>Formats: %1</translation>
+    </message>
+    <message id="lc-sign-btn-cancel">
+        <source>Cancel</source>
+        <translation>Cancel</translation>
+    </message>
+    <message id="lc-sign-btn-done">
+        <source>Done</source>
+        <translation>Done</translation>
+    </message>
+    <message id="lc-sign-copy-error">
+        <source>Copy</source>
+        <translation>Copy</translation>
+    </message>
+    <message id="lc-sign-limits-info">
+        <source>Max file size: 256 MB. ZIP archives for ASiC-E: up to 100,000 files, 256 MB decompressed.</source>
+        <translation>Max file size: 256 MB. ZIP archives for ASiC-E: up to 100,000 files, 256 MB decompressed.</translation>
+    </message>
+    <message id="lc-sign-level-label">
+        <source>Signature level:</source>
+        <translation>Signature level:</translation>
+    </message>
+    <message id="lc-sign-tsa-label">
+        <source>TSA server:</source>
+        <translation>TSA server:</translation>
+    </message>
+    <message id="lc-sign-tsa-info">
+        <source>For a qualified signature, use a qualified TSA from your certificate authority</source>
+        <translation>For a qualified signature, use a qualified TSA from your certificate authority</translation>
+    </message>
+    <message id="lc-sign-tsa-add-title">
+        <source>Add TSA server</source>
+        <translation>Add TSA server</translation>
+    </message>
+    <message id="lc-sign-tsa-add-prompt">
+        <source>Enter TSA server URL:</source>
+        <translation>Enter TSA server URL:</translation>
+    </message>
+    <message id="lc-sign-tsa-add-item">
+        <source>+ Add TSA server...</source>
+        <translation>+ Add TSA server...</translation>
+    </message>
+    <message id="lc-sign-select-output-folder">
+        <source>Select output folder</source>
+        <translation>Select output folder</translation>
+    </message>
+    <message id="lc-sign-page-prev">
+        <source>Previous</source>
+        <translation>Previous</translation>
+    </message>
+    <message id="lc-sign-page-next">
+        <source>Next</source>
+        <translation>Next</translation>
+    </message>
+    <message id="lc-sign-visual-reason">
+        <source>Reason:</source>
+        <translation>Reason:</translation>
+    </message>
+    <message id="lc-sign-visual-reason-placeholder">
+        <source>e.g. Contract approval</source>
+        <translation>e.g. Contract approval</translation>
+    </message>
+    <message id="lc-sign-visual-location">
+        <source>Location:</source>
+        <translation>Location:</translation>
+    </message>
+    <message id="lc-sign-visual-location-placeholder">
+        <source>e.g. Belgrade, Serbia</source>
+        <translation>e.g. Belgrade, Serbia</translation>
+    </message>
+    <message id="lc-sign-filelist-tooltip">
+        <source>Select a file and press Delete to remove it</source>
+        <translation>Select a file and press Delete to remove it</translation>
+    </message>
+    <message id="lc-sign-visual-text-signed-by">
+        <source>Digitally signed by:</source>
+        <translation>Digitally signed by:</translation>
+    </message>
+    <message id="lc-sign-visual-text-issued-by">
+        <source>Issued by:</source>
+        <translation>Issued by:</translation>
+    </message>
+    <message id="lc-sign-visual-text-date">
+        <source>Date:</source>
+        <translation>Date:</translation>
+    </message>
+    <message id="lc-sign-visual-text-reason">
+        <source>Reason:</source>
+        <translation>Reason:</translation>
+    </message>
+    <message id="lc-sign-visual-text-location">
+        <source>Location:</source>
+        <translation>Location:</translation>
+    </message>
+    <message id="lc-sign-fail-read">
+        <source>FAILED: %1 — could not read file</source>
+        <translation>FAILED: %1 — could not read file</translation>
+    </message>
+    <message id="lc-sign-ok">
+        <source>OK: %1 → %2</source>
+        <translation>OK: %1 → %2</translation>
+    </message>
+    <message id="lc-sign-fail-write">
+        <source>FAILED: %1 — could not write output</source>
+        <translation>FAILED: %1 — could not write output</translation>
+    </message>
+    <message id="lc-sign-fail-too-large">
+        <source>FAILED: %1 — file exceeds 256 MB size limit</source>
+        <translation>FAILED: %1 — file exceeds 256 MB size limit</translation>
+    </message>
+    <message id="lc-sign-fail-sign">
+        <source>FAILED: %1 — %2</source>
+        <translation>FAILED: %1 — %2</translation>
+    </message>
+    <message id="lc-sign-complete">
+        <source>Signing complete: %1 succeeded, %2 failed</source>
+        <translation>Signing complete: %1 succeeded, %2 failed</translation>
+    </message>
+    <message id="lc-sign-expired-cert-title">
+        <source>Expired Certificate</source>
+        <translation>Expired Certificate</translation>
+    </message>
+    <message id="lc-sign-expired-cert-message">
+        <source>The selected certificate has expired. At B-B level, the signature will not include revocation data. Continue anyway?</source>
+        <translation>The selected certificate has expired. At B-B level, the signature will not include revocation data. Continue anyway?</translation>
+    </message>
+    <message id="lc-sign-output-folder-error-title">
+        <source>Output Folder Error</source>
+        <translation>Output Folder Error</translation>
+    </message>
+    <message id="lc-sign-output-folder-error-message">
+        <source>Could not create the output folder.</source>
+        <translation>Could not create the output folder.</translation>
+    </message>
+    <message id="lc-sign-tsa-invalid-title">
+        <source>Invalid TSA URL</source>
+        <translation>Invalid TSA URL</translation>
+    </message>
+    <message id="lc-sign-tsa-invalid-message">
+        <source>The configured Timestamp Authority URL is not a valid https:// endpoint.</source>
+        <translation>The configured Timestamp Authority URL is not a valid https:// endpoint.</translation>
+    </message>
 </context>
 <context>
     <name>AsyncCardReader</name>
@@ -1897,7 +2016,7 @@
     </message>
     <message>
         <source>English</source>
-        <translation>English</translation>
+        <translation type="vanished">English</translation>
     </message>
     <message>
         <source>Српски</source>

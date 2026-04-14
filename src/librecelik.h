@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #pragma once
 
 #include "asynccardreader.h"
+#include "config.h"
 #include "plugin/cardwidgetpluginregistry.h"
 
 #include <plugin/card_plugin_registry.h>
@@ -12,10 +13,21 @@ namespace smartcard {
 struct MonitorEvent;
 }
 
+#include <QAction>
 #include <QMainWindow>
+#include <QMenu>
 #include <QTranslator>
 
+#include <memory>
 #include <stop_token>
+
+#ifdef LIBRECELIK_SIGNING_ENABLED
+namespace libresign {
+class SigningService;
+}
+#endif
+
+class SettingsDialog;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -37,7 +49,6 @@ protected:
 private slots:
     void onCardEventReceived(const smartcard::MonitorEvent& event);
     void onSmartCardReaderEnumerationChanged(const QStringList& scrNames);
-    void onLanguageChanged(int index);
 
 private:
     void addNewReader(std::string reader, int retryCount = 0);
@@ -45,6 +56,9 @@ private:
     void connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget);
     bool loadLanguage(const QString& locale);
     void updateAboutText();
+    void retranslateMenuBar();
+    void openSettings();
+    void showAboutDialog();
 
 private:
     Ui::LibreCelik* ui;
@@ -61,6 +75,18 @@ private:
     std::map<std::string, std::stop_source> readerStopSource;
 
     QTranslator translator;
+    QTranslator qtTranslator;
     bool uiReady = false;
     QString locale;
+
+    // Menu actions (stored for retranslation)
+    QMenu* editMenu = nullptr;
+    QMenu* helpMenu = nullptr;
+    QAction* settingsAction = nullptr;
+    QAction* aboutAction = nullptr;
+    QAction* aboutQtAction = nullptr;
+
+#ifdef LIBRECELIK_SIGNING_ENABLED
+    std::unique_ptr<libresign::SigningService> signingService;
+#endif
 };

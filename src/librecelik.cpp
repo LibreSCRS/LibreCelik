@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "librecelik.h"
 #include "config.h"
+#include "settings/settingsdialog.h"
+#include "settings/settingskeys.h"
 #include "document/rs-eid/changepindlg.h"
 #include "document/emrtd/emrtdauthwidget.h"
 #include "document/tokensection.h"
@@ -13,19 +15,35 @@
 
 #include <smartcard/pcsc_connection.h>
 
+#ifdef LIBRECELIK_SIGNING_ENABLED
+#include "signing/defaults.h"
+#include "signing/signingwizard.h"
+#include <libresign/signing_service_factory.h>
+#endif
+
+#ifdef Q_OS_MACOS
+#include "utils/macos_menu.h"
+#endif
+
 #include <algorithm>
 
 #include <QApplication>
 #include <QColor>
 #include <QDir>
 #include <QEvent>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
+#include <QLibraryInfo>
 #include <QLocale>
 #include <QMenu>
+#include <QMessageBox>
 #include <QProgressBar>
 #include <QScrollArea>
 #include <QSettings>
 #include <QSpacerItem>
+#include <QStandardPaths>
 #include <QTimer>
 #include <QThread>
 #include <QVBoxLayout>
@@ -37,8 +55,8 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
     // Install translator BEFORE setupUi so the initial UI render is translated.
     // changeEvent is guarded by uiReady to avoid calling retranslateUi before
     // setupUi has run.
-    QSettings settings("LibreSCRS", "LibreCelik");
-    QString locale = settings.value("language", QString()).toString();
+    QSettings settings(settings::kOrganization, settings::kApplication);
+    QString locale = settings.value(settings::kLanguage, QString()).toString();
 
     if (!loadLanguage(locale)) {
         locale.clear();
@@ -84,7 +102,23 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
             &QStackedWidget::setCurrentIndex);
 
     ui->statusbar->hide();
-    ui->menubar->hide();
+    // Menu bar
+    editMenu = ui->menubar->addMenu(qtTrId("lc-menu-edit"));
+    settingsAction = editMenu->addAction(qtTrId("lc-menu-settings"));
+    settingsAction->setMenuRole(QAction::PreferencesRole);
+    settingsAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Comma));
+    connect(settingsAction, &QAction::triggered, this, &LibreCelik::openSettings);
+
+    helpMenu = ui->menubar->addMenu(qtTrId("lc-menu-help"));
+    aboutAction = helpMenu->addAction(qtTrId("lc-menu-about"));
+    aboutAction->setMenuRole(QAction::AboutRole);
+    connect(aboutAction, &QAction::triggered, this, &LibreCelik::showAboutDialog);
+    aboutQtAction = helpMenu->addAction(qtTrId("lc-menu-about-qt"));
+    aboutQtAction->setMenuRole(QAction::AboutQtRole);
+    connect(aboutQtAction, &QAction::triggered, qApp, &QApplication::aboutQt);
+#ifdef Q_OS_MACOS
+    macosRetranslateAppMenu(qtTrId("lc-menu-about"), qtTrId("lc-menu-settings"));
+#endif
 
     // Auto-hide the status bar once its message is cleared (e.g. after showMessage timeout
     // or explicit clearMessage). This keeps the bar invisible except when in use.
@@ -92,17 +126,6 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
         if (msg.isEmpty())
             ui->statusbar->hide();
     });
-
-    // Build the language menu and set the button text to match the loaded locale.
-    {
-        auto* langMenu = new QMenu(ui->languageButton);
-        auto* enAction = langMenu->addAction("English");
-        auto* srAction = langMenu->addAction("Српски");
-        ui->languageButton->setMenu(langMenu);
-        connect(enAction, &QAction::triggered, this, [this]() { onLanguageChanged(0); });
-        connect(srAction, &QAction::triggered, this, [this]() { onLanguageChanged(1); });
-    }
-    ui->languageButton->setText(locale.startsWith("sr") ? "Српски" : "English");
 
     updateAboutText();
     connect(&SmartCardReaderListener::instance(), &SmartCardReaderListener::smartCardReaderEventOccured, this,
@@ -124,30 +147,41 @@ bool LibreCelik::loadLanguage(const QString& locale)
     if (locale.isEmpty())
         return false;
     QApplication::removeTranslator(&translator);
+    QApplication::removeTranslator(&qtTranslator);
     if (translator.load(":/i18n/LibreCelik_" + locale)) {
         QApplication::installTranslator(&translator);
+        // Load Qt's own translations (for About Qt dialog, standard buttons, etc.).
+        // Missing translations for some locales are expected (e.g. sr_RS); the
+        // application text is still available via our own .qm file installed
+        // above, so a failed Qt-catalog load is not fatal.
+        if (!qtTranslator.load("qt_" + locale, QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
+            // Intentionally ignored — see comment above.
+        }
+        QApplication::installTranslator(&qtTranslator);
         this->locale = locale;
         return true;
     }
     return false;
 }
 
-void LibreCelik::onLanguageChanged(int index)
+void LibreCelik::retranslateMenuBar()
 {
-    QString locale = (index == 1) ? "sr_RS" : "en";
-    QSettings settings("LibreSCRS", "LibreCelik");
-    settings.setValue("language", locale);
-    loadLanguage(locale);
-    ui->languageButton->setText(index == 1 ? "Српски" : "English");
+    editMenu->setTitle(qtTrId("lc-menu-edit"));
+    settingsAction->setText(qtTrId("lc-menu-settings"));
+    helpMenu->setTitle(qtTrId("lc-menu-help"));
+    aboutAction->setText(qtTrId("lc-menu-about"));
+    aboutQtAction->setText(qtTrId("lc-menu-about-qt"));
+#ifdef Q_OS_MACOS
+    macosRetranslateAppMenu(qtTrId("lc-menu-about"), qtTrId("lc-menu-settings"));
+#endif
 }
 
 void LibreCelik::changeEvent(QEvent* event)
 {
     if (event->type() == QEvent::LanguageChange && uiReady) {
         ui->retranslateUi(this);
+        retranslateMenuBar();
         updateAboutText();
-        // retranslateUi resets the button to "English"; restore the actual locale.
-        ui->languageButton->setText(locale.startsWith("sr") ? "Српски" : "English");
     }
     QMainWindow::changeEvent(event);
 }
@@ -380,10 +414,13 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                             if (containerLayout) {
                                 auto* pkiWidget = guiPlugin->createPKIWidget(self);
                                 if (!pkiWidget) {
-                                    auto* ts = new TokenSection(LIBRECELIK_CERTIFICATES_DIR, self);
+                                    auto* ts = new TokenSection({LIBRECELIK_CERTIFICATES_DIR}, self);
                                     ts->setHeaderColor(QColor(230, 135, 60));
                                     ts->setHeaderHeight(56);
                                     ts->setExpanded(!visible);
+#ifdef LIBRECELIK_SIGNING_ENABLED
+                                    ts->setReaderName(reader);
+#endif
                                     pkiWidget = ts;
                                 }
                                 connectPKISignals(asyncReader, pkiWidget);
@@ -408,10 +445,13 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                 if (asyncReader->hasPKI()) {
                     auto* pkiWidget = guiPlugin->createPKIWidget(self);
                     if (!pkiWidget) {
-                        auto* ts = new TokenSection(LIBRECELIK_CERTIFICATES_DIR, self);
+                        auto* ts = new TokenSection({LIBRECELIK_CERTIFICATES_DIR}, self);
                         ts->setHeaderColor(QColor(230, 135, 60));
                         ts->setHeaderHeight(56);
                         ts->setExpanded(!visible2);
+#ifdef LIBRECELIK_SIGNING_ENABLED
+                        ts->setReaderName(reader);
+#endif
                         pkiWidget = ts;
                     }
                     connectPKISignals(asyncReader, pkiWidget);
@@ -583,6 +623,65 @@ void LibreCelik::connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget)
                 reader->requestPINTriesLeft(pinRef);
                 dlg->exec();
             });
+
+#ifdef LIBRECELIK_SIGNING_ENABLED
+    connect(tokenSection, &TokenSection::signRequested, this,
+            [this](const plugin::CertificateData& cert, const std::string& readerName) {
+                if (!signingService)
+                    signingService = libresign::createSigningService(libresign::Backend::DSS);
+
+                if (!signingService)
+                    return;
+
+                // Build trust configuration from settings
+                QSettings settings(settings::kOrganization, settings::kApplication);
+                libresign::TrustConfig trustConfig;
+
+                auto tlEntries = QJsonDocument::fromJson(settings.value(settings::kTslEntries).toByteArray()).array();
+                if (tlEntries.isEmpty())
+                    tlEntries = settings.value(settings::kTslEntries).toJsonArray();
+                if (tlEntries.isEmpty()) {
+                    for (const auto& d : signing::defaultTrustedLists())
+                        trustConfig.trustedLists.push_back({d.url.toStdString(), d.lotl, d.eager});
+                } else {
+                    for (const auto& entry : tlEntries) {
+                        auto obj = entry.toObject();
+                        trustConfig.trustedLists.push_back({
+                            obj["url"].toString().toStdString(),
+                            obj["lotl"].toBool(false),
+                            obj["eager"].toBool(true),
+                        });
+                    }
+                }
+
+                QString cacheDir = settings.value(settings::kTslCacheDir).toString();
+                if (cacheDir.isEmpty()) {
+                    QString xdgCache = QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation);
+                    cacheDir = xdgCache + "/librescrs/tsl";
+                }
+                trustConfig.cacheDirectory = cacheDir.toStdString();
+
+                SigningWizard wizard(cert, readerName, signingService.get(), this);
+                wizard.setTrustConfig(trustConfig);
+                wizard.exec();
+            });
+#endif
+}
+
+void LibreCelik::openSettings()
+{
+    SettingsDialog dlg(this);
+    connect(&dlg, &SettingsDialog::languageChanged, this,
+            [this](const QString& newLocale) { loadLanguage(newLocale); });
+    dlg.exec();
+}
+
+void LibreCelik::showAboutDialog()
+{
+    QString text = QStringLiteral("<p>") + qtTrId("lc-main-about-librecelik").arg(LIBRECELIK_VERSION) +
+                   QStringLiteral("</p><p>") +
+                   qtTrId("lc-main-about-libremiddleware").arg(LIBRECELIK_MIDDLEWARE_VERSION) + QStringLiteral("</p>");
+    QMessageBox::about(this, qtTrId("lc-about-title"), text);
 }
 
 LibreCelik::~LibreCelik()

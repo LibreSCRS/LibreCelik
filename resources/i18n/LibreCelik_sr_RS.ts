@@ -27,26 +27,6 @@
         <source>Unavailable</source>
         <translation>Недоступно</translation>
     </message>
-    <message id="lc-eidreader-failed-connect">
-        <source>Failed to connect to card.</source>
-        <translation>Неуспешно повезивање са картицом.</translation>
-    </message>
-    <message id="lc-eidreader-pin-blocked">
-        <source>PIN is blocked!</source>
-        <translation>PIN је блокиран!</translation>
-    </message>
-    <message id="lc-eidreader-pin-incorrect">
-        <source>Incorrect PIN. Retries remaining: %1</source>
-        <translation>Нетачан PIN. Преостало покушаја: %1</translation>
-    </message>
-    <message id="lc-eidreader-pin-change-failed">
-        <source>PIN change failed.</source>
-        <translation>Промена PIN-а није успела.</translation>
-    </message>
-    <message id="lc-eidreader-pin-change-exception">
-        <source>PIN change failed: %1</source>
-        <translation>Промена PIN-а није успела: %1</translation>
-    </message>
     <message id="lc-eid-doc-title">
         <source>ELECTRONIC ID CARD READER: DATA PRINTING</source>
         <translation>ЧИТАЧ ЕЛЕКТРОНСКЕ ЛИЧНЕ КАРТЕ: ШТАМПА ПОДАТАКА</translation>
@@ -151,10 +131,6 @@
         <source>Serbian eID</source>
         <translation>Српска електронска лична карта</translation>
     </message>
-    <message id="lc-eid-label-identity-card">
-        <source>Identity card</source>
-        <translation>Лична карта</translation>
-    </message>
     <message id="lc-eid-title-foreigner">
         <source>Serbian eID (Foreigner)</source>
         <translation>Лична карта за странце</translation>
@@ -162,10 +138,6 @@
     <message id="lc-eid-label-ebs">
         <source>EBS</source>
         <translation>ЕБС</translation>
-    </message>
-    <message id="lc-eid-label-identity-foreigners">
-        <source>Identity card for foreigners</source>
-        <translation>Лична карта за странце</translation>
     </message>
     <message id="lc-eid-label-given-name">
         <source>Given Name</source>
@@ -239,14 +211,6 @@
         <source>Variable Data</source>
         <translation>Променљиви подаци</translation>
     </message>
-    <message id="lc-eid-cert-can-sign">
-        <source>can sign</source>
-        <translation>може потписати</translation>
-    </message>
-    <message id="lc-eid-pin-user">
-        <source>User PIN</source>
-        <translation>Корисников PIN</translation>
-    </message>
     <message id="lc-eid-pin-blocked">
         <source>BLOCKED</source>
         <translation>БЛОКИРАН</translation>
@@ -267,6 +231,11 @@
         <source>View Certificate</source>
         <translation>Прикажи сертификат</translation>
     </message>
+    <message id="lc-sign-with-cert">
+        <source>Sign with this certificate</source>
+        <extracomment>Context menu action to sign with a specific certificate</extracomment>
+        <translation>Потпиши овим сертификатом</translation>
+    </message>
     <message id="lc-eid-menu-initialize-pin">
         <source>Initialize PIN</source>
         <translation>Иницијализуј PIN</translation>
@@ -278,10 +247,6 @@
     <message id="lc-eid-print-title">
         <source>Print Document</source>
         <translation>Штампај документ</translation>
-    </message>
-    <message id="lc-changepin-title">
-        <source>Change PIN</source>
-        <translation type="vanished">Промена PIN-а</translation>
     </message>
     <message id="lc-changepin-initialize-title">
         <source>Initialize %1</source>
@@ -471,170 +436,6 @@
         <source>No certificates available.</source>
         <translation>Нема доступних сертификата.</translation>
     </message>
-    <message id="lc-vehicle-doc-title">
-        <source>Vehicle registration card reader</source>
-        <translation>ЧИТАЧ САОБРАЋАЈНЕ ДОЗВОЛЕ: ШТАМПА ПОДАТАКА</translation>
-    </message>
-    <message id="lc-vehicle-doc-printing-date">
-        <source>Printing date</source>
-        <translation>Датум штампе</translation>
-    </message>
-    <message id="lc-vehicle-doc-reg-number">
-        <source>Registration number</source>
-        <translation>Регистарски број</translation>
-    </message>
-    <message id="lc-vehicle-doc-issuance-date">
-        <source>Date of issuance</source>
-        <translation>Датум издавања</translation>
-    </message>
-    <message id="lc-vehicle-doc-valid-to">
-        <source>Valid to</source>
-        <translation>Важи до</translation>
-    </message>
-    <message id="lc-vehicle-doc-state-issuing">
-        <source>State issuing</source>
-        <translation>Држава издавалац</translation>
-    </message>
-    <message id="lc-vehicle-doc-competent-authority">
-        <source>Competent authority</source>
-        <translation>Надлежни орган</translation>
-    </message>
-    <message id="lc-vehicle-doc-authority-issuing">
-        <source>Authority issuing</source>
-        <translation>Орган који издаје</translation>
-    </message>
-    <message id="lc-vehicle-doc-unambiguous-no">
-        <source>Unambiguous number</source>
-        <translation>Једнозначни број</translation>
-    </message>
-    <message id="lc-vehicle-doc-serial-no">
-        <source>Serial number</source>
-        <translation>Серијски број</translation>
-    </message>
-    <message id="lc-vehicle-doc-owner-data">
-        <source>Owner data</source>
-        <translation>Подаци о власнику</translation>
-    </message>
-    <message id="lc-vehicle-doc-owner-surname">
-        <source>Surname / Business name</source>
-        <translation>Презиме / Назив фирме</translation>
-    </message>
-    <message id="lc-vehicle-doc-owner-name">
-        <source>Name</source>
-        <translation>Име</translation>
-    </message>
-    <message id="lc-vehicle-doc-owner-address">
-        <source>Address</source>
-        <translation>Адреса</translation>
-    </message>
-    <message id="lc-vehicle-doc-owner-personal-no">
-        <source>Personal number</source>
-        <translation>Матични број</translation>
-    </message>
-    <message id="lc-vehicle-doc-user-surname">
-        <source>Surname / Business name</source>
-        <translation>Презиме / Назив фирме</translation>
-    </message>
-    <message id="lc-vehicle-doc-user-name">
-        <source>Name</source>
-        <translation>Име</translation>
-    </message>
-    <message id="lc-vehicle-doc-user-address">
-        <source>Address</source>
-        <translation>Адреса</translation>
-    </message>
-    <message id="lc-vehicle-doc-user-personal-no">
-        <source>Personal number</source>
-        <translation>Матични број</translation>
-    </message>
-    <message id="lc-vehicle-doc-vehicle-data">
-        <source>Vehicle data</source>
-        <translation>Подаци о возилу</translation>
-    </message>
-    <message id="lc-vehicle-doc-first-reg-date">
-        <source>Date of first registration</source>
-        <translation>Датум прве регистрације</translation>
-    </message>
-    <message id="lc-vehicle-doc-production-year">
-        <source>Year of production</source>
-        <translation>Година производње</translation>
-    </message>
-    <message id="lc-vehicle-doc-make">
-        <source>Make</source>
-        <translation>Марка</translation>
-    </message>
-    <message id="lc-vehicle-doc-type">
-        <source>Type</source>
-        <translation>Тип</translation>
-    </message>
-    <message id="lc-vehicle-doc-commercial-desc">
-        <source>Commercial description</source>
-        <translation>Комерцијални опис</translation>
-    </message>
-    <message id="lc-vehicle-doc-type-approval-no">
-        <source>Type approval number</source>
-        <translation>Број типског одобрења</translation>
-    </message>
-    <message id="lc-vehicle-doc-colour">
-        <source>Colour</source>
-        <translation>Боја</translation>
-    </message>
-    <message id="lc-vehicle-doc-axles">
-        <source>Number of axles</source>
-        <translation>Број осовина</translation>
-    </message>
-    <message id="lc-vehicle-doc-vin">
-        <source>VIN</source>
-        <translation>ВИН</translation>
-    </message>
-    <message id="lc-vehicle-doc-capacity">
-        <source>Capacity (cm3)</source>
-        <translation>Запремина (cm3)</translation>
-    </message>
-    <message id="lc-vehicle-doc-engine-number">
-        <source>Engine number</source>
-        <translation>Број мотора</translation>
-    </message>
-    <message id="lc-vehicle-doc-mass">
-        <source>Mass (kg)</source>
-        <translation>Маса (kg)</translation>
-    </message>
-    <message id="lc-vehicle-doc-power">
-        <source>Power (kW)</source>
-        <translation>Снага (kW)</translation>
-    </message>
-    <message id="lc-vehicle-doc-load">
-        <source>Load (kg)</source>
-        <translation>Носивост (kg)</translation>
-    </message>
-    <message id="lc-vehicle-doc-power-weight">
-        <source>Power/weight ratio</source>
-        <translation>Однос снаге и масе</translation>
-    </message>
-    <message id="lc-vehicle-doc-max-laden-mass">
-        <source>Max laden mass (kg)</source>
-        <translation>Највећа дозвољена маса (kg)</translation>
-    </message>
-    <message id="lc-vehicle-doc-category">
-        <source>Category</source>
-        <translation>Категорија</translation>
-    </message>
-    <message id="lc-vehicle-doc-fuel-type">
-        <source>Fuel type</source>
-        <translation>Врста горива</translation>
-    </message>
-    <message id="lc-vehicle-doc-seats">
-        <source>Seats</source>
-        <translation>Број седишта</translation>
-    </message>
-    <message id="lc-vehicle-doc-standing-places">
-        <source>Standing places</source>
-        <translation>Број места за стајање</translation>
-    </message>
-    <message id="lc-vehicle-title">
-        <source>Vehicle Registration</source>
-        <translation>Саобраћајна дозвола</translation>
-    </message>
     <message id="lc-eid-label-status-of-foreigner">
         <source>Status of Foreigner</source>
         <translation>Статус странца</translation>
@@ -650,10 +451,6 @@
     <message id="lc-error-no-plugin">
         <source>No plugin could read this card.</source>
         <translation>Ниједан додатак не може да прочита ову картицу.</translation>
-    </message>
-    <message id="lc-vehicle-print-title">
-        <source>Print Document</source>
-        <translation>Штампај документ</translation>
     </message>
     <message id="lc-euvrc-title">
         <source>Vehicle Registration</source>
@@ -1219,6 +1016,216 @@
         <source>Value</source>
         <translation>Вредност</translation>
     </message>
+    <message id="lc-sign-wizard-title">
+        <source>Sign Documents — %1</source>
+        <oldsource>Sign Document — %1</oldsource>
+        <translation>Потписивање докумената — %1</translation>
+    </message>
+    <message id="lc-sign-select-files">
+        <source>Select files</source>
+        <oldsource>Select Files to Sign</oldsource>
+        <translation>Изаберите фајлове</translation>
+    </message>
+    <message id="lc-sign-level-bb">
+        <source>B-B (Basic)</source>
+        <translation>B-B (Основни)</translation>
+    </message>
+    <message id="lc-sign-level-bt">
+        <source>B-T (with Timestamp)</source>
+        <translation>B-T (са временским жигом)</translation>
+    </message>
+    <message id="lc-sign-level-blt">
+        <source>B-LT (Long Term)</source>
+        <translation>B-LT (Дугорочни)</translation>
+    </message>
+    <message id="lc-sign-level-blta">
+        <source>B-LTA (Long Term with Archive)</source>
+        <translation>B-LTA (Дугорочни са архивом)</translation>
+    </message>
+    <message id="lc-sign-output-folder">
+        <source>Output folder:</source>
+        <oldsource>Output folder</oldsource>
+        <translation>Излазни фолдер:</translation>
+    </message>
+    <message id="lc-sign-change-folder">
+        <source>Change...</source>
+        <translation>Промени...</translation>
+    </message>
+    <message id="lc-sign-page-of-total">
+        <source>of %1</source>
+        <translation>од %1</translation>
+    </message>
+    <message id="lc-sign-visual-sig">
+        <source>Add visual signature</source>
+        <translation>Додај визуелни потпис</translation>
+    </message>
+    <message id="lc-sign-pin-label">
+        <source>PIN:</source>
+        <oldsource>Enter PIN for signing key:</oldsource>
+        <translation>ПИН:</translation>
+    </message>
+    <message id="lc-sign-can-label">
+        <source>CAN:</source>
+        <translation>CAN:</translation>
+    </message>
+    <message id="lc-sign-btn-sign">
+        <source>Sign</source>
+        <translation>Потпиши</translation>
+    </message>
+    <message id="lc-sign-btn-back">
+        <source>Back</source>
+        <translation>Назад</translation>
+    </message>
+    <message id="lc-sign-btn-next">
+        <source>Next</source>
+        <translation>Даље</translation>
+    </message>
+    <message id="lc-sign-preparing">
+        <source>Preparing to sign...</source>
+        <translation>Припрема за потписивање...</translation>
+    </message>
+    <message id="lc-sign-progress">
+        <source>Signing file %1 of %2: %3</source>
+        <translation>Потписивање фајла %1 од %2: %3</translation>
+    </message>
+    <message id="lc-sign-summary-cert">
+        <source>Certificate</source>
+        <oldsource>Certificate: %1</oldsource>
+        <translation>Сертификат</translation>
+    </message>
+    <message id="lc-sign-summary-files">
+        <source>Files</source>
+        <oldsource>Files: %1</oldsource>
+        <translation>Фајлови</translation>
+    </message>
+    <message id="lc-sign-wizard-header-title">
+        <source>Sign Documents</source>
+        <extracomment>Header title for the signing wizard</extracomment>
+        <translation>Потписивање докумената</translation>
+    </message>
+    <message id="lc-sign-step-files">
+        <source>Files</source>
+        <extracomment>Step 1 label in wizard header</extracomment>
+        <translation>Фајлови</translation>
+    </message>
+    <message id="lc-sign-step-place">
+        <source>Place</source>
+        <extracomment>Step 2 label in wizard header</extracomment>
+        <translation>Место</translation>
+    </message>
+    <message id="lc-sign-step-sign">
+        <source>Sign</source>
+        <extracomment>Step 3 label in wizard header</extracomment>
+        <translation>Потпис</translation>
+    </message>
+    <message id="lc-sign-drop-primary">
+        <source>Drop PDF or other files here</source>
+        <translation>Превуците PDF или друге фајлове овде</translation>
+    </message>
+    <message id="lc-sign-drop-or">
+        <source>or</source>
+        <translation>или</translation>
+    </message>
+    <message id="lc-sign-drop-browse">
+        <source>browse files</source>
+        <translation>изаберите фајлове</translation>
+    </message>
+    <message id="lc-sign-summary-level">
+        <source>Level</source>
+        <translation>Ниво</translation>
+    </message>
+    <message id="lc-menu-edit">
+        <source>Edit</source>
+        <translation>Уреди</translation>
+    </message>
+    <message id="lc-menu-settings">
+        <source>Settings...</source>
+        <translation>Подешавања...</translation>
+    </message>
+    <message id="lc-menu-help">
+        <source>Help</source>
+        <translation>Помоћ</translation>
+    </message>
+    <message id="lc-menu-about">
+        <source>About LibreCelik</source>
+        <translation>О програму Слободни Челик</translation>
+    </message>
+    <message id="lc-menu-about-qt">
+        <source>About Qt</source>
+        <translation>О библиотеци Qt</translation>
+    </message>
+    <message id="lc-about-title">
+        <source>About LibreCelik</source>
+        <translation>О програму Слободни Челик</translation>
+    </message>
+    <message id="lc-settings-title">
+        <source>Settings</source>
+        <translation>Подешавања</translation>
+    </message>
+    <message id="lc-settings-tab-general">
+        <source>General</source>
+        <translation>Опште</translation>
+    </message>
+    <message id="lc-settings-tab-signing">
+        <source>Signing</source>
+        <translation>Потписивање</translation>
+    </message>
+    <message id="lc-settings-tab-trust">
+        <source>Trust</source>
+        <translation>Поверење</translation>
+    </message>
+    <message id="lc-settings-language">
+        <source>Language:</source>
+        <translation>Језик:</translation>
+    </message>
+    <message id="lc-settings-default-level">
+        <source>Default signature level:</source>
+        <translation>Подразумевани ниво потписа:</translation>
+    </message>
+    <message id="lc-settings-default-output">
+        <source>Default output folder:</source>
+        <translation>Подразумевани излазни фолдер:</translation>
+    </message>
+    <message id="lc-settings-output-placeholder">
+        <source>Same as input file</source>
+        <translation>Исти као улазна датотека</translation>
+    </message>
+    <message id="lc-settings-tsa-servers">
+        <source>TSA servers:</source>
+        <translation>TSA сервери:</translation>
+    </message>
+    <message id="lc-settings-tl-servers">
+        <source>Trusted Lists:</source>
+        <translation>Листе поверења:</translation>
+    </message>
+    <message id="lc-settings-tl-add-item">
+        <source>+ Add Trusted List...</source>
+        <translation>+ Додај листу поверења...</translation>
+    </message>
+    <message id="lc-settings-tl-add-title">
+        <source>Add Trusted List</source>
+        <translation>Додај листу поверења</translation>
+    </message>
+    <message id="lc-settings-tl-type">
+        <source>Type:</source>
+        <translation>Тип:</translation>
+    </message>
+    <message id="lc-settings-tl-loading">
+        <source>Loading:</source>
+        <translation>Учитавање:</translation>
+    </message>
+    <message id="lc-settings-cache-dir">
+        <source>Cache directory:</source>
+        <translation>Директоријум кеша:</translation>
+    </message>
+    <message id="lc-settings-invalid-url-title">
+        <source>Invalid URL</source>
+        <translation>Неисправан URL</translation>
+    </message>
+    <message id="lc-settings-invalid-url-msg">
+        <source>Please enter a valid URL.</source>
+        <translation>Молимо унесите исправан URL.</translation>
+    </message>
     <message id="lc-reader-unsupported-card">
         <source>Card in reader is not supported.</source>
         <translation>Картица у читачу није подржана.</translation>
@@ -1230,10 +1237,6 @@
     <message id="lc-health-title">
         <source>Health Insurance Card</source>
         <translation>Здравствена картица</translation>
-    </message>
-    <message id="lc-healthreader-failed-connect">
-        <source>Failed to connect to card.</source>
-        <translation>Неуспешно повезивање са картицом.</translation>
     </message>
     <message id="lc-health-print-title">
         <source>Print Document</source>
@@ -1271,25 +1274,13 @@
         <source>Name</source>
         <translation>Име</translation>
     </message>
-    <message id="lc-health-label-given-name-lat">
-        <source>Name (Latin)</source>
-        <translation>Име (лат.)</translation>
-    </message>
     <message id="lc-health-label-family-name">
         <source>Surname</source>
         <translation>Презиме</translation>
     </message>
-    <message id="lc-health-label-family-name-lat">
-        <source>Surname (Latin)</source>
-        <translation>Презиме (лат.)</translation>
-    </message>
     <message id="lc-health-label-parent-name">
         <source>Parent name</source>
         <translation>Име родитеља</translation>
-    </message>
-    <message id="lc-health-label-parent-name-lat">
-        <source>Parent name (Latin)</source>
-        <translation>Име родитеља (лат.)</translation>
     </message>
     <message id="lc-health-label-dob">
         <source>Date of birth</source>
@@ -1463,10 +1454,6 @@
         <source>Sex</source>
         <translation>Пол</translation>
     </message>
-    <message id="lc-emrtd-personal-data">
-        <source>Personal Data</source>
-        <translation type="vanished">Лични подаци</translation>
-    </message>
     <message id="lc-emrtd-surname">
         <source>Surname</source>
         <translation>Презиме</translation>
@@ -1482,10 +1469,6 @@
     <message id="lc-emrtd-date-of-birth">
         <source>Date of Birth</source>
         <translation>Датум рођења</translation>
-    </message>
-    <message id="lc-emrtd-sex">
-        <source>Sex</source>
-        <translation>Пол</translation>
     </message>
     <message id="lc-emrtd-document-data">
         <source>Document Data</source>
@@ -1531,6 +1514,10 @@
         <source>Token</source>
         <translation>Токен</translation>
     </message>
+    <message id="lc-sign-button">
+        <source>Sign</source>
+        <translation>Потпиши</translation>
+    </message>
     <message id="lc-token-key-subject">
         <source>Subject</source>
         <translation>Власник</translation>
@@ -1557,7 +1544,7 @@
     </message>
     <message id="lc-token-ku-non-repudiation">
         <source>Non-Repudiation</source>
-        <translation>Неодрицивост</translation>
+        <translation>Непорецивост</translation>
     </message>
     <message id="lc-token-ku-key-encipherment">
         <source>Key Encipherment</source>
@@ -1571,21 +1558,9 @@
         <source>Key Agreement</source>
         <translation>Размена кључева</translation>
     </message>
-    <message id="lc-print-button">
-        <source>Print</source>
-        <translation>Штампај</translation>
-    </message>
     <message id="lc-personal-data-title">
         <source>Personal Data</source>
         <translation>Лични подаци</translation>
-    </message>
-    <message id="lc-emrtd-auth-dlg-title">
-        <source>Electronic Passport Authentication</source>
-        <translation>Аутентификација електронског пасоша</translation>
-    </message>
-    <message id="lc-emrtd-auth-dlg-subtitle">
-        <source>Foreigner ID Card</source>
-        <translation>Лична карта за странце</translation>
     </message>
     <message id="lc-emrtd-auth-can-title">
         <source>CAN</source>
@@ -1782,6 +1757,150 @@
     <message id="lc-piv-field-offcardurl">
         <source>Off-Card URL</source>
         <translation>URL ван картице</translation>
+    </message>
+    <message id="lc-sign-formats-desc">
+        <source>Formats: %1</source>
+        <translation>Формати: %1</translation>
+    </message>
+    <message id="lc-sign-btn-cancel">
+        <source>Cancel</source>
+        <translation>Откажи</translation>
+    </message>
+    <message id="lc-sign-btn-done">
+        <source>Done</source>
+        <translation>Готово</translation>
+    </message>
+    <message id="lc-sign-copy-error">
+        <source>Copy</source>
+        <translation>Копирај</translation>
+    </message>
+    <message id="lc-sign-limits-info">
+        <source>Max file size: 256 MB. ZIP archives for ASiC-E: up to 100,000 files, 256 MB decompressed.</source>
+        <translation>Макс. величина фајла: 256 MB. ZIP архиве за ASiC-E: до 100.000 фајлова, 256 MB декомпресовано.</translation>
+    </message>
+    <message id="lc-sign-level-label">
+        <source>Signature level:</source>
+        <translation>Ниво потписа:</translation>
+    </message>
+    <message id="lc-sign-tsa-label">
+        <source>TSA server:</source>
+        <translation>TSA сервер:</translation>
+    </message>
+    <message id="lc-sign-tsa-info">
+        <source>For a qualified signature, use a qualified TSA from your certificate authority</source>
+        <translation>За квалификован потпис користите квалификовани TSA сервер вашег сертификационог тела</translation>
+    </message>
+    <message id="lc-sign-tsa-add-title">
+        <source>Add TSA server</source>
+        <translation>Додај TSA сервер</translation>
+    </message>
+    <message id="lc-sign-tsa-add-prompt">
+        <source>Enter TSA server URL:</source>
+        <translation>Унесите URL TSA сервера:</translation>
+    </message>
+    <message id="lc-sign-tsa-add-item">
+        <source>+ Add TSA server...</source>
+        <translation>+ Додај TSA сервер...</translation>
+    </message>
+    <message id="lc-sign-select-output-folder">
+        <source>Select output folder</source>
+        <translation>Изаберите излазни фолдер</translation>
+    </message>
+    <message id="lc-sign-page-prev">
+        <source>Previous</source>
+        <translation>Претходна</translation>
+    </message>
+    <message id="lc-sign-page-next">
+        <source>Next</source>
+        <translation>Даље</translation>
+    </message>
+    <message id="lc-sign-visual-reason">
+        <source>Reason:</source>
+        <translation>Разлог:</translation>
+    </message>
+    <message id="lc-sign-visual-reason-placeholder">
+        <source>e.g. Contract approval</source>
+        <translation>нпр. Одобрење уговора</translation>
+    </message>
+    <message id="lc-sign-visual-location">
+        <source>Location:</source>
+        <translation>Локација:</translation>
+    </message>
+    <message id="lc-sign-visual-location-placeholder">
+        <source>e.g. Belgrade, Serbia</source>
+        <translation>нпр. Београд, Србија</translation>
+    </message>
+    <message id="lc-sign-filelist-tooltip">
+        <source>Select a file and press Delete to remove it</source>
+        <translation>Изаберите фајл и притисните Delete да га уклоните</translation>
+    </message>
+    <message id="lc-sign-visual-text-signed-by">
+        <source>Digitally signed by:</source>
+        <translation>Дигитално потписао/ла:</translation>
+    </message>
+    <message id="lc-sign-visual-text-issued-by">
+        <source>Issued by:</source>
+        <translation>Издавач:</translation>
+    </message>
+    <message id="lc-sign-visual-text-date">
+        <source>Date:</source>
+        <translation>Датум:</translation>
+    </message>
+    <message id="lc-sign-visual-text-reason">
+        <source>Reason:</source>
+        <translation>Разлог:</translation>
+    </message>
+    <message id="lc-sign-visual-text-location">
+        <source>Location:</source>
+        <translation>Локација:</translation>
+    </message>
+    <message id="lc-sign-fail-read">
+        <source>FAILED: %1 — could not read file</source>
+        <translation>ГРЕШКА: %1 — не може да прочита фајл</translation>
+    </message>
+    <message id="lc-sign-ok">
+        <source>OK: %1 → %2</source>
+        <translation>OK: %1 → %2</translation>
+    </message>
+    <message id="lc-sign-fail-write">
+        <source>FAILED: %1 — could not write output</source>
+        <translation>ГРЕШКА: %1 — не може да упише излаз</translation>
+    </message>
+    <message id="lc-sign-fail-too-large">
+        <source>FAILED: %1 — file exceeds 256 MB size limit</source>
+        <translation>ГРЕШКА: %1 — фајл прелази ограничење од 256 MB</translation>
+    </message>
+    <message id="lc-sign-fail-sign">
+        <source>FAILED: %1 — %2</source>
+        <translation>ГРЕШКА: %1 — %2</translation>
+    </message>
+    <message id="lc-sign-complete">
+        <source>Signing complete: %1 succeeded, %2 failed</source>
+        <translation>Потписивање завршено: %1 успешно, %2 неуспешно</translation>
+    </message>
+    <message id="lc-sign-expired-cert-title">
+        <source>Expired Certificate</source>
+        <translation>Истекао сертификат</translation>
+    </message>
+    <message id="lc-sign-expired-cert-message">
+        <source>The selected certificate has expired. At B-B level, the signature will not include revocation data. Continue anyway?</source>
+        <translation>Изабрани сертификат је истекао. На Б-Б нивоу, потпис неће садржати податке о повлачењу. Наставити?</translation>
+    </message>
+    <message id="lc-sign-output-folder-error-title">
+        <source>Output Folder Error</source>
+        <translation>Грешка излазног фолдера</translation>
+    </message>
+    <message id="lc-sign-output-folder-error-message">
+        <source>Could not create the output folder.</source>
+        <translation>Није могуће креирати излазни фолдер.</translation>
+    </message>
+    <message id="lc-sign-tsa-invalid-title">
+        <source>Invalid TSA URL</source>
+        <translation>Неисправан URL TSA сервера</translation>
+    </message>
+    <message id="lc-sign-tsa-invalid-message">
+        <source>The configured Timestamp Authority URL is not a valid https:// endpoint.</source>
+        <translation>Подешени URL Timestamp Authority сервера није исправан https:// endpoint.</translation>
     </message>
 </context>
 <context>
@@ -2446,7 +2565,7 @@
     </message>
     <message>
         <source>English</source>
-        <translation>Енглески</translation>
+        <translation type="vanished">Енглески</translation>
     </message>
     <message>
         <source>Српски</source>

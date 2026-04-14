@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 // This file exists solely to provide //% source-text comments for lupdate.
 // It registers the English source strings for all qtTrId() IDs used in the
@@ -47,16 +47,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
 
     // --- eID reader errors ---
     //% "Failed to connect to card."
-    QT_TRID_NOOP("lc-eidreader-failed-connect");
-    //% "PIN is blocked!"
-    QT_TRID_NOOP("lc-eidreader-pin-blocked");
-    //% "Incorrect PIN. Retries remaining: %1"
-    QT_TRID_NOOP("lc-eidreader-pin-incorrect");
-    //% "PIN change failed."
-    QT_TRID_NOOP("lc-eidreader-pin-change-failed");
-    //% "PIN change failed: %1"
-    QT_TRID_NOOP("lc-eidreader-pin-change-exception");
-
     // --- eID print document field labels ---
     //% "ELECTRONIC ID CARD READER: DATA PRINTING"
     QT_TRID_NOOP("lc-eid-doc-title");
@@ -113,10 +103,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "EBS"
     QT_TRID_NOOP("lc-eid-label-ebs");
     //% "Identity card"
-    QT_TRID_NOOP("lc-eid-label-identity-card");
-    //% "Identity card for foreigners"
-    QT_TRID_NOOP("lc-eid-label-identity-foreigners");
-    //% "Address"
     QT_TRID_NOOP("lc-eid-label-address");
     //% "Address"
     QT_TRID_NOOP("lc-eid-label-address-foreigner");
@@ -157,10 +143,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Variable Data"
     QT_TRID_NOOP("lc-eid-label-variable-verification");
     //% "can sign"
-    QT_TRID_NOOP("lc-eid-cert-can-sign");
-    //% "User PIN"
-    QT_TRID_NOOP("lc-eid-pin-user");
-    //% "BLOCKED"
     QT_TRID_NOOP("lc-eid-pin-blocked");
     //% "%1 tries remaining"
     QT_TRID_NOOP("lc-eid-pin-tries-remaining");
@@ -297,8 +279,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Health Insurance Card"
     QT_TRID_NOOP("lc-health-title");
     //% "Failed to connect to card."
-    QT_TRID_NOOP("lc-healthreader-failed-connect");
-    //% "Print Document"
     QT_TRID_NOOP("lc-health-print-title");
     //% "HEALTH INSURANCE CARD READER: DATA PRINTING"
     QT_TRID_NOOP("lc-health-doc-title");
@@ -317,16 +297,10 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Name"
     QT_TRID_NOOP("lc-health-label-given-name");
     //% "Name (Latin)"
-    QT_TRID_NOOP("lc-health-label-given-name-lat");
-    //% "Surname"
     QT_TRID_NOOP("lc-health-label-family-name");
     //% "Surname (Latin)"
-    QT_TRID_NOOP("lc-health-label-family-name-lat");
-    //% "Parent name"
     QT_TRID_NOOP("lc-health-label-parent-name");
     //% "Parent name (Latin)"
-    QT_TRID_NOOP("lc-health-label-parent-name-lat");
-    //% "Date of birth"
     QT_TRID_NOOP("lc-health-label-dob");
     //% "Gender"
     QT_TRID_NOOP("lc-health-label-gender");
@@ -432,16 +406,10 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
 
     // --- Shared UI ---
     //% "Print"
-    QT_TRID_NOOP("lc-print-button");
-    //% "Print"
     QT_TRID_NOOP("lc-print-tooltip");
 
     // --- Vehicle registration ---
     //% "Vehicle Registration"
-    QT_TRID_NOOP("lc-vehicle-title");
-    //% "Print Document"
-    QT_TRID_NOOP("lc-vehicle-print-title");
-
     // --- EU VRC (Vehicle Registration Certificate) ---
     //% "Vehicle Registration"
     QT_TRID_NOOP("lc-euvrc-title");
@@ -705,86 +673,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-euvrc-doc-fuel-tank");
 
     //% "Vehicle registration card reader"
-    QT_TRID_NOOP("lc-vehicle-doc-title");
-    //% "Printing date"
-    QT_TRID_NOOP("lc-vehicle-doc-printing-date");
-    //% "Registration number"
-    QT_TRID_NOOP("lc-vehicle-doc-reg-number");
-    //% "Date of issuance"
-    QT_TRID_NOOP("lc-vehicle-doc-issuance-date");
-    //% "Valid to"
-    QT_TRID_NOOP("lc-vehicle-doc-valid-to");
-    //% "State issuing"
-    QT_TRID_NOOP("lc-vehicle-doc-state-issuing");
-    //% "Competent authority"
-    QT_TRID_NOOP("lc-vehicle-doc-competent-authority");
-    //% "Authority issuing"
-    QT_TRID_NOOP("lc-vehicle-doc-authority-issuing");
-    //% "Unambiguous number"
-    QT_TRID_NOOP("lc-vehicle-doc-unambiguous-no");
-    //% "Serial number"
-    QT_TRID_NOOP("lc-vehicle-doc-serial-no");
-    //% "Owner data"
-    QT_TRID_NOOP("lc-vehicle-doc-owner-data");
-    //% "Surname / Business name"
-    QT_TRID_NOOP("lc-vehicle-doc-owner-surname");
-    //% "Name"
-    QT_TRID_NOOP("lc-vehicle-doc-owner-name");
-    //% "Address"
-    QT_TRID_NOOP("lc-vehicle-doc-owner-address");
-    //% "Personal number"
-    QT_TRID_NOOP("lc-vehicle-doc-owner-personal-no");
-    //% "Surname / Business name"
-    QT_TRID_NOOP("lc-vehicle-doc-user-surname");
-    //% "Name"
-    QT_TRID_NOOP("lc-vehicle-doc-user-name");
-    //% "Address"
-    QT_TRID_NOOP("lc-vehicle-doc-user-address");
-    //% "Personal number"
-    QT_TRID_NOOP("lc-vehicle-doc-user-personal-no");
-    //% "Vehicle data"
-    QT_TRID_NOOP("lc-vehicle-doc-vehicle-data");
-    //% "Date of first registration"
-    QT_TRID_NOOP("lc-vehicle-doc-first-reg-date");
-    //% "Year of production"
-    QT_TRID_NOOP("lc-vehicle-doc-production-year");
-    //% "Make"
-    QT_TRID_NOOP("lc-vehicle-doc-make");
-    //% "Type"
-    QT_TRID_NOOP("lc-vehicle-doc-type");
-    //% "Commercial description"
-    QT_TRID_NOOP("lc-vehicle-doc-commercial-desc");
-    //% "Type approval number"
-    QT_TRID_NOOP("lc-vehicle-doc-type-approval-no");
-    //% "Colour"
-    QT_TRID_NOOP("lc-vehicle-doc-colour");
-    //% "Number of axles"
-    QT_TRID_NOOP("lc-vehicle-doc-axles");
-    //% "VIN"
-    QT_TRID_NOOP("lc-vehicle-doc-vin");
-    //% "Capacity (cm3)"
-    QT_TRID_NOOP("lc-vehicle-doc-capacity");
-    //% "Engine number"
-    QT_TRID_NOOP("lc-vehicle-doc-engine-number");
-    //% "Mass (kg)"
-    QT_TRID_NOOP("lc-vehicle-doc-mass");
-    //% "Power (kW)"
-    QT_TRID_NOOP("lc-vehicle-doc-power");
-    //% "Load (kg)"
-    QT_TRID_NOOP("lc-vehicle-doc-load");
-    //% "Power/weight ratio"
-    QT_TRID_NOOP("lc-vehicle-doc-power-weight");
-    //% "Max laden mass (kg)"
-    QT_TRID_NOOP("lc-vehicle-doc-max-laden-mass");
-    //% "Category"
-    QT_TRID_NOOP("lc-vehicle-doc-category");
-    //% "Fuel type"
-    QT_TRID_NOOP("lc-vehicle-doc-fuel-type");
-    //% "Seats"
-    QT_TRID_NOOP("lc-vehicle-doc-seats");
-    //% "Standing places"
-    QT_TRID_NOOP("lc-vehicle-doc-standing-places");
-
     // eMRTD (Electronic Passport)
     //% "Authentication Required"
     QT_TRID_NOOP("lc-emrtd-auth-required");
@@ -805,8 +693,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Date of Birth"
     QT_TRID_NOOP("lc-emrtd-date-of-birth");
     //% "Sex"
-    QT_TRID_NOOP("lc-emrtd-sex");
-    //% "Document Data"
     QT_TRID_NOOP("lc-emrtd-document-data");
     //% "Document Number"
     QT_TRID_NOOP("lc-emrtd-doc-number");
@@ -823,10 +709,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Issuing Information"
     QT_TRID_NOOP("lc-emrtd-issuing-info");
     //% "Electronic Passport Authentication"
-    QT_TRID_NOOP("lc-emrtd-auth-dlg-title");
-    //% "Foreigner ID Card"
-    QT_TRID_NOOP("lc-emrtd-auth-dlg-subtitle");
-    //% "CAN"
     QT_TRID_NOOP("lc-emrtd-auth-can-title");
     //% "6-digit number on card front"
     QT_TRID_NOOP("lc-emrtd-auth-can-desc");
@@ -975,6 +857,198 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-piv-field-offcardcerts");
     //% "Off-Card URL"
     QT_TRID_NOOP("lc-piv-field-offcardurl");
+
+    // --- Signing UI ---
+    //% "Sign"
+    QT_TRID_NOOP("lc-sign-button");
+    //% "Sign with this certificate"
+    QT_TRID_NOOP("lc-sign-with-cert");
+    //% "Sign Documents — %1"
+    QT_TRID_NOOP("lc-sign-wizard-title");
+    //% "Select files"
+    QT_TRID_NOOP("lc-sign-select-files");
+    //% "Formats: %1"
+    QT_TRID_NOOP("lc-sign-formats-desc");
+    //% "B-B (Basic)"
+    QT_TRID_NOOP("lc-sign-level-bb");
+    //% "B-T (with Timestamp)"
+    QT_TRID_NOOP("lc-sign-level-bt");
+    //% "B-LT (Long Term)"
+    QT_TRID_NOOP("lc-sign-level-blt");
+    //% "B-LTA (Long Term with Archive)"
+    QT_TRID_NOOP("lc-sign-level-blta");
+    //% "Output folder:"
+    QT_TRID_NOOP("lc-sign-output-folder");
+    //% "Change..."
+    QT_TRID_NOOP("lc-sign-change-folder");
+    //% "of %1"
+    QT_TRID_NOOP("lc-sign-page-of-total");
+    //% "Add visual signature"
+    QT_TRID_NOOP("lc-sign-visual-sig");
+    //% "PIN:"
+    QT_TRID_NOOP("lc-sign-pin-label");
+    //% "CAN:"
+    QT_TRID_NOOP("lc-sign-can-label");
+    //% "Sign"
+    QT_TRID_NOOP("lc-sign-btn-sign");
+    //% "Back"
+    QT_TRID_NOOP("lc-sign-btn-back");
+    //% "Next"
+    QT_TRID_NOOP("lc-sign-btn-next");
+    //% "Preparing to sign..."
+    QT_TRID_NOOP("lc-sign-preparing");
+    //% "Signing file %1 of %2: %3"
+    QT_TRID_NOOP("lc-sign-progress");
+    //% "Certificate"
+    QT_TRID_NOOP("lc-sign-summary-cert");
+    //% "Files"
+    QT_TRID_NOOP("lc-sign-summary-files");
+    //% "Signing complete: %1 succeeded, %2 failed"
+    QT_TRID_NOOP("lc-sign-complete");
+    //% "FAILED: %1 — %2"
+    QT_TRID_NOOP("lc-sign-fail-sign");
+    //% "FAILED: %1 — could not read file"
+    QT_TRID_NOOP("lc-sign-fail-read");
+    //% "FAILED: %1 — could not write output"
+    QT_TRID_NOOP("lc-sign-fail-write");
+    //% "FAILED: %1 — file exceeds 256 MB size limit"
+    QT_TRID_NOOP("lc-sign-fail-too-large");
+    //% "OK: %1 → %2"
+    QT_TRID_NOOP("lc-sign-ok");
+    //% "Previous"
+    QT_TRID_NOOP("lc-sign-page-prev");
+    //% "Next"
+    QT_TRID_NOOP("lc-sign-page-next");
+    //% "Reason:"
+    QT_TRID_NOOP("lc-sign-visual-reason");
+    //% "e.g. Contract approval"
+    QT_TRID_NOOP("lc-sign-visual-reason-placeholder");
+    //% "Location:"
+    QT_TRID_NOOP("lc-sign-visual-location");
+    //% "e.g. Belgrade, Serbia"
+    QT_TRID_NOOP("lc-sign-visual-location-placeholder");
+    //% "Select output folder"
+    QT_TRID_NOOP("lc-sign-select-output-folder");
+    //% "Signature level:"
+    QT_TRID_NOOP("lc-sign-level-label");
+    //% "TSA server:"
+    QT_TRID_NOOP("lc-sign-tsa-label");
+    //% "For a qualified signature, use a qualified TSA from your certificate authority"
+    QT_TRID_NOOP("lc-sign-tsa-info");
+    //% "Add TSA server"
+    QT_TRID_NOOP("lc-sign-tsa-add-title");
+    //% "Enter TSA server URL:"
+    QT_TRID_NOOP("lc-sign-tsa-add-prompt");
+    //% "+ Add TSA server..."
+    QT_TRID_NOOP("lc-sign-tsa-add-item");
+    //% "Cancel"
+    QT_TRID_NOOP("lc-sign-btn-cancel");
+    //% "Done"
+    QT_TRID_NOOP("lc-sign-btn-done");
+    //% "Copy"
+    QT_TRID_NOOP("lc-sign-copy-error");
+    //% "Max file size: 256 MB. ZIP archives for ASiC-E: up to 100,000 files, 256 MB decompressed."
+    QT_TRID_NOOP("lc-sign-limits-info");
+    //% "Select a file and press Delete to remove it"
+    QT_TRID_NOOP("lc-sign-filelist-tooltip");
+
+    // Visual signature text labels (embedded in signed PDF)
+    //% "Digitally signed by:"
+    QT_TRID_NOOP("lc-sign-visual-text-signed-by");
+    //% "Issued by:"
+    QT_TRID_NOOP("lc-sign-visual-text-issued-by");
+    //% "Date:"
+    QT_TRID_NOOP("lc-sign-visual-text-date");
+    //% "Reason:"
+    QT_TRID_NOOP("lc-sign-visual-text-reason");
+    //% "Location:"
+    QT_TRID_NOOP("lc-sign-visual-text-location");
+
+    // Wizard header
+    //% "Sign Documents"
+    QT_TRID_NOOP("lc-sign-wizard-header-title");
+    //% "Files"
+    QT_TRID_NOOP("lc-sign-step-files");
+    //% "Place"
+    QT_TRID_NOOP("lc-sign-step-place");
+    //% "Sign"
+    QT_TRID_NOOP("lc-sign-step-sign");
+
+    // Drop zone
+    //% "Drop PDF or other files here"
+    QT_TRID_NOOP("lc-sign-drop-primary");
+    //% "or"
+    QT_TRID_NOOP("lc-sign-drop-or");
+    //% "browse files"
+    QT_TRID_NOOP("lc-sign-drop-browse");
+
+    // Sign page summary
+    //% "Level"
+    QT_TRID_NOOP("lc-sign-summary-level");
+
+    // Expired certificate warning
+    //% "Expired Certificate"
+    QT_TRID_NOOP("lc-sign-expired-cert-title");
+    //% "The selected certificate has expired. At B-B level, the signature will not include revocation data. Continue anyway?"
+    QT_TRID_NOOP("lc-sign-expired-cert-message");
+    //% "Output Folder Error"
+    QT_TRID_NOOP("lc-sign-output-folder-error-title");
+    //% "Could not create the output folder."
+    QT_TRID_NOOP("lc-sign-output-folder-error-message");
+    //% "Invalid TSA URL"
+    QT_TRID_NOOP("lc-sign-tsa-invalid-title");
+    //% "The configured Timestamp Authority URL is not a valid https:// endpoint."
+    QT_TRID_NOOP("lc-sign-tsa-invalid-message");
+
+    // --- menu bar ---
+    //% "Edit"
+    QT_TRID_NOOP("lc-menu-edit");
+    //% "Settings..."
+    QT_TRID_NOOP("lc-menu-settings");
+    //% "Help"
+    QT_TRID_NOOP("lc-menu-help");
+    //% "About LibreCelik"
+    QT_TRID_NOOP("lc-menu-about");
+    //% "About Qt"
+    QT_TRID_NOOP("lc-menu-about-qt");
+    //% "About LibreCelik"
+    QT_TRID_NOOP("lc-about-title");
+
+    // --- settings dialog ---
+    //% "Settings"
+    QT_TRID_NOOP("lc-settings-title");
+    //% "General"
+    QT_TRID_NOOP("lc-settings-tab-general");
+    //% "Signing"
+    QT_TRID_NOOP("lc-settings-tab-signing");
+    //% "Trust"
+    QT_TRID_NOOP("lc-settings-tab-trust");
+    //% "Language:"
+    QT_TRID_NOOP("lc-settings-language");
+    //% "Default signature level:"
+    QT_TRID_NOOP("lc-settings-default-level");
+    //% "Default output folder:"
+    QT_TRID_NOOP("lc-settings-default-output");
+    //% "Same as input file"
+    QT_TRID_NOOP("lc-settings-output-placeholder");
+    //% "TSA servers:"
+    QT_TRID_NOOP("lc-settings-tsa-servers");
+    //% "Trusted Lists:"
+    QT_TRID_NOOP("lc-settings-tl-servers");
+    //% "+ Add Trusted List..."
+    QT_TRID_NOOP("lc-settings-tl-add-item");
+    //% "Add Trusted List"
+    QT_TRID_NOOP("lc-settings-tl-add-title");
+    //% "Type:"
+    QT_TRID_NOOP("lc-settings-tl-type");
+    //% "Loading:"
+    QT_TRID_NOOP("lc-settings-tl-loading");
+    //% "Cache directory:"
+    QT_TRID_NOOP("lc-settings-cache-dir");
+    //% "Invalid URL"
+    QT_TRID_NOOP("lc-settings-invalid-url-title");
+    //% "Please enter a valid URL."
+    QT_TRID_NOOP("lc-settings-invalid-url-msg");
 }
 
 QT_WARNING_POP

@@ -92,26 +92,6 @@
              </property>
             </spacer>
            </item>
-           <!-- Language selector -->
-           <item>
-            <widget class="QToolButton" name="languageButton">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">QToolButton { background-color: rgb(103, 165, 172); color: white; border: 1px solid rgba(255,255,255,120); border-radius: 4px; padding: 3px 10px; } QToolButton::menu-indicator { image: none; }</string>
-             </property>
-             <property name="text">
-              <string>English</string>
-             </property>
-             <property name="popupMode">
-              <enum>QToolButton::InstantPopup</enum>
-             </property>
-            </widget>
-           </item>
           </layout>
          </widget>
         </item>
@@ -214,7 +194,7 @@
              <string>To access a smart card, insert the card into the smart card reader and select the desired feature of the card</string>
             </property>
             <property name="styleSheet">
-             <string notr="true">QLabel { color: grey; }</string>
+             <string notr="true"/>
             </property>
             <property name="alignment">
              <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -245,7 +225,7 @@
              <string/>
             </property>
             <property name="styleSheet">
-             <string notr="true">QLabel { color: grey; font-size: 11px; }</string>
+             <string notr="true">QLabel { font-size: 11px; }</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignmentFlag::AlignCenter</set>

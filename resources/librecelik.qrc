@@ -22,6 +22,7 @@
         <file>vehicle-icon.svg</file>
         <file>health-icon.svg</file>
         <file>piv-icon.svg</file>
+        <file>sign-icon.svg</file>
     </qresource>
     <qresource prefix="/html">
         <file>idcard.html</file>

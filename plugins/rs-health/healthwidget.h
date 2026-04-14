@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #pragma once
 
+#include "utils/pluginwidgetbase.h"
+
 #include <plugin/card_data.h>
-#include <QWidget>
 
 class CollapsibleSection;
 class QToolButton;
 class QVBoxLayout;
 
-class HealthWidget : public QWidget
+class HealthWidget : public plugin_ui::PluginWidgetBase
 {
     Q_OBJECT
 public:
@@ -32,6 +33,9 @@ public:
 
 signals:
     void printRequested(const plugin::CardData& data);
+
+protected:
+    void retranslateUi() override;
 
 private:
     void buildEmptyShell();

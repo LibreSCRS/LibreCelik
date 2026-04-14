@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "eidwidget.h"
 
 #include "utils/cardheadercard.h"
 #include "utils/collapsiblesection.h"
 #include "utils/fieldsectionbuilder.h"
+#include "utils/iconutils.h"
 
 #include <plugin/carddatautils.h>
 
 #include <QDate>
 #include <QGridLayout>
 #include <QHBoxLayout>
-#include <QIcon>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPainter>
@@ -35,7 +35,7 @@ EidWidget::EidWidget(const plugin::CardData& cardData, QWidget* parent) : EidWid
     }
 }
 
-EidWidget::EidWidget(QWidget* parent) : QWidget(parent)
+EidWidget::EidWidget(QWidget* parent) : plugin_ui::PluginWidgetBase(parent)
 {
     outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
@@ -61,23 +61,7 @@ void EidWidget::addGroup(const plugin::CardFieldGroup& group)
         outerLayout->addWidget(outerSection);
 
         // Print button — disabled (dimmed) until all data arrives
-        printBtn = new QToolButton(this);
-        {
-            QIcon icon(QStringLiteral(":/images/printer-header.svg"));
-            auto normalPix = icon.pixmap(24, 24);
-            QPixmap dimPix(normalPix.size());
-            dimPix.fill(Qt::transparent);
-            QPainter p(&dimPix);
-            p.setOpacity(0.3);
-            p.drawPixmap(0, 0, normalPix);
-            p.end();
-            icon.addPixmap(dimPix, QIcon::Disabled);
-            printBtn->setIcon(icon);
-        }
-        printBtn->setIconSize(QSize(24, 24));
-        printBtn->setToolTip(qtTrId("lc-print-tooltip"));
-        printBtn->setAutoRaise(true);
-        printBtn->setEnabled(false);
+        printBtn = iconutils::createPrinterHeaderButton(this);
         connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
         outerSection->addHeaderWidget(printBtn);
 
@@ -366,4 +350,12 @@ CollapsibleSection* EidWidget::buildDocumentSection(QWidget* parent) const
                                                           hiddenFields, parent);
     LibreSCRS::FieldSectionBuilder::highlightExpiredDates(section, *docGroup, {"expiry_date"});
     return section;
+}
+
+void EidWidget::retranslateUi()
+{
+    if (outerSection)
+        outerSection->setTitle(isForeigner() ? qtTrId("lc-eid-title-foreigner") : qtTrId("lc-eid-title"));
+    if (printBtn)
+        printBtn->setToolTip(qtTrId("lc-print-tooltip"));
 }

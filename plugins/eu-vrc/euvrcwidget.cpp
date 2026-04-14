@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "euvrcwidget.h"
 
 #include "utils/cardheadercard.h"
 #include "utils/collapsiblesection.h"
 #include "utils/fieldsectionbuilder.h"
+#include "utils/iconutils.h"
 #include "utils/stringutils.h"
 
 #include <plugin/carddatautils.h>
@@ -13,7 +14,6 @@
 #include <QDate>
 #include <QIcon>
 #include <QLabel>
-#include <QPainter>
 #include <QLineEdit>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -27,7 +27,7 @@ EuVrcWidget::EuVrcWidget(const plugin::CardData& cardData, QWidget* parent) : Eu
         addGroup(group);
 }
 
-EuVrcWidget::EuVrcWidget(QWidget* parent) : QWidget(parent)
+EuVrcWidget::EuVrcWidget(QWidget* parent) : plugin_ui::PluginWidgetBase(parent)
 {
     buildShell();
 }
@@ -50,23 +50,7 @@ void EuVrcWidget::buildShell()
     outerLayout->addWidget(outerSection);
 
     // Print button — disabled until all data arrives
-    printBtn = new QToolButton(this);
-    {
-        QIcon icon(QStringLiteral(":/images/printer-header.svg"));
-        auto normalPix = icon.pixmap(24, 24);
-        QPixmap dimPix(normalPix.size());
-        dimPix.fill(Qt::transparent);
-        QPainter p(&dimPix);
-        p.setOpacity(0.3);
-        p.drawPixmap(0, 0, normalPix);
-        p.end();
-        icon.addPixmap(dimPix, QIcon::Disabled);
-        printBtn->setIcon(icon);
-    }
-    printBtn->setIconSize(QSize(24, 24));
-    printBtn->setToolTip(qtTrId("lc-print-tooltip"));
-    printBtn->setAutoRaise(true);
-    printBtn->setEnabled(false);
+    printBtn = iconutils::createPrinterHeaderButton(this);
     connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
     outerSection->addHeaderWidget(printBtn);
 }
@@ -476,4 +460,12 @@ CollapsibleSection* EuVrcWidget::buildNationalSection(const plugin::CardFieldGro
     auto* section = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-national"), natGroup, labels);
 
     return section;
+}
+
+void EuVrcWidget::retranslateUi()
+{
+    if (outerSection)
+        outerSection->setTitle(qtTrId("lc-euvrc-title"));
+    if (printBtn)
+        printBtn->setToolTip(qtTrId("lc-print-tooltip"));
 }

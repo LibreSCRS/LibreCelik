@@ -16,6 +16,8 @@ add_library(piv-gui-plugin MODULE
     ${CMAKE_SOURCE_DIR}/src/utils/cardheadercard.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.h
     ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pluginwidgetbase.h
+    ${CMAKE_SOURCE_DIR}/src/utils/pluginwidgetbase.cpp
 )
 target_include_directories(piv-gui-plugin PRIVATE
     ${CMAKE_SOURCE_DIR}/src

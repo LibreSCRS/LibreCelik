@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "healthwidget.h"
 
 #include "utils/cardheadercard.h"
 #include "utils/collapsiblesection.h"
 #include "utils/fieldsectionbuilder.h"
+#include "utils/iconutils.h"
 
 #include <plugin/carddatautils.h>
 
 #include <QIcon>
-#include <QPainter>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -73,7 +73,7 @@ HealthWidget::HealthWidget(const plugin::CardData& cardData, QWidget* parent) : 
         addGroup(group);
 }
 
-HealthWidget::HealthWidget(QWidget* parent) : QWidget(parent)
+HealthWidget::HealthWidget(QWidget* parent) : plugin_ui::PluginWidgetBase(parent)
 {
     buildEmptyShell();
 }
@@ -95,23 +95,7 @@ void HealthWidget::buildEmptyShell()
     outerLayout->addWidget(outerSection);
 
     // Print button — disabled until all data arrives
-    printBtn = new QToolButton(this);
-    {
-        QIcon icon(QStringLiteral(":/images/printer-header.svg"));
-        auto normalPix = icon.pixmap(24, 24);
-        QPixmap dimPix(normalPix.size());
-        dimPix.fill(Qt::transparent);
-        QPainter p(&dimPix);
-        p.setOpacity(0.3);
-        p.drawPixmap(0, 0, normalPix);
-        p.end();
-        icon.addPixmap(dimPix, QIcon::Disabled);
-        printBtn->setIcon(icon);
-    }
-    printBtn->setIconSize(QSize(24, 24));
-    printBtn->setToolTip(qtTrId("lc-print-tooltip"));
-    printBtn->setAutoRaise(true);
-    printBtn->setEnabled(false);
+    printBtn = iconutils::createPrinterHeaderButton(this);
     connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
     outerSection->addHeaderWidget(printBtn);
 }
@@ -209,6 +193,14 @@ void HealthWidget::transformPermanentlyValid(plugin::CardFieldGroup& group)
             break;
         }
     }
+}
+
+void HealthWidget::retranslateUi()
+{
+    if (outerSection)
+        outerSection->setTitle(qtTrId("lc-health-title"));
+    if (printBtn)
+        printBtn->setToolTip(qtTrId("lc-print-tooltip"));
 }
 
 // buildLayout() removed — full-data constructor now delegates to empty + addGroup loop

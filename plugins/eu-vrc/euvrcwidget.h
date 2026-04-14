@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #pragma once
 
+#include "utils/pluginwidgetbase.h"
+
 #include <plugin/card_data.h>
-#include <QWidget>
 
 namespace LibreSCRS {
 class CardHeaderCard;
@@ -14,7 +15,7 @@ class CollapsibleSection;
 class QToolButton;
 class QVBoxLayout;
 
-class EuVrcWidget : public QWidget
+class EuVrcWidget : public plugin_ui::PluginWidgetBase
 {
     Q_OBJECT
 public:
@@ -36,6 +37,9 @@ public:
 
 signals:
     void printRequested(const plugin::CardData& data);
+
+protected:
+    void retranslateUi() override;
 
 private:
     void buildShell();

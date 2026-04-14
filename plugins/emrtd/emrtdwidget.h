@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #pragma once
 
-#include <plugin/card_data.h>
+#include "utils/pluginwidgetbase.h"
 
-#include <QWidget>
+#include <plugin/card_data.h>
 
 class CollapsibleSection;
 class QLabel;
@@ -14,7 +14,7 @@ class QToolButton;
 class QVBoxLayout;
 class SecurityStatusWidget;
 
-class EMRTDWidget : public QWidget
+class EMRTDWidget : public plugin_ui::PluginWidgetBase
 {
     Q_OBJECT
 public:
@@ -37,6 +37,9 @@ public:
 
 signals:
     void printRequested(const plugin::CardData& data);
+
+protected:
+    void retranslateUi() override;
 
 private:
     void showAuthRequired(const plugin::CardFieldGroup* group);

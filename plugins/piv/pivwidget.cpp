@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "pivwidget.h"
 
 #include "utils/cardheadercard.h"
 #include "utils/collapsiblesection.h"
 #include "utils/fieldsectionbuilder.h"
+#include "utils/iconutils.h"
 
 #include <plugin/carddatautils.h>
 
-#include <QIcon>
-#include <QPainter>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -58,14 +57,13 @@ static std::map<std::string, QString> keyHistoryTranslationMap()
     };
 }
 
-PIVWidget::PIVWidget(const plugin::CardData& cardData, QWidget* parent) : PIVWidget(parent)
-{
+PIVWidget::PIVWidget(const plugin::CardData& cardData, QWidget* parent) : PIVWidget(parent){
     data.cardType = cardData.cardType;
     for (const auto& group : cardData.groups)
         addGroup(group);
 }
 
-PIVWidget::PIVWidget(QWidget* parent) : QWidget(parent)
+PIVWidget::PIVWidget(QWidget* parent) : plugin_ui::PluginWidgetBase(parent)
 {
     buildEmptyShell();
 }
@@ -87,23 +85,7 @@ void PIVWidget::buildEmptyShell()
     outerLayout->addWidget(outerSection);
 
     // Print button — disabled until all data arrives
-    printBtn = new QToolButton(this);
-    {
-        QIcon icon(QStringLiteral(":/images/printer-header.svg"));
-        auto normalPix = icon.pixmap(24, 24);
-        QPixmap dimPix(normalPix.size());
-        dimPix.fill(Qt::transparent);
-        QPainter p(&dimPix);
-        p.setOpacity(0.3);
-        p.drawPixmap(0, 0, normalPix);
-        p.end();
-        icon.addPixmap(dimPix, QIcon::Disabled);
-        printBtn->setIcon(icon);
-    }
-    printBtn->setIconSize(QSize(24, 24));
-    printBtn->setToolTip(qtTrId("lc-print-tooltip"));
-    printBtn->setAutoRaise(true);
-    printBtn->setEnabled(false);
+    printBtn = iconutils::createPrinterHeaderButton(this);
     connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
     outerSection->addHeaderWidget(printBtn);
 }
@@ -207,4 +189,12 @@ void PIVWidget::rebuildHeader()
     delete item;
     headerCard->deleteLater();
     headerCard = newHeader;
+}
+
+void PIVWidget::retranslateUi()
+{
+    if (outerSection)
+        outerSection->setTitle(qtTrId("lc-piv-widget-title"));
+    if (printBtn)
+        printBtn->setToolTip(qtTrId("lc-print-tooltip"));
 }

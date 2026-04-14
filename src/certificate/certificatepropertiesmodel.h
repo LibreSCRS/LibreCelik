@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #pragma once
 
 #include "certificatetreeviewmodel.h"
 
-#include <openssl/x509.h>
+typedef struct x509_st X509;
+typedef struct X509_name_st X509_NAME;
 
 class CertificatePropertiesModel : public CertificateTreeViewModel
 {
@@ -25,5 +26,4 @@ private:
     void addExtensions(CertificateInfoItem* parent, X509* cert);
 
     static QString nameToString(X509_NAME* name);
-    static QString asnTimeToString(const ASN1_TIME* time);
 };

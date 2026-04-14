@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "certificatepropertiesmodel.h"
 #include "certificateinfoitem.h"
+#include "opensslhelpers.h"
 
 #include <openssl/bio.h>
 #include <openssl/evp.h>
@@ -78,9 +79,9 @@ void CertificatePropertiesModel::addValidity(CertificateInfoItem* parent, X509* 
     auto* validityPtr = validityItem.get();
 
     validityPtr->appendChild(std::make_unique<CertificateInfoItem>(
-        qtTrId("lc-cert-field-not-before"), asnTimeToString(X509_get0_notBefore(cert)), validityPtr));
+        qtTrId("lc-cert-field-not-before"), certutil::asnTimeToString(X509_get0_notBefore(cert)), validityPtr));
     validityPtr->appendChild(std::make_unique<CertificateInfoItem>(
-        qtTrId("lc-cert-field-not-after"), asnTimeToString(X509_get0_notAfter(cert)), validityPtr));
+        qtTrId("lc-cert-field-not-after"), certutil::asnTimeToString(X509_get0_notAfter(cert)), validityPtr));
 
     parent->appendChild(std::move(validityItem));
 }
@@ -133,15 +134,10 @@ void CertificatePropertiesModel::addExtensions(CertificateInfoItem* parent, X509
         char oidBuf[128];
         OBJ_obj2txt(oidBuf, sizeof(oidBuf), obj, 0);
 
-        BIO* bio = BIO_new(BIO_s_mem());
+        certutil::BioPtr bio(BIO_new(BIO_s_mem()));
         if (bio) {
-            X509V3_EXT_print(bio, ext, X509V3_EXT_DUMP_UNKNOWN, 0);
-            BUF_MEM* bptr = nullptr;
-            BIO_get_mem_ptr(bio, &bptr);
-            QString value;
-            if (bptr && bptr->length > 0)
-                value = QString::fromUtf8(bptr->data, static_cast<int>(bptr->length));
-            BIO_free(bio);
+            X509V3_EXT_print(bio.get(), ext, X509V3_EXT_DUMP_UNKNOWN, 0);
+            QString value = certutil::bioToQString(bio.get());
 
             if (value.contains(":")) {
                 value.replace(QRegularExpression("([0-9A-Fa-f]{2}):"), "\\1");
@@ -164,36 +160,11 @@ QString CertificatePropertiesModel::nameToString(X509_NAME* name)
     if (!name)
         return {};
 
-    BIO* bio = BIO_new(BIO_s_mem());
+    certutil::BioPtr bio(BIO_new(BIO_s_mem()));
     if (!bio)
         return {};
 
-    X509_NAME_print_ex(bio, name, 0,
+    X509_NAME_print_ex(bio.get(), name, 0,
                        (ASN1_STRFLGS_UTF8_CONVERT | XN_FLAG_MULTILINE | XN_FLAG_DN_REV) & ~ASN1_STRFLGS_ESC_MSB);
-    BUF_MEM* bptr = nullptr;
-    BIO_get_mem_ptr(bio, &bptr);
-    QString result;
-    if (bptr && bptr->length > 0)
-        result = QString::fromUtf8(bptr->data, static_cast<int>(bptr->length));
-    BIO_free(bio);
-    return result;
-}
-
-QString CertificatePropertiesModel::asnTimeToString(const ASN1_TIME* time)
-{
-    if (!time)
-        return {};
-
-    BIO* bio = BIO_new(BIO_s_mem());
-    if (!bio)
-        return {};
-
-    ASN1_TIME_print(bio, time);
-    BUF_MEM* bptr = nullptr;
-    BIO_get_mem_ptr(bio, &bptr);
-    QString result;
-    if (bptr && bptr->length > 0)
-        result = QString::fromLatin1(bptr->data, static_cast<int>(bptr->length));
-    BIO_free(bio);
-    return result;
+    return certutil::bioToQString(bio.get());
 }

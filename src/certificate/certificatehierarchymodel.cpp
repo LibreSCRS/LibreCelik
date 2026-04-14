@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "certificatehierarchymodel.h"
 #include "certificateinfoitem.h"
@@ -7,6 +7,7 @@
 
 #include <openssl/bio.h>
 #include <openssl/x509.h>
+#include <openssl/x509_vfy.h>
 
 #include <QIcon>
 

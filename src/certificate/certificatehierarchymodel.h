@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #pragma once
 
 #include "certificatetreeviewmodel.h"
 
-#include <openssl/x509.h>
-#include <openssl/x509_vfy.h>
+typedef struct x509_st X509;
+typedef struct x509_store_st X509_STORE;
 
 class CertificateHierarchyModel : public CertificateTreeViewModel
 {
@@ -20,5 +20,5 @@ private:
     void buildChain(X509* cert, X509_STORE* store);
     QString translateVerificationResult(int error);
 
-    int verificationError = X509_V_OK;
+    int verificationError = 0;
 };

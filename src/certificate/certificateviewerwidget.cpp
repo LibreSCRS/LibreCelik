@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "certificateviewerwidget.h"
 #include "ui_certificateviewerwidget.h"
 #include "certificatepropertiesmodel.h"
 #include "certificatehierarchymodel.h"
+#include "opensslhelpers.h"
 
 #include <openssl/bio.h>
+#include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
 #include <QLineEdit>
@@ -87,8 +89,8 @@ void CertificateViewerWidget::populateGeneralTab(X509* cert, X509_STORE* store)
     setFieldText(ui->issuedByOUEdit, nameEntryValue(issuer, NID_organizationalUnitName));
 
     // Validity
-    setFieldText(ui->notBeforeEdit, asnTimeToString(X509_get0_notBefore(cert)));
-    setFieldText(ui->notAfterEdit, asnTimeToString(X509_get0_notAfter(cert)));
+    setFieldText(ui->notBeforeEdit, certutil::asnTimeToString(X509_get0_notBefore(cert)));
+    setFieldText(ui->notAfterEdit, certutil::asnTimeToString(X509_get0_notAfter(cert)));
 
     // Key Usage
     setFieldText(ui->keyUsageEdit, keyUsageString(cert));
@@ -121,25 +123,6 @@ QString CertificateViewerWidget::nameEntryValue(X509_NAME* name, int nid)
     return result;
 }
 
-QString CertificateViewerWidget::asnTimeToString(const ASN1_TIME* time)
-{
-    if (!time)
-        return {};
-
-    BIO* bio = BIO_new(BIO_s_mem());
-    if (!bio)
-        return {};
-
-    ASN1_TIME_print(bio, time);
-    BUF_MEM* bptr = nullptr;
-    BIO_get_mem_ptr(bio, &bptr);
-    QString result;
-    if (bptr && bptr->length > 0)
-        result = QString::fromLatin1(bptr->data, static_cast<int>(bptr->length));
-    BIO_free(bio);
-    return result;
-}
-
 QString CertificateViewerWidget::keyUsageString(X509* cert)
 {
     // Try Key Usage extension
@@ -154,18 +137,12 @@ QString CertificateViewerWidget::keyUsageString(X509* cert)
     if (!ext)
         return {};
 
-    BIO* bio = BIO_new(BIO_s_mem());
+    certutil::BioPtr bio(BIO_new(BIO_s_mem()));
     if (!bio)
         return {};
 
-    X509V3_EXT_print(bio, ext, 0, 0);
-    BUF_MEM* bptr = nullptr;
-    BIO_get_mem_ptr(bio, &bptr);
-    QString result;
-    if (bptr && bptr->length > 0)
-        result = QString::fromUtf8(bptr->data, static_cast<int>(bptr->length));
-    BIO_free(bio);
-    return result;
+    X509V3_EXT_print(bio.get(), ext, 0, 0);
+    return certutil::bioToQString(bio.get());
 }
 
 void CertificateViewerWidget::onDetailsSelectionChanged(const QItemSelection& selected,

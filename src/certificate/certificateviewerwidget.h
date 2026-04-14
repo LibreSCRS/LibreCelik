@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #pragma once
 
 #include <QWidget>
 #include <QItemSelection>
 
-#include <openssl/x509.h>
-#include <openssl/x509_vfy.h>
+typedef struct x509_st X509;
+typedef struct x509_store_st X509_STORE;
+typedef struct X509_name_st X509_NAME;
 
 namespace Ui {
 class CertificateViewerWidget;
@@ -28,7 +29,6 @@ private:
     void populateGeneralTab(X509* cert, X509_STORE* store);
 
     static QString nameEntryValue(X509_NAME* name, int nid);
-    static QString asnTimeToString(const ASN1_TIME* time);
     static QString keyUsageString(X509* cert);
 
     Ui::CertificateViewerWidget* ui;

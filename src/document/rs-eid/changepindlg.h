@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #pragma once
 
@@ -32,7 +32,6 @@ private slots:
     void validateForm();
 
 private:
-    void addToggleVisibilityAction(QLineEdit* edit);
     bool isValidPinLength(const QString& pin) const;
     QLabel* retriesLabel;
     QLineEdit* currentPinEdit;

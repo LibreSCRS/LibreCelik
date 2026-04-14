@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "emrtdauthwidget.h"
 
 #include <QDateEdit>
+#include <QEvent>
 #include <QFormLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -40,8 +41,10 @@ EMRTDAuthWidget::EMRTDAuthWidget(QWidget* parent)
     canLayout->addWidget(canTitle);
 
     auto* canHint = new QLabel(qtTrId("lc-emrtd-auth-can-desc"), canPage);
+    canHint->setObjectName("hint");
     canHint->setAlignment(Qt::AlignCenter);
-    canHint->setStyleSheet("color: #888; font-size: 10px;");
+    canHint->setStyleSheet(
+        QString("color: %1; font-size: 10px;").arg(palette().color(QPalette::PlaceholderText).name()));
     canLayout->addWidget(canHint);
 
     canEdit = new QLineEdit(canPage);
@@ -67,9 +70,11 @@ EMRTDAuthWidget::EMRTDAuthWidget(QWidget* parent)
     mrzLayout->addWidget(mrzTitle);
 
     auto* mrzHint = new QLabel(qtTrId("lc-emrtd-auth-mrz-desc"), mrzPage);
+    mrzHint->setObjectName("hint");
     mrzHint->setAlignment(Qt::AlignCenter);
     mrzHint->setWordWrap(true);
-    mrzHint->setStyleSheet("color: #888; font-size: 10px;");
+    mrzHint->setStyleSheet(
+        QString("color: %1; font-size: 10px;").arg(palette().color(QPalette::PlaceholderText).name()));
     mrzLayout->addWidget(mrzHint);
 
     auto* formWidget = new QWidget(mrzPage);
@@ -136,8 +141,10 @@ EMRTDAuthWidget::EMRTDAuthWidget(QWidget* parent)
     spinnerLayout->addWidget(bar, 0, Qt::AlignCenter);
 
     auto* waitLabel = new QLabel(qtTrId("lc-emrtd-authenticating"), spinnerSection);
+    waitLabel->setObjectName("hint");
     waitLabel->setAlignment(Qt::AlignCenter);
-    waitLabel->setStyleSheet("color: #888; font-size: 11px;");
+    waitLabel->setStyleSheet(
+        QString("color: %1; font-size: 11px;").arg(palette().color(QPalette::PlaceholderText).name()));
     spinnerLayout->addWidget(waitLabel);
 
     layout->addWidget(spinnerSection);
@@ -202,4 +209,24 @@ void EMRTDAuthWidget::validateForm()
         bool expiryOk = expiryEdit->date() != kSentinelDate;
         authButton->setEnabled(docOk && dobOk && expiryOk);
     }
+}
+
+void EMRTDAuthWidget::changeEvent(QEvent* event)
+{
+    if (event->type() == QEvent::LanguageChange) {
+        tabWidget->setTabText(0, qtTrId("lc-emrtd-auth-can-tab"));
+        tabWidget->setTabText(1, qtTrId("lc-emrtd-auth-mrz-tab"));
+        authButton->setText(qtTrId("lc-emrtd-authenticate"));
+    } else if (event->type() == QEvent::PaletteChange) {
+        auto hints = findChildren<QLabel*>("hint");
+        QString color = palette().color(QPalette::PlaceholderText).name();
+        for (auto* hint : hints) {
+            QString ss = hint->styleSheet();
+            if (ss.contains("font-size: 11px"))
+                hint->setStyleSheet(QString("color: %1; font-size: 11px;").arg(color));
+            else
+                hint->setStyleSheet(QString("color: %1; font-size: 10px;").arg(color));
+        }
+    }
+    QWidget::changeEvent(event);
 }

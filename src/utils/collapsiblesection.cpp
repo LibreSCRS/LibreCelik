@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "collapsiblesection.h"
 
@@ -260,6 +260,8 @@ void CollapsibleSection::changeEvent(QEvent* event)
     QGroupBox::changeEvent(event);
     if (event->type() == QEvent::FontChange || event->type() == QEvent::StyleChange)
         setContentsMargins(2, headerHeight + 4, 2, 4);
+    if (event->type() == QEvent::PaletteChange)
+        update(); // repaint header with current palette
 }
 
 void CollapsibleSection::showEvent(QShowEvent* event)

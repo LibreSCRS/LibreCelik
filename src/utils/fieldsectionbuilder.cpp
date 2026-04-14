@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "utils/fieldsectionbuilder.h"
 #include <QGridLayout>
@@ -41,7 +41,9 @@ CollapsibleSection* FieldSectionBuilder::build(const QString& title, const plugi
             labelText = QString::fromStdString(field.key);
 
         auto* label = new QLabel(labelText, section);
-        label->setStyleSheet("color: #777; font-size: 10px;");
+        auto* paletteSource = parent ? parent : section;
+        label->setStyleSheet(QString("color: %1; font-size: 10px;")
+                                 .arg(paletteSource->palette().color(QPalette::PlaceholderText).name()));
 
         auto* value = new QLineEdit(QString::fromStdString(field.asString()), section);
         value->setReadOnly(true);

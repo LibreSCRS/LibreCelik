@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 #pragma once
 
+#include <QEvent>
 #include <QWidget>
 #include <plugin/security_check.h>
 
@@ -16,8 +17,12 @@ public:
     explicit SecurityStatusWidget(QWidget* parent = nullptr);
     void setSecurityStatus(const plugin::SecurityStatus& status);
 
+protected:
+    void changeEvent(QEvent* event) override;
+
 private:
     void buildLayout();
+    void retranslateUi();
     QWidget* createStatusRow(const QString& label, plugin::SecurityCheck::Status status);
     QString statusColor(plugin::SecurityCheck::Status status) const;
     QString statusText(plugin::SecurityCheck::Status status) const;

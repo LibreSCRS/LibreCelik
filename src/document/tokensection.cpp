@@ -1,17 +1,25 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "tokensection.h"
 #include "certificate/certificateviewerdlg.h"
+#ifdef LIBRECELIK_SIGNING_ENABLED
+#include "signing/certutils.h"
+#endif
 
 #include <QBrush>
+#include <QEvent>
+#include <QGraphicsOpacityEffect>
 #include <QHeaderView>
 #include <QIcon>
 #include <QMenu>
 #include <QEasingCurve>
 #include <QPropertyAnimation>
+#include <QToolButton>
+#include <QScreen>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QSettings>
 #include <QStringList>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
@@ -19,6 +27,7 @@
 
 #include <openssl/evp.h>
 #include <openssl/x509v3.h>
+#include <climits>
 #include <cstdint>
 #include <ctime>
 
@@ -48,6 +57,8 @@ static QString asnTimeToDate(const ASN1_TIME* t)
 static CertInfo parseCertInfo(const std::vector<uint8_t>& der)
 {
     CertInfo info;
+    if (der.size() > static_cast<size_t>(LONG_MAX))
+        return info;
     const uint8_t* p = der.data();
     X509* cert = d2i_X509(nullptr, &p, static_cast<long>(der.size()));
     if (!cert)
@@ -109,10 +120,34 @@ constexpr int PinMinLengthRole = Qt::UserRole + 4;
 constexpr int PinMaxLengthRole = Qt::UserRole + 5;
 constexpr int PinCanChangeRole = Qt::UserRole + 6;
 
+#ifdef LIBRECELIK_SIGNING_ENABLED
+static bool isSigningCapable(const plugin::CertificateData& cert)
+{
+    if (cert.keyFID == 0)
+        return false;
+
+    if (cert.derBytes.size() > static_cast<size_t>(LONG_MAX))
+        return false;
+    const uint8_t* p = cert.derBytes.data();
+    X509* x509 = d2i_X509(nullptr, &p, static_cast<long>(cert.derBytes.size()));
+    if (!x509)
+        return false;
+
+    uint32_t usage = X509_get_key_usage(x509);
+    X509_free(x509);
+
+    if (usage == ~uint32_t{0})
+        return false;
+
+    return (usage & KU_DIGITAL_SIGNATURE) || (usage & KU_NON_REPUDIATION);
+}
+
+#endif
+
 } // namespace
 
-TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
-    : CollapsibleSection(qtTrId("lc-token-title"), parent), certFolderPath(std::move(certFolderPath))
+TokenSection::TokenSection(std::vector<std::string> certPaths, QWidget* parent)
+    : CollapsibleSection(qtTrId("lc-token-title"), parent), certPaths(std::move(certPaths))
 {
     contentLayout = new QVBoxLayout(this);
     contentLayout->setSpacing(2);
@@ -133,14 +168,7 @@ TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
     treeWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     treeWidget->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
     treeWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    treeWidget->setStyleSheet("QTreeView::item:selected {"
-                              "  background-color: rgb(34, 86, 117);"
-                              "  color: white;"
-                              "}"
-                              "QTreeView::item:selected:!active {"
-                              "  background-color: rgb(34, 86, 117);"
-                              "  color: white;"
-                              "}");
+    applyTreeStyleSheet();
 
     tokenCertsItem = new QTreeWidgetItem(treeWidget, QStringList{qtTrId("lc-eid-tree-certificates")});
     tokenCertsItem->setExpanded(true);
@@ -151,6 +179,32 @@ TokenSection::TokenSection(std::string certFolderPath, QWidget* parent)
     contentLayout->addWidget(treeWidget);
 
     connect(treeWidget, &QTreeWidget::customContextMenuRequested, this, &TokenSection::onContextMenu);
+
+#ifdef LIBRECELIK_SIGNING_ENABLED
+    {
+        //: Button in Token section header to sign with a certificate
+        //% "Sign"
+        signBtn = new QToolButton(this);
+        signBtn->setIcon(QIcon(":/images/sign-icon.svg"));
+        signBtn->setIconSize(QSize(24, 24));
+        signBtn->setToolTip(qtTrId("lc-sign-button"));
+        signBtn->setAutoRaise(true);
+        signBtn->setEnabled(false);
+        auto* dimEffect = new QGraphicsOpacityEffect(signBtn);
+        dimEffect->setOpacity(0.3);
+        signBtn->setGraphicsEffect(dimEffect);
+        signBtn->setVisible(true);
+        addHeaderWidget(signBtn);
+
+        connect(signBtn, &QToolButton::clicked, this, [this]() {
+            auto certs = signingCertificates();
+            if (certs.size() == 1)
+                emit signRequested(certs.front(), readerName);
+            else if (certs.size() > 1)
+                showCertificateDropdown();
+        });
+    }
+#endif
 
     setExpanded(false);
 
@@ -262,11 +316,27 @@ void TokenSection::setCertificates(const std::vector<plugin::CertificateData>& c
         if (cert.keyFID != 0)
             addRow(qtTrId("lc-token-key-private-key"), "\u2713");
     }
+
+#ifdef LIBRECELIK_SIGNING_ENABLED
+    bool canSign = !signingCertificates().empty();
+    if (canSign) {
+        if (signBtn->graphicsEffect())
+            signBtn->setGraphicsEffect(nullptr);
+    } else if (!signBtn->graphicsEffect()) {
+        auto* dimEffect = new QGraphicsOpacityEffect(signBtn);
+        dimEffect->setOpacity(0.3);
+        signBtn->setGraphicsEffect(dimEffect);
+    }
+    signBtn->setEnabled(canSign);
+#endif
+
     updateTreeMinimumHeight();
 }
 
 void TokenSection::setPINList(const std::vector<plugin::PinStatusEntry>& pins)
 {
+    pinList = pins;
+
     if (pins.empty()) {
         tokenPinItem->setHidden(true);
         return;
@@ -330,9 +400,21 @@ void TokenSection::onContextMenu(const QPoint& pos)
         connect(viewAction, &QAction::triggered, this, [this, certIndex]() {
             if (certificateList.empty())
                 return;
-            auto dlg = std::make_unique<CertificateViewerDlg>(certificateList, certFolderPath, this, certIndex);
+            auto dlg = std::make_unique<CertificateViewerDlg>(certificateList, certPaths, this, certIndex);
             dlg->exec();
         });
+
+#ifdef LIBRECELIK_SIGNING_ENABLED
+        if (certIndex >= 0 && certIndex < static_cast<int>(certificateList.size()) &&
+            isSigningCapable(certificateList[static_cast<size_t>(certIndex)])) {
+            //: Context menu action to sign with a specific certificate
+            //% "Sign with this certificate"
+            QAction* signAction = menu.addAction(qtTrId("lc-sign-with-cert"));
+            connect(signAction, &QAction::triggered, this, [this, certIndex]() {
+                emit signRequested(certificateList[static_cast<size_t>(certIndex)], readerName);
+            });
+        }
+#endif
     }
 
     if (item->parent() == tokenPinItem) {
@@ -361,4 +443,90 @@ void TokenSection::onContextMenu(const QPoint& pos)
 
     if (!menu.isEmpty())
         menu.exec(treeWidget->viewport()->mapToGlobal(pos));
+}
+
+#ifdef LIBRECELIK_SIGNING_ENABLED
+void TokenSection::setReaderName(const std::string& name)
+{
+    readerName = name;
+}
+
+std::vector<plugin::CertificateData> TokenSection::signingCertificates() const
+{
+    std::vector<plugin::CertificateData> result;
+    for (const auto& cert : certificateList) {
+        if (isSigningCapable(cert))
+            result.push_back(cert);
+    }
+    return result;
+}
+
+void TokenSection::showCertificateDropdown()
+{
+    auto certs = signingCertificates();
+    if (certs.empty())
+        return;
+
+    QMenu menu(this);
+    for (const auto& cert : certs) {
+        QString label = QString::fromStdString(cert.label);
+        QString cn = signing::subjectCN(cert.derBytes);
+        QString text = cn.isEmpty() ? label : label + " (" + cn + ")";
+        QAction* action = menu.addAction(text);
+        connect(action, &QAction::triggered, this, [this, cert]() { emit signRequested(cert, readerName); });
+    }
+    // Right-align menu to button so it doesn't extend past the window
+    QSize menuSize = menu.sizeHint();
+    QPoint pos = signBtn->mapToGlobal(QPoint(signBtn->width() - menuSize.width(), signBtn->height()));
+    // Clamp to screen edges
+    QRect screenGeo = signBtn->screen()->availableGeometry();
+    if (pos.x() < screenGeo.left())
+        pos.setX(screenGeo.left());
+    if (pos.x() + menuSize.width() > screenGeo.right())
+        pos.setX(screenGeo.right() - menuSize.width());
+    menu.exec(pos);
+}
+#endif
+
+void TokenSection::applyTreeStyleSheet()
+{
+    QString textColor = palette().color(QPalette::HighlightedText).name();
+    treeWidget->setStyleSheet(QString("QTreeView::item:selected {"
+                                      "  background-color: rgb(34, 86, 117);"
+                                      "  color: %1;"
+                                      "}"
+                                      "QTreeView::item:selected:!active {"
+                                      "  background-color: rgb(34, 86, 117);"
+                                      "  color: %1;"
+                                      "}")
+                                  .arg(textColor));
+}
+
+void TokenSection::changeEvent(QEvent* event)
+{
+    if (event->type() == QEvent::PaletteChange)
+        applyTreeStyleSheet();
+    if (event->type() == QEvent::LanguageChange)
+        retranslateUi();
+    CollapsibleSection::changeEvent(event);
+}
+
+void TokenSection::retranslateUi()
+{
+    setTitle(qtTrId("lc-token-title"));
+    treeWidget->setHeaderLabels({qtTrId("lc-token-col-object"), qtTrId("lc-token-col-details")});
+
+    if (tokenCertsItem)
+        tokenCertsItem->setText(0, qtTrId("lc-eid-tree-certificates"));
+    if (tokenPinItem)
+        tokenPinItem->setText(0, qtTrId("lc-eid-tree-pin"));
+
+#ifdef LIBRECELIK_SIGNING_ENABLED
+    if (signBtn)
+        signBtn->setToolTip(qtTrId("lc-sign-button"));
+#endif
+
+    // Rebuild certificate and PIN tree items with new translations
+    setCertificates(certificateList);
+    setPINList(pinList);
 }

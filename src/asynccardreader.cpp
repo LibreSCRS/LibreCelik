@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "asynccardreader.h"
 
 #include <smartcard/pcsc_connection.h>
+#include <smartcard/secure_buffer.h>
 
 #include <openssl/crypto.h>
 
@@ -11,6 +12,22 @@
 #include <QMetaObject>
 #include <QMetaType>
 #include <QPointer>
+
+namespace {
+
+// Alias the shared PIN-string scrubber (defined in smartcard/secure_buffer.h)
+// under the name this translation unit historically used.
+using StdStringScrubber = ::smartcard::PinStringScrubber;
+
+/// Materialize a std::string from a SecureBuffer for passing to CardPlugin
+/// APIs that take `const std::string&`. The returned string is a temporary
+/// uncleansed copy; wrap it with StdStringScrubber in the caller's scope.
+std::string toStdString(const smartcard::SecureBuffer& buf)
+{
+    return std::string(reinterpret_cast<const char*>(buf.data()), buf.size());
+}
+
+} // namespace
 
 AsyncCardReader::AsyncCardReader(std::vector<plugin::CardPlugin*> candidates,
                                  std::vector<plugin::CardPlugin*> allPlugins,
@@ -296,20 +313,33 @@ void AsyncCardReader::requestChangePIN(uint8_t pinReference, const QString& oldP
 
     waitForPendingAsync();
 
-    auto oldPinStd = oldPin.toStdString();
-    auto newPinStd = newPin.toStdString();
+    auto oldPinStdTmp = oldPin.toStdString();
+    smartcard::SecureBuffer oldPinBuffer(oldPinStdTmp);
+    StdStringScrubber oldPinTmpScrubber{oldPinStdTmp};
+
+    auto newPinStdTmp = newPin.toStdString();
+    smartcard::SecureBuffer newPinBuffer(newPinStdTmp);
+    StdStringScrubber newPinTmpScrubber{newPinStdTmp};
 
     QPointer<AsyncCardReader> self = this;
-    futurePKI = std::async(std::launch::async, [this, self, pki, pinReference, oldPinStd, newPinStd]() mutable {
+    futurePKI = std::async(std::launch::async,
+                           [this, self, pki, pinReference, oldPinBuffer = std::move(oldPinBuffer),
+                            newPinBuffer = std::move(newPinBuffer)]() mutable {
         if (stopRequested)
             return;
         try {
-            auto result = pki->changePIN(*conn, pinReference, oldPinStd, newPinStd);
-            if (!result.success && result.retriesLeft == -1 && !result.blocked) {
-                result = pki->changePIN(*conn, oldPinStd, newPinStd);
+            plugin::PINResult result;
+            {
+                std::string oldPinStd = toStdString(oldPinBuffer);
+                StdStringScrubber oldScrubber{oldPinStd};
+                std::string newPinStd = toStdString(newPinBuffer);
+                StdStringScrubber newScrubber{newPinStd};
+
+                result = pki->changePIN(*conn, pinReference, oldPinStd, newPinStd);
+                if (!result.success && result.retriesLeft == -1 && !result.blocked) {
+                    result = pki->changePIN(*conn, oldPinStd, newPinStd);
+                }
             }
-            OPENSSL_cleanse(oldPinStd.data(), oldPinStd.size());
-            OPENSSL_cleanse(newPinStd.data(), newPinStd.size());
 
             QMetaObject::invokeMethod(
                 self,
@@ -321,8 +351,6 @@ void AsyncCardReader::requestChangePIN(uint8_t pinReference, const QString& oldP
                 },
                 Qt::QueuedConnection);
         } catch (const std::exception& e) {
-            OPENSSL_cleanse(oldPinStd.data(), oldPinStd.size());
-            OPENSSL_cleanse(newPinStd.data(), newPinStd.size());
             QMetaObject::invokeMethod(
                 self,
                 [self, msg = QString::fromStdString(e.what())]() {
@@ -343,15 +371,22 @@ void AsyncCardReader::requestVerifyPIN(const QString& pin)
 
     waitForPendingAsync();
 
-    auto pinStd = pin.toStdString();
+    auto pinStdTmp = pin.toStdString();
+    smartcard::SecureBuffer pinBuffer(pinStdTmp);
+    StdStringScrubber pinTmpScrubber{pinStdTmp};
 
     QPointer<AsyncCardReader> self = this;
-    futurePKI = std::async(std::launch::async, [this, self, pki, pinStd]() mutable {
+    futurePKI = std::async(std::launch::async,
+                           [this, self, pki, pinBuffer = std::move(pinBuffer)]() mutable {
         if (stopRequested)
             return;
         try {
-            auto result = pki->verifyPIN(*conn, pinStd);
-            OPENSSL_cleanse(pinStd.data(), pinStd.size());
+            plugin::PINResult result;
+            {
+                std::string pinStd = toStdString(pinBuffer);
+                StdStringScrubber scrubber{pinStd};
+                result = pki->verifyPIN(*conn, pinStd);
+            }
             QMetaObject::invokeMethod(
                 self,
                 [self, result]() {
@@ -361,7 +396,6 @@ void AsyncCardReader::requestVerifyPIN(const QString& pin)
                 },
                 Qt::QueuedConnection);
         } catch (const std::exception& e) {
-            OPENSSL_cleanse(pinStd.data(), pinStd.size());
             QMetaObject::invokeMethod(
                 self,
                 [self, msg = QString::fromStdString(e.what())]() {

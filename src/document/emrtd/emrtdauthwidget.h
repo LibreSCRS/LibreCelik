@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #pragma once
 
+#include <QEvent>
 #include <QMap>
 #include <QWidget>
 
@@ -21,6 +22,9 @@ public:
 
 signals:
     void credentialsEntered(const QMap<QString, QString>& credentials);
+
+protected:
+    void changeEvent(QEvent* event) override;
 
 public slots:
     void onAuthFailed(const QString& errorMessage);

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "utils/cardheadercard.h"
 
+#include <QEvent>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QIcon>
@@ -44,7 +45,8 @@ void CardHeaderCard::buildLayout(QWidget* leftWidget, const std::vector<HeaderFi
         cellLayout->setContentsMargins(0, 0, 0, 0);
         cellLayout->setSpacing(0);
         auto* label = new QLabel(field.label, this);
-        label->setStyleSheet("color: #777; font-size: 10px;");
+        label->setStyleSheet(
+            QString("color: %1; font-size: 10px;").arg(palette().color(QPalette::PlaceholderText).name()));
         auto* value = new QLineEdit(field.value, this);
         value->setReadOnly(true);
         value->setCursorPosition(0);
@@ -69,6 +71,23 @@ void CardHeaderCard::buildLayout(QWidget* leftWidget, const std::vector<HeaderFi
     rightColumnLayout->addWidget(fieldsWidget, 0);
 
     mainLayout->addLayout(rightColumnLayout, 1);
+}
+
+void CardHeaderCard::applyLabelStyles()
+{
+    auto labels = findChildren<QLabel*>();
+    QString style = QString("color: %1; font-size: 10px;").arg(palette().color(QPalette::PlaceholderText).name());
+    for (auto* label : labels) {
+        if (label->styleSheet().contains("font-size: 10px"))
+            label->setStyleSheet(style);
+    }
+}
+
+void CardHeaderCard::changeEvent(QEvent* event)
+{
+    if (event->type() == QEvent::PaletteChange)
+        applyLabelStyles();
+    QWidget::changeEvent(event);
 }
 
 } // namespace LibreSCRS

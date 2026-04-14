@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "securitystatuswidget.h"
 
 #include "utils/collapsiblesection.h"
 
+#include <QEvent>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QVBoxLayout>
@@ -141,7 +142,9 @@ void SecurityStatusWidget::setSecurityStatus(const plugin::SecurityStatus& statu
         detailLayout->setSpacing(2);
 
         auto* detailTitle = new QLabel(qtTrId("lc-emrtd-security-details"));
-        detailTitle->setStyleSheet("font-size: 11px; font-weight: bold; color: #555;");
+        detailTitle->setObjectName(QStringLiteral("detailTitle"));
+        detailTitle->setStyleSheet(
+            QString("font-size: 11px; font-weight: bold; color: %1;").arg(palette().color(QPalette::Text).name()));
         detailLayout->addWidget(detailTitle);
 
         for (const auto& check : status.checks) {
@@ -153,7 +156,9 @@ void SecurityStatusWidget::setSecurityStatus(const plugin::SecurityStatus& statu
             checkIcon->setStyleSheet(QString("background: %1; border-radius: 5px;").arg(statusColor(check.status)));
 
             auto* checkLabel = new QLabel(QString::fromStdString(check.label));
-            checkLabel->setStyleSheet("font-size: 11px; color: #666;");
+            checkLabel->setObjectName(QStringLiteral("checkLabel"));
+            checkLabel->setStyleSheet(
+                QString("font-size: 11px; color: %1;").arg(palette().color(QPalette::Text).name()));
             checkLabel->setWordWrap(true);
 
             checkRow->addWidget(checkIcon);
@@ -162,7 +167,9 @@ void SecurityStatusWidget::setSecurityStatus(const plugin::SecurityStatus& statu
 
             if (!check.detail.empty()) {
                 auto* detailText = new QLabel(QString::fromStdString(check.detail));
-                detailText->setStyleSheet("font-size: 10px; color: #888; margin-left: 16px;");
+                detailText->setObjectName(QStringLiteral("detailText"));
+                detailText->setStyleSheet(QString("font-size: 10px; color: %1; margin-left: 16px;")
+                                              .arg(palette().color(QPalette::PlaceholderText).name()));
                 detailText->setWordWrap(true);
                 detailLayout->addWidget(detailText);
             }
@@ -170,4 +177,29 @@ void SecurityStatusWidget::setSecurityStatus(const plugin::SecurityStatus& statu
 
         detailWidget->setVisible(true);
     }
+}
+
+void SecurityStatusWidget::changeEvent(QEvent* event)
+{
+    if (event->type() == QEvent::LanguageChange) {
+        retranslateUi();
+    } else if (event->type() == QEvent::PaletteChange) {
+        if (detailWidget && detailWidget->isVisible()) {
+            const QString textColor = palette().color(QPalette::Text).name();
+            const QString placeholderColor = palette().color(QPalette::PlaceholderText).name();
+
+            for (auto* label : detailWidget->findChildren<QLabel*>(QStringLiteral("detailTitle")))
+                label->setStyleSheet(QString("font-size: 11px; font-weight: bold; color: %1;").arg(textColor));
+            for (auto* label : detailWidget->findChildren<QLabel*>(QStringLiteral("checkLabel")))
+                label->setStyleSheet(QString("font-size: 11px; color: %1;").arg(textColor));
+            for (auto* label : detailWidget->findChildren<QLabel*>(QStringLiteral("detailText")))
+                label->setStyleSheet(QString("font-size: 10px; color: %1; margin-left: 16px;").arg(placeholderColor));
+        }
+    }
+    QWidget::changeEvent(event);
+}
+
+void SecurityStatusWidget::retranslateUi()
+{
+    section->setTitle(qtTrId("lc-emrtd-security-status"));
 }

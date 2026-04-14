@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
 #pragma once
 
+#include <QEvent>
 #include <QWidget>
 
 #include <vector>
@@ -36,8 +37,12 @@ public:
     explicit CardHeaderCard(const QIcon& icon, const QSize& iconSize, const std::vector<HeaderField>& fields,
                             QWidget* parent = nullptr);
 
+protected:
+    void changeEvent(QEvent* event) override;
+
 private:
     void buildLayout(QWidget* leftWidget, const std::vector<HeaderField>& fields);
+    void applyLabelStyles();
     QGridLayout* fieldsGrid = nullptr;
     QVBoxLayout* rightColumnLayout = nullptr;
 };

@@ -59,6 +59,15 @@ endif()
 # Add LibreMiddleware's cmake modules to our path (for FindPCSC, FindUUID)
 list(APPEND CMAKE_MODULE_PATH "${libremiddleware_SOURCE_DIR}/cmake")
 
+# Digital signing UI — requires LibreMiddleware built with BUILD_SIGNING=ON.
+# Can be independently disabled even if LM has signing support.
+option(ENABLE_SIGNING "Enable digital signing UI (requires LM signing support)" ON)
+if(ENABLE_SIGNING AND NOT LIBREMIDDLEWARE_HAS_SIGNING)
+    message(STATUS "Signing UI disabled: LibreMiddleware was built without BUILD_SIGNING")
+    set(ENABLE_SIGNING OFF)
+endif()
+set(LIBRECELIK_SIGNING_ENABLED ${ENABLE_SIGNING})
+
 set(LIBRECELIK_GUI_PLUGIN_DIR "${CMAKE_BINARY_DIR}/gui-plugins" CACHE PATH
     "Directory where GUI plugin .so files are placed")
 

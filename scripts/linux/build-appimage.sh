@@ -266,6 +266,45 @@ fi
 MW_PLUGIN_DIR="$BUILD_DIR/plugins"
 GUI_PLUGIN_DIR="$BUILD_DIR/gui-plugins"
 
+# --- PKCS#11 module (for digital signing via PKCS#11 tokens) ---
+PKCS11_SO="$BUILD_DIR/lib/pkcs11/librescrs-pkcs11.so"
+if [[ -f "$PKCS11_SO" ]]; then
+    echo "Copying PKCS#11 module..."
+    cp "$PKCS11_SO" "$APPDIR/usr/lib/"
+    echo "  $(basename "$PKCS11_SO")"
+else
+    echo "WARNING: PKCS#11 module not found at $PKCS11_SO (signing will not work)"
+fi
+
+# --- Signing bundle (JRE + extracted JAR + CDS) ---
+# Look for pre-built signing/ directory, or generate it from the fat JAR.
+SIGNING_BUNDLE=""
+if [[ -d "$BUILD_DIR/signing" ]]; then
+    SIGNING_BUNDLE="$BUILD_DIR/signing"
+fi
+
+if [[ -z "$SIGNING_BUNDLE" ]]; then
+    # Find the fat JAR and generate the bundle
+    DSS_JAR="$BUILD_DIR/../tools/dss-service/target/dss-service-1.0.0-SNAPSHOT.jar"
+    if [[ ! -f "$DSS_JAR" ]]; then
+        DSS_JAR="$BUILD_DIR/_deps/libremiddleware-src/tools/dss-service/target/dss-service-1.0.0-SNAPSHOT.jar"
+    fi
+    if [[ -f "$DSS_JAR" ]]; then
+        echo "Generating signing bundle..."
+        "$SCRIPT_DIR/../prepare-signing-bundle.sh" "$DSS_JAR" "$BUILD_DIR"
+        SIGNING_BUNDLE="$BUILD_DIR/signing"
+    fi
+fi
+
+if [[ -d "$SIGNING_BUNDLE" ]]; then
+    echo "Copying signing bundle..."
+    mkdir -p "$APPDIR/usr/share/librescrs"
+    cp -r "$SIGNING_BUNDLE" "$APPDIR/usr/share/librescrs/signing"
+    echo "  signing/ ($(du -sh "$SIGNING_BUNDLE" | cut -f1))"
+else
+    echo "WARNING: Signing bundle not found (signing will not work)"
+fi
+
 echo "Copying middleware plugins..."
 mkdir -p "$APPDIR/usr/lib/middleware-plugins"
 for f in "$MW_PLUGIN_DIR"/lib*-plugin.so; do

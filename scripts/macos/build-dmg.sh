@@ -86,6 +86,43 @@ cp -R "$APP_SRC" "$APP_STAGING"
 MW_PLUGIN_DIR="$BUILD_DIR/plugins"
 GUI_PLUGIN_DIR="$BUILD_DIR/gui-plugins"
 
+# --- PKCS#11 module (for digital signing via PKCS#11 tokens) ---
+PKCS11_DYLIB="$BUILD_DIR/lib/pkcs11/librescrs-pkcs11.dylib"
+if [[ -f "$PKCS11_DYLIB" ]]; then
+    echo "Copying PKCS#11 module..."
+    cp "$PKCS11_DYLIB" "$APP_STAGING/Contents/Frameworks/"
+    echo "  $(basename "$PKCS11_DYLIB")"
+else
+    echo "WARNING: PKCS#11 module not found at $PKCS11_DYLIB (signing will not work)"
+fi
+
+# --- Signing bundle (JRE + extracted JAR + CDS) ---
+SIGNING_BUNDLE=""
+if [[ -d "$BUILD_DIR/signing" ]]; then
+    SIGNING_BUNDLE="$BUILD_DIR/signing"
+fi
+
+if [[ -z "$SIGNING_BUNDLE" ]]; then
+    DSS_JAR="$BUILD_DIR/../tools/dss-service/target/dss-service-1.0.0-SNAPSHOT.jar"
+    if [[ ! -f "$DSS_JAR" ]]; then
+        DSS_JAR="$BUILD_DIR/_deps/libremiddleware-src/tools/dss-service/target/dss-service-1.0.0-SNAPSHOT.jar"
+    fi
+    if [[ -f "$DSS_JAR" ]]; then
+        echo "Generating signing bundle..."
+        "$SCRIPT_DIR/../prepare-signing-bundle.sh" "$DSS_JAR" "$BUILD_DIR"
+        SIGNING_BUNDLE="$BUILD_DIR/signing"
+    fi
+fi
+
+if [[ -d "$SIGNING_BUNDLE" ]]; then
+    echo "Copying signing bundle..."
+    mkdir -p "$APP_STAGING/Contents/Frameworks"
+    cp -r "$SIGNING_BUNDLE" "$APP_STAGING/Contents/Frameworks/signing"
+    echo "  signing/ ($(du -sh "$SIGNING_BUNDLE" | cut -f1))"
+else
+    echo "WARNING: Signing bundle not found (signing will not work)"
+fi
+
 echo "Copying middleware plugins..."
 mkdir -p "$APP_STAGING/Contents/PlugIns/middleware-plugins"
 for f in "$MW_PLUGIN_DIR"/lib*-plugin.dylib; do
@@ -112,7 +149,8 @@ echo "Running macdeployqt..."
 # launch; they can bypass it with right-click → Open.
 # ---------------------------------------------------------------------------
 echo "Ad-hoc signing..."
-codesign --deep --force --sign - "$APP_STAGING"
+ENTITLEMENTS="$PROJECT_ROOT/resources/macos/LibreCelik.entitlements"
+codesign --deep --force --sign - --entitlements "$ENTITLEMENTS" --options runtime "$APP_STAGING"
 
 # ---------------------------------------------------------------------------
 # Build the DMG

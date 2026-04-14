@@ -17,9 +17,10 @@ find_package(UUID)
 
 # Glob cert files now (configure time) so configure_file can reference the path.
 # The actual qt_add_resources call is below, after qt_add_executable.
-file(GLOB LIBRECELIK_CERT_FILES
-    "${libremiddleware_SOURCE_DIR}/thirdparty/certificates/all/*.cer"
-    "${libremiddleware_SOURCE_DIR}/thirdparty/certificates/all/*.crt"
+file(GLOB_RECURSE LIBRECELIK_CERT_FILES
+    "${libremiddleware_SOURCE_DIR}/thirdparty/certificates/*.cer"
+    "${libremiddleware_SOURCE_DIR}/thirdparty/certificates/*.crt"
+    "${libremiddleware_SOURCE_DIR}/thirdparty/certificates/*.pem"
 )
 set(LIBRECELIK_CERTIFICATES_DIR ":/certificates")
 
@@ -55,6 +56,8 @@ set(PROJECT_SOURCES
         certificate/certificatepropertiesmodel.cpp
         certificate/certificatehierarchymodel.h
         certificate/certificatehierarchymodel.cpp
+        certificate/opensslhelpers.h
+        certificate/opensslhelpers.cpp
         certificate/certificateviewerwidget.h
         certificate/certificateviewerwidget.cpp
         certificate/certificateviewerwidget.ui
@@ -66,13 +69,56 @@ set(PROJECT_SOURCES
         utils/cardheadercard.cpp
         utils/fieldsectionbuilder.h
         utils/fieldsectionbuilder.cpp
+        utils/listitemdelegate.h
+        utils/listitemdelegate.cpp
+        utils/pluginwidgetbase.h
+        utils/pluginwidgetbase.cpp
         utils/translations_catalog.cpp
         plugin/cardwidgetplugin.h
         plugin/cardwidgetpluginregistry.h
         plugin/cardwidgetpluginregistry.cpp
         asynccardreader.h
         asynccardreader.cpp
+        settings/settingsdialog.h
+        settings/settingsdialog.cpp
+        settings/tlitemdelegate.h
+        settings/tlitemdelegate.cpp
+        signing/tsaitemdelegate.h
+        signing/tsaitemdelegate.cpp
 )
+
+if(APPLE)
+    list(APPEND PROJECT_SOURCES utils/macos_menu.h utils/macos_menu.mm)
+endif()
+
+if(LIBRECELIK_SIGNING_ENABLED)
+    find_package(Qt6 REQUIRED COMPONENTS PdfWidgets)
+    list(APPEND PROJECT_SOURCES
+        signing/signingwizard.h
+        signing/signingwizard.cpp
+        signing/fileselectionpage.h
+        signing/fileselectionpage.cpp
+        signing/signatureplacementpage.h
+        signing/signatureplacementpage.cpp
+        signing/signpage.h
+        signing/signpage.cpp
+        signing/pkcs11utils.h
+        signing/pkcs11utils.cpp
+        signing/pdfpreviewwidget.h
+        signing/pdfpreviewwidget.cpp
+        signing/filedropzone.h
+        signing/filedropzone.cpp
+        signing/certutils.h
+        signing/certutils.cpp
+        signing/wizardheaderwidget.h
+        signing/wizardheaderwidget.cpp
+        signing/filelistdelegate.h
+        signing/filelistdelegate.cpp
+        signing/resultdelegate.h
+        signing/resultdelegate.cpp
+        signing/signingcolors.h
+    )
+endif()
 
 set(RESOURCE_SOURCES
         ${RESOURCE_FILE}
@@ -111,11 +157,19 @@ qt_add_translations(${PROJECT_NAME}
 # previously expected from LIBRECELIK_CERTIFICATES_DIR.
 qt_add_resources(${PROJECT_NAME} "certificates_res"
     PREFIX "/certificates"
-    BASE "${libremiddleware_SOURCE_DIR}/thirdparty/certificates/all"
+    BASE "${libremiddleware_SOURCE_DIR}/thirdparty/certificates"
     FILES ${LIBRECELIK_CERT_FILES}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::PrintSupport LibreCelikPrinting CardPlugin SmartCard OpenSSL_Crypto PCSC::PCSC UUID::UUID)
+
+if(APPLE)
+    target_link_libraries(${PROJECT_NAME} PRIVATE "-framework AppKit")
+endif()
+
+if(LIBRECELIK_SIGNING_ENABLED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::PdfWidgets LibreSign)
+endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     ${BUNDLE_ID_OPTION}

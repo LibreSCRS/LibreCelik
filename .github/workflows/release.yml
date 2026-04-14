@@ -17,7 +17,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libpcsclite-dev uuid-dev cmake ninja-build patchelf
+          sudo apt-get install -y libpcsclite-dev uuid-dev cmake ninja-build patchelf maven
 
       - name: Install Qt 6.10
         uses: jurplel/install-qt-action@v4
@@ -97,6 +97,20 @@ jobs:
       - name: Test (LibreMiddleware)
         run: ctest --output-on-failure --test-dir build/_deps/libremiddleware-build/test
 
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Build DSS service JAR
+        run: |
+          DSS_DIR="build/_deps/libremiddleware-src/tools/dss-service"
+          if [[ ! -d "$DSS_DIR" ]]; then
+            DSS_DIR="tools/dss-service"
+          fi
+          cd "$DSS_DIR" && mvn package -DskipTests -q
+
       - name: Cache linuxdeploy tools
         uses: actions/cache@v4
         with:
@@ -134,7 +148,7 @@ jobs:
           cache: true
 
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
 
       - name: Build
         env:
@@ -148,6 +162,20 @@ jobs:
 
       - name: Test (LibreMiddleware)
         run: ctest --output-on-failure --test-dir build/_deps/libremiddleware-build/test
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Build DSS service JAR
+        run: |
+          DSS_DIR="build/_deps/libremiddleware-src/tools/dss-service"
+          if [[ ! -d "$DSS_DIR" ]]; then
+            DSS_DIR="tools/dss-service"
+          fi
+          cd "$DSS_DIR" && mvn package -DskipTests -q
 
       - name: Build DMG
         run: scripts/macos/build-dmg.sh build

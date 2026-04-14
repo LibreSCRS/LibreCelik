@@ -245,3 +245,65 @@ target_link_libraries(EMRTDAuthWidgetTests
 )
 set_target_properties(EMRTDAuthWidgetTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(EMRTDAuthWidgetTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+if(LIBRECELIK_SIGNING_ENABLED)
+    add_executable(SigningUnitTests
+        signing_unit_test.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/certutils.cpp
+        ${CMAKE_SOURCE_DIR}/src/certificate/opensslhelpers.cpp
+    )
+    target_include_directories(SigningUnitTests PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+        ${PROJECT_BINARY_DIR}/../src
+    )
+    target_link_libraries(SigningUnitTests PRIVATE
+        GTest::gtest
+        Qt6::Core
+        OpenSSL_Crypto
+        LibreSign
+    )
+    gtest_discover_tests(SigningUnitTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+endif()
+
+if(LIBRECELIK_SIGNING_ENABLED)
+    find_package(Qt6 REQUIRED COMPONENTS PdfWidgets)
+    add_executable(SigningWizardE2ETests
+        signingwizard_e2e_test.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/signingwizard.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/fileselectionpage.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/signatureplacementpage.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/signpage.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/filedropzone.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/pdfpreviewwidget.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/certutils.cpp
+        ${CMAKE_SOURCE_DIR}/src/certificate/opensslhelpers.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/wizardheaderwidget.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/filelistdelegate.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/resultdelegate.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/pkcs11utils.cpp
+    )
+    target_include_directories(SigningWizardE2ETests PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+        ${PROJECT_BINARY_DIR}/../src
+    )
+    target_link_libraries(SigningWizardE2ETests PRIVATE
+        GTest::gtest_main
+        Qt6::Widgets
+        Qt6::Test
+        Qt6::PdfWidgets
+        CardPlugin
+        SmartCard
+        LibreSign
+        OpenSSL_Crypto
+        PCSC::PCSC
+    )
+    target_compile_definitions(SigningWizardE2ETests PRIVATE
+        MIDDLEWARE_PLUGIN_DIR="$<TARGET_FILE_DIR:piv-plugin>"
+        PKCS11_MODULE_PATH="$<TARGET_FILE:librescrs-pkcs11>"
+        DSS_JAR_DIR="${libremiddleware_SOURCE_DIR}/tools/dss-service/target"
+        LIBRESCRS_TESTING
+    )
+    set_target_properties(SigningWizardE2ETests PROPERTIES AUTOMOC ON)
+    add_dependencies(SigningWizardE2ETests piv-plugin pkcs15-plugin cardedge-plugin librescrs-pkcs11)
+    gtest_discover_tests(SigningWizardE2ETests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+endif()

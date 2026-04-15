@@ -13,6 +13,7 @@
 #include <smartcard/secure_buffer.h>
 
 #include <QAction>
+#include <QDateTime>
 #include <QDir>
 #include <QEvent>
 #include <QFile>
@@ -284,7 +285,8 @@ void SignPage::configure(const Config& cfg)
     resultsList->clear();
     resultsList->setVisible(false);
 
-    emit pinReady(!pinEdit->text().isEmpty());
+    bool canOk = !canRow->isVisible() || !canEdit->text().isEmpty();
+    emit pinReady(!pinEdit->text().isEmpty() && canOk);
 }
 
 void SignPage::setSigningService(libresign::SigningService* svc)
@@ -304,7 +306,8 @@ void SignPage::setPrefetchCallback(std::function<bool()> cb)
 
 bool SignPage::hasPinInput() const
 {
-    return !pinEdit->text().isEmpty();
+    bool canOk = !canRow->isVisible() || !canEdit->text().isEmpty();
+    return !pinEdit->text().isEmpty() && canOk;
 }
 
 void SignPage::focusPin()
@@ -527,8 +530,21 @@ void SignPage::startSigning()
             request.level = level;
             if (!tsa.empty())
                 request.tsa.url = tsa;
-            if (job.format == libresign::SignatureFormat::PAdES)
+            if (job.format == libresign::SignatureFormat::PAdES) {
+                // Refresh the timestamp in the visual signature text so each
+                // file gets the actual signing time rather than the stale
+                // timestamp captured when the user entered the sign page.
+                if (visual.enabled && !visual.text.empty()) {
+                    QString text = QString::fromStdString(visual.text);
+                    static const QRegularExpression dateRe(
+                        QStringLiteral("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"));
+                    text.replace(dateRe,
+                                 QDateTime::currentDateTime().toString(
+                                     QStringLiteral("yyyy-MM-dd HH:mm:ss")));
+                    visual.text = text.toStdString();
+                }
                 request.visual = visual;
+            }
 #ifdef LIBRESCRS_TESTING
             // Allow signing with expired certificates (test builds only)
             if (qEnvironmentVariableIsSet("LIBRESCRS_ALLOW_EXPIRED_CERT"))
@@ -606,8 +622,9 @@ void SignPage::startSigning()
             QMetaObject::invokeMethod(guard.data(), [guard, this]() {
                 if (!guard)
                     return;
+                //% "Unknown signing error"
                 addResultItem(QStringLiteral("\u2718"), signing::kErrorHex,
-                              QStringLiteral("unknown signing worker error"));
+                              qtTrId("lc-sign-unknown-error"));
             });
         }
 

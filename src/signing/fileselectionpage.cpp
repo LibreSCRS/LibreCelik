@@ -320,7 +320,9 @@ void FileSelectionPage::removeSelectedFile()
     if (row < 0 || row >= files.count())
         return;
 
+    const QString removed = files.at(row);
     files.removeAt(row);
+    dropZone->removeFile(removed);
     rebuildFileList();
 }
 

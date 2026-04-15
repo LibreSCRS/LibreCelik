@@ -15,6 +15,7 @@ public:
     QStringList filePaths() const;
     void clear();
     void addFiles(const QStringList& paths);
+    void removeFile(const QString& path);
 
 signals:
     void filesChanged(const QStringList& paths);

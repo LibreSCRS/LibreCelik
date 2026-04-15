@@ -999,6 +999,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-sign-tsa-invalid-title");
     //% "The configured Timestamp Authority URL is not a valid https:// endpoint."
     QT_TRID_NOOP("lc-sign-tsa-invalid-message");
+    //% "Unknown signing error"
+    QT_TRID_NOOP("lc-sign-unknown-error");
 
     // --- menu bar ---
     //% "Edit"

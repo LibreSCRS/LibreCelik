@@ -235,6 +235,15 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
         // Fresh card event: defensively remove any stale widget left over from a
         // fast swap where CardRemoved wasn't emitted (no-op if nothing registered).
         removeReader(reader);
+        // Give old AsyncCardReader's PCSC handle time to release before connecting.
+        // macOS PCSC daemon serializes SCardTransmit per reader, so a lingering
+        // handle from the cleanup thread would block our APDU probing.
+        auto stopToken = readerStopSource[reader].get_token();
+        QTimer::singleShot(200, this, [this, reader, stopToken]() {
+            if (stopToken.stop_requested()) return;
+            addNewReader(reader, 1);
+        });
+        return;
     } else if (activeReaders.count(reader)) {
         // Retry timer: a widget was created while this timer was pending — stop.
         return;
@@ -248,8 +257,9 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
         conn = std::make_unique<smartcard::PCSCConnection>(reader);
         atr = conn->getATR();
     } catch (const std::exception&) {
-        if (retryCount < 2) {
-            QTimer::singleShot(300, this, [this, reader, retryCount, stopToken]() {
+        if (retryCount < 6) {
+            int delay = 200 + retryCount * 150; // progressive: 350, 500, 650, 800, 950ms
+            QTimer::singleShot(delay, this, [this, reader, retryCount, stopToken]() {
                 if (stopToken.stop_requested())
                     return;
                 addNewReader(reader, retryCount + 1);
@@ -263,8 +273,9 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
 
     auto candidates = middlewarePluginRegistry.findAllCandidates(atr, *conn);
     if (candidates.empty()) {
-        if (retryCount < 2) {
-            QTimer::singleShot(300, this, [this, reader, retryCount, stopToken]() {
+        if (retryCount < 6) {
+            int delay = 200 + retryCount * 150; // progressive: 350, 500, 650, 800, 950ms
+            QTimer::singleShot(delay, this, [this, reader, retryCount, stopToken]() {
                 if (stopToken.stop_requested())
                     return;
                 addNewReader(reader, retryCount + 1);
@@ -628,7 +639,7 @@ void LibreCelik::connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget)
     connect(tokenSection, &TokenSection::signRequested, this,
             [this](const plugin::CertificateData& cert, const std::string& readerName) {
                 if (!signingService)
-                    signingService = libresign::createSigningService(libresign::Backend::DSS);
+                    signingService = libresign::createSigningService(libresign::Backend::Native);
 
                 if (!signingService)
                     return;

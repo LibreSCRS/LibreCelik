@@ -184,6 +184,11 @@ void FileDropZone::paintEvent(QPaintEvent* event)
     painter.drawText(QPointF(startX + orWidth + spacing, secondaryY + fm.ascent()), browseText);
 }
 
+void FileDropZone::removeFile(const QString& path)
+{
+    files.removeAll(path);
+}
+
 void FileDropZone::addFiles(const QStringList& paths)
 {
     // Centralized validation: drag-and-drop accepts arbitrary local file

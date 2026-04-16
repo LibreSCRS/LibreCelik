@@ -35,5 +35,10 @@
         <file>emrtdcard.css</file>
         <file>pivcard.css</file>
     </qresource>
+    <qresource prefix="/">
+        <file>licenses/gpl-3.0.txt</file>
+        <file>licenses/lgpl-2.1.txt</file>
+        <file>licenses/apache-2.0.txt</file>
+    </qresource>
 
 </RCC>

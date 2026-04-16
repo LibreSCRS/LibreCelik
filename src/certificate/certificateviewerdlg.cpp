@@ -88,12 +88,9 @@ void CertificateViewerDlg::buildStore(const std::vector<std::string>& certPaths)
             if (!fs::exists(dirPath))
                 continue;
             std::error_code walkEc;
-            for (auto it = fs::recursive_directory_iterator(
-                     dirPath,
-                     fs::directory_options::skip_permission_denied,
-                     walkEc);
-                 it != fs::recursive_directory_iterator();
-                 it.increment(walkEc)) {
+            for (auto it =
+                     fs::recursive_directory_iterator(dirPath, fs::directory_options::skip_permission_denied, walkEc);
+                 it != fs::recursive_directory_iterator(); it.increment(walkEc)) {
                 if (walkEc) {
                     walkEc.clear();
                     continue;

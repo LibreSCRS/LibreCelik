@@ -196,8 +196,8 @@ void SettingsDialog::loadSettings()
         languageCombo->setCurrentIndex(langIdx);
 
     // Signing
-    int levelIdx = defaultLevelCombo->findData(
-        settings.value(settings::kSigningDefaultLevel, QStringLiteral("B_B")).toString());
+    int levelIdx =
+        defaultLevelCombo->findData(settings.value(settings::kSigningDefaultLevel, QStringLiteral("B_B")).toString());
     if (levelIdx >= 0)
         defaultLevelCombo->setCurrentIndex(levelIdx);
     defaultOutputFolder->setText(settings.value(settings::kSigningDefaultOutputFolder).toString());

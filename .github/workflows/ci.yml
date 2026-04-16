@@ -35,7 +35,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libpcsclite-dev uuid-dev cmake ninja-build
+          sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build
 
       - name: Install Qt 6.10
         uses: jurplel/install-qt-action@v4
@@ -44,7 +44,7 @@ jobs:
           host: linux
           target: desktop
           arch: linux_gcc_64
-          modules: ''
+          modules: 'qtpdf'
           cache: true
 
       - name: Configure
@@ -80,7 +80,7 @@ jobs:
           host: mac
           target: desktop
           arch: clang_64
-          modules: ''
+          modules: 'qtpdf'
           cache: true
 
       - name: Configure

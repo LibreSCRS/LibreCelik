@@ -223,8 +223,8 @@ TEST(BuildOutputPath, JAdES)
 TEST(BuildOutputPath, CompoundExtension)
 {
     // completeBaseName strips only the last extension
-    FileSignInfo info{
-        "/tmp/archive.tar.gz", libresign::SignatureFormat::ASiC_E, libresign::SignaturePackaging::ENVELOPED};
+    FileSignInfo info{"/tmp/archive.tar.gz", libresign::SignatureFormat::ASiC_E,
+                      libresign::SignaturePackaging::ENVELOPED};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/archive.tar.asice"));
 }

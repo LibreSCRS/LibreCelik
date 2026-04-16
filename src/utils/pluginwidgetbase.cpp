@@ -7,9 +7,7 @@
 
 namespace plugin_ui {
 
-PluginWidgetBase::PluginWidgetBase(QWidget* parent) : QWidget(parent)
-{
-}
+PluginWidgetBase::PluginWidgetBase(QWidget* parent) : QWidget(parent) {}
 
 void PluginWidgetBase::changeEvent(QEvent* event)
 {

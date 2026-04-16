@@ -276,34 +276,9 @@ else
     echo "WARNING: PKCS#11 module not found at $PKCS11_SO (signing will not work)"
 fi
 
-# --- Signing bundle (JRE + extracted JAR + CDS) ---
-# Look for pre-built signing/ directory, or generate it from the fat JAR.
-SIGNING_BUNDLE=""
-if [[ -d "$BUILD_DIR/signing" ]]; then
-    SIGNING_BUNDLE="$BUILD_DIR/signing"
-fi
-
-if [[ -z "$SIGNING_BUNDLE" ]]; then
-    # Find the fat JAR and generate the bundle
-    DSS_JAR="$BUILD_DIR/../tools/dss-service/target/dss-service-1.0.0-SNAPSHOT.jar"
-    if [[ ! -f "$DSS_JAR" ]]; then
-        DSS_JAR="$BUILD_DIR/_deps/libremiddleware-src/tools/dss-service/target/dss-service-1.0.0-SNAPSHOT.jar"
-    fi
-    if [[ -f "$DSS_JAR" ]]; then
-        echo "Generating signing bundle..."
-        "$SCRIPT_DIR/../prepare-signing-bundle.sh" "$DSS_JAR" "$BUILD_DIR"
-        SIGNING_BUNDLE="$BUILD_DIR/signing"
-    fi
-fi
-
-if [[ -d "$SIGNING_BUNDLE" ]]; then
-    echo "Copying signing bundle..."
-    mkdir -p "$APPDIR/usr/share/librescrs"
-    cp -r "$SIGNING_BUNDLE" "$APPDIR/usr/share/librescrs/signing"
-    echo "  signing/ ($(du -sh "$SIGNING_BUNDLE" | cut -f1))"
-else
-    echo "WARNING: Signing bundle not found (signing will not work)"
-fi
+# --- DSS signing bundle (JRE + JAR) ---
+# Skipped: native signing backend is the default and does not require Java.
+# DSS is deprecated. To re-enable, set SIGNING_BACKEND=dss and uncomment.
 
 echo "Copying middleware plugins..."
 mkdir -p "$APPDIR/usr/lib/middleware-plugins"

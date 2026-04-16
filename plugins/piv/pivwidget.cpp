@@ -57,7 +57,8 @@ static std::map<std::string, QString> keyHistoryTranslationMap()
     };
 }
 
-PIVWidget::PIVWidget(const plugin::CardData& cardData, QWidget* parent) : PIVWidget(parent){
+PIVWidget::PIVWidget(const plugin::CardData& cardData, QWidget* parent) : PIVWidget(parent)
+{
     data.cardType = cardData.cardType;
     for (const auto& group : cardData.groups)
         addGroup(group);

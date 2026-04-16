@@ -322,9 +322,8 @@ void AsyncCardReader::requestChangePIN(uint8_t pinReference, const QString& oldP
     StdStringScrubber newPinTmpScrubber{newPinStdTmp};
 
     QPointer<AsyncCardReader> self = this;
-    futurePKI = std::async(std::launch::async,
-                           [this, self, pki, pinReference, oldPinBuffer = std::move(oldPinBuffer),
-                            newPinBuffer = std::move(newPinBuffer)]() mutable {
+    futurePKI = std::async(std::launch::async, [this, self, pki, pinReference, oldPinBuffer = std::move(oldPinBuffer),
+                                                newPinBuffer = std::move(newPinBuffer)]() mutable {
         if (stopRequested)
             return;
         try {
@@ -376,8 +375,7 @@ void AsyncCardReader::requestVerifyPIN(const QString& pin)
     StdStringScrubber pinTmpScrubber{pinStdTmp};
 
     QPointer<AsyncCardReader> self = this;
-    futurePKI = std::async(std::launch::async,
-                           [this, self, pki, pinBuffer = std::move(pinBuffer)]() mutable {
+    futurePKI = std::async(std::launch::async, [this, self, pki, pinBuffer = std::move(pinBuffer)]() mutable {
         if (stopRequested)
             return;
         try {

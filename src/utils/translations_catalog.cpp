@@ -41,6 +41,42 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "♥ Support this project — <a href=\"https://opencollective.com/librescrs\">opencollective.com/librescrs</a>"
     QT_TRID_NOOP("lc-main-about-donate");
 
+    // --- about dialog ---
+    //% "Libre Čelik"
+    QT_TRID_NOOP("lc-about-app-name");
+    //% "Open-source smart card reader and digital signing tool"
+    QT_TRID_NOOP("lc-about-description");
+    //% "Copyright (c) 2024-present hirashix0"
+    QT_TRID_NOOP("lc-about-copyright");
+    //% "If you find this software useful, please consider supporting its development"
+    QT_TRID_NOOP("lc-about-donate-motivation");
+    //% "♥ Donate"
+    QT_TRID_NOOP("lc-about-donate-button");
+    //% "Authors"
+    QT_TRID_NOOP("lc-about-credits-authors");
+    //% "Author & Maintainer"
+    QT_TRID_NOOP("lc-about-credits-role-maintainer");
+    //% "GNU General Public License v3.0 or later"
+    QT_TRID_NOOP("lc-about-license-gpl");
+    //% "GNU Lesser General Public License v2.1 or later"
+    QT_TRID_NOOP("lc-about-license-lgpl");
+    //% "Apache License 2.0"
+    QT_TRID_NOOP("lc-about-license-apache");
+    //% "statically linked"
+    QT_TRID_NOOP("lc-about-license-static");
+    //% "About"
+    QT_TRID_NOOP("lc-about-tab-about");
+    //% "Credits"
+    QT_TRID_NOOP("lc-about-tab-credits");
+    //% "License"
+    QT_TRID_NOOP("lc-about-tab-license");
+    //% "GitHub"
+    QT_TRID_NOOP("lc-about-link-github");
+    //% "Website"
+    QT_TRID_NOOP("lc-about-link-website");
+    //% "Version %1"
+    QT_TRID_NOOP("lc-about-version");
+
     // --- generic ---
     //% "Unavailable"
     QT_TRID_NOOP("lc-doc-unavailable");
@@ -989,7 +1025,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     // Expired certificate warning
     //% "Expired Certificate"
     QT_TRID_NOOP("lc-sign-expired-cert-title");
-    //% "The selected certificate has expired. At B-B level, the signature will not include revocation data. Continue anyway?"
+    //% "The selected certificate has expired. At B-B level, the signature will not include revocation "
+    //% "data. Continue anyway?"
     QT_TRID_NOOP("lc-sign-expired-cert-message");
     //% "Output Folder Error"
     QT_TRID_NOOP("lc-sign-output-folder-error-title");

@@ -79,6 +79,8 @@ set(PROJECT_SOURCES
         plugin/cardwidgetpluginregistry.cpp
         asynccardreader.h
         asynccardreader.cpp
+        aboutdialog.h
+        aboutdialog.cpp
         settings/settingsdialog.h
         settings/settingsdialog.cpp
         settings/tlitemdelegate.h

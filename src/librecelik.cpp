@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "librecelik.h"
+#include "aboutdialog.h"
 #include "config.h"
 #include "settings/settingsdialog.h"
 #include "settings/settingskeys.h"
@@ -38,7 +39,6 @@
 #include <QLibraryInfo>
 #include <QLocale>
 #include <QMenu>
-#include <QMessageBox>
 #include <QProgressBar>
 #include <QScrollArea>
 #include <QSettings>
@@ -240,7 +240,8 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
         // handle from the cleanup thread would block our APDU probing.
         auto stopToken = readerStopSource[reader].get_token();
         QTimer::singleShot(200, this, [this, reader, stopToken]() {
-            if (stopToken.stop_requested()) return;
+            if (stopToken.stop_requested())
+                return;
             addNewReader(reader, 1);
         });
         return;
@@ -689,10 +690,8 @@ void LibreCelik::openSettings()
 
 void LibreCelik::showAboutDialog()
 {
-    QString text = QStringLiteral("<p>") + qtTrId("lc-main-about-librecelik").arg(LIBRECELIK_VERSION) +
-                   QStringLiteral("</p><p>") +
-                   qtTrId("lc-main-about-libremiddleware").arg(LIBRECELIK_MIDDLEWARE_VERSION) + QStringLiteral("</p>");
-    QMessageBox::about(this, qtTrId("lc-about-title"), text);
+    AboutDialog dlg(this);
+    dlg.exec();
 }
 
 LibreCelik::~LibreCelik()

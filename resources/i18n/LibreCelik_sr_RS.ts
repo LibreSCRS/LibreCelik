@@ -1158,6 +1158,74 @@
         <source>About LibreCelik</source>
         <translation>О програму Слободни Челик</translation>
     </message>
+    <message id="lc-about-app-name">
+        <source>Libre Čelik</source>
+        <translation>Слободни Челик</translation>
+    </message>
+    <message id="lc-about-description">
+        <source>Open-source smart card reader and digital signing tool</source>
+        <translation>Читач паметних картица и алат за дигитално потписивање отвореног кода</translation>
+    </message>
+    <message id="lc-about-copyright">
+        <source>Copyright (c) 2024-present hirashix0</source>
+        <translation>Copyright (c) 2024-present hirashix0</translation>
+    </message>
+    <message id="lc-about-donate-motivation">
+        <source>If you find this software useful, please consider supporting its development</source>
+        <translation>Ако вам је овај програм користан, молимо вас да размотрите подршку његовом развоју</translation>
+    </message>
+    <message id="lc-about-donate-button">
+        <source>♥ Donate</source>
+        <translation>♥ Донирајте</translation>
+    </message>
+    <message id="lc-about-credits-authors">
+        <source>Authors</source>
+        <translation>Аутори</translation>
+    </message>
+    <message id="lc-about-credits-role-maintainer">
+        <source>Author &amp; Maintainer</source>
+        <translation>Аутор и одржавалац</translation>
+    </message>
+    <message id="lc-about-license-gpl">
+        <source>GNU General Public License v3.0 or later</source>
+        <translation>GNU General Public License v3.0 or later</translation>
+    </message>
+    <message id="lc-about-license-lgpl">
+        <source>GNU Lesser General Public License v2.1 or later</source>
+        <translation>GNU Lesser General Public License v2.1 or later</translation>
+    </message>
+    <message id="lc-about-license-apache">
+        <source>Apache License 2.0</source>
+        <translation>Apache License 2.0</translation>
+    </message>
+    <message id="lc-about-license-static">
+        <source>statically linked</source>
+        <translation>статички повезан</translation>
+    </message>
+    <message id="lc-about-tab-about">
+        <source>About</source>
+        <translation>О програму</translation>
+    </message>
+    <message id="lc-about-tab-credits">
+        <source>Credits</source>
+        <translation>Заслуге</translation>
+    </message>
+    <message id="lc-about-tab-license">
+        <source>License</source>
+        <translation>Лиценца</translation>
+    </message>
+    <message id="lc-about-link-github">
+        <source>GitHub</source>
+        <translation>GitHub</translation>
+    </message>
+    <message id="lc-about-link-website">
+        <source>Website</source>
+        <translation>Веб-сајт</translation>
+    </message>
+    <message id="lc-about-version">
+        <source>Version %1</source>
+        <translation>Верзија %1</translation>
+    </message>
     <message id="lc-settings-title">
         <source>Settings</source>
         <translation>Подешавања</translation>

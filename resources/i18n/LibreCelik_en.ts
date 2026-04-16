@@ -1158,6 +1158,74 @@
         <source>About LibreCelik</source>
         <translation>About Libre Celik</translation>
     </message>
+    <message id="lc-about-app-name">
+        <source>Libre Čelik</source>
+        <translation>Libre Čelik</translation>
+    </message>
+    <message id="lc-about-description">
+        <source>Open-source smart card reader and digital signing tool</source>
+        <translation>Open-source smart card reader and digital signing tool</translation>
+    </message>
+    <message id="lc-about-copyright">
+        <source>Copyright (c) 2024-present hirashix0</source>
+        <translation>Copyright (c) 2024-present hirashix0</translation>
+    </message>
+    <message id="lc-about-donate-motivation">
+        <source>If you find this software useful, please consider supporting its development</source>
+        <translation>If you find this software useful, please consider supporting its development</translation>
+    </message>
+    <message id="lc-about-donate-button">
+        <source>♥ Donate</source>
+        <translation>♥ Donate</translation>
+    </message>
+    <message id="lc-about-credits-authors">
+        <source>Authors</source>
+        <translation>Authors</translation>
+    </message>
+    <message id="lc-about-credits-role-maintainer">
+        <source>Author &amp; Maintainer</source>
+        <translation>Author &amp; Maintainer</translation>
+    </message>
+    <message id="lc-about-license-gpl">
+        <source>GNU General Public License v3.0 or later</source>
+        <translation>GNU General Public License v3.0 or later</translation>
+    </message>
+    <message id="lc-about-license-lgpl">
+        <source>GNU Lesser General Public License v2.1 or later</source>
+        <translation>GNU Lesser General Public License v2.1 or later</translation>
+    </message>
+    <message id="lc-about-license-apache">
+        <source>Apache License 2.0</source>
+        <translation>Apache License 2.0</translation>
+    </message>
+    <message id="lc-about-license-static">
+        <source>statically linked</source>
+        <translation>statically linked</translation>
+    </message>
+    <message id="lc-about-tab-about">
+        <source>About</source>
+        <translation>About</translation>
+    </message>
+    <message id="lc-about-tab-credits">
+        <source>Credits</source>
+        <translation>Credits</translation>
+    </message>
+    <message id="lc-about-tab-license">
+        <source>License</source>
+        <translation>License</translation>
+    </message>
+    <message id="lc-about-link-github">
+        <source>GitHub</source>
+        <translation>GitHub</translation>
+    </message>
+    <message id="lc-about-link-website">
+        <source>Website</source>
+        <translation>Website</translation>
+    </message>
+    <message id="lc-about-version">
+        <source>Version %1</source>
+        <translation>Version %1</translation>
+    </message>
     <message id="lc-settings-title">
         <source>Settings</source>
         <translation>Settings</translation>

@@ -362,8 +362,7 @@ void SignPage::startSigning()
     // so the signing service is never handed an untrusted URL.
     if (sigLevel != QStringLiteral("B_B") && !tsaUrl.empty()) {
         if (!signing::isValidTsaUrl(QString::fromStdString(tsaUrl))) {
-            QMessageBox::warning(this, qtTrId("lc-sign-tsa-invalid-title"),
-                                 qtTrId("lc-sign-tsa-invalid-message"));
+            QMessageBox::warning(this, qtTrId("lc-sign-tsa-invalid-title"), qtTrId("lc-sign-tsa-invalid-message"));
             return;
         }
     }
@@ -460,145 +459,146 @@ void SignPage::startSigning()
         // a visible failure in the UI instead of silently leaving the
         // progress bar spinning and the Sign button disabled.
         try {
-        bool prefetched = prefetch ? prefetch() : false;
+            bool prefetched = prefetch ? prefetch() : false;
 
-        if (!prefetched && !trust.trustedLists.empty()) {
-            svc->configure(trust);
-        }
-
-        for (int i = 0; i < jobs.count(); ++i) {
-            const auto& job = jobs.at(i);
-            QFileInfo fi(job.filePath);
-
-            QMetaObject::invokeMethod(
-                guard.data(), [guard, this, i, count = jobs.count(), name = fi.fileName(), totalFiles]() {
-                    if (!guard)
-                        return;
-                    progressLabel->setText(qtTrId("lc-sign-progress").arg(i + 1).arg(count).arg(name));
-                    if (totalFiles > 1) {
-                        progressBar->setRange(0, totalFiles);
-                        progressBar->setValue(i);
-                    } else {
-                        progressBar->setRange(0, 0); // indeterminate for single file
-                    }
-                });
-
-            // Open and validate size atomically on the open handle (avoid
-            // TOCTOU between QFileInfo::size() and QFile::open() — and don't
-            // read 256MB+ into RAM only to discard it).
-            constexpr qint64 maxFileSize = 256 * 1024 * 1024;
-            QFile file(job.filePath);
-            if (!file.open(QIODevice::ReadOnly)) {
-                QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName()]() {
-                    if (!guard)
-                        return;
-                    addResultItem(QStringLiteral("\u2718"), signing::kErrorHex, qtTrId("lc-sign-fail-read").arg(name));
-                });
-                ++failed;
-                continue;
+            if (!prefetched && !trust.trustedLists.empty()) {
+                svc->configure(trust);
             }
-            if (file.size() > maxFileSize) {
-                file.close();
-                QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName()]() {
-                    if (!guard)
-                        return;
-                    addResultItem(QStringLiteral("\u2718"), signing::kErrorHex,
-                                  qtTrId("lc-sign-fail-too-large").arg(name));
-                });
-                ++failed;
-                continue;
-            }
-            const QByteArray data = file.readAll();
-            if (file.error() != QFile::NoError) {
-                file.close();
-                QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName()]() {
-                    if (!guard)
-                        return;
-                    addResultItem(QStringLiteral("\u2718"), signing::kErrorHex, qtTrId("lc-sign-fail-read").arg(name));
-                });
-                ++failed;
-                continue;
-            }
-            file.close();
 
-            // Build request
-            libresign::SigningRequest request;
-            request.document = std::vector<uint8_t>(data.begin(), data.end());
-            request.fileName = fi.fileName().toStdString();
-            request.format = job.format;
-            request.packaging = job.packaging;
-            request.level = level;
-            if (!tsa.empty())
-                request.tsa.url = tsa;
-            if (job.format == libresign::SignatureFormat::PAdES) {
-                // Refresh the timestamp in the visual signature text so each
-                // file gets the actual signing time rather than the stale
-                // timestamp captured when the user entered the sign page.
-                if (visual.enabled && !visual.text.empty()) {
-                    QString text = QString::fromStdString(visual.text);
-                    static const QRegularExpression dateRe(
-                        QStringLiteral("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"));
-                    text.replace(dateRe,
-                                 QDateTime::currentDateTime().toString(
-                                     QStringLiteral("yyyy-MM-dd HH:mm:ss")));
-                    visual.text = text.toStdString();
-                }
-                request.visual = visual;
-            }
-#ifdef LIBRESCRS_TESTING
-            // Allow signing with expired certificates (test builds only)
-            if (qEnvironmentVariableIsSet("LIBRESCRS_ALLOW_EXPIRED_CERT"))
-                request.allowExpiredCertificate = true;
-#endif
+            for (int i = 0; i < jobs.count(); ++i) {
+                const auto& job = jobs.at(i);
+                QFileInfo fi(job.filePath);
 
-            // Sign
-            auto result = svc->sign(request, pkcs11Path.toStdString(), pinBuffer, keyAlias);
-
-            if (result.success) {
-                QFile outFile(job.outputPath);
-                const qint64 expectedBytes = static_cast<qint64>(result.signedDocument.size());
-                bool wroteOk = false;
-                if (outFile.open(QIODevice::WriteOnly)) {
-                    const qint64 written = outFile.write(
-                        reinterpret_cast<const char*>(result.signedDocument.data()), expectedBytes);
-                    // Treat partial write or any QFile error as failure so we
-                    // don't report a corrupt signed file as success.
-                    wroteOk = (written == expectedBytes && outFile.error() == QFile::NoError);
-                    outFile.close();
-                    if (!wroteOk) {
-                        // Best-effort cleanup of the truncated/garbage file.
-                        outFile.remove();
-                    }
-                }
-                if (wroteOk) {
-                    QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName(),
-                                                             outName = QFileInfo(job.outputPath).fileName()]() {
+                QMetaObject::invokeMethod(
+                    guard.data(), [guard, this, i, count = jobs.count(), name = fi.fileName(), totalFiles]() {
                         if (!guard)
                             return;
-                        addResultItem(QStringLiteral("\u2714"), signing::kSuccessHex,
-                                      qtTrId("lc-sign-ok").arg(name, outName));
+                        progressLabel->setText(qtTrId("lc-sign-progress").arg(i + 1).arg(count).arg(name));
+                        if (totalFiles > 1) {
+                            progressBar->setRange(0, totalFiles);
+                            progressBar->setValue(i);
+                        } else {
+                            progressBar->setRange(0, 0); // indeterminate for single file
+                        }
                     });
-                    ++succeeded;
-                } else {
+
+                // Open and validate size atomically on the open handle (avoid
+                // TOCTOU between QFileInfo::size() and QFile::open() — and don't
+                // read 256MB+ into RAM only to discard it).
+                constexpr qint64 maxFileSize = 256 * 1024 * 1024;
+                QFile file(job.filePath);
+                if (!file.open(QIODevice::ReadOnly)) {
                     QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName()]() {
                         if (!guard)
                             return;
                         addResultItem(QStringLiteral("\u2718"), signing::kErrorHex,
-                                      qtTrId("lc-sign-fail-write").arg(name));
+                                      qtTrId("lc-sign-fail-read").arg(name));
+                    });
+                    ++failed;
+                    continue;
+                }
+                if (file.size() > maxFileSize) {
+                    file.close();
+                    QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName()]() {
+                        if (!guard)
+                            return;
+                        addResultItem(QStringLiteral("\u2718"), signing::kErrorHex,
+                                      qtTrId("lc-sign-fail-too-large").arg(name));
+                    });
+                    ++failed;
+                    continue;
+                }
+                const QByteArray data = file.readAll();
+                if (file.error() != QFile::NoError) {
+                    file.close();
+                    QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName()]() {
+                        if (!guard)
+                            return;
+                        addResultItem(QStringLiteral("\u2718"), signing::kErrorHex,
+                                      qtTrId("lc-sign-fail-read").arg(name));
+                    });
+                    ++failed;
+                    continue;
+                }
+                file.close();
+
+                // Build request
+                libresign::SigningRequest request;
+                request.document = std::vector<uint8_t>(data.begin(), data.end());
+                request.fileName = fi.fileName().toStdString();
+                request.format = job.format;
+                request.packaging = job.packaging;
+                request.level = level;
+                if (!tsa.empty())
+                    request.tsa.url = tsa;
+                if (job.format == libresign::SignatureFormat::PAdES) {
+                    // Refresh the timestamp in the visual signature text so each
+                    // file gets the actual signing time rather than the stale
+                    // timestamp captured when the user entered the sign page.
+                    if (visual.enabled && !visual.text.empty()) {
+                        QString text = QString::fromStdString(visual.text);
+                        static const QRegularExpression dateRe(
+                            QStringLiteral("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"));
+                        text.replace(dateRe,
+                                     QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss")));
+                        visual.text = text.toStdString();
+                    }
+                    request.visual = visual;
+                }
+#ifdef LIBRESCRS_TESTING
+                // Allow signing with expired certificates (test builds only)
+                if (qEnvironmentVariableIsSet("LIBRESCRS_ALLOW_EXPIRED_CERT"))
+                    request.allowExpiredCertificate = true;
+#endif
+
+                // Sign
+                auto result = svc->sign(request, pkcs11Path.toStdString(), pinBuffer, keyAlias);
+
+                if (result.success) {
+                    QFile outFile(job.outputPath);
+                    const qint64 expectedBytes = static_cast<qint64>(result.signedDocument.size());
+                    bool wroteOk = false;
+                    if (outFile.open(QIODevice::WriteOnly)) {
+                        const qint64 written =
+                            outFile.write(reinterpret_cast<const char*>(result.signedDocument.data()), expectedBytes);
+                        // Treat partial write or any QFile error as failure so we
+                        // don't report a corrupt signed file as success.
+                        wroteOk = (written == expectedBytes && outFile.error() == QFile::NoError);
+                        outFile.close();
+                        if (!wroteOk) {
+                            // Best-effort cleanup of the truncated/garbage file.
+                            outFile.remove();
+                        }
+                    }
+                    if (wroteOk) {
+                        QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName(),
+                                                                 outName = QFileInfo(job.outputPath).fileName()]() {
+                            if (!guard)
+                                return;
+                            addResultItem(QStringLiteral("\u2714"), signing::kSuccessHex,
+                                          qtTrId("lc-sign-ok").arg(name, outName));
+                        });
+                        ++succeeded;
+                    } else {
+                        QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName()]() {
+                            if (!guard)
+                                return;
+                            addResultItem(QStringLiteral("\u2718"), signing::kErrorHex,
+                                          qtTrId("lc-sign-fail-write").arg(name));
+                        });
+                        ++failed;
+                    }
+                } else {
+                    QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName(),
+                                                             err = QString::fromStdString(result.errorMessage)]() {
+                        if (!guard)
+                            return;
+                        addResultItem(QStringLiteral("\u2718"), signing::kErrorHex,
+                                      qtTrId("lc-sign-fail-sign").arg(name, err));
                     });
                     ++failed;
                 }
-            } else {
-                QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName(),
-                                                         err = QString::fromStdString(result.errorMessage)]() {
-                    if (!guard)
-                        return;
-                    addResultItem(QStringLiteral("\u2718"), signing::kErrorHex,
-                                  qtTrId("lc-sign-fail-sign").arg(name, err));
-                });
-                ++failed;
             }
-        }
 
         } catch (const std::exception& e) {
             // Count any jobs we didn't reach as failed, and show the error
@@ -623,8 +623,7 @@ void SignPage::startSigning()
                 if (!guard)
                     return;
                 //% "Unknown signing error"
-                addResultItem(QStringLiteral("\u2718"), signing::kErrorHex,
-                              qtTrId("lc-sign-unknown-error"));
+                addResultItem(QStringLiteral("\u2718"), signing::kErrorHex, qtTrId("lc-sign-unknown-error"));
             });
         }
 

@@ -90,6 +90,8 @@ GUI_PLUGIN_DIR="$BUILD_DIR/gui-plugins"
 PKCS11_DYLIB="$BUILD_DIR/lib/pkcs11/librescrs-pkcs11.dylib"
 if [[ -f "$PKCS11_DYLIB" ]]; then
     echo "Copying PKCS#11 module..."
+    # Frameworks/ is created later by macdeployqt; pre-create so we can stage here first.
+    mkdir -p "$APP_STAGING/Contents/Frameworks"
     cp "$PKCS11_DYLIB" "$APP_STAGING/Contents/Frameworks/"
     echo "  $(basename "$PKCS11_DYLIB")"
 else

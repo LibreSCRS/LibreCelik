@@ -273,7 +273,9 @@ if [[ -f "$PKCS11_SO" ]]; then
     cp "$PKCS11_SO" "$APPDIR/usr/lib/"
     echo "  $(basename "$PKCS11_SO")"
 else
-    echo "WARNING: PKCS#11 module not found at $PKCS11_SO (signing will not work)"
+    echo "ERROR: PKCS#11 module not found at $PKCS11_SO — signing would not work."
+    echo "       Ensure LibreMiddleware builds librescrs-pkcs11 with LIBRARY_OUTPUT_DIRECTORY set to \${CMAKE_BINARY_DIR}/lib/pkcs11."
+    exit 1
 fi
 
 # --- DSS signing bundle (JRE + JAR) ---

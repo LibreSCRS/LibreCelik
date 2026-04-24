@@ -99,20 +99,22 @@ SignPage::SignPage(QWidget* parent) : QWidget(parent)
     layout->addWidget(canRow);
 
     // --- PIN entry ---
-    auto* pinRow = new QHBoxLayout;
+    pinRow = new QWidget(this);
+    auto* pinRowLayout = new QHBoxLayout(pinRow);
+    pinRowLayout->setContentsMargins(0, 0, 0, 0);
     //% "PIN:"
-    pinLabel = new QLabel(qtTrId("lc-sign-pin-label"), this);
-    pinRow->addWidget(pinLabel);
+    pinLabel = new QLabel(qtTrId("lc-sign-pin-label"), pinRow);
+    pinRowLayout->addWidget(pinLabel);
 
-    pinEdit = new QLineEdit(this);
+    pinEdit = new QLineEdit(pinRow);
     pinEdit->setEchoMode(QLineEdit::Password);
     pinEdit->setMaximumWidth(160);
     pinEdit->setMaxLength(256);
     pinEdit->setAttribute(Qt::WA_InputMethodEnabled, false);
     iconutils::addToggleVisibilityAction(this, pinEdit);
-    pinRow->addWidget(pinEdit);
-    pinRow->addStretch();
-    layout->addLayout(pinRow);
+    pinRowLayout->addWidget(pinEdit);
+    pinRowLayout->addStretch();
+    layout->addWidget(pinRow);
 
     layout->addSpacing(10);
 
@@ -277,6 +279,7 @@ void SignPage::configure(const Config& cfg)
     filesValueLabel->setText(QString::number(cfg.fileInfos.count()));
     levelValueLabel->setText(QString(cfg.level).replace(QLatin1Char('_'), QLatin1Char('-')));
 
+    pinRow->setVisible(true);
     pinEdit->setEnabled(true);
     progressWidget->setVisible(false);
     progressLabel->clear();
@@ -379,17 +382,13 @@ void SignPage::startSigning()
     signingInProgress = true;
     emit signingStarted();
 
-    pinEdit->setEnabled(false);
-    progressWidget->setVisible(true);
-    progressBar->setRange(0, 0); // indeterminate
-    progressLabel->setText(qtTrId("lc-sign-preparing"));
-    resultsList->setVisible(true);
-
-    const int totalFiles = fileInfos.count();
-
-    const QString pkcs11Path = signing::findPkcs11Module();
-
-    // Build PIN buffer using smartcard::SecureBuffer (RAII zeroization).
+    // Build PIN buffer using smartcard::SecureBuffer (RAII zeroization)
+    // BEFORE hiding the input rows. canRow->isVisible() is the CL-reader
+    // gate for the CAN:PIN path; hiding the row first would short-circuit
+    // the check and send only the raw PIN, breaking contactless signing.
+    // Moving this read up also shortens the window PIN material lives
+    // inside the QLineEdit's QString storage.
+    //
     // Intermediate std::strings from QString::toStdString() are explicitly
     // cleansed before they leave scope so PIN material doesn't leak through
     // the QString → std::string → SecureBuffer conversion path.
@@ -415,6 +414,21 @@ void SignPage::startSigning()
         pinBuffer = smartcard::SecureBuffer(pinTmp);
         OPENSSL_cleanse(pinTmp.data(), pinTmp.size());
     }
+
+    // PIN and CAN values are now safely in SecureBuffer. Hide the input
+    // rows so the progress + results area owns the bottom half of the
+    // page; the widgets have no further role during signing or on the
+    // completion screen.
+    pinRow->setVisible(false);
+    canRow->setVisible(false);
+    progressWidget->setVisible(true);
+    progressBar->setRange(0, 0); // indeterminate
+    progressLabel->setText(qtTrId("lc-sign-preparing"));
+    resultsList->setVisible(true);
+
+    const int totalFiles = fileInfos.count();
+
+    const QString pkcs11Path = signing::findPkcs11Module();
     const std::string keyAlias = certificate.label;
     const libresign::SignatureLevel level = parseLevel(sigLevel);
 

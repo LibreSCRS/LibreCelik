@@ -16,8 +16,8 @@
         <translation>&lt;b&gt;LibreMiddleware&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html&quot;&gt;LGPL-2.1-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt;</translation>
     </message>
     <message id="lc-main-about-donate">
-        <source>♥ Support this project — &lt;a href=&quot;https://opencollective.com/librescrs&quot;&gt;opencollective.com/librescrs&lt;/a&gt;</source>
-        <translation>♥ Support this project — &lt;a href=&quot;https://opencollective.com/librescrs&quot;&gt;opencollective.com/librescrs&lt;/a&gt;</translation>
+        <source>♥ Support this project — &lt;a href=&quot;https://librescrs.github.io/donate&quot;&gt;librescrs.github.io/donate&lt;/a&gt;</source>
+        <translation>♥ Support this project — &lt;a href=&quot;https://librescrs.github.io/donate&quot;&gt;librescrs.github.io/donate&lt;/a&gt;</translation>
     </message>
     <message id="lc-error-auth-failed">
         <source>Authentication failed</source>

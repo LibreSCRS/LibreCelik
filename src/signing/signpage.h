@@ -90,6 +90,7 @@ private:
     QLabel* levelHeaderLabel = nullptr;
     QLabel* levelValueLabel = nullptr;
 
+    QWidget* pinRow = nullptr;
     QLabel* pinLabel = nullptr;
     QLineEdit* pinEdit = nullptr;
 

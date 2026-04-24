@@ -110,7 +110,7 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent)
     aboutLayout->addWidget(donateButton, 0, Qt::AlignCenter);
 
     connect(donateButton, &QPushButton::clicked, this,
-            [] { QDesktopServices::openUrl(QUrl(QStringLiteral("https://opencollective.com/librescrs"))); });
+            [] { QDesktopServices::openUrl(QUrl(QStringLiteral("https://librescrs.github.io/donate"))); });
 
     aboutLayout->addStretch();
     tabs->addTab(aboutTab, QString());

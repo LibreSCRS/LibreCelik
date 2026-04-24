@@ -22,6 +22,7 @@ QString findPkcs11Module()
     const QStringList searchPaths = {
         appDir.filePath(moduleName),
         appDir.filePath(QStringLiteral("../lib/") + moduleName),
+        appDir.filePath(QStringLiteral("../lib/pkcs11/") + moduleName),
         appDir.filePath(QStringLiteral("../Frameworks/") + moduleName),
         appDir.filePath(QStringLiteral("../_deps/libremiddleware-build/lib/pkcs11/") + moduleName),
         appDir.filePath(QStringLiteral("../../LibreMiddleware/build/lib/pkcs11/") + moduleName),

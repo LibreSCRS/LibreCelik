@@ -38,7 +38,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     // href=\"https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html\">LGPL-2.1-or-later</a> :: <a
     // href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a>"
     QT_TRID_NOOP("lc-main-about-libremiddleware");
-    //% "♥ Support this project — <a href=\"https://opencollective.com/librescrs\">opencollective.com/librescrs</a>"
+    //% "♥ Support this project — <a href=\"https://librescrs.github.io/donate\">librescrs.github.io/donate</a>"
     QT_TRID_NOOP("lc-main-about-donate");
 
     // --- about dialog ---

@@ -165,10 +165,16 @@ libresign::VisualSignatureParams SignaturePlacementPage::visualParams() const
         const QSizeF pageSize = preview->pagePointSize();
         params.page = preview->currentPage() + 1; // DSS uses 1-based
         params.x = static_cast<float>(rect.x());
-        // Convert from PDF coords (origin bottom-left) to DSS coords (origin top-left)
-        params.y = static_cast<float>(pageSize.height() - rect.y() - rect.height());
+        // signatureRect() is stored in PDF coords (origin bottom-left) and the
+        // native PAdES module writes params.x/y straight into the /Rect field,
+        // which is also in PDF coords. Pass through unchanged. A historical
+        // y-flip here converted to DSS's top-left origin; it caused a double
+        // transform when the DSS backend was retired and the visual signature
+        // always rendered mirrored vertically.
+        params.y = static_cast<float>(rect.y());
         params.width = static_cast<float>(rect.width());
         params.height = static_cast<float>(rect.height());
+        (void)pageSize;
         params.signerName = currentSignerName.toStdString();
         params.reason = reasonEdit->text().trimmed().toStdString();
         params.location = locationEdit->text().trimmed().toStdString();

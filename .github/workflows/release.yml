@@ -36,7 +36,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build patchelf
+          sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build python3-jsonschema patchelf
 
       - name: Install Qt 6.10
         uses: jurplel/install-qt-action@v4
@@ -143,7 +143,12 @@ jobs:
           fetch-depth: 0
 
       - name: Install build tools
-        run: brew install ninja
+        run: |
+          brew install ninja
+          # LibreMiddleware (fetched via FetchContent) runs
+          # manifest2header.py at configure time; that script hard-fails
+          # without jsonschema.
+          python3 -m pip install --break-system-packages --user jsonschema
 
       - name: Install Qt 6.10
         uses: jurplel/install-qt-action@v4

@@ -47,6 +47,13 @@ jobs:
           modules: 'qtpdf'
           cache: true
 
+      - name: Install jsonschema into Qt's Python
+        # aqtinstall puts its own Python on PATH; the apt-installed
+        # python3-jsonschema package is invisible to it. Install
+        # jsonschema again via pip targeting the post-Qt-setup
+        # `python3` so manifest2header.py codegen succeeds.
+        run: python3 -m pip install --break-system-packages --user jsonschema
+
       - name: Configure (Release)
         # Release matches what users receive — same `-O2 -DNDEBUG` code
         # path runs in production. Debug coverage lives in the developer
@@ -77,12 +84,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install build tools
-        run: |
-          brew install ninja
-          # LibreMiddleware (fetched via FetchContent) runs
-          # manifest2header.py at configure time; that script hard-fails
-          # without jsonschema.
-          python3 -m pip install --break-system-packages --user jsonschema
+        run: brew install ninja
 
       - name: Install Qt 6.10
         uses: jurplel/install-qt-action@v4
@@ -93,6 +95,12 @@ jobs:
           arch: clang_64
           modules: 'qtpdf'
           cache: true
+
+      - name: Install jsonschema into Qt's Python
+        # aqtinstall puts its own Python on PATH; install jsonschema
+        # AFTER Qt setup so it lands in the python3 that cmake will
+        # invoke for manifest2header.py codegen.
+        run: python3 -m pip install --break-system-packages --user jsonschema
 
       - name: Configure (Release)
         # Both Linux and macOS CI build Release — matches what users

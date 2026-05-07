@@ -42,6 +42,9 @@ jobs:
           modules: 'qtpdf'
           cache: true
 
+      - name: Install jsonschema into Qt's Python
+        run: python3 -m pip install --break-system-packages --user jsonschema
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:

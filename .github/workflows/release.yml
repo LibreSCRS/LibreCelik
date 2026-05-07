@@ -48,6 +48,9 @@ jobs:
           modules: 'qtpdf'
           cache: true
 
+      - name: Install jsonschema into Qt's Python
+        run: python3 -m pip install --break-system-packages --user jsonschema
+
       - name: Build JasPer and qtimageformats for JPEG2000 support
         run: |
           # JasPer is not in Ubuntu repos; build from source
@@ -143,12 +146,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install build tools
-        run: |
-          brew install ninja
-          # LibreMiddleware (fetched via FetchContent) runs
-          # manifest2header.py at configure time; that script hard-fails
-          # without jsonschema.
-          python3 -m pip install --break-system-packages --user jsonschema
+        run: brew install ninja
 
       - name: Install Qt 6.10
         uses: jurplel/install-qt-action@v4
@@ -159,6 +157,12 @@ jobs:
           arch: clang_64
           modules: 'qtimageformats qtpdf'
           cache: true
+
+      - name: Install jsonschema into Qt's Python
+        # aqtinstall puts its own Python on PATH; install jsonschema
+        # AFTER Qt setup so it lands in the python3 that cmake will
+        # invoke for manifest2header.py codegen.
+        run: python3 -m pip install --break-system-packages --user jsonschema
 
       - name: Configure
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"

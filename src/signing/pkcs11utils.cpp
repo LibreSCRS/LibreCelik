@@ -26,9 +26,11 @@ QString findPkcs11Module()
         appDir.filePath(QStringLiteral("../Frameworks/") + moduleName),
         appDir.filePath(QStringLiteral("../_deps/libremiddleware-build/lib/pkcs11/") + moduleName),
         appDir.filePath(QStringLiteral("../../LibreMiddleware/build/lib/pkcs11/") + moduleName),
-#ifdef _WIN32
-        appDir.filePath(QStringLiteral("librescrs-pkcs11.dll")),
-#endif
+        // macOS development bundles: the binary sits at
+        // build/src/LibreCelik.app/Contents/MacOS/, so the in-tree module
+        // at build/lib/pkcs11/ is four parents away. (Deployed .app bundles
+        // get the module copied into Contents/Frameworks/, covered above.)
+        appDir.filePath(QStringLiteral("../../../../lib/pkcs11/") + moduleName),
     };
 
     for (const auto& path : searchPaths) {

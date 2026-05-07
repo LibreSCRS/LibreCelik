@@ -47,8 +47,14 @@ jobs:
           modules: 'qtpdf'
           cache: true
 
-      - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -G Ninja
+      - name: Configure (Release)
+        # Release matches what users receive — same `-O2 -DNDEBUG` code
+        # path runs in production. Debug coverage lives in the developer
+        # workflow; the CI gate exists to catch regressions in the
+        # shipped configuration. LM is built transitively via FetchContent
+        # in Release too, giving consumer-side Release cross-check of the
+        # LM 4.0 surface.
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
 
       - name: Build
         env:
@@ -83,8 +89,10 @@ jobs:
           modules: 'qtpdf'
           cache: true
 
-      - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -G Ninja
+      - name: Configure (Release)
+        # Both Linux and macOS CI build Release — matches what users
+        # receive. Debug coverage lives in the developer workflow.
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
 
       - name: Build
         run: cmake --build build

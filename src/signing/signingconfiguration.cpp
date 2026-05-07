@@ -50,7 +50,15 @@ LibreSCRS::Trust::TrustConfig SigningConfiguration::makeTrustConfig() const
         const QString xdg = QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation);
         cacheDir = xdg + QStringLiteral("/librescrs/tsl");
     }
-    trust.cacheDirectory = std::filesystem::path(cacheDir.toStdString());
+    auto cachePath = std::filesystem::path(cacheDir.toStdString());
+    // TrustStoreService::create rejects a TrustConfig whose cacheDirectory
+    // does not yet exist — that contract puts the burden of mkdir on the
+    // caller. The first LC startup on a fresh user profile (and every CI
+    // run, which always starts from a clean $XDG_CACHE_HOME) hits this,
+    // so create the directory eagerly here.
+    std::error_code ec;
+    std::filesystem::create_directories(cachePath, ec);
+    trust.cacheDirectory = std::move(cachePath);
 
     return trust;
 }

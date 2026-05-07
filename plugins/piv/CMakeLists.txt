@@ -24,7 +24,7 @@ target_include_directories(piv-gui-plugin PRIVATE
 )
 target_link_libraries(piv-gui-plugin PRIVATE
     Qt6::Widgets
-    CardPlugin
+    LibreSCRS::Plugin
     LibreCelikPrinting
 )
 set_target_properties(piv-gui-plugin PROPERTIES

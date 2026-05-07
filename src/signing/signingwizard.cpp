@@ -9,20 +9,27 @@
 #include "signpage.h"
 #include "wizardheaderwidget.h"
 
-#include <libresign/signing_service.h>
+#include <LibreSCRS/Signing/SigningService.h>
+#include <LibreSCRS/Signing/VisualSignatureParams.h>
 
 #include <QCloseEvent>
 #include <QEvent>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QStackedWidget>
+#include <QtGlobal>
 #include <QVBoxLayout>
-#include <QtConcurrent/QtConcurrentRun>
 
-SigningWizard::SigningWizard(const plugin::CertificateData& cert, const std::string& readerName,
-                             libresign::SigningService* signingService, QWidget* parent)
-    : QDialog(parent), certificate(cert), readerName(readerName), signingService(signingService)
+SigningWizard::SigningWizard(const LibreSCRS::Plugin::CertificateData& cert, const std::string& readerName,
+                             std::shared_ptr<LibreSCRS::Signing::SigningService> service,
+                             std::shared_ptr<LibreSCRS::Plugin::CardPlugin> plugin,
+                             std::shared_ptr<LibreSCRS::SmartCard::CardSession> cardSession, QWidget* parent)
+    : QDialog(parent), certificate(cert), readerName(readerName), signingService(std::move(service)),
+      session(std::move(cardSession)), cardPlugin(std::move(plugin))
 {
+    Q_ASSERT(cardPlugin != nullptr);
+    Q_ASSERT(session != nullptr);
+
     setWindowTitle(qtTrId("lc-sign-wizard-title").arg(certificateCN()));
     setMinimumSize(600, 450);
     resize(700, 550);
@@ -38,7 +45,6 @@ SigningWizard::SigningWizard(const plugin::CertificateData& cert, const std::str
     placementPage = new SignaturePlacementPage(this);
     signPage = new SignPage(this);
     signPage->setSigningService(signingService);
-    signPage->setPrefetchCallback([this]() { return waitForPrefetch(); });
 
     stack = new QStackedWidget(this);
     stack->addWidget(filePage);      // index 0
@@ -94,41 +100,7 @@ SigningWizard::SigningWizard(const plugin::CertificateData& cert, const std::str
     updateButtons();
 }
 
-SigningWizard::~SigningWizard()
-{
-    // The prefetchFuture lambda captures a raw pointer to signingService.
-    // We must wait for it to finish to prevent use-after-free if the service
-    // is destroyed shortly after the wizard. The wait is bounded by the
-    // startup timeout (typically a few seconds).
-    if (prefetchFuture.isValid() && !prefetchFuture.isFinished())
-        prefetchFuture.waitForFinished();
-}
-
-void SigningWizard::setTrustConfig(const libresign::TrustConfig& config)
-{
-    signPage->setTrustConfig(config);
-
-    // Start DSS service + trust config in background while user fills in wizard pages.
-    // By the time user clicks Sign, the service is already warm.
-    // Skip if the service is already running (e.g., from a previous wizard).
-    if (signingService && !signingService->isAvailable()) {
-        prefetchFuture = QtConcurrent::run([svc = signingService, trust = config]() -> bool {
-            if (!trust.trustedLists.empty())
-                return svc->configure(trust);
-            return svc->isAvailable();
-        });
-    }
-}
-
-bool SigningWizard::waitForPrefetch()
-{
-    if (!prefetchFuture.isValid())
-        return false;
-    prefetchFuture.waitForFinished();
-    if (prefetchFuture.isCanceled())
-        return false;
-    return prefetchFuture.result();
-}
+SigningWizard::~SigningWizard() = default;
 
 void SigningWizard::changeEvent(QEvent* event)
 {
@@ -179,26 +151,29 @@ void SigningWizard::goNext()
                 buildFileInfoList(),
                 filePage->signatureLevel(),
                 filePage->outputFolder(),
-                libresign::VisualSignatureParams{},
+                std::nullopt,
                 filePage->tsaUrl().toStdString(),
+                cardPlugin,
+                session,
             });
             stack->setCurrentIndex(2);
         }
     } else if (current == 1) {
         // Placement → Sign
         placementPage->saveSettings();
-        libresign::VisualSignatureParams visual;
-        if (placementPage->isVisualSignatureEnabled()) {
+        std::optional<LibreSCRS::Signing::VisualSignatureParams> visual;
+        if (placementPage->isVisualSignatureEnabled())
             visual = placementPage->visualParams();
-        }
         signPage->configure(SignPage::Config{
             certificate,
             readerName,
             buildFileInfoList(),
             filePage->signatureLevel(),
             filePage->outputFolder(),
-            visual,
+            std::move(visual),
             filePage->tsaUrl().toStdString(),
+            cardPlugin,
+            session,
         });
         stack->setCurrentIndex(2);
     } else if (current == 2) {

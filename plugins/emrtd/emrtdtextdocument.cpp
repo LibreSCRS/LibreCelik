@@ -5,11 +5,11 @@
 #include <QDate>
 #include "emrtdtextdocument.h"
 #include <plugin/carddatautils.h>
-#include <plugin/security_check.h>
+#include <LibreSCRS/Plugin/SecurityCheck.h>
 
-using plugin::getFieldValue;
+using LibreSCRS::Plugin::getFieldValue;
 
-EMRTDTextDocument::EMRTDTextDocument(const plugin::CardData& cardData, QString documentPath, QString cssPath)
+EMRTDTextDocument::EMRTDTextDocument(const LibreSCRS::Plugin::CardData& cardData, QString documentPath, QString cssPath)
 {
     if (documentPath.isEmpty())
         documentPath = QStringLiteral(":/html/emrtdcard.html");
@@ -78,11 +78,11 @@ void EMRTDTextDocument::translateDocumentData(QString& data) const
     data.replace("${contact_address}", qtTrId("lc-emrtd-address"));
 }
 
-void EMRTDTextDocument::prepareDocumentData(QString& html, const plugin::CardData& cardData) const
+void EMRTDTextDocument::prepareDocumentData(QString& html, const LibreSCRS::Plugin::CardData& cardData) const
 {
     // Security status — parse from security_status group
-    const auto* secGroup = cardData.findGroup("security_status");
-    if (secGroup) {
+    if (auto secIdx = cardData.findGroup("security_status")) {
+        const auto& secGroup = cardData.groupAt(*secIdx);
         auto statusColor = [](const QString& statusStr) -> QString {
             if (statusStr == "PASSED")
                 return QStringLiteral("#4CAF50");
@@ -104,9 +104,9 @@ void EMRTDTextDocument::prepareDocumentData(QString& html, const plugin::CardDat
             return qtTrId("lc-emrtd-security-not-performed");
         };
 
-        auto integrityStr = getFieldValue(secGroup, "overall_integrity");
-        auto authenticityStr = getFieldValue(secGroup, "overall_authenticity");
-        auto genuinenessStr = getFieldValue(secGroup, "overall_genuineness");
+        auto integrityStr = getFieldValue(&secGroup, "overall_integrity");
+        auto authenticityStr = getFieldValue(&secGroup, "overall_authenticity");
+        auto genuinenessStr = getFieldValue(&secGroup, "overall_genuineness");
 
         html.replace("${security_integrity_color}", statusColor(integrityStr));
         html.replace("${security_integrity_value}", statusLabel(integrityStr));
@@ -133,65 +133,76 @@ void EMRTDTextDocument::prepareDocumentData(QString& html, const plugin::CardDat
     html.replace("${personal_number_value}", getPreparedValue(getFieldValue(cardData, "personal_number")));
 
     // Photo — raw bytes to base64 data URI
-    const auto* photoField = cardData.findField("photo");
-    if (photoField && !photoField->value.empty()) {
-        QByteArray raw(reinterpret_cast<const char*>(photoField->value.data()),
-                       static_cast<qsizetype>(photoField->value.size()));
-        QString dataUri = "data:image/png;base64, " + raw.toBase64();
-        html.replace(":/images/user.png", dataUri);
+    if (auto photoIdx = cardData.findField("photo")) {
+        const auto& value = cardData.fieldAt(*photoIdx).value;
+        if (!value.empty()) {
+            QByteArray raw(reinterpret_cast<const char*>(value.data()), static_cast<qsizetype>(value.size()));
+            QString dataUri = "data:image/png;base64, " + raw.toBase64();
+            html.replace(":/images/user.png", dataUri);
+        }
     }
 
     // DG11 — Additional Personal Data (optional)
-    const auto* dg11 = cardData.findGroup("additional");
-    if (dg11) {
-        html.replace("${full_name_value}", getPreparedValue(getFieldValue(dg11, "full_name")));
-        html.replace("${place_of_birth_value}", getPreparedValue(getFieldValue(dg11, "place_of_birth")));
-        html.replace("${address_value}", getPreparedValue(getFieldValue(dg11, "address")));
-        html.replace("${telephone_value}", getPreparedValue(getFieldValue(dg11, "telephone")));
-        html.replace("${profession_value}", getPreparedValue(getFieldValue(dg11, "profession")));
+    if (auto dg11Idx = cardData.findGroup("additional")) {
+        const auto& dg11 = cardData.groupAt(*dg11Idx);
+        html.replace("${full_name_value}", getPreparedValue(getFieldValue(&dg11, "full_name")));
+        html.replace("${place_of_birth_value}", getPreparedValue(getFieldValue(&dg11, "place_of_birth")));
+        html.replace("${address_value}", getPreparedValue(getFieldValue(&dg11, "address")));
+        html.replace("${telephone_value}", getPreparedValue(getFieldValue(&dg11, "telephone")));
+        html.replace("${profession_value}", getPreparedValue(getFieldValue(&dg11, "profession")));
     } else {
         removeConditionalBlock(html, "DG11");
     }
 
     // DG12 — Issuing Information (optional)
-    const auto* dg12 = cardData.findGroup("document_extra");
-    if (dg12) {
-        html.replace("${issuing_authority_value}", getPreparedValue(getFieldValue(dg12, "issuing_authority")));
-        html.replace("${date_of_issue_value}", getPreparedValue(getFieldValue(dg12, "date_of_issue")));
-        html.replace("${endorsements_value}", getPreparedValue(getFieldValue(dg12, "endorsements")));
+    if (auto dg12Idx = cardData.findGroup("document_extra")) {
+        const auto& dg12 = cardData.groupAt(*dg12Idx);
+        html.replace("${issuing_authority_value}", getPreparedValue(getFieldValue(&dg12, "issuing_authority")));
+        html.replace("${date_of_issue_value}", getPreparedValue(getFieldValue(&dg12, "date_of_issue")));
+        html.replace("${endorsements_value}", getPreparedValue(getFieldValue(&dg12, "endorsements")));
     } else {
         removeConditionalBlock(html, "DG12");
     }
 
     // DG5 — Portrait (optional)
-    const auto* portraitGroup = cardData.findGroup("portrait");
-    if (portraitGroup && !portraitGroup->fields.empty() && !portraitGroup->fields[0].value.empty()) {
-        QByteArray portraitRaw(reinterpret_cast<const char*>(portraitGroup->fields[0].value.data()),
-                               static_cast<qsizetype>(portraitGroup->fields[0].value.size()));
-        QString portraitUri = "data:image/png;base64, " + portraitRaw.toBase64();
-        html.replace("${portrait_image}", portraitUri);
-    } else {
+    bool hasPortrait = false;
+    if (auto portraitIdx = cardData.findGroup("portrait")) {
+        const auto& portraitGroup = cardData.groupAt(*portraitIdx);
+        if (!portraitGroup.fields.empty() && !portraitGroup.fields[0].value.empty()) {
+            const auto& value = portraitGroup.fields[0].value;
+            QByteArray portraitRaw(reinterpret_cast<const char*>(value.data()), static_cast<qsizetype>(value.size()));
+            QString portraitUri = "data:image/png;base64, " + portraitRaw.toBase64();
+            html.replace("${portrait_image}", portraitUri);
+            hasPortrait = true;
+        }
+    }
+    if (!hasPortrait) {
         removeConditionalBlock(html, "DG5");
     }
 
     // DG16 — Contacts (optional)
-    const auto* contactsGroup = cardData.findGroup("contacts");
-    if (contactsGroup) {
-        html.replace("${contact_name_value}", getPreparedValue(getFieldValue(contactsGroup, "name")));
-        html.replace("${contact_telephone_value}", getPreparedValue(getFieldValue(contactsGroup, "telephone")));
-        html.replace("${contact_address_value}", getPreparedValue(getFieldValue(contactsGroup, "address")));
+    if (auto contactsIdx = cardData.findGroup("contacts")) {
+        const auto& contactsGroup = cardData.groupAt(*contactsIdx);
+        html.replace("${contact_name_value}", getPreparedValue(getFieldValue(&contactsGroup, "name")));
+        html.replace("${contact_telephone_value}", getPreparedValue(getFieldValue(&contactsGroup, "telephone")));
+        html.replace("${contact_address_value}", getPreparedValue(getFieldValue(&contactsGroup, "address")));
     } else {
         removeConditionalBlock(html, "DG16");
     }
 
     // DG7 — Signature (optional)
-    const auto* sigGroup = cardData.findGroup("signature");
-    if (sigGroup && !sigGroup->fields.empty() && !sigGroup->fields[0].value.empty()) {
-        QByteArray sigRaw(reinterpret_cast<const char*>(sigGroup->fields[0].value.data()),
-                          static_cast<qsizetype>(sigGroup->fields[0].value.size()));
-        QString sigUri = "data:image/png;base64, " + sigRaw.toBase64();
-        html.replace("${signature_image}", sigUri);
-    } else {
+    bool hasSignature = false;
+    if (auto sigIdx = cardData.findGroup("signature")) {
+        const auto& sigGroup = cardData.groupAt(*sigIdx);
+        if (!sigGroup.fields.empty() && !sigGroup.fields[0].value.empty()) {
+            const auto& value = sigGroup.fields[0].value;
+            QByteArray sigRaw(reinterpret_cast<const char*>(value.data()), static_cast<qsizetype>(value.size()));
+            QString sigUri = "data:image/png;base64, " + sigRaw.toBase64();
+            html.replace("${signature_image}", sigUri);
+            hasSignature = true;
+        }
+    }
+    if (!hasSignature) {
         removeConditionalBlock(html, "DG7");
     }
 }

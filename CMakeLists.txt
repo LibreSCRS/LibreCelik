@@ -27,6 +27,7 @@ endif()
 # Apple Clang ships <stop_token> behind an experimental flag.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_compile_options(-fexperimental-library)
+    add_link_options(-fexperimental-library)
 endif()
 
 set(MIDDLEWARE_VERSION 3.0.0)

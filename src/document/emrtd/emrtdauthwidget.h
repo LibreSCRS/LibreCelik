@@ -3,8 +3,9 @@
 
 #pragma once
 
+#include "emrtdcredentials.h"
+
 #include <QEvent>
-#include <QMap>
 #include <QWidget>
 
 class QDateEdit;
@@ -21,7 +22,15 @@ public:
     void setDefaultTab(bool paceSupported);
 
 signals:
-    void credentialsEntered(const QMap<QString, QString>& credentials);
+    /// @brief Emitted on auth-button click with the user-entered CAN/MRZ
+    ///        wrapped in cleansing @ref LibreSCRS::Secure::String storage.
+    /// @note  Connected via @c Qt::QueuedConnection in @c librecelik.cpp;
+    ///        the carrier travels by-value across the queue hop, with
+    ///        Secure::String's copy ctor allocating a fresh cleansed block
+    ///        per copy. The original QLineEdits are cleared immediately
+    ///        after the secure copy is built — read-then-hide ordering per
+    ///        @c feedback_read_then_hide_secrets.md.
+    void credentialsEntered(const EmrtdCredentials& credentials);
 
 protected:
     void changeEvent(QEvent* event) override;

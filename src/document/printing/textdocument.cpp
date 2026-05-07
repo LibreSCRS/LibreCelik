@@ -9,7 +9,7 @@
 
 void TextDocument::print(QPrinter* printer) const
 {
-    qCDebug(libreCelikPrinting) << "Printer page rect: " << printer->pageRect(QPrinter::Unit::Point).size();
+    qCDebug(lcPrinting) << "Printer page rect: " << printer->pageRect(QPrinter::Unit::Point).size();
     QMarginsF margins(15, 15, 15, 15);
     printer->setPageMargins(margins, QPageLayout::Millimeter);
     document.print(printer);
@@ -19,7 +19,7 @@ QString TextDocument::loadFile(const QString& path)
 {
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly)) {
-        qCDebug(libreCelikPrinting) << "File not opened in readonly:" << path;
+        qCDebug(lcPrinting) << "File not opened in readonly:" << path;
         return {};
     }
     return file.readAll();
@@ -35,8 +35,8 @@ void TextDocument::setupDocument(const QString& htmlContent, const QString& cssP
     font.setPointSize(isMacOS() ? MACOS_FONTSIZE : LINUX_FONTSIZE);
     document.setDefaultFont(font);
 
-    qCDebug(libreCelikPrinting) << "Document page size: " << document.pageSize();
-    qCDebug(libreCelikPrinting) << "Page count: " << document.pageCount();
+    qCDebug(lcPrinting) << "Document page size: " << document.pageSize();
+    qCDebug(lcPrinting) << "Page count: " << document.pageCount();
 }
 
 QString TextDocument::getPreparedValue(const QString& data) const

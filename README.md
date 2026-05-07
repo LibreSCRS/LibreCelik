@@ -20,11 +20,36 @@ LibreCelik (Слободни Челик) is a free and open-source smart card re
 - Progressive data reading with streaming display
 - Formatted document printing
 - Multi-PIN support and PIN management
+- Document signing wizard (PAdES, XAdES, CAdES, JAdES, ASiC) with optional
+  TSA timestamping and Trusted-List-driven validation
 - Bilingual interface (English / Serbian Cyrillic)
 
 ## Downloads
 
 Pre-built packages are available on the [Releases](https://github.com/LibreSCRS/LibreCelik/releases) page.
+Releases are signed with cosign keyless against the LibreSCRS GitHub
+Actions identity; verification instructions are on the
+[security page](https://librescrs.github.io/security/).
+
+## Building from source
+
+LibreCelik consumes LibreMiddleware via CMake `FetchContent`. For local
+development, point at a sibling LibreMiddleware checkout:
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release \
+      -DFETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE=/path/to/LibreMiddleware
+cmake --build build -j4
+```
+
+Requires CMake 3.24+, C++23, Qt 6.10+, PC/SC, OpenSSL 3, libcurl, and
+libxml2. Cap parallel jobs to `-j4` to avoid system saturation.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for code-formatting expectations
+(clang-format-21 pin), commit conventions, and the optional pre-commit
+hook.
 
 ## License
 

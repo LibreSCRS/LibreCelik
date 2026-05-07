@@ -3,12 +3,16 @@
 
 #pragma once
 
-#include "opensslhelpers.h"
-
 #include <QDialog>
-#include <plugin/card_plugin.h>
 
+#include <LibreSCRS/Plugin/CardPlugin.h>
+
+#include <memory>
 #include <vector>
+
+namespace LibreSCRS::Trust {
+class TrustStore;
+}
 
 class QComboBox;
 class QStackedWidget;
@@ -17,23 +21,22 @@ class CertificateViewerDlg : public QDialog
 {
     Q_OBJECT
 public:
-    explicit CertificateViewerDlg(const std::vector<plugin::CertificateData>& certs,
-                                  const std::vector<std::string>& certPaths, QWidget* parent = nullptr,
-                                  int initialIndex = 0);
-    ~CertificateViewerDlg() = default;
+    /// @brief Build a viewer dialog for the cards' certificates.
+    /// @param certs        Per-card certificate list (DER + label).
+    /// @param trustStore   Shared trust store used by the chain hierarchy
+    ///                     tab. May be null — the dialog still opens, but
+    ///                     the chain shows "trust unknown".
+    /// @param parent       Optional Qt parent.
+    /// @param initialIndex Which entry of @p certs to focus first.
+    explicit CertificateViewerDlg(const std::vector<LibreSCRS::Plugin::CertificateData>& certs,
+                                  std::shared_ptr<const LibreSCRS::Trust::TrustStore> trustStore,
+                                  QWidget* parent = nullptr, int initialIndex = 0);
+    ~CertificateViewerDlg() override = default;
 
 private:
-    void buildStore(const std::vector<std::string>& certPaths);
-    void buildUI(const std::vector<plugin::CertificateData>& certs);
+    void buildUI(const std::vector<LibreSCRS::Plugin::CertificateData>& certs);
 
-    struct ParsedCert
-    {
-        certutil::X509Ptr x509;
-        QString label;
-    };
-
-    std::vector<ParsedCert> parsedCerts;
-    certutil::X509StorePtr store;
+    std::shared_ptr<const LibreSCRS::Trust::TrustStore> trustStore;
     QComboBox* certCombo = nullptr;
     QStackedWidget* stack = nullptr;
 };

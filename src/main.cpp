@@ -3,11 +3,15 @@
 
 #include "librecelik.h"
 #include "config.h"
+#include "signing/pkcs11utils.h"
 #include "smartcard/smartcardreaderlistener.h"
 #include "utils/libreceliklog.h"
 
+#include <LibreSCRS/Secure/String.h>
+
 #include <QApplication>
 #include <QIcon>
+#include <QMetaType>
 
 using namespace std::literals;
 const static char* LOGPATTERN =
@@ -25,16 +29,34 @@ int main(int argc, char* argv[])
     qSetMessagePattern(LOGPATTERN);
     a.setWindowIcon(QIcon(":/images/smartcard-id-512.png"));
 
-    qCInfo(libreSCRSGeneral) << "Starting LibreCelik - Version: " << LIBRECELIK_VERSION;
+    // PIN material flows through Qt signal/slot connections
+    // (notably ChangePinDlg::pinChangeRequested) as Secure::String rather
+    // than QString so that cleanse-on-destruction survives the
+    // Qt::QueuedConnection marshalling. The metatype must be registered
+    // once, before any signal carrying it is connected, otherwise
+    // QueuedConnection invocation aborts.
+    qRegisterMetaType<LibreSCRS::Secure::String>();
+
+    // LibreMiddleware's signing engine resolves the PKCS#11 module via an
+    // exe-relative search at sign() time, but the search list is Linux-only
+    // (it relies on /proc/self/exe). Hand it the LC-resolved path through
+    // the documented LIBRESCRS_PKCS11_MODULE override so macOS dev builds
+    // and packaged .app bundles both pick up the bundled module without
+    // touching LM. Don't overwrite an explicit override the user set.
+    if (!qEnvironmentVariableIsSet("LIBRESCRS_PKCS11_MODULE"))
+        qputenv("LIBRESCRS_PKCS11_MODULE", signing::findPkcs11Module().toUtf8());
+
+    qCInfo(lcGeneral) << "Starting LibreCelik - Version: " << LIBRECELIK_VERSION;
 #if defined(LIBRECELIK_LOCAL_MIDDLEWARE_VERSION) && LIBRECELIK_LOCAL_MIDDLEWARE_VERSION
-    qCInfo(libreSCRSGeneral) << "Using LibreMiddleware - Version: LOCAL";
+    qCInfo(lcGeneral) << "Using LibreMiddleware - Version: LOCAL";
 #else
-    qCInfo(libreSCRSGeneral) << "Using LibreMiddleware - Version: " << LIBRECELIK_MIDDLEWARE_VERSION;
+    qCInfo(lcGeneral) << "Using LibreMiddleware - Version: " << LIBRECELIK_MIDDLEWARE_VERSION;
 #endif
 
-    // Shut down the smart card monitor before QApplication destructs,
-    // to avoid static destruction order issues with the singleton.
-    QObject::connect(&a, &QApplication::aboutToQuit, []() { SmartCardReaderListener::instance().shutdown(); });
+    // SmartCardReaderListener is a Q_GLOBAL_STATIC (see
+    // src/smartcard/smartcardreaderlistener.{h,cpp}) so QApplication tears it
+    // down deterministically before its own destructor runs — no explicit
+    // shutdown handler required.
 
     LibreCelik w;
     w.show();

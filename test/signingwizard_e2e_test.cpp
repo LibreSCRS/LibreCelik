@@ -9,11 +9,14 @@
 #include <signing/signpage.h>
 #include <signing/filedropzone.h>
 
-#include <libresign/signing_service.h>
-#include <libresign/signing_service_factory.h>
-#include <plugin/card_plugin.h>
-#include <plugin/card_plugin_registry.h>
-#include <smartcard/pcsc_connection.h>
+#include <LibreSCRS/Plugin/CardPlugin.h>
+#include <LibreSCRS/Plugin/CardPluginService.h>
+#include <LibreSCRS/Signing/SigningService.h>
+#include <LibreSCRS/Signing/TsaProvider.h>
+#include <LibreSCRS/Trust/TrustConfig.h>
+#include <LibreSCRS/Trust/TrustStoreService.h>
+#include <LibreSCRS/SmartCard/CardSession.h>
+#include <LibreSCRS/SmartCard/MonitorService.h>
 
 #include <QApplication>
 #include <QComboBox>
@@ -27,6 +30,7 @@
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTest>
+#include <QTranslator>
 
 #include <cstdlib>
 #include <filesystem>
@@ -87,7 +91,7 @@ struct ReaderInfo
 {
     std::string readerName;
     std::string cardType;
-    std::vector<plugin::CertificateData> certificates;
+    std::vector<LibreSCRS::Plugin::CertificateData> certificates;
 };
 
 class SigningWizardE2ETest : public ::testing::Test
@@ -100,6 +104,21 @@ protected:
             static char arg0[] = "SigningWizardE2ETests";
             static char* argv[] = {arg0, nullptr};
             app = new QApplication(argc, argv);
+        }
+
+        // Install the LC English translator so qtTrId() returns the source
+        // text (with %1/%2 placeholders) instead of the bare ID. Without
+        // this, signpage strings like `qtTrId("lc-sign-ok").arg(...)` warn
+        // about unfilled args because qtTrId falls back to the literal ID
+        // which has no placeholders.
+        // qt_add_translations binds the :/i18n/ resource only to the main
+        // LibreCelik target, so the test binary has no embedded .qm. Load
+        // the build-output .qm from the filesystem instead.
+        if (!translator) {
+            translator = new QTranslator(app);
+            const QString qmPath = QStringLiteral(LIBRECELIK_QM_DIR);
+            if (translator->load(QStringLiteral("LibreCelik_en"), qmPath))
+                QApplication::installTranslator(translator);
         }
 
         // --- PINs (per-card-type, fallback to generic) ---
@@ -137,10 +156,50 @@ protected:
             return;
         }
 
+        // DSS JAR is retained for the verification oracle only; the signing
+        // backend stays on Native (the default when LIBRESCRS_SIGNING_BACKEND
+        // is unset).
         setenv("LIBRESCRS_DSS_JAR", jarPath.c_str(), 1);
-        sharedSigningService = libresign::createSigningService(libresign::Backend::DSS);
-        if (!sharedSigningService) {
-            suiteSkipReason = "Failed to create DSS signing service";
+
+        // SigningService is constructed once with
+        // trust + TSA and is immutable post-ctor. Build the TL sources here
+        // so runWizardFlow doesn't need to reconfigure.
+        LibreSCRS::Trust::TrustConfig trust;
+        trust.trustedListSources.push_back({"https://www.mit.gov.rs/TrustedList/TSL-RS.xml", false, true});
+        trust.trustedListSources.push_back({"https://ec.europa.eu/tools/lotl/eu-lotl.xml", true, false});
+        auto tslCacheDir = std::filesystem::path(
+            QStandardPaths::writableLocation(QStandardPaths::CacheLocation).toStdString() + "/tsl");
+        // TrustStoreService::create() rejects a non-existent cacheDirectory
+        // with InvalidConfig, so materialise it before passing the path in.
+        // (On a fresh macOS test run the cache root has never been used and
+        // the directory is missing; Linux CI happens to inherit it from
+        // earlier runs.)
+        std::error_code ec;
+        std::filesystem::create_directories(tslCacheDir, ec);
+        trust.cacheDirectory = std::move(tslCacheDir);
+
+        // TSA is required for B-T / B-LT / B-LTA levels; configure a public
+        // one on the shared service. Override via LIBRESCRS_TEST_TSA_URL when
+        // a specific authority is needed. Fallback list matches
+        // signing::defaultTsaUrls() so this test mirrors the wizard's default.
+        std::string tsaUrl;
+        if (const char* envTsa = std::getenv("LIBRESCRS_TEST_TSA_URL"); envTsa && *envTsa)
+            tsaUrl = envTsa;
+        else
+            tsaUrl = "https://timestamp.sectigo.com";
+
+        try {
+            auto trustResult = LibreSCRS::Trust::TrustStoreService::create(std::move(trust));
+            if (!trustResult) {
+                suiteSkipReason = std::string("Failed to create LibreSCRS::Trust::TrustStoreService: ") +
+                                  trustResult.error().userMessage.defaultText;
+                return;
+            }
+            sharedTrustService = *trustResult;
+            sharedSigningService = std::make_shared<LibreSCRS::Signing::SigningService>(
+                sharedTrustService, LibreSCRS::Signing::staticTsa(tsaUrl));
+        } catch (const std::exception& e) {
+            suiteSkipReason = std::string("Failed to create LibreSCRS::Signing::SigningService: ") + e.what();
             return;
         }
 
@@ -150,30 +209,43 @@ protected:
             suiteSkipReason = "PKCS#11 module not found: " + p11;
             return;
         }
+        // SigningService::detectPkcs11Module() searches exe-relative paths and
+        // falls back to bare-name `dlopen`. Apple's dlopen does not pick up
+        // the in-tree `build/lib/pkcs11/` location automatically (the test
+        // exe lives in `build/test/`, and the relative-path search list
+        // doesn't normalise `..` reliably across all macOS versions).
+        // Pin the in-tree build artefact via the documented env-var override
+        // so the wizard flow uses the freshly-built module.
+        setenv("LIBRESCRS_PKCS11_MODULE", p11.c_str(), 1);
 
         // --- Middleware plugins ---
-        sharedPluginRegistry.loadPluginsFromDirectory(MIDDLEWARE_PLUGIN_DIR);
+        sharedPluginRegistry =
+            std::make_unique<LibreSCRS::Plugin::CardPluginService>(std::filesystem::path{MIDDLEWARE_PLUGIN_DIR});
 
         // --- Discover cards in readers ---
-        auto readers = smartcard::PCSCConnection::listReaders();
-        if (readers.empty()) {
+        LibreSCRS::SmartCard::MonitorService monitor;
+        auto readersOpt = monitor.listReaders();
+        if (!readersOpt.has_value() || readersOpt->empty()) {
             suiteSkipReason = "No PC/SC readers found";
             return;
         }
+        const auto& readers = *readersOpt;
 
         for (const auto& readerName : readers) {
             try {
-                smartcard::PCSCConnection conn(readerName);
-                auto atr = conn.getATR();
-                auto candidates = sharedPluginRegistry.findAllCandidates(atr, conn);
+                auto opened = LibreSCRS::SmartCard::CardSession::open(readerName);
+                if (!opened.has_value())
+                    continue;
+                auto session = std::make_shared<LibreSCRS::SmartCard::CardSession>(std::move(*opened));
+                auto candidates = sharedPluginRegistry->findAllCandidates(session->atr(), *session);
                 if (candidates.empty())
                     continue;
 
-                auto* plugin = candidates.front();
-                if (!plugin->supportsPKI())
+                auto plugin = candidates.front();
+                if (!LibreSCRS::Plugin::hasCapability(plugin->capabilities(), LibreSCRS::Plugin::CardCapabilities::PKI))
                     continue;
 
-                auto certs = plugin->readCertificates(conn);
+                auto certs = plugin->readCertificates(*session);
                 if (certs.empty())
                     continue;
 
@@ -190,6 +262,7 @@ protected:
     static void TearDownTestSuite()
     {
         sharedSigningService.reset();
+        sharedTrustService.reset();
     }
 
     void SetUp() override
@@ -226,17 +299,27 @@ protected:
             settings.remove(QStringLiteral("signing/defaultOutputFolder"));
         }
 
-        SigningWizard wizard(card.certificates.front(), card.readerName, sharedSigningService.get());
+        // Trust + TSA are baked into sharedSigningService at SetUpTestSuite
+        // (see  — SigningService is immutable post-ctor).
+        // Nothing to reconfigure per-test.
 
-        // Configure trust for B-T/B-LT/B-LTA levels
-        if (levelIdx > 0) {
-            libresign::TrustConfig trust;
-            trust.trustedLists.push_back({"https://www.mit.gov.rs/TrustedList/TSL-RS.xml", false, true});
-            trust.trustedLists.push_back({"https://ec.europa.eu/tools/lotl/eu-lotl.xml", true, false});
-            trust.cacheDirectory =
-                QStandardPaths::writableLocation(QStandardPaths::CacheLocation).toStdString() + "/tsl";
-            wizard.setTrustConfig(trust);
+        auto wizardOpened = LibreSCRS::SmartCard::CardSession::open(card.readerName);
+        if (!wizardOpened.has_value()) {
+            // Match the pre-v4.0 throw-skip shape: propagate via GTEST_SKIP
+            // rather than ADD_FAILURE since the test is hardware-dependent
+            // and a removed card in the middle of the suite is not a code
+            // defect.
+            ADD_FAILURE() << "Cannot open wizard CardSession for " << card.readerName;
+            return {-1, -1};
         }
+        auto wizardSession = std::make_shared<LibreSCRS::SmartCard::CardSession>(std::move(*wizardOpened));
+        auto candidates = sharedPluginRegistry->findAllCandidates(wizardSession->atr(), *wizardSession);
+        // CardPluginService hands out shared_ptr<CardPlugin> directly — the
+        // SigningWizard shared-ownership contract is satisfied without any
+        // no-op-deleter aliasing hack.
+        auto wizardPlugin = candidates.front();
+        SigningWizard wizard(card.certificates.front(), card.readerName, sharedSigningService, std::move(wizardPlugin),
+                             std::move(wizardSession));
 
         wizard.show();
         QApplication::processEvents();
@@ -346,17 +429,21 @@ protected:
     }
 
     static QApplication* app;
+    static QTranslator* translator;
     static std::map<QString, QString> pinMap; // cardType -> PIN
-    static plugin::CardPluginRegistry sharedPluginRegistry;
-    static std::unique_ptr<libresign::SigningService> sharedSigningService;
+    static std::unique_ptr<LibreSCRS::Plugin::CardPluginService> sharedPluginRegistry;
+    static std::shared_ptr<LibreSCRS::Trust::TrustStoreService> sharedTrustService;
+    static std::shared_ptr<LibreSCRS::Signing::SigningService> sharedSigningService;
     static std::vector<ReaderInfo> sharedCards;
     static std::string suiteSkipReason;
 };
 
 QApplication* SigningWizardE2ETest::app = nullptr;
+QTranslator* SigningWizardE2ETest::translator = nullptr;
 std::map<QString, QString> SigningWizardE2ETest::pinMap;
-plugin::CardPluginRegistry SigningWizardE2ETest::sharedPluginRegistry;
-std::unique_ptr<libresign::SigningService> SigningWizardE2ETest::sharedSigningService;
+std::unique_ptr<LibreSCRS::Plugin::CardPluginService> SigningWizardE2ETest::sharedPluginRegistry;
+std::shared_ptr<LibreSCRS::Trust::TrustStoreService> SigningWizardE2ETest::sharedTrustService;
+std::shared_ptr<LibreSCRS::Signing::SigningService> SigningWizardE2ETest::sharedSigningService;
 std::vector<ReaderInfo> SigningWizardE2ETest::sharedCards;
 std::string SigningWizardE2ETest::suiteSkipReason;
 

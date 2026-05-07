@@ -19,19 +19,18 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-using plugin::getFieldValue;
+using LibreSCRS::Plugin::getFieldValue;
 
-EidWidget::EidWidget(const plugin::CardData& cardData, QWidget* parent) : EidWidget(parent)
+EidWidget::EidWidget(const LibreSCRS::Plugin::CardData& cardData, QWidget* parent) : EidWidget(parent)
 {
     data.cardType = cardData.cardType;
     for (const auto& group : cardData.groups)
         addGroup(group);
     // Non-streaming: verification data may be in "meta" group rather than a
     // separate "verification" group. Apply if streaming didn't handle it.
-    if (personalSection && !data.findGroup("verification")) {
-        const auto* meta = data.findGroup("meta");
-        if (meta)
-            addVerificationBadges(personalSection, meta);
+    if (personalSection && !data.findGroup("verification").has_value()) {
+        if (auto metaIdx = data.findGroup("meta"))
+            addVerificationBadges(personalSection, &data.groupAt(*metaIdx));
     }
 }
 
@@ -41,7 +40,7 @@ EidWidget::EidWidget(QWidget* parent) : plugin_ui::PluginWidgetBase(parent)
     outerLayout->setContentsMargins(0, 0, 0, 0);
 }
 
-void EidWidget::addGroup(const plugin::CardFieldGroup& group)
+void EidWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     data.groups.push_back(group);
 
@@ -124,30 +123,37 @@ void EidWidget::enablePrintButton()
 
 bool EidWidget::isForeigner() const
 {
-    const auto* cardTypeField = data.findField("card_type");
-    return cardTypeField && cardTypeField->asString() == "ForeignerIF2020";
+    auto cardTypeField = data.findField("card_type");
+    if (!cardTypeField)
+        return false;
+    auto text = data.fieldAt(*cardTypeField).textValue();
+    return text.has_value() && *text == "ForeignerIF2020";
 }
 
 QPixmap EidWidget::loadPhoto() const
 {
-    const auto* photoGroup = data.findGroup("photo");
-    if (photoGroup && !photoGroup->fields.empty() && !photoGroup->fields[0].value.empty()) {
-        QPixmap pixmap;
-        pixmap.loadFromData(photoGroup->fields[0].value.data(), static_cast<uint>(photoGroup->fields[0].value.size()));
-        if (!pixmap.isNull())
-            return pixmap;
+    if (auto photoIdx = data.findGroup("photo")) {
+        const auto& photoGroup = data.groupAt(*photoIdx);
+        if (!photoGroup.fields.empty() && !photoGroup.fields[0].value.empty()) {
+            QPixmap pixmap;
+            pixmap.loadFromData(photoGroup.fields[0].value.data(),
+                                static_cast<uint>(photoGroup.fields[0].value.size()));
+            if (!pixmap.isNull())
+                return pixmap;
+        }
     }
     return QPixmap(QStringLiteral(":/images/user.png"));
 }
 
 CollapsibleSection* EidWidget::buildPersonalSection(QWidget* parent) const
 {
-    const auto* personal = data.findGroup("personal");
-    if (!personal) {
+    auto personalOpt = data.findGroup("personal");
+    if (!personalOpt) {
         auto* section = new CollapsibleSection(qtTrId("lc-personal-data-title"), parent);
         section->setCollapsible(false);
         return section;
     }
+    const auto& personal = data.groupAt(*personalOpt);
 
     bool foreigner = isForeigner();
 
@@ -176,17 +182,17 @@ CollapsibleSection* EidWidget::buildPersonalSection(QWidget* parent) const
     }
 
     // Synthetic composite place-of-birth for foreigners
-    plugin::CardFieldGroup modifiedGroup = *personal;
+    LibreSCRS::Plugin::CardFieldGroup modifiedGroup = personal;
     if (foreigner) {
         QStringList pobParts;
-        pobParts << getFieldValue(personal, "place_of_birth") << getFieldValue(personal, "community_of_birth")
-                 << getFieldValue(personal, "state_of_birth");
+        pobParts << getFieldValue(&personal, "place_of_birth") << getFieldValue(&personal, "community_of_birth")
+                 << getFieldValue(&personal, "state_of_birth");
         pobParts.removeAll(QString());
         auto pobValue = pobParts.join(", ").toStdString();
         if (!pobValue.empty()) {
             modifiedGroup.fields.push_back({"place_of_birth_composite",
                                             "Place of Birth",
-                                            plugin::FieldType::Text,
+                                            LibreSCRS::Plugin::FieldType::Text,
                                             {pobValue.begin(), pobValue.end()}});
             translationMap["place_of_birth_composite"] = qtTrId("lc-eid-label-place-of-birth");
         }
@@ -198,7 +204,7 @@ CollapsibleSection* EidWidget::buildPersonalSection(QWidget* parent) const
     return section;
 }
 
-void EidWidget::addVerificationBadges(CollapsibleSection* section, const plugin::CardFieldGroup* source)
+void EidWidget::addVerificationBadges(CollapsibleSection* section, const LibreSCRS::Plugin::CardFieldGroup* source)
 {
     if (!section)
         return;
@@ -271,7 +277,8 @@ void EidWidget::addVerificationBadges(CollapsibleSection* section, const plugin:
 
 CollapsibleSection* EidWidget::buildAddressSection(QWidget* parent) const
 {
-    const auto* addressGroup = data.findGroup("address");
+    auto addressGroupOpt = data.findGroup("address");
+    const LibreSCRS::Plugin::CardFieldGroup* addressGroup = addressGroupOpt ? &data.groupAt(*addressGroupOpt) : nullptr;
 
     // Build address fields with composite assembly (same logic as original)
     auto* section = new CollapsibleSection(
@@ -324,7 +331,8 @@ CollapsibleSection* EidWidget::buildAddressSection(QWidget* parent) const
 
 CollapsibleSection* EidWidget::buildDocumentSection(QWidget* parent) const
 {
-    const auto* docGroup = data.findGroup("document");
+    auto docGroupOpt = data.findGroup("document");
+    const LibreSCRS::Plugin::CardFieldGroup* docGroup = docGroupOpt ? &data.groupAt(*docGroupOpt) : nullptr;
 
     const std::map<std::string, QString> translationMap = {
         {"document_type", qtTrId("lc-eid-label-document-type")},

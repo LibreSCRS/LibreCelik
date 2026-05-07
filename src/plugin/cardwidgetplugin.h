@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <plugin/card_data.h>
+#include <LibreSCRS/Plugin/CardData.h>
 
 #include <QIcon>
 #include <QString>
@@ -29,7 +29,7 @@ public:
 
     // Main widget — receives CardData, returns populated QWidget.
     // Caller takes ownership of the returned widget.
-    virtual QWidget* createWidget(const plugin::CardData& data, QWidget* parent) const = 0;
+    virtual QWidget* createWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent) const = 0;
 
     // Progressive display: create an empty shell widget for incremental population.
     // Returns nullptr if plugin does not support streaming (fallback to createWidget).
@@ -40,7 +40,7 @@ public:
     }
 
     // Progressive display: add a group to an existing widget created by createEmptyWidget.
-    virtual void addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const
+    virtual void addGroup(const LibreSCRS::Plugin::CardFieldGroup& group, QWidget* widget) const
     {
         Q_UNUSED(group);
         Q_UNUSED(widget);
@@ -58,7 +58,7 @@ public:
     {
         return false;
     }
-    virtual void print(const plugin::CardData& data) const
+    virtual void print(const LibreSCRS::Plugin::CardData& data) const
     {
         Q_UNUSED(data);
     }

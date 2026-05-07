@@ -2,29 +2,72 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "certificateviewerwidget.h"
-#include "ui_certificateviewerwidget.h"
-#include "certificatepropertiesmodel.h"
+#include "cert_format.h"
 #include "certificatehierarchymodel.h"
-#include "opensslhelpers.h"
+#include "certificatepropertiesmodel.h"
+#include "ui_certificateviewerwidget.h"
 
-#include <openssl/bio.h>
-#include <openssl/x509.h>
-#include <openssl/x509v3.h>
+#include <LibreSCRS/Auth/ErrorKeys.h>
+#include <LibreSCRS/Certificate/ParsedCertificate.h>
 
 #include <QLineEdit>
 
-CertificateViewerWidget::CertificateViewerWidget(X509* cert, X509_STORE* store, QWidget* parent)
-    : QWidget(parent), ui(new Ui::CertificateViewerWidget)
+namespace lcc = LibreSCRS::Certificate;
+namespace cf = librecelik::cert_format;
+
+namespace {
+
+QString fromStd(const std::string& s)
+{
+    return QString::fromStdString(s);
+}
+
+QString keyUsageString(const lcc::ParsedCertificate& cert)
+{
+    auto ku = cert.keyUsage();
+    if (!ku)
+        return {};
+    return cf::keyUsageToString(*ku);
+}
+
+} // namespace
+
+CertificateViewerWidget::CertificateViewerWidget(std::vector<std::uint8_t> der,
+                                                 std::shared_ptr<const LibreSCRS::Trust::TrustStore> store,
+                                                 QWidget* parent)
+    : QWidget(parent), ui(new Ui::CertificateViewerWidget), leafCertDer(std::move(der)),
+      // Field carries an "uninitialised" ParseError until fromDer() is invoked
+      // below. ParsedCertificate has no public default ctor, so std::expected
+      // cannot itself be default-constructed; we seed an explicit unexpected.
+      parsedCert(std::unexpected{lcc::ParsedCertificate::ParseError{lcc::ParsedCertificate::ParseError::Kind::Invalid,
+                                                                    LibreSCRS::Auth::ErrorKeys::derInvalid(),
+                                                                    std::string{"not yet parsed"}}}),
+      trustStore(std::move(store))
 {
     ui->setupUi(this);
 
-    if (!cert)
+    if (leafCertDer.empty()) {
+        populateUnparseableTab();
         return;
+    }
 
-    populateGeneralTab(cert, store);
+    parsedCert = lcc::ParsedCertificate::fromDer(leafCertDer);
+    if (!parsedCert) {
+        populateUnparseableTab();
+        // Still wire the details model so the user sees the parse-error row
+        // followed by a forensic hex dump of the raw DER bytes.
+        auto* propsModel = new CertificatePropertiesModel(nullptr, std::span<const std::uint8_t>(leafCertDer), this);
+        ui->detailsTreeView->setModel(propsModel);
+        ui->detailsTreeView->expandAll();
+        ui->detailsTreeView->resizeColumnToContents(0);
+        connect(ui->detailsTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this,
+                &CertificateViewerWidget::onDetailsSelectionChanged);
+        return;
+    }
 
-    // Details tab
-    auto* propsModel = new CertificatePropertiesModel(cert, this);
+    populateGeneralTab();
+
+    auto* propsModel = new CertificatePropertiesModel(&*parsedCert, this);
     ui->detailsTreeView->setModel(propsModel);
     ui->detailsTreeView->expandAll();
     ui->detailsTreeView->resizeColumnToContents(0);
@@ -32,22 +75,20 @@ CertificateViewerWidget::CertificateViewerWidget(X509* cert, X509_STORE* store, 
     connect(ui->detailsTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this,
             &CertificateViewerWidget::onDetailsSelectionChanged);
 
-    // Certification Path tab
-    if (store) {
-        auto* hierarchyModel = new CertificateHierarchyModel(cert, store, this);
-        ui->certPathTreeView->setModel(hierarchyModel);
-        ui->certPathTreeView->expandAll();
-        ui->certPathTreeView->resizeColumnToContents(0);
+    auto* hierarchyModel = new CertificateHierarchyModel(&*parsedCert, trustStore, this);
+    ui->certPathTreeView->setModel(hierarchyModel);
+    ui->certPathTreeView->expandAll();
+    ui->certPathTreeView->resizeColumnToContents(0);
 
-        connect(ui->certPathTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this,
-                &CertificateViewerWidget::onCertPathSelectionChanged);
+    connect(ui->certPathTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this,
+            &CertificateViewerWidget::onCertPathSelectionChanged);
 
-        // Select the leaf node (deepest child) and populate summary
-        QModelIndex idx = hierarchyModel->index(0, 0);
-        while (hierarchyModel->rowCount(idx) > 0)
-            idx = hierarchyModel->index(0, 0, idx);
+    // Select the leaf node (deepest child) and populate summary.
+    QModelIndex idx = hierarchyModel->index(0, 0);
+    while (hierarchyModel->rowCount(idx) > 0)
+        idx = hierarchyModel->index(0, 0, idx);
+    if (idx.isValid())
         ui->certPathTreeView->setCurrentIndex(idx);
-    }
 }
 
 CertificateViewerWidget::~CertificateViewerWidget()
@@ -55,94 +96,51 @@ CertificateViewerWidget::~CertificateViewerWidget()
     delete ui;
 }
 
-void CertificateViewerWidget::populateGeneralTab(X509* cert, X509_STORE* store)
+void CertificateViewerWidget::populateGeneralTab()
 {
-    Q_UNUSED(store);
-
-    X509_NAME* subject = X509_get_subject_name(cert);
-    X509_NAME* issuer = X509_get_issuer_name(cert);
+    const auto& cert = *parsedCert;
 
     auto setFieldText = [](QLineEdit* edit, const QString& text) {
         edit->setText(text);
         edit->setCursorPosition(0);
     };
 
-    // Issued To
-    setFieldText(ui->issuedToCNEdit, nameEntryValue(subject, NID_commonName));
-    setFieldText(ui->issuedToOEdit, nameEntryValue(subject, NID_organizationName));
-    setFieldText(ui->issuedToOUEdit, nameEntryValue(subject, NID_organizationalUnitName));
+    const auto subject = cert.subject();
+    const auto issuer = cert.issuer();
 
-    ASN1_INTEGER* serial = X509_get_serialNumber(cert);
-    BIGNUM* bn = ASN1_INTEGER_to_BN(serial, nullptr);
-    if (bn) {
-        char* hex = BN_bn2hex(bn);
-        if (hex) {
-            setFieldText(ui->issuedToSerialEdit, QString::fromLatin1(hex));
-            OPENSSL_free(hex);
-        }
-        BN_free(bn);
-    }
+    setFieldText(ui->issuedToCNEdit, fromStd(subject.commonName()));
+    setFieldText(ui->issuedToOEdit, fromStd(subject.organization()));
+    setFieldText(ui->issuedToOUEdit, fromStd(subject.organizationalUnit()));
+    setFieldText(ui->issuedToSerialEdit, cf::bytesToHex(std::span<const std::uint8_t>(cert.serialNumber())));
 
-    // Issued By
-    setFieldText(ui->issuedByCNEdit, nameEntryValue(issuer, NID_commonName));
-    setFieldText(ui->issuedByOEdit, nameEntryValue(issuer, NID_organizationName));
-    setFieldText(ui->issuedByOUEdit, nameEntryValue(issuer, NID_organizationalUnitName));
+    setFieldText(ui->issuedByCNEdit, fromStd(issuer.commonName()));
+    setFieldText(ui->issuedByOEdit, fromStd(issuer.organization()));
+    setFieldText(ui->issuedByOUEdit, fromStd(issuer.organizationalUnit()));
 
-    // Validity
-    setFieldText(ui->notBeforeEdit, certutil::asnTimeToString(X509_get0_notBefore(cert)));
-    setFieldText(ui->notAfterEdit, certutil::asnTimeToString(X509_get0_notAfter(cert)));
+    setFieldText(ui->notBeforeEdit, cf::formatTime(cert.notBefore()));
+    setFieldText(ui->notAfterEdit, cf::formatTime(cert.notAfter()));
 
-    // Key Usage
     setFieldText(ui->keyUsageEdit, keyUsageString(cert));
 }
 
-QString CertificateViewerWidget::nameEntryValue(X509_NAME* name, int nid)
+void CertificateViewerWidget::populateUnparseableTab()
 {
-    if (!name)
-        return {};
+    auto setFieldText = [](QLineEdit* edit, const QString& text) {
+        edit->setText(text);
+        edit->setCursorPosition(0);
+    };
 
-    int idx = X509_NAME_get_index_by_NID(name, nid, -1);
-    if (idx < 0)
-        return {};
-
-    X509_NAME_ENTRY* entry = X509_NAME_get_entry(name, idx);
-    if (!entry)
-        return {};
-
-    ASN1_STRING* data = X509_NAME_ENTRY_get_data(entry);
-    if (!data)
-        return {};
-
-    unsigned char* utf8 = nullptr;
-    int len = ASN1_STRING_to_UTF8(&utf8, data);
-    if (len < 0)
-        return {};
-
-    QString result = QString::fromUtf8(reinterpret_cast<const char*>(utf8), len);
-    OPENSSL_free(utf8);
-    return result;
-}
-
-QString CertificateViewerWidget::keyUsageString(X509* cert)
-{
-    // Try Key Usage extension
-    int idx = X509_get_ext_by_NID(cert, NID_key_usage, -1);
-    if (idx < 0)
-        idx = X509_get_ext_by_NID(cert, NID_ext_key_usage, -1);
-
-    if (idx < 0)
-        return {};
-
-    X509_EXTENSION* ext = X509_get_ext(cert, idx);
-    if (!ext)
-        return {};
-
-    certutil::BioPtr bio(BIO_new(BIO_s_mem()));
-    if (!bio)
-        return {};
-
-    X509V3_EXT_print(bio.get(), ext, 0, 0);
-    return certutil::bioToQString(bio.get());
+    const QString placeholder = qtTrId("lc-cert-parse-error");
+    setFieldText(ui->issuedToCNEdit, placeholder);
+    setFieldText(ui->issuedToOEdit, QString());
+    setFieldText(ui->issuedToOUEdit, QString());
+    setFieldText(ui->issuedToSerialEdit, QString());
+    setFieldText(ui->issuedByCNEdit, placeholder);
+    setFieldText(ui->issuedByOEdit, QString());
+    setFieldText(ui->issuedByOUEdit, QString());
+    setFieldText(ui->notBeforeEdit, QString());
+    setFieldText(ui->notAfterEdit, QString());
+    setFieldText(ui->keyUsageEdit, QString());
 }
 
 void CertificateViewerWidget::onDetailsSelectionChanged(const QItemSelection& selected,
@@ -154,7 +152,6 @@ void CertificateViewerWidget::onDetailsSelectionChanged(const QItemSelection& se
     }
 
     QModelIndex index = selected.indexes().first();
-    // Show the value from column 1 (Value column)
     QModelIndex valueIndex = index.sibling(index.row(), 1);
     QString value = valueIndex.data(Qt::DisplayRole).toString();
     ui->detailsValueEdit->setPlainText(value);
@@ -176,5 +173,8 @@ void CertificateViewerWidget::onCertPathSelectionChanged(const QItemSelection& s
 
     QModelIndex valueIndex = index.sibling(index.row(), 1);
     QString status = valueIndex.data(Qt::DisplayRole).toString();
-    ui->certPathStatusEdit->setText(status.isEmpty() ? qtTrId("lc-cert-verify-valid") : status);
+    // Empty status means a non-leaf row (the model only writes a status string
+    // for the leaf — chain validation is chain-wide, not per-cert). Leave the
+    // field empty rather than fabricating a misleading "Valid" indicator.
+    ui->certPathStatusEdit->setText(status);
 }

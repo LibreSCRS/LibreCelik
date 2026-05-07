@@ -4,7 +4,7 @@
 
 #include <QEvent>
 #include <QWidget>
-#include <plugin/security_check.h>
+#include <LibreSCRS/Plugin/SecurityCheck.h>
 
 class QLabel;
 class QVBoxLayout;
@@ -15,7 +15,7 @@ class SecurityStatusWidget : public QWidget
     Q_OBJECT
 public:
     explicit SecurityStatusWidget(QWidget* parent = nullptr);
-    void setSecurityStatus(const plugin::SecurityStatus& status);
+    void setSecurityStatus(const LibreSCRS::Plugin::SecurityStatus& status);
 
 protected:
     void changeEvent(QEvent* event) override;
@@ -23,9 +23,9 @@ protected:
 private:
     void buildLayout();
     void retranslateUi();
-    QWidget* createStatusRow(const QString& label, plugin::SecurityCheck::Status status);
-    QString statusColor(plugin::SecurityCheck::Status status) const;
-    QString statusText(plugin::SecurityCheck::Status status) const;
+    QWidget* createStatusRow(const QString& label, LibreSCRS::Plugin::SecurityCheck::Status status);
+    QString statusColor(LibreSCRS::Plugin::SecurityCheck::Status status) const;
+    QString statusText(LibreSCRS::Plugin::SecurityCheck::Status status) const;
 
     QVBoxLayout* mainLayout = nullptr;
     CollapsibleSection* section = nullptr;

@@ -15,15 +15,6 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets LinguistTools PrintSupport)
 # PCSC is found by LibreMiddleware; UUID is used directly by the app
 find_package(UUID)
 
-# Glob cert files now (configure time) so configure_file can reference the path.
-# The actual qt_add_resources call is below, after qt_add_executable.
-file(GLOB_RECURSE LIBRECELIK_CERT_FILES
-    "${libremiddleware_SOURCE_DIR}/thirdparty/certificates/*.cer"
-    "${libremiddleware_SOURCE_DIR}/thirdparty/certificates/*.crt"
-    "${libremiddleware_SOURCE_DIR}/thirdparty/certificates/*.pem"
-)
-set(LIBRECELIK_CERTIFICATES_DIR ":/certificates")
-
 configure_file (
     "${PROJECT_SOURCE_DIR}/src/config.h.in"
     "${PROJECT_BINARY_DIR}/src/config.h"
@@ -38,6 +29,8 @@ set(PROJECT_SOURCES
         utils/libreceliklog.cpp
         utils/printmanager.h
 	utils/utils.h
+        utils/iconutils.h
+        utils/stringutils.h
         smartcard/qsmartcardmonitor.h
         smartcard/qsmartcardmonitor.cpp
         smartcard/smartcardreaderlistener.h
@@ -48,6 +41,8 @@ set(PROJECT_SOURCES
         document/rs-eid/changepindlg.cpp
         document/emrtd/emrtdauthwidget.h
         document/emrtd/emrtdauthwidget.cpp
+        certificate/cert_format.h
+        certificate/cert_format.cpp
         certificate/certificateinfoitem.h
         certificate/certificateinfoitem.cpp
         certificate/certificatetreeviewmodel.h
@@ -56,8 +51,6 @@ set(PROJECT_SOURCES
         certificate/certificatepropertiesmodel.cpp
         certificate/certificatehierarchymodel.h
         certificate/certificatehierarchymodel.cpp
-        certificate/opensslhelpers.h
-        certificate/opensslhelpers.cpp
         certificate/certificateviewerwidget.h
         certificate/certificateviewerwidget.cpp
         certificate/certificateviewerwidget.ui
@@ -77,6 +70,7 @@ set(PROJECT_SOURCES
         plugin/cardwidgetplugin.h
         plugin/cardwidgetpluginregistry.h
         plugin/cardwidgetpluginregistry.cpp
+        plugin/carddatautils.h
         asynccardreader.h
         asynccardreader.cpp
         aboutdialog.h
@@ -85,8 +79,10 @@ set(PROJECT_SOURCES
         settings/settingsdialog.cpp
         settings/tlitemdelegate.h
         settings/tlitemdelegate.cpp
+        settings/settingskeys.h
         signing/tsaitemdelegate.h
         signing/tsaitemdelegate.cpp
+        signing/defaults.h
 )
 
 if(APPLE)
@@ -119,6 +115,8 @@ if(LIBRECELIK_SIGNING_ENABLED)
         signing/resultdelegate.h
         signing/resultdelegate.cpp
         signing/signingcolors.h
+        signing/signingconfiguration.h
+        signing/signingconfiguration.cpp
     )
 endif()
 
@@ -153,24 +151,30 @@ qt_add_translations(${PROJECT_NAME}
 # AppImage translations in 1.7.1 and 1.7.2).
 # To update translations: edit .ts files, then run LibreCelik_lupdate to sync
 # source strings, and LibreCelik_lrelease to recompile (or just cmake --build).
-# Embed Serbian CA certificates into the executable via Qt resources so they are
-# accessible at runtime in AppImage / DMG builds (where the LibreMiddleware
-# source tree is not present).  :/certificates/<name>.cer mirrors the layout
-# previously expected from LIBRECELIK_CERTIFICATES_DIR.
-qt_add_resources(${PROJECT_NAME} "certificates_res"
-    PREFIX "/certificates"
-    BASE "${libremiddleware_SOURCE_DIR}/thirdparty/certificates"
-    FILES ${LIBRECELIK_CERT_FILES}
-)
+# 4.0 LM: trust anchors live inside the LibreSCRS::Trust::TrustStore
+# composed and exposed by SigningService; LC no longer embeds raw cert files
+# via Qt resources or links OpenSSL directly. All certificate parsing and
+# chain validation happens through LibreSCRS::Certificate::ParsedCertificate
+# and LibreSCRS::Trust::TrustStore.
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets Qt6::PrintSupport LibreCelikPrinting CardPlugin SmartCard OpenSSL_Crypto PCSC::PCSC UUID::UUID)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    Qt6::Widgets
+    Qt6::PrintSupport
+    LibreCelikPrinting
+    LibreSCRS::Plugin
+    SmartCard_Impl
+    LibreSCRS::SmartCard
+    LibreSCRS::Trust
+    LibreSCRS::Certificate
+    PCSC::PCSC
+    UUID::UUID)
 
 if(APPLE)
     target_link_libraries(${PROJECT_NAME} PRIVATE "-framework AppKit")
 endif()
 
 if(LIBRECELIK_SIGNING_ENABLED)
-    target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::PdfWidgets LibreSign)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::PdfWidgets LibreSign LibreSCRS_Signing)
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

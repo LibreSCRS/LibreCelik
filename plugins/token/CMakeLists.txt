@@ -12,7 +12,7 @@ target_include_directories(token-gui-plugin PRIVATE
 )
 target_link_libraries(token-gui-plugin PRIVATE
     Qt6::Widgets
-    CardPlugin
+    LibreSCRS::Plugin
 )
 set_target_properties(token-gui-plugin PROPERTIES
     AUTOMOC ON

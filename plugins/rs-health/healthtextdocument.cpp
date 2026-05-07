@@ -6,9 +6,10 @@
 #include "healthtextdocument.h"
 #include <plugin/carddatautils.h>
 
-using plugin::getFieldValue;
+using LibreSCRS::Plugin::getFieldValue;
 
-HealthTextDocument::HealthTextDocument(const plugin::CardData& cardData, QString documentPath, QString cssPath)
+HealthTextDocument::HealthTextDocument(const LibreSCRS::Plugin::CardData& cardData, QString documentPath,
+                                       QString cssPath)
 {
     auto data = loadFile(documentPath);
 
@@ -63,7 +64,7 @@ void HealthTextDocument::translateDocumentData(QString& data) const
     data.replace("${taxpayer_act}", qtTrId("lc-health-label-taxpayer-act"));
 }
 
-void HealthTextDocument::prepareDocumentData(QString& html, const plugin::CardData& cardData) const
+void HealthTextDocument::prepareDocumentData(QString& html, const LibreSCRS::Plugin::CardData& cardData) const
 {
     html.replace("${given_name_value}", getPreparedValue(getFieldValue(cardData, "given_name")));
     html.replace("${family_name_value}", getPreparedValue(getFieldValue(cardData, "family_name")));

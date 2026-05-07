@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 #include <QApplication>
 #include "euvrctextdocument.h"
-#include <plugin/card_data.h>
+#include <LibreSCRS/Plugin/CardData.h>
 
 int main(int argc, char** argv)
 {
@@ -26,18 +26,18 @@ public:
     }
 };
 
-auto addText = [](plugin::CardFieldGroup& g, const std::string& key, const std::string& val) {
+auto addText = [](LibreSCRS::Plugin::CardFieldGroup& g, const std::string& key, const std::string& val) {
     if (!val.empty())
-        g.fields.push_back({key, key, plugin::FieldType::Text, {val.begin(), val.end()}});
+        g.fields.push_back({key, key, LibreSCRS::Plugin::FieldType::Text, {val.begin(), val.end()}});
 };
 
-plugin::CardData makeFullCardData()
+LibreSCRS::Plugin::CardData makeFullCardData()
 {
-    plugin::CardData data;
+    LibreSCRS::Plugin::CardData data;
     data.cardType = "eu-vrc";
 
     {
-        plugin::CardFieldGroup reg;
+        LibreSCRS::Plugin::CardFieldGroup reg;
         reg.groupKey = "registration";
         addText(reg, "registration_number", "BG 123-AB");
         addText(reg, "date_of_first_registration", "01.01.2020");
@@ -51,7 +51,7 @@ plugin::CardData makeFullCardData()
         data.groups.push_back(std::move(reg));
     }
     {
-        plugin::CardFieldGroup veh;
+        LibreSCRS::Plugin::CardFieldGroup veh;
         veh.groupKey = "vehicle";
         addText(veh, "vehicle_make", "VOLKSWAGEN");
         addText(veh, "vehicle_type", "GOLF");
@@ -68,7 +68,7 @@ plugin::CardData makeFullCardData()
         data.groups.push_back(std::move(veh));
     }
     {
-        plugin::CardFieldGroup holder;
+        LibreSCRS::Plugin::CardFieldGroup holder;
         holder.groupKey = "holder";
         addText(holder, "holder_name", "PETROVIC");
         addText(holder, "holder_other_names", "MARKO");
@@ -76,7 +76,7 @@ plugin::CardData makeFullCardData()
         data.groups.push_back(std::move(holder));
     }
     {
-        plugin::CardFieldGroup user;
+        LibreSCRS::Plugin::CardFieldGroup user;
         user.groupKey = "user";
         addText(user, "user_name", "PETROVIC");
         addText(user, "user_other_names", "MARKO");
@@ -86,11 +86,11 @@ plugin::CardData makeFullCardData()
     return data;
 }
 
-plugin::CardData makeCardDataWithNational()
+LibreSCRS::Plugin::CardData makeCardDataWithNational()
 {
     auto data = makeFullCardData();
 
-    plugin::CardFieldGroup nat;
+    LibreSCRS::Plugin::CardFieldGroup nat;
     nat.groupKey = "national";
     addText(nat, "owners_personal_no", "1234567890123");
     addText(nat, "year_of_production", "2019");
@@ -110,20 +110,22 @@ TEST(EuVrcTextDocumentTest, ConstructionSucceeds)
 
 TEST(EuVrcTextDocumentTest, EmptyDataDoesNotCrash)
 {
-    plugin::CardData empty;
+    LibreSCRS::Plugin::CardData empty;
     empty.cardType = "eu-vrc";
     EXPECT_NO_THROW({ EuVrcTextDocument doc(empty); });
 }
 
 TEST(EuVrcTextDocumentTest, RegistrationOnlyDoesNotCrash)
 {
-    plugin::CardData data;
+    LibreSCRS::Plugin::CardData data;
     data.cardType = "eu-vrc";
 
-    plugin::CardFieldGroup reg;
+    LibreSCRS::Plugin::CardFieldGroup reg;
     reg.groupKey = "registration";
-    reg.fields.push_back(
-        {"registration_number", "registration_number", plugin::FieldType::Text, {'B', 'G', ' ', '1', '2', '3'}});
+    reg.fields.push_back({"registration_number",
+                          "registration_number",
+                          LibreSCRS::Plugin::FieldType::Text,
+                          {'B', 'G', ' ', '1', '2', '3'}});
     data.groups.push_back(std::move(reg));
 
     EXPECT_NO_THROW({ EuVrcTextDocument doc(data); });
@@ -131,10 +133,10 @@ TEST(EuVrcTextDocumentTest, RegistrationOnlyDoesNotCrash)
 
 TEST(EuVrcTextDocumentTest, EmptyFieldsNotInOutput)
 {
-    plugin::CardData data;
+    LibreSCRS::Plugin::CardData data;
     data.cardType = "eu-vrc";
 
-    plugin::CardFieldGroup veh;
+    LibreSCRS::Plugin::CardFieldGroup veh;
     veh.groupKey = "vehicle";
     addText(veh, "vehicle_make", "FORD");
     // vehicle_type intentionally omitted — should not appear in output
@@ -171,10 +173,10 @@ TEST(EuVrcTextDocumentTest, NationalExtensionsAppear)
 
 TEST(EuVrcTextDocumentTest, NewEuFieldsAppearWhenPopulated)
 {
-    plugin::CardData data;
+    LibreSCRS::Plugin::CardData data;
     data.cardType = "eu-vrc";
 
-    plugin::CardFieldGroup veh;
+    LibreSCRS::Plugin::CardFieldGroup veh;
     veh.groupKey = "vehicle";
     addText(veh, "vehicle_make", "BMW");
     addText(veh, "co2_emissions", "CO2_TEST_VALUE_120g");
@@ -190,10 +192,10 @@ TEST(EuVrcTextDocumentTest, NewEuFieldsAppearWhenPopulated)
 
 TEST(EuVrcTextDocumentTest, ExpiredDateHighlighted)
 {
-    plugin::CardData data;
+    LibreSCRS::Plugin::CardData data;
     data.cardType = "eu-vrc";
 
-    plugin::CardFieldGroup reg;
+    LibreSCRS::Plugin::CardFieldGroup reg;
     reg.groupKey = "registration";
     addText(reg, "registration_number", "BG 999-ZZ");
     addText(reg, "expiry_date", "01.01.2020"); // expired date

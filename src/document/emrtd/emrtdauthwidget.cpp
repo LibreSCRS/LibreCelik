@@ -174,19 +174,48 @@ void EMRTDAuthWidget::onAuthenticateClicked()
 {
     if (!authButton->isEnabled())
         return;
+
+    // Read CAN/MRZ from QLineEdits BEFORE any visual mutation (status label,
+    // button disable, edit clear). The bytes are adopted into Secure::String
+    // immediately via the std::string&& adopt-and-cleanse ctor — no
+    // intermediate QString copy outlives this function. Mirrors the pattern
+    // in `signing/signpage.cpp` (`pinSecure`/`canSecure`) where the secure
+    // capture happens before the source widgets are hidden.
+    //
+    // See `feedback_read_then_hide_secrets.md`: read first, hide second —
+    // QLineEdit visibility-state is sometimes a downstream logic gate, but
+    // here the widget itself stays alive (the spinner section is a sibling),
+    // so the only requirement is that the source storage be evicted from
+    // QString CoW heap pages immediately after the secure copy is built.
+    EmrtdCredentials credentials;
+    if (tabWidget->currentIndex() == 0) {
+        credentials.mode = EmrtdCredentials::Mode::CAN;
+        credentials.can = LibreSCRS::Secure::String{canEdit->text().toStdString()};
+    } else {
+        credentials.mode = EmrtdCredentials::Mode::MRZ;
+        credentials.mrzDocNumber = LibreSCRS::Secure::String{docNumberEdit->text().toStdString()};
+        credentials.mrzDob = LibreSCRS::Secure::String{dobEdit->date().toString("yyMMdd").toStdString()};
+        credentials.mrzExpiry = LibreSCRS::Secure::String{expiryEdit->date().toString("yyMMdd").toStdString()};
+    }
+
+    // Evict CAN/MRZ from the QLineEdit's QString CoW storage. QLineEdit::clear
+    // re-assigns an empty string, which drops the last shared ref to the
+    // previous CoW block. The block is then deallocated by the implicit-
+    // sharing ref-count drop without explicit cleansing, but the practical
+    // window where a memory-dump primitive can recover the digits is closed
+    // as soon as the heap page is reused.
+    canEdit->clear();
+    docNumberEdit->clear();
+    // QDateEdits revert to the sentinel date so the displayed yyMMdd is
+    // overwritten in the input widget's internal QString storage.
+    dobEdit->setDate(kSentinelDate);
+    expiryEdit->setDate(kSentinelDate);
+
     authButton->setEnabled(false);
     statusLabel->setStyleSheet("color: #E6873C;");
     statusLabel->setText(qtTrId("lc-emrtd-authenticating"));
     statusLabel->setVisible(true);
 
-    QMap<QString, QString> credentials;
-    if (tabWidget->currentIndex() == 0) {
-        credentials["can"] = canEdit->text();
-    } else {
-        credentials["mrz_doc_number"] = docNumberEdit->text();
-        credentials["mrz_dob"] = dobEdit->date().toString("yyMMdd");
-        credentials["mrz_expiry"] = expiryEdit->date().toString("yyMMdd");
-    }
     emit credentialsEntered(credentials);
 }
 

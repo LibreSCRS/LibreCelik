@@ -18,9 +18,9 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-using plugin::getFieldValue;
+using LibreSCRS::Plugin::getFieldValue;
 
-EuVrcWidget::EuVrcWidget(const plugin::CardData& cardData, QWidget* parent) : EuVrcWidget(parent)
+EuVrcWidget::EuVrcWidget(const LibreSCRS::Plugin::CardData& cardData, QWidget* parent) : EuVrcWidget(parent)
 {
     data.cardType = cardData.cardType;
     for (const auto& group : cardData.groups)
@@ -55,7 +55,7 @@ void EuVrcWidget::buildShell()
     outerSection->addHeaderWidget(printBtn);
 }
 
-void EuVrcWidget::addGroup(const plugin::CardFieldGroup& group)
+void EuVrcWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     // Accumulate into data for cardData() accessor
     data.groups.push_back(group);
@@ -81,7 +81,7 @@ void EuVrcWidget::enablePrintButton()
     }
 }
 
-void EuVrcWidget::addRegistrationGroup(const plugin::CardFieldGroup& group)
+void EuVrcWidget::addRegistrationGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     // CardHeaderCard: icon + key fields (make is added later when vehicle group arrives)
     auto regNumber = getFieldValue(&group, "registration_number");
@@ -101,15 +101,15 @@ void EuVrcWidget::addRegistrationGroup(const plugin::CardFieldGroup& group)
     contentLayout->addWidget(buildRegistrationSection(&group));
 }
 
-void EuVrcWidget::addVehicleGroup(const plugin::CardFieldGroup& group)
+void EuVrcWidget::addVehicleGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     // Update header card with vehicle make now that the vehicle group has arrived
     if (headerCard) {
-        const auto* regGroup = data.findGroup("registration");
-        if (regGroup) {
-            auto regNumber = getFieldValue(regGroup, "registration_number");
-            auto expiry = getFieldValue(regGroup, "expiry_date");
-            auto memberState = getFieldValue(regGroup, "member_state");
+        if (auto regIdx = data.findGroup("registration")) {
+            const auto& regGroup = data.groupAt(*regIdx);
+            auto regNumber = getFieldValue(&regGroup, "registration_number");
+            auto expiry = getFieldValue(&regGroup, "expiry_date");
+            auto memberState = getFieldValue(&regGroup, "member_state");
             auto make = getFieldValue(&group, "vehicle_make");
 
             std::vector<LibreSCRS::HeaderField> headerFields = {
@@ -131,16 +131,17 @@ void EuVrcWidget::addVehicleGroup(const plugin::CardFieldGroup& group)
     contentLayout->addWidget(buildEngineTechnicalSection(&group));
 }
 
-void EuVrcWidget::addHolderGroup(const plugin::CardFieldGroup& group)
+void EuVrcWidget::addHolderGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     contentLayout->addWidget(buildHolderSection(&group));
 }
 
-void EuVrcWidget::addOwnerGroup(const plugin::CardFieldGroup& group)
+void EuVrcWidget::addOwnerGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     bool hasValues = false;
     for (const auto& field : group.fields) {
-        if (!field.asString().empty()) {
+        auto text = field.textValue();
+        if (text.has_value() && !text->empty()) {
             hasValues = true;
             break;
         }
@@ -149,12 +150,13 @@ void EuVrcWidget::addOwnerGroup(const plugin::CardFieldGroup& group)
         contentLayout->addWidget(buildOwnerSection(&group));
 }
 
-void EuVrcWidget::addUserGroup(const plugin::CardFieldGroup& group)
+void EuVrcWidget::addUserGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     // Only add if there are actual fields with values
     bool hasValues = false;
     for (const auto& field : group.fields) {
-        if (!field.asString().empty()) {
+        auto text = field.textValue();
+        if (text.has_value() && !text->empty()) {
             hasValues = true;
             break;
         }
@@ -163,15 +165,15 @@ void EuVrcWidget::addUserGroup(const plugin::CardFieldGroup& group)
         contentLayout->addWidget(buildUserSection(&group));
 }
 
-void EuVrcWidget::addNationalGroup(const plugin::CardFieldGroup& group)
+void EuVrcWidget::addNationalGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     if (!group.fields.empty())
         contentLayout->addWidget(buildNationalSection(&group));
 }
 
-CollapsibleSection* EuVrcWidget::buildRegistrationSection(const plugin::CardFieldGroup* group)
+CollapsibleSection* EuVrcWidget::buildRegistrationSection(const LibreSCRS::Plugin::CardFieldGroup* group)
 {
-    plugin::CardFieldGroup regGroup;
+    LibreSCRS::Plugin::CardFieldGroup regGroup;
     regGroup.groupKey = "registration_display";
 
     auto addIfPresent = [&](const char* key) {
@@ -179,7 +181,7 @@ CollapsibleSection* EuVrcWidget::buildRegistrationSection(const plugin::CardFiel
         if (!val.isEmpty()) {
             auto bytes = val.toUtf8();
             regGroup.fields.push_back(
-                {key, key, plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+                {key, key, LibreSCRS::Plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
         }
     };
 
@@ -217,9 +219,9 @@ CollapsibleSection* EuVrcWidget::buildRegistrationSection(const plugin::CardFiel
     return section;
 }
 
-CollapsibleSection* EuVrcWidget::buildVehicleSection(const plugin::CardFieldGroup* group)
+CollapsibleSection* EuVrcWidget::buildVehicleSection(const LibreSCRS::Plugin::CardFieldGroup* group)
 {
-    plugin::CardFieldGroup vehGroup;
+    LibreSCRS::Plugin::CardFieldGroup vehGroup;
     vehGroup.groupKey = "vehicle_display";
 
     auto addIfPresent = [&](const char* key) {
@@ -227,7 +229,7 @@ CollapsibleSection* EuVrcWidget::buildVehicleSection(const plugin::CardFieldGrou
         if (!val.isEmpty()) {
             auto bytes = val.toUtf8();
             vehGroup.fields.push_back(
-                {key, key, plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+                {key, key, LibreSCRS::Plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
         }
     };
 
@@ -252,9 +254,9 @@ CollapsibleSection* EuVrcWidget::buildVehicleSection(const plugin::CardFieldGrou
     return LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-vehicle"), vehGroup, labels);
 }
 
-CollapsibleSection* EuVrcWidget::buildEngineTechnicalSection(const plugin::CardFieldGroup* group)
+CollapsibleSection* EuVrcWidget::buildEngineTechnicalSection(const LibreSCRS::Plugin::CardFieldGroup* group)
 {
-    plugin::CardFieldGroup techGroup;
+    LibreSCRS::Plugin::CardFieldGroup techGroup;
     techGroup.groupKey = "engine_technical";
 
     auto addIfPresent = [&](const char* key) {
@@ -262,7 +264,7 @@ CollapsibleSection* EuVrcWidget::buildEngineTechnicalSection(const plugin::CardF
         if (!val.isEmpty()) {
             auto bytes = val.toUtf8();
             techGroup.fields.push_back(
-                {key, key, plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+                {key, key, LibreSCRS::Plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
         }
     };
 
@@ -319,9 +321,9 @@ CollapsibleSection* EuVrcWidget::buildEngineTechnicalSection(const plugin::CardF
     return LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-engine"), techGroup, labels);
 }
 
-CollapsibleSection* EuVrcWidget::buildHolderSection(const plugin::CardFieldGroup* group)
+CollapsibleSection* EuVrcWidget::buildHolderSection(const LibreSCRS::Plugin::CardFieldGroup* group)
 {
-    plugin::CardFieldGroup holderGroup;
+    LibreSCRS::Plugin::CardFieldGroup holderGroup;
     holderGroup.groupKey = "holder_display";
 
     auto addIfPresent = [&](const char* key) {
@@ -329,7 +331,7 @@ CollapsibleSection* EuVrcWidget::buildHolderSection(const plugin::CardFieldGroup
         if (!val.isEmpty()) {
             auto bytes = val.toUtf8();
             holderGroup.fields.push_back(
-                {key, key, plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+                {key, key, LibreSCRS::Plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
         }
     };
 
@@ -342,7 +344,7 @@ CollapsibleSection* EuVrcWidget::buildHolderSection(const plugin::CardFieldGroup
             auto bytes = val.toUtf8();
             holderGroup.fields.push_back({"holder_address",
                                           "holder_address",
-                                          plugin::FieldType::Text,
+                                          LibreSCRS::Plugin::FieldType::Text,
                                           {bytes.constData(), bytes.constData() + bytes.size()}});
         }
     }
@@ -356,9 +358,9 @@ CollapsibleSection* EuVrcWidget::buildHolderSection(const plugin::CardFieldGroup
     return LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-holder"), holderGroup, labels);
 }
 
-CollapsibleSection* EuVrcWidget::buildOwnerSection(const plugin::CardFieldGroup* group)
+CollapsibleSection* EuVrcWidget::buildOwnerSection(const LibreSCRS::Plugin::CardFieldGroup* group)
 {
-    plugin::CardFieldGroup ownerGroup;
+    LibreSCRS::Plugin::CardFieldGroup ownerGroup;
     ownerGroup.groupKey = "owner_display";
 
     auto addIfPresent = [&](const char* key) {
@@ -366,7 +368,7 @@ CollapsibleSection* EuVrcWidget::buildOwnerSection(const plugin::CardFieldGroup*
         if (!val.isEmpty()) {
             auto bytes = val.toUtf8();
             ownerGroup.fields.push_back(
-                {key, key, plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+                {key, key, LibreSCRS::Plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
         }
     };
 
@@ -379,9 +381,9 @@ CollapsibleSection* EuVrcWidget::buildOwnerSection(const plugin::CardFieldGroup*
     return LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-owner"), ownerGroup, labels);
 }
 
-CollapsibleSection* EuVrcWidget::buildUserSection(const plugin::CardFieldGroup* group)
+CollapsibleSection* EuVrcWidget::buildUserSection(const LibreSCRS::Plugin::CardFieldGroup* group)
 {
-    plugin::CardFieldGroup userGroup;
+    LibreSCRS::Plugin::CardFieldGroup userGroup;
     userGroup.groupKey = "user_display";
 
     auto addIfPresent = [&](const char* key) {
@@ -389,7 +391,7 @@ CollapsibleSection* EuVrcWidget::buildUserSection(const plugin::CardFieldGroup* 
         if (!val.isEmpty()) {
             auto bytes = val.toUtf8();
             userGroup.fields.push_back(
-                {key, key, plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+                {key, key, LibreSCRS::Plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
         }
     };
 
@@ -402,7 +404,7 @@ CollapsibleSection* EuVrcWidget::buildUserSection(const plugin::CardFieldGroup* 
             auto bytes = val.toUtf8();
             userGroup.fields.push_back({"user_address",
                                         "user_address",
-                                        plugin::FieldType::Text,
+                                        LibreSCRS::Plugin::FieldType::Text,
                                         {bytes.constData(), bytes.constData() + bytes.size()}});
         }
     }
@@ -422,7 +424,7 @@ CollapsibleSection* EuVrcWidget::buildUserSection(const plugin::CardFieldGroup* 
     return section;
 }
 
-CollapsibleSection* EuVrcWidget::buildNationalSection(const plugin::CardFieldGroup* group)
+CollapsibleSection* EuVrcWidget::buildNationalSection(const LibreSCRS::Plugin::CardFieldGroup* group)
 {
     // Translated labels for known Serbian national extension keys
     const std::map<std::string, QString> knownLabels = {
@@ -433,17 +435,22 @@ CollapsibleSection* EuVrcWidget::buildNationalSection(const plugin::CardFieldGro
         {"serial_number", qtTrId("lc-euvrc-nat-serial-number")},
     };
 
-    plugin::CardFieldGroup natGroup;
+    LibreSCRS::Plugin::CardFieldGroup natGroup;
     natGroup.groupKey = "national_display";
 
     std::map<std::string, QString> labels;
 
     for (const auto& field : group->fields) {
-        auto val = QString::fromStdString(field.asString());
+        auto textOpt = field.textValue();
+        if (!textOpt.has_value())
+            continue;
+        auto val = QString::fromStdString(*textOpt);
         if (!val.isEmpty()) {
             auto bytes = val.toUtf8();
-            natGroup.fields.push_back(
-                {field.key, field.key, plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+            natGroup.fields.push_back({field.key,
+                                       field.key,
+                                       LibreSCRS::Plugin::FieldType::Text,
+                                       {bytes.constData(), bytes.constData() + bytes.size()}});
 
             auto it = knownLabels.find(field.key);
             if (it != knownLabels.end()) {

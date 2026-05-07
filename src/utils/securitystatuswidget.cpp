@@ -28,19 +28,20 @@ void SecurityStatusWidget::buildLayout()
     contentLayout->setSpacing(6);
 
     // Three summary rows — initially NOT_PERFORMED
-    auto* integrityRow = createStatusRow(qtTrId("lc-emrtd-security-integrity"), plugin::SecurityCheck::NOT_PERFORMED);
+    auto* integrityRow =
+        createStatusRow(qtTrId("lc-emrtd-security-integrity"), LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
     integrityIcon = integrityRow->findChildren<QLabel*>("icon").value(0);
     integrityLabel = integrityRow->findChildren<QLabel*>("text").value(0);
     contentLayout->addWidget(integrityRow);
 
-    auto* authenticityRow =
-        createStatusRow(qtTrId("lc-emrtd-security-authenticity"), plugin::SecurityCheck::NOT_PERFORMED);
+    auto* authenticityRow = createStatusRow(qtTrId("lc-emrtd-security-authenticity"),
+                                            LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
     authenticityIcon = authenticityRow->findChildren<QLabel*>("icon").value(0);
     authenticityLabel = authenticityRow->findChildren<QLabel*>("text").value(0);
     contentLayout->addWidget(authenticityRow);
 
-    auto* genuinenessRow =
-        createStatusRow(qtTrId("lc-emrtd-security-genuineness"), plugin::SecurityCheck::NOT_PERFORMED);
+    auto* genuinenessRow = createStatusRow(qtTrId("lc-emrtd-security-genuineness"),
+                                           LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
     genuinenessIcon = genuinenessRow->findChildren<QLabel*>("icon").value(0);
     genuinenessLabel = genuinenessRow->findChildren<QLabel*>("text").value(0);
     contentLayout->addWidget(genuinenessRow);
@@ -54,7 +55,7 @@ void SecurityStatusWidget::buildLayout()
     mainLayout->addWidget(section);
 }
 
-QWidget* SecurityStatusWidget::createStatusRow(const QString& label, plugin::SecurityCheck::Status status)
+QWidget* SecurityStatusWidget::createStatusRow(const QString& label, LibreSCRS::Plugin::SecurityCheck::Status status)
 {
     auto* row = new QWidget();
     auto* rowLayout = new QHBoxLayout(row);
@@ -78,43 +79,44 @@ QWidget* SecurityStatusWidget::createStatusRow(const QString& label, plugin::Sec
     return row;
 }
 
-QString SecurityStatusWidget::statusColor(plugin::SecurityCheck::Status status) const
+QString SecurityStatusWidget::statusColor(LibreSCRS::Plugin::SecurityCheck::Status status) const
 {
     switch (status) {
-    case plugin::SecurityCheck::PASSED:
+    case LibreSCRS::Plugin::SecurityCheck::Status::Passed:
         return QStringLiteral("#4CAF50");
-    case plugin::SecurityCheck::FAILED:
+    case LibreSCRS::Plugin::SecurityCheck::Status::Failed:
         return QStringLiteral("#F44336");
-    case plugin::SecurityCheck::NOT_SUPPORTED:
-    case plugin::SecurityCheck::SKIPPED:
+    case LibreSCRS::Plugin::SecurityCheck::Status::NotSupported:
+    case LibreSCRS::Plugin::SecurityCheck::Status::Skipped:
         return QStringLiteral("#FFC107");
-    case plugin::SecurityCheck::NOT_PERFORMED:
+    case LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed:
         return QStringLiteral("#9E9E9E");
     }
     return QStringLiteral("#9E9E9E");
 }
 
-QString SecurityStatusWidget::statusText(plugin::SecurityCheck::Status status) const
+QString SecurityStatusWidget::statusText(LibreSCRS::Plugin::SecurityCheck::Status status) const
 {
     switch (status) {
-    case plugin::SecurityCheck::PASSED:
+    case LibreSCRS::Plugin::SecurityCheck::Status::Passed:
         return qtTrId("lc-emrtd-security-passed");
-    case plugin::SecurityCheck::FAILED:
+    case LibreSCRS::Plugin::SecurityCheck::Status::Failed:
         return qtTrId("lc-emrtd-security-failed");
-    case plugin::SecurityCheck::NOT_SUPPORTED:
+    case LibreSCRS::Plugin::SecurityCheck::Status::NotSupported:
         return qtTrId("lc-emrtd-security-not-supported");
-    case plugin::SecurityCheck::SKIPPED:
+    case LibreSCRS::Plugin::SecurityCheck::Status::Skipped:
         return qtTrId("lc-emrtd-security-skipped");
-    case plugin::SecurityCheck::NOT_PERFORMED:
+    case LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed:
         return qtTrId("lc-emrtd-security-not-performed");
     }
     return qtTrId("lc-emrtd-security-not-performed");
 }
 
-void SecurityStatusWidget::setSecurityStatus(const plugin::SecurityStatus& status)
+void SecurityStatusWidget::setSecurityStatus(const LibreSCRS::Plugin::SecurityStatus& status)
 {
     // Update summary rows
-    auto updateRow = [this](QLabel* icon, QLabel* text, const QString& label, plugin::SecurityCheck::Status s) {
+    auto updateRow = [this](QLabel* icon, QLabel* text, const QString& label,
+                            LibreSCRS::Plugin::SecurityCheck::Status s) {
         if (icon)
             icon->setStyleSheet(QString("background: %1; border-radius: 8px;").arg(statusColor(s)));
         if (text)

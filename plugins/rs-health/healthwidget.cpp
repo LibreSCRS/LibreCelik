@@ -14,7 +14,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-using plugin::getFieldValue;
+using LibreSCRS::Plugin::getFieldValue;
 
 static std::map<std::string, QString> insuranceTranslationMap()
 {
@@ -66,7 +66,7 @@ static std::map<std::string, QString> taxpayerTranslationMap()
     };
 }
 
-HealthWidget::HealthWidget(const plugin::CardData& cardData, QWidget* parent) : HealthWidget(parent)
+HealthWidget::HealthWidget(const LibreSCRS::Plugin::CardData& cardData, QWidget* parent) : HealthWidget(parent)
 {
     data.cardType = cardData.cardType;
     for (const auto& group : cardData.groups)
@@ -100,7 +100,7 @@ void HealthWidget::buildEmptyShell()
     outerSection->addHeaderWidget(printBtn);
 }
 
-void HealthWidget::addGroup(const plugin::CardFieldGroup& group)
+void HealthWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     // Accumulate into data for cardData() accessor and printing
     data.groups.push_back(group);
@@ -126,7 +126,7 @@ void HealthWidget::enablePrintButton()
     }
 }
 
-void HealthWidget::addPersonalGroup(const plugin::CardFieldGroup& group)
+void HealthWidget::addPersonalGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     // Build CardHeaderCard with health icon and key personal fields.
     // Insurance fields are not yet available, so only personal fields appear in header.
@@ -141,7 +141,7 @@ void HealthWidget::addPersonalGroup(const plugin::CardFieldGroup& group)
     contentLayout->addWidget(headerCard);
 }
 
-void HealthWidget::addInsuranceGroup(const plugin::CardFieldGroup& /*group*/)
+void HealthWidget::addInsuranceGroup(const LibreSCRS::Plugin::CardFieldGroup& /*group*/)
 {
     // Transform permanently_valid in accumulated data
     transformPermanentlyValid(data.groups.back());
@@ -151,14 +151,14 @@ void HealthWidget::addInsuranceGroup(const plugin::CardFieldGroup& /*group*/)
     contentLayout->addWidget(insuranceSec);
 }
 
-void HealthWidget::addAddressGroup(const plugin::CardFieldGroup& group)
+void HealthWidget::addAddressGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     auto* addressSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-address"), group,
                                                              addressTranslationMap(), {}, outerSection);
     contentLayout->addWidget(addressSec);
 }
 
-void HealthWidget::addCarrierGroup(const plugin::CardFieldGroup& group)
+void HealthWidget::addCarrierGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     auto familyMember = getFieldValue(&group, "carrier_family_member");
     bool hasData = !group.fields.empty();
@@ -171,22 +171,22 @@ void HealthWidget::addCarrierGroup(const plugin::CardFieldGroup& group)
     }
 }
 
-void HealthWidget::addTaxpayerGroup(const plugin::CardFieldGroup& group)
+void HealthWidget::addTaxpayerGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     auto* taxpayerSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-taxpayer"), group,
                                                               taxpayerTranslationMap(), {}, outerSection);
     contentLayout->addWidget(taxpayerSec);
 }
 
-void HealthWidget::transformPermanentlyValid(plugin::CardFieldGroup& group)
+void HealthWidget::transformPermanentlyValid(LibreSCRS::Plugin::CardFieldGroup& group)
 {
     for (auto& field : group.fields) {
         if (field.key == "permanently_valid") {
-            auto val = field.asString();
-            if (val == "true") {
+            auto val = field.textValue();
+            if (val.has_value() && *val == "true") {
                 std::string yes = qtTrId("lc-health-val-yes").toStdString();
                 field.value.assign(yes.begin(), yes.end());
-            } else if (val == "false") {
+            } else if (val.has_value() && *val == "false") {
                 std::string no = qtTrId("lc-health-val-no").toStdString();
                 field.value.assign(no.begin(), no.end());
             }

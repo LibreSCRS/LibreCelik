@@ -155,34 +155,29 @@ bool SignaturePlacementPage::isVisualSignatureEnabled() const
     return visualSigCheckbox->isChecked();
 }
 
-libresign::VisualSignatureParams SignaturePlacementPage::visualParams() const
+LibreSCRS::Signing::VisualSignatureParams SignaturePlacementPage::visualParams() const
 {
-    libresign::VisualSignatureParams params;
-    params.enabled = isVisualSignatureEnabled();
+    // Caller guards this with isVisualSignatureEnabled(); the placement page
+    // is only asked for params when the checkbox is on, and the wizard
+    // passes std::nullopt otherwise. Builder validators (pageIndex >= 0,
+    // positive width/height) would reject an empty call anyway.
+    const QRectF rect = preview->signatureRect();
 
-    if (params.enabled) {
-        const QRectF rect = preview->signatureRect();
-        const QSizeF pageSize = preview->pagePointSize();
-        params.page = preview->currentPage() + 1; // DSS uses 1-based
-        params.x = static_cast<float>(rect.x());
-        // signatureRect() is stored in PDF coords (origin bottom-left) and the
-        // native PAdES module writes params.x/y straight into the /Rect field,
-        // which is also in PDF coords. Pass through unchanged. A historical
-        // y-flip here converted to DSS's top-left origin; it caused a double
-        // transform when the DSS backend was retired and the visual signature
-        // always rendered mirrored vertically.
-        params.y = static_cast<float>(rect.y());
-        params.width = static_cast<float>(rect.width());
-        params.height = static_cast<float>(rect.height());
-        (void)pageSize;
-        params.signerName = currentSignerName.toStdString();
-        params.reason = reasonEdit->text().trimmed().toStdString();
-        params.location = locationEdit->text().trimmed().toStdString();
-        // Rebuild text with current timestamp (preview text may have stale time)
-        params.text = buildSignatureText().toStdString();
-    }
+    // signatureRect() is in PDF user space (origin bottom-left). The native
+    // PAdES engine writes these values straight into /Rect which is also in
+    // PDF user space, so pass through unchanged. A historical y-flip here
+    // converted to DSS's top-left origin and caused a double-transform once
+    // the DSS backend was retired (main commit 1185e24 fixed the regression).
+    const int x = static_cast<int>(rect.x());
+    const int y = static_cast<int>(rect.y());
+    const int w = static_cast<int>(rect.width());
+    const int h = static_cast<int>(rect.height());
 
-    return params;
+    LibreSCRS::Signing::VisualSignatureParams::Builder b;
+    b.pageIndex(preview->currentPage())
+        .rect(LibreSCRS::Signing::Rect{x, y, w, h})
+        .textTemplate(buildSignatureText().toStdString());
+    return std::move(b).build();
 }
 
 void SignaturePlacementPage::saveSettings() const

@@ -23,12 +23,12 @@ public:
     {
         return qtTrId("lc-piv-widget-title");
     }
-    QWidget* createWidget(const plugin::CardData& data, QWidget* parent) const override;
+    QWidget* createWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent) const override;
     QWidget* createEmptyWidget(QWidget* parent) const override;
-    void addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const override;
+    void addGroup(const LibreSCRS::Plugin::CardFieldGroup& group, QWidget* widget) const override;
     bool supportsPrinting() const override
     {
         return true;
     }
-    void print(const plugin::CardData& data) const override;
+    void print(const LibreSCRS::Plugin::CardData& data) const override;
 };

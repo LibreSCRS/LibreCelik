@@ -11,7 +11,7 @@
 
 namespace LibreSCRS {
 
-CollapsibleSection* FieldSectionBuilder::build(const QString& title, const plugin::CardFieldGroup& group,
+CollapsibleSection* FieldSectionBuilder::build(const QString& title, const LibreSCRS::Plugin::CardFieldGroup& group,
                                                const std::map<std::string, QString>& translationMap,
                                                const std::set<std::string>& hiddenFields, QWidget* parent)
 {
@@ -45,7 +45,8 @@ CollapsibleSection* FieldSectionBuilder::build(const QString& title, const plugi
         label->setStyleSheet(QString("color: %1; font-size: 10px;")
                                  .arg(paletteSource->palette().color(QPalette::PlaceholderText).name()));
 
-        auto* value = new QLineEdit(QString::fromStdString(field.asString()), section);
+        auto textOpt = field.textValue();
+        auto* value = new QLineEdit(textOpt ? QString::fromStdString(*textOpt) : QString{}, section);
         value->setReadOnly(true);
         value->setCursorPosition(0);
 
@@ -65,7 +66,8 @@ CollapsibleSection* FieldSectionBuilder::build(const QString& title, const plugi
     return section;
 }
 
-void FieldSectionBuilder::highlightExpiredDates(CollapsibleSection* section, const plugin::CardFieldGroup& group,
+void FieldSectionBuilder::highlightExpiredDates(CollapsibleSection* section,
+                                                const LibreSCRS::Plugin::CardFieldGroup& group,
                                                 const std::set<std::string>& dateFieldKeys)
 {
     if (!section || dateFieldKeys.empty())
@@ -76,7 +78,10 @@ void FieldSectionBuilder::highlightExpiredDates(CollapsibleSection* section, con
     for (const auto& field : group.fields) {
         if (!dateFieldKeys.count(field.key))
             continue;
-        auto val = QString::fromStdString(field.asString());
+        auto textOpt = field.textValue();
+        if (!textOpt.has_value())
+            continue;
+        auto val = QString::fromStdString(*textOpt);
         auto date = QDate::fromString(val, "dd.MM.yyyy");
         if (date.isValid() && date < QDate::currentDate())
             expiredValues.insert(val);

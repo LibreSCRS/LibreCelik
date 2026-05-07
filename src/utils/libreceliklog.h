@@ -16,10 +16,12 @@ inline QDebug operator<<(QDebug dbg, const std::string& s)
 }
 #endif
 
-Q_DECLARE_LOGGING_CATEGORY(libreSCRSGeneral)
-Q_DECLARE_LOGGING_CATEGORY(librecSCRSCard)
-Q_DECLARE_LOGGING_CATEGORY(libreCelikAPI)
-Q_DECLARE_LOGGING_CATEGORY(libreCelikPrinting)
-Q_DECLARE_LOGGING_CATEGORY(libreCelikCertificates)
-Q_DECLARE_LOGGING_CATEGORY(libreCelikHealth)
-Q_DECLARE_LOGGING_CATEGORY(libreCelikPks)
+// LibreCelik logging categories. The C++ identifiers use a short `lc*` prefix;
+// the runtime category strings (`rs.libresc.librecelik.<subsystem>`) are the
+// stable external contract — they are what users filter on via
+// QT_LOGGING_RULES and what appears in journald output.
+Q_DECLARE_LOGGING_CATEGORY(lcGeneral)
+Q_DECLARE_LOGGING_CATEGORY(lcSmartCard)
+Q_DECLARE_LOGGING_CATEGORY(lcPrinting)
+Q_DECLARE_LOGGING_CATEGORY(lcCertificates)
+Q_DECLARE_LOGGING_CATEGORY(lcPluginRegistry)

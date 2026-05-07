@@ -1,0 +1,15 @@
+name: API Boundary Check
+
+on:
+  pull_request:
+    branches: [main, 'feature/**']
+  push:
+    branches: [main, 'feature/**']
+
+jobs:
+  check-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run check-api-boundary.sh
+        run: ./ci/scripts/check-api-boundary.sh

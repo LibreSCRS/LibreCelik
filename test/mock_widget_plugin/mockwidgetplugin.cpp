@@ -23,7 +23,7 @@ public:
         return "Mock Card";
     }
 
-    QWidget* createWidget(const plugin::CardData& data, QWidget* parent) const override
+    QWidget* createWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent) const override
     {
         auto* label = new QLabel(QString::fromStdString(data.cardType), parent);
         label->setObjectName("mockLabel");

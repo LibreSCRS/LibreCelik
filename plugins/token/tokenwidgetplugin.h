@@ -27,5 +27,5 @@ public:
     {
         return {QStringLiteral("pkcs15"), QStringLiteral("cardedge")};
     }
-    QWidget* createWidget(const plugin::CardData& data, QWidget* parent) const override;
+    QWidget* createWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent) const override;
 };

@@ -49,7 +49,7 @@ add_executable(
 target_link_libraries(
     ${PROJECT_NAME}
     GTest::gtest_main
-    CardPlugin
+    CardPlugin_Impl
     RsEId
     UUID::UUID
     Qt6::Core
@@ -70,10 +70,11 @@ target_include_directories(CardWidgetPluginRegistryTests PRIVATE
 target_link_libraries(CardWidgetPluginRegistryTests
     GTest::gtest_main
     Qt6::Widgets
-    CardPlugin
+    CardPlugin_Impl
 )
 target_sources(CardWidgetPluginRegistryTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src/plugin/cardwidgetpluginregistry.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
 )
 target_compile_definitions(CardWidgetPluginRegistryTests PRIVATE
     MOCK_WIDGET_PLUGIN_DIR="$<TARGET_FILE_DIR:mock-widget-plugin>"
@@ -91,9 +92,8 @@ target_include_directories(AsyncCardReaderTests PRIVATE
 )
 target_link_libraries(AsyncCardReaderTests
     GTest::gtest_main
-    CardPlugin
-    SmartCard
-    OpenSSL_Crypto
+    CardPlugin_Impl
+    SmartCard_Impl
     Qt6::Core
     Qt6::Widgets
     Qt6::Test
@@ -111,12 +111,17 @@ target_link_libraries(QSmartCardMonitorTests PRIVATE
     GTest::gtest_main
     Qt6::Core
     Qt6::Test
-    SmartCard
+    SmartCard_Impl
+    LibreSCRS_SmartCard
     Threads::Threads
 )
+# detail/MonitorInjection.h is internal: #error-guarded behind
+# LIBRESCRS_INTERNAL_BUILD. Mirrors LM's LibreSCRS_MonitorTests setup.
+target_compile_definitions(QSmartCardMonitorTests PRIVATE LIBRESCRS_INTERNAL_BUILD)
 target_include_directories(QSmartCardMonitorTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${libremiddleware_SOURCE_DIR}/test
+    ${libremiddleware_SOURCE_DIR}/lib/smartcard/src
 )
 gtest_discover_tests(QSmartCardMonitorTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
@@ -136,7 +141,7 @@ target_include_directories(EuVrcTextDocumentTests PRIVATE
 )
 target_link_libraries(EuVrcTextDocumentTests
     GTest::gtest
-    CardPlugin
+    CardPlugin_Impl
     LibreCelikPrinting
     Qt6::Widgets
     Qt6::PrintSupport
@@ -173,7 +178,7 @@ target_include_directories(HealthTextDocumentTests PRIVATE
 )
 target_link_libraries(HealthTextDocumentTests
     GTest::gtest
-    CardPlugin
+    CardPlugin_Impl
     LibreCelikPrinting
     Qt6::Widgets
     Qt6::PrintSupport
@@ -197,7 +202,7 @@ target_include_directories(EIdTextDocumentTests PRIVATE
 )
 target_link_libraries(EIdTextDocumentTests
     GTest::gtest
-    CardPlugin
+    CardPlugin_Impl
     LibreCelikPrinting
     Qt6::Widgets
     Qt6::PrintSupport
@@ -221,7 +226,7 @@ target_include_directories(PIVTextDocumentTests PRIVATE
 )
 target_link_libraries(PIVTextDocumentTests
     GTest::gtest
-    CardPlugin
+    CardPlugin_Impl
     LibreCelikPrinting
     Qt6::Widgets
     Qt6::PrintSupport
@@ -242,15 +247,51 @@ target_link_libraries(EMRTDAuthWidgetTests
     Qt6::Core
     Qt6::Widgets
     Qt6::Test
+    LibreSCRS::Auth
 )
 set_target_properties(EMRTDAuthWidgetTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(EMRTDAuthWidgetTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 if(LIBRECELIK_SIGNING_ENABLED)
+    add_executable(signingconfiguration_test
+        signingconfiguration_test.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/signingconfiguration.cpp
+        ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.h
+        ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
+    )
+    target_include_directories(signingconfiguration_test PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+        ${PROJECT_BINARY_DIR}/../src
+    )
+    target_link_libraries(signingconfiguration_test PRIVATE
+        GTest::gtest_main
+        Qt6::Core
+        LibreSCRS_Signing
+    )
+    gtest_discover_tests(signingconfiguration_test PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+    add_executable(signingservice_startup_test
+        signingservice_startup_test.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/signingconfiguration.cpp
+        ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.h
+        ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
+    )
+    target_include_directories(signingservice_startup_test PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+        ${PROJECT_BINARY_DIR}/../src
+    )
+    target_link_libraries(signingservice_startup_test PRIVATE
+        GTest::gtest_main
+        Qt6::Core
+        LibreSCRS_Signing
+    )
+    gtest_discover_tests(signingservice_startup_test PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+endif()
+
+if(LIBRECELIK_SIGNING_ENABLED)
     add_executable(SigningUnitTests
         signing_unit_test.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/certutils.cpp
-        ${CMAKE_SOURCE_DIR}/src/certificate/opensslhelpers.cpp
     )
     target_include_directories(SigningUnitTests PRIVATE
         ${CMAKE_SOURCE_DIR}/src
@@ -259,8 +300,9 @@ if(LIBRECELIK_SIGNING_ENABLED)
     target_link_libraries(SigningUnitTests PRIVATE
         GTest::gtest
         Qt6::Core
-        OpenSSL_Crypto
+        LibreSCRS::Certificate
         LibreSign
+        LibreSCRS_Signing
     )
     gtest_discover_tests(SigningUnitTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()
@@ -276,7 +318,6 @@ if(LIBRECELIK_SIGNING_ENABLED)
         ${CMAKE_SOURCE_DIR}/src/signing/filedropzone.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/pdfpreviewwidget.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/certutils.cpp
-        ${CMAKE_SOURCE_DIR}/src/certificate/opensslhelpers.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/wizardheaderwidget.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/filelistdelegate.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/resultdelegate.cpp
@@ -291,19 +332,25 @@ if(LIBRECELIK_SIGNING_ENABLED)
         Qt6::Widgets
         Qt6::Test
         Qt6::PdfWidgets
-        CardPlugin
-        SmartCard
+        CardPlugin_Impl
+        SmartCard_Impl
         LibreSign
-        OpenSSL_Crypto
+        LibreSCRS_Signing
+        LibreSCRS::Certificate
         PCSC::PCSC
     )
     target_compile_definitions(SigningWizardE2ETests PRIVATE
         MIDDLEWARE_PLUGIN_DIR="$<TARGET_FILE_DIR:piv-plugin>"
         PKCS11_MODULE_PATH="$<TARGET_FILE:librescrs-pkcs11>"
         DSS_JAR_DIR="${libremiddleware_SOURCE_DIR}/tools/dss-service/target"
+        # qt_add_translations binds the :/i18n/ resource only to the main
+        # LibreCelik target, so the test binary loads the .qm from the
+        # build dir directly. The path tracks where qt_add_translations
+        # writes the lrelease output (currently ${CMAKE_BINARY_DIR}/src/).
+        LIBRECELIK_QM_DIR="${CMAKE_BINARY_DIR}/src"
         LIBRESCRS_TESTING
     )
     set_target_properties(SigningWizardE2ETests PROPERTIES AUTOMOC ON)
-    add_dependencies(SigningWizardE2ETests piv-plugin pkcs15-plugin cardedge-plugin librescrs-pkcs11)
+    add_dependencies(SigningWizardE2ETests piv-plugin pkcs15-plugin cardedge-plugin librescrs-pkcs11 LibreCelik_lrelease)
     gtest_discover_tests(SigningWizardE2ETests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()

@@ -5,7 +5,7 @@
 
 #include "utils/pluginwidgetbase.h"
 
-#include <plugin/card_data.h>
+#include <LibreSCRS/Plugin/CardData.h>
 
 class CollapsibleSection;
 class QLabel;
@@ -17,23 +17,23 @@ class EidWidget : public plugin_ui::PluginWidgetBase
     Q_OBJECT
 public:
     // Full-data constructor (existing behaviour, unchanged)
-    explicit EidWidget(const plugin::CardData& data, QWidget* parent = nullptr);
+    explicit EidWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent = nullptr);
 
     // Empty-shell constructor for progressive display
     explicit EidWidget(QWidget* parent);
 
     // Progressive display: add one group at a time
-    void addGroup(const plugin::CardFieldGroup& group);
+    void addGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
 
     Q_INVOKABLE void enablePrintButton();
 
-    const plugin::CardData& cardData() const
+    const LibreSCRS::Plugin::CardData& cardData() const
     {
         return data;
     }
 
 signals:
-    void printRequested(const plugin::CardData& data);
+    void printRequested(const LibreSCRS::Plugin::CardData& data);
 
 protected:
     void retranslateUi() override;
@@ -44,9 +44,9 @@ private:
     CollapsibleSection* buildAddressSection(QWidget* parent) const;
     CollapsibleSection* buildDocumentSection(QWidget* parent) const;
     CollapsibleSection* buildPersonalSection(QWidget* parent) const;
-    void addVerificationBadges(CollapsibleSection* section, const plugin::CardFieldGroup* source = nullptr);
+    void addVerificationBadges(CollapsibleSection* section, const LibreSCRS::Plugin::CardFieldGroup* source = nullptr);
 
-    plugin::CardData data;
+    LibreSCRS::Plugin::CardData data;
 
     // Progressive-display state
     QVBoxLayout* outerLayout = nullptr;

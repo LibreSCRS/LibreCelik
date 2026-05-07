@@ -3,33 +3,45 @@
 
 #pragma once
 
+#include <LibreSCRS/SmartCard/MonitorService.h>
+
 #include <QObject>
 #include <QString>
-#include <smartcard/monitor.h>
-#include <smartcard/monitor_event.h>
 
 #include <memory>
 
 #include "qsmartcardmonitor.h"
 
+/// Process-wide PC/SC monitor relay.
+///
+/// Singleton-like access goes through smartCardReaderListener() (a
+/// Q_GLOBAL_STATIC handle), matching the LibreCelik singleton convention.
+/// Q_GLOBAL_STATIC handles deterministic destruction at QApplication exit,
+/// so no explicit shutdown() method is required (compare main()'s
+/// aboutToQuit handler previously responsible for tearing down a Meyers
+/// static).
 class SmartCardReaderListener : public QObject
 {
     Q_OBJECT
 public:
-    static SmartCardReaderListener& instance();
-    void shutdown(); // Stop monitor before app exit
-
-signals:
-    void smartCardReaderEnumerationChanged(const QStringList& scrNames);
-    void smartCardReaderEventOccured(smartcard::MonitorEvent event);
-
-private:
-    SmartCardReaderListener(QObject* parent = nullptr);
+    explicit SmartCardReaderListener(QObject* parent = nullptr);
     ~SmartCardReaderListener() override;
+
     SmartCardReaderListener(const SmartCardReaderListener&) = delete;
     SmartCardReaderListener& operator=(const SmartCardReaderListener&) = delete;
 
+signals:
+    void smartCardReaderEnumerationChanged(const QStringList& scrNames);
+    void smartCardReaderEventOccured(LibreSCRS::SmartCard::MonitorEvent event);
+
 private:
-    std::unique_ptr<smartcard::Monitor> monitor;
+    std::unique_ptr<LibreSCRS::SmartCard::MonitorService> monitor;
     QSmartCardMonitor* qtMonitor = nullptr;
 };
+
+/// Returns the process-wide SmartCardReaderListener.
+///
+/// Backed by Q_GLOBAL_STATIC; first call constructs the listener,
+/// QApplication shutdown destroys it deterministically before static
+/// destructors run.
+SmartCardReaderListener* smartCardReaderListener();

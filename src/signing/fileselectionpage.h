@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <libresign/types.h>
+#include <LibreSCRS/Signing/Enums.h>
 
 #include <QWidget>
 
@@ -18,8 +18,8 @@ class FileDropZone;
 
 struct FileFormatInfo
 {
-    libresign::SignatureFormat format;
-    libresign::SignaturePackaging packaging;
+    LibreSCRS::Signing::SignatureFormat format;
+    LibreSCRS::Signing::PackagingMode packaging;
 };
 
 class FileSelectionPage : public QWidget
@@ -34,8 +34,8 @@ public:
     QString outputFolder() const;
     bool hasPAdESFiles() const;
     QString firstPAdESFile() const;
-    libresign::SignatureFormat formatForFile(int index) const;
-    libresign::SignaturePackaging packagingForFile(int index) const;
+    LibreSCRS::Signing::SignatureFormat formatForFile(int index) const;
+    LibreSCRS::Signing::PackagingMode packagingForFile(int index) const;
 
 signals:
     void validityChanged(bool valid);
@@ -56,9 +56,10 @@ private:
     bool isValid() const;
     QString formatFileSize(qint64 bytes) const;
 
-    static libresign::SignatureFormat defaultFormatForExtension(const QString& suffix);
+    static LibreSCRS::Signing::SignatureFormat defaultFormatForExtension(const QString& suffix);
     static QList<FileFormatInfo> availableFormatsForExtension(const QString& suffix);
-    static QString formatDisplayName(libresign::SignatureFormat format, libresign::SignaturePackaging packaging);
+    static QString formatDisplayName(LibreSCRS::Signing::SignatureFormat format,
+                                     LibreSCRS::Signing::PackagingMode packaging);
 
     FileDropZone* dropZone = nullptr;
     QListWidget* fileList = nullptr;

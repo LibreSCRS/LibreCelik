@@ -64,6 +64,10 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-about-license-apache");
     //% "statically linked"
     QT_TRID_NOOP("lc-about-license-static");
+    //% "bundled subset"
+    QT_TRID_NOOP("lc-about-license-bundled");
+    //% "SIL Open Font License 1.1"
+    QT_TRID_NOOP("lc-about-license-ofl");
     //% "About"
     QT_TRID_NOOP("lc-about-tab-about");
     //% "Credits"
@@ -260,6 +264,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-cert-extension-critical");
     //% "Unknown"
     QT_TRID_NOOP("lc-cert-unknown");
+    //% "Unknown"
+    QT_TRID_NOOP("lc-cert-algorithm-unknown");
     //% "Certificate Viewer"
     QT_TRID_NOOP("lc-cert-dialog-title");
     //% "No certificates available."
@@ -272,32 +278,44 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-cert-verify-unspecified-error");
     //% "Unable to get issuer certificate"
     QT_TRID_NOOP("lc-cert-verify-no-issuer");
-    //% "Unable to get CRL"
-    QT_TRID_NOOP("lc-cert-verify-no-crl");
-    //% "Unable to decrypt certificate signature"
-    QT_TRID_NOOP("lc-cert-verify-decrypt-fail");
-    //% "Unable to decode issuer public key"
-    QT_TRID_NOOP("lc-cert-verify-decode-fail");
-    //% "Certificate not yet valid"
-    QT_TRID_NOOP("lc-cert-verify-not-yet-valid");
     //% "Certificate has expired"
     QT_TRID_NOOP("lc-cert-verify-expired");
-    //% "Certificate signature failure"
-    QT_TRID_NOOP("lc-cert-verify-signature-fail");
-    //% "Error in cert not before field"
-    QT_TRID_NOOP("lc-cert-verify-not-before-error");
-    //% "Error in cert not after field"
-    QT_TRID_NOOP("lc-cert-verify-not-after-error");
-    //% "Self-signed certificate"
-    QT_TRID_NOOP("lc-cert-verify-self-signed");
-    //% "Self-signed certificate in chain"
-    QT_TRID_NOOP("lc-cert-verify-self-signed-chain");
-    //% "Unable to get local issuer certificate"
-    QT_TRID_NOOP("lc-cert-verify-no-local-issuer");
-    //% "Unable to verify leaf signature"
-    QT_TRID_NOOP("lc-cert-verify-leaf-fail");
-    //% "Certificate revoked"
-    QT_TRID_NOOP("lc-cert-verify-revoked");
+    //% "Untrusted root certificate"
+    QT_TRID_NOOP("lc-cert-verify-untrusted-root");
+    //% "Trust unknown"
+    QT_TRID_NOOP("lc-cert-verify-trust-unknown");
+    //% "Unparseable certificate"
+    QT_TRID_NOOP("lc-cert-parse-error");
+    //% "Curve"
+    QT_TRID_NOOP("lc-cert-field-curve");
+
+    // --- Certificate KeyUsage / ExtendedKeyUsage / GeneralName labels ---
+    //% "Certificate Sign"
+    QT_TRID_NOOP("lc-cert-ku-key-cert-sign");
+    //% "CRL Sign"
+    QT_TRID_NOOP("lc-cert-ku-crl-sign");
+    //% "Encipher Only"
+    QT_TRID_NOOP("lc-cert-ku-encipher-only");
+    //% "Decipher Only"
+    QT_TRID_NOOP("lc-cert-ku-decipher-only");
+    //% "Email"
+    QT_TRID_NOOP("lc-cert-gn-rfc822");
+    //% "DNS"
+    QT_TRID_NOOP("lc-cert-gn-dns");
+    //% "URI"
+    QT_TRID_NOOP("lc-cert-gn-uri");
+    //% "IP"
+    QT_TRID_NOOP("lc-cert-gn-ip");
+    //% "Directory"
+    QT_TRID_NOOP("lc-cert-gn-directory");
+    //% "Registered ID"
+    QT_TRID_NOOP("lc-cert-gn-registered-id");
+    //% "Other Name"
+    QT_TRID_NOOP("lc-cert-gn-other");
+    //% "X.400 Address"
+    QT_TRID_NOOP("lc-cert-gn-x400");
+    //% "EDI Party Name"
+    QT_TRID_NOOP("lc-cert-gn-edi");
 
     // --- Error messages ---
     //% "No card connection available"
@@ -943,12 +961,22 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-sign-complete");
     //% "FAILED: %1 — %2"
     QT_TRID_NOOP("lc-sign-fail-sign");
-    //% "FAILED: %1 — could not read file"
-    QT_TRID_NOOP("lc-sign-fail-read");
-    //% "FAILED: %1 — could not write output"
-    QT_TRID_NOOP("lc-sign-fail-write");
     //% "FAILED: %1 — file exceeds 256 MB size limit"
     QT_TRID_NOOP("lc-sign-fail-too-large");
+    //% "FAILED: signing was cancelled"
+    QT_TRID_NOOP("lc-sign-fail-cancelled");
+    //% "FAILED: incorrect PIN"
+    QT_TRID_NOOP("lc-sign-fail-pin");
+    //% "FAILED: card is blocked"
+    QT_TRID_NOOP("lc-sign-fail-blocked");
+    //% "FAILED: timestamp authority unreachable"
+    QT_TRID_NOOP("lc-sign-fail-tsa");
+    //% "FAILED: trust store unavailable"
+    QT_TRID_NOOP("lc-sign-fail-trust");
+    //% "FAILED: invalid signing request"
+    QT_TRID_NOOP("lc-sign-fail-invalid");
+    //% "FAILED: signing failed — see log for details"
+    QT_TRID_NOOP("lc-sign-fail-generic");
     //% "OK: %1 → %2"
     QT_TRID_NOOP("lc-sign-ok");
     //% "Previous"

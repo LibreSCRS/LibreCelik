@@ -5,20 +5,41 @@
 
 #include "certificatetreeviewmodel.h"
 
-typedef struct x509_st X509;
-typedef struct x509_store_st X509_STORE;
+#include <cstdint>
+#include <memory>
+#include <vector>
+
+namespace LibreSCRS::Trust {
+class TrustStore;
+}
+
+namespace LibreSCRS::Certificate {
+class ParsedCertificate;
+}
 
 class CertificateHierarchyModel : public CertificateTreeViewModel
 {
     Q_OBJECT
 public:
-    explicit CertificateHierarchyModel(X509* cert, X509_STORE* store, QObject* parent = nullptr);
+    /// @brief Build a chain hierarchy by walking issuers from @p leaf upward
+    ///        through the @p trustStore. When @p trustStore is null, only the
+    ///        leaf is shown with a "trust unknown" status (graceful
+    ///        degradation per Spec §10).
+    explicit CertificateHierarchyModel(const LibreSCRS::Certificate::ParsedCertificate* leaf,
+                                       std::shared_ptr<const LibreSCRS::Trust::TrustStore> trustStore,
+                                       QObject* parent = nullptr);
 
     QVariant data(const QModelIndex& index, int role) const override;
 
 private:
-    void buildChain(X509* cert, X509_STORE* store);
-    QString translateVerificationResult(int error);
+    enum class TrustState {
+        Trusted,
+        Untrusted,
+        Unknown,
+    };
 
-    int verificationError = 0;
+    void buildChain(const LibreSCRS::Certificate::ParsedCertificate& leaf);
+
+    std::shared_ptr<const LibreSCRS::Trust::TrustStore> trustStore;
+    TrustState trustState = TrustState::Unknown;
 };

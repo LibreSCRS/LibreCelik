@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: CodeQL
+
+# GitHub CodeQL static analysis for the C++ surface, on every PR plus a
+# weekly schedule.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 4 * * 0'
+
+jobs:
+  analyze:
+    name: Analyze (cpp)
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build
+
+      - name: Install Qt 6.10
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.10.*'
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          modules: 'qtpdf'
+          cache: true
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: cpp
+          queries: security-and-quality
+
+      - name: Configure & Build
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Debug -G Ninja
+          cmake --build build -j4
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:cpp"

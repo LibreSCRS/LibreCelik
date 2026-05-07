@@ -3,11 +3,10 @@
 
 #include "cardwidgetpluginregistry.h"
 
+#include "utils/libreceliklog.h"
+
 #include <QDir>
 #include <QJsonObject>
-#include <QLoggingCategory>
-
-Q_LOGGING_CATEGORY(lcPluginRegistry, "rs.libresc.librecelik.plugin")
 
 CardWidgetPluginRegistry::~CardWidgetPluginRegistry()
 {

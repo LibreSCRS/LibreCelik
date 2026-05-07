@@ -5,7 +5,7 @@
 
 #include "utils/pluginwidgetbase.h"
 
-#include <plugin/card_data.h>
+#include <LibreSCRS/Plugin/CardData.h>
 
 namespace LibreSCRS {
 class CardHeaderCard;
@@ -19,12 +19,12 @@ class PIVWidget : public plugin_ui::PluginWidgetBase
 {
     Q_OBJECT
 public:
-    explicit PIVWidget(const plugin::CardData& data, QWidget* parent = nullptr);
+    explicit PIVWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent = nullptr);
     explicit PIVWidget(QWidget* parent);
 
-    void addGroup(const plugin::CardFieldGroup& group);
+    void addGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
 
-    const plugin::CardData& cardData() const
+    const LibreSCRS::Plugin::CardData& cardData() const
     {
         return data;
     }
@@ -32,21 +32,21 @@ public:
     Q_INVOKABLE void enablePrintButton();
 
 signals:
-    void printRequested(const plugin::CardData& data);
+    void printRequested(const LibreSCRS::Plugin::CardData& data);
 
 protected:
     void retranslateUi() override;
 
 private:
     void buildEmptyShell();
-    void addChuidGroup(const plugin::CardFieldGroup& group);
-    void addCccGroup(const plugin::CardFieldGroup& group);
-    void addPrintedGroup(const plugin::CardFieldGroup& group);
-    void addDiscoveryGroup(const plugin::CardFieldGroup& group);
-    void addKeyHistoryGroup(const plugin::CardFieldGroup& group);
+    void addChuidGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
+    void addCccGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
+    void addPrintedGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
+    void addDiscoveryGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
+    void addKeyHistoryGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
     void rebuildHeader();
 
-    plugin::CardData data;
+    LibreSCRS::Plugin::CardData data;
     QVBoxLayout* contentLayout = nullptr;
     CollapsibleSection* outerSection = nullptr;
     QToolButton* printBtn = nullptr;

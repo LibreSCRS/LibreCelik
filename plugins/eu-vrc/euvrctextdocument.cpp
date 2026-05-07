@@ -7,9 +7,9 @@
 #include "utils/stringutils.h"
 #include <plugin/carddatautils.h>
 
-using plugin::getFieldValue;
+using LibreSCRS::Plugin::getFieldValue;
 
-EuVrcTextDocument::EuVrcTextDocument(const plugin::CardData& cardData, QString cssPath)
+EuVrcTextDocument::EuVrcTextDocument(const LibreSCRS::Plugin::CardData& cardData, QString cssPath)
 {
     auto html = buildHtml(cardData);
     setupDocument(html, cssPath);
@@ -29,7 +29,7 @@ QString EuVrcTextDocument::emitRow(const QString& label, const QString& value, c
         .arg(label.toHtmlEscaped(), value.toHtmlEscaped(), cls);
 }
 
-QString EuVrcTextDocument::buildHtml(const plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildHtml(const LibreSCRS::Plugin::CardData& cardData) const
 {
     QString html;
     html += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -70,7 +70,7 @@ QString EuVrcTextDocument::buildHtml(const plugin::CardData& cardData) const
     return html;
 }
 
-QString EuVrcTextDocument::buildRegistrationSection(const plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildRegistrationSection(const LibreSCRS::Plugin::CardData& cardData) const
 {
     struct Field
     {
@@ -108,7 +108,7 @@ QString EuVrcTextDocument::buildRegistrationSection(const plugin::CardData& card
     return "<table>\n" + rows + "</table>\n";
 }
 
-QString EuVrcTextDocument::buildVehicleSection(const plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildVehicleSection(const LibreSCRS::Plugin::CardData& cardData) const
 {
     struct Field
     {
@@ -135,7 +135,7 @@ QString EuVrcTextDocument::buildVehicleSection(const plugin::CardData& cardData)
     return "<h2>" + qtTrId("lc-euvrc-doc-vehicle-data") + "</h2>\n<table>\n" + rows + "</table>\n";
 }
 
-QString EuVrcTextDocument::buildEngineTechnicalSection(const plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildEngineTechnicalSection(const LibreSCRS::Plugin::CardData& cardData) const
 {
     struct Field
     {
@@ -178,7 +178,7 @@ QString EuVrcTextDocument::buildEngineTechnicalSection(const plugin::CardData& c
     return "<h2>" + qtTrId("lc-euvrc-doc-engine-technical") + "</h2>\n<table>\n" + rows + "</table>\n";
 }
 
-QString EuVrcTextDocument::buildHolderSection(const plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildHolderSection(const LibreSCRS::Plugin::CardData& cardData) const
 {
     struct Field
     {
@@ -206,7 +206,7 @@ QString EuVrcTextDocument::buildHolderSection(const plugin::CardData& cardData) 
     return "<h2>" + qtTrId("lc-euvrc-doc-holder-data") + "</h2>\n<table>\n" + rows + "</table>\n";
 }
 
-QString EuVrcTextDocument::buildOwnerSection(const plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildOwnerSection(const LibreSCRS::Plugin::CardData& cardData) const
 {
     auto val = getFieldValue(cardData, "owner2_name");
     auto row = emitRow(qtTrId("lc-euvrc-doc-owner-name"), val);
@@ -216,7 +216,7 @@ QString EuVrcTextDocument::buildOwnerSection(const plugin::CardData& cardData) c
     return "<h2>" + qtTrId("lc-euvrc-doc-owner-data") + "</h2>\n<table>\n" + row + "</table>\n";
 }
 
-QString EuVrcTextDocument::buildUserSection(const plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildUserSection(const LibreSCRS::Plugin::CardData& cardData) const
 {
     struct Field
     {
@@ -244,10 +244,13 @@ QString EuVrcTextDocument::buildUserSection(const plugin::CardData& cardData) co
     return "<h2>" + qtTrId("lc-euvrc-doc-user-data") + "</h2>\n<table>\n" + rows + "</table>\n";
 }
 
-QString EuVrcTextDocument::buildNationalSection(const plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildNationalSection(const LibreSCRS::Plugin::CardData& cardData) const
 {
-    const auto* natGroup = cardData.findGroup("national");
-    if (!natGroup || natGroup->fields.empty())
+    auto natGroupOpt = cardData.findGroup("national");
+    if (!natGroupOpt)
+        return {};
+    const auto& natGroup = cardData.groupAt(*natGroupOpt);
+    if (natGroup.fields.empty())
         return {};
 
     // Known Serbian national extension labels
@@ -260,8 +263,11 @@ QString EuVrcTextDocument::buildNationalSection(const plugin::CardData& cardData
     };
 
     QString rows;
-    for (const auto& field : natGroup->fields) {
-        auto val = QString::fromStdString(field.asString());
+    for (const auto& field : natGroup.fields) {
+        auto textOpt = field.textValue();
+        if (!textOpt.has_value())
+            continue;
+        auto val = QString::fromStdString(*textOpt);
         if (val.isEmpty())
             continue;
 

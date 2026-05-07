@@ -7,10 +7,10 @@
 
 #include <QAction>
 #include <QDialogButtonBox>
-#include <QRegularExpressionValidator>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QRegularExpressionValidator>
 #include <QVBoxLayout>
 
 ChangePinDlg::ChangePinDlg(const QString& pinLabel, bool isTransport, int minLen, int maxLen, QWidget* parent)
@@ -75,10 +75,21 @@ void ChangePinDlg::onOkClicked()
     statusLabel->setStyleSheet("");
     statusLabel->setText(qtTrId("lc-changepin-changing"));
 
-    emit pinChangeRequested(currentPinEdit->text(), newPinEdit->text());
+    // PIN passes from the QLineEdit's QString into a Secure::String via the
+    // adopt-and-cleanse rvalue constructor — Secure::String(std::string&&)
+    // copies the bytes into its cleansing storage and zeroes the temporary
+    // before it dies, so no plaintext intermediate outlives the call. The
+    // QLineEdit's own QString is then cleared so its implicitly-shared
+    // storage gets overwritten by the next textChanged-driven detach.
+    LibreSCRS::Secure::String oldPin{currentPinEdit->text().toStdString()};
+    LibreSCRS::Secure::String newPin{newPinEdit->text().toStdString()};
+    emit pinChangeRequested(oldPin, newPin);
+    currentPinEdit->clear();
+    newPinEdit->clear();
+    confirmPinEdit->clear();
 }
 
-void ChangePinDlg::onPinTriesLeftRead(int triesLeft, bool blocked)
+void ChangePinDlg::onPinRetriesLeftRead(int retriesLeft, bool blocked)
 {
     if (blocked) {
         retriesLabel->setText(qtTrId("lc-changepin-blocked"));
@@ -87,8 +98,8 @@ void ChangePinDlg::onPinTriesLeftRead(int triesLeft, bool blocked)
         currentPinEdit->setEnabled(false);
         newPinEdit->setEnabled(false);
         confirmPinEdit->setEnabled(false);
-    } else if (triesLeft >= 0) {
-        retriesLabel->setText(qtTrId("lc-changepin-retries-remaining").arg(triesLeft));
+    } else if (retriesLeft >= 0) {
+        retriesLabel->setText(qtTrId("lc-changepin-retries-remaining").arg(retriesLeft));
     } else {
         retriesLabel->setText(qtTrId("lc-changepin-retries-remaining").arg("?"));
     }
@@ -109,7 +120,7 @@ void ChangePinDlg::onPinChangeFailed(int retriesLeft, bool blocked, const QStrin
     statusLabel->setText(errorMessage);
 
     // Refresh retries display
-    onPinTriesLeftRead(retriesLeft, blocked);
+    onPinRetriesLeftRead(retriesLeft, blocked);
 
     if (!blocked)
         validateForm();

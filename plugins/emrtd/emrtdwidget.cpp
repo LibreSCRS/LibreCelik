@@ -13,14 +13,14 @@
 #include <QToolButton>
 
 #include <plugin/carddatautils.h>
-#include <plugin/security_check.h>
+#include <LibreSCRS/Plugin/SecurityCheck.h>
 
 #include <QLabel>
 #include <QLineEdit>
 #include <QPixmap>
 #include <QVBoxLayout>
 
-using plugin::getFieldValue;
+using LibreSCRS::Plugin::getFieldValue;
 
 namespace {
 
@@ -89,7 +89,7 @@ std::map<std::string, QString> nationalTranslationMap()
 
 } // namespace
 
-EMRTDWidget::EMRTDWidget(const plugin::CardData& cardData, QWidget* parent) : EMRTDWidget(parent)
+EMRTDWidget::EMRTDWidget(const LibreSCRS::Plugin::CardData& cardData, QWidget* parent) : EMRTDWidget(parent)
 {
     data.cardType = cardData.cardType;
     for (const auto& group : cardData.groups)
@@ -119,7 +119,7 @@ EMRTDWidget::EMRTDWidget(QWidget* parent) : plugin_ui::PluginWidgetBase(parent)
     outerSection->addHeaderWidget(printBtn);
 }
 
-void EMRTDWidget::addGroup(const plugin::CardFieldGroup& group)
+void EMRTDWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     const auto& key = group.groupKey;
 
@@ -188,7 +188,7 @@ void EMRTDWidget::addGroup(const plugin::CardFieldGroup& group)
     } else if (key == "document_extra") {
         // If "additional" already added, show as separate "Issuing Information" section
         // Otherwise show as "Additional"
-        bool hasAdditional = data.findGroup("additional") != nullptr;
+        bool hasAdditional = data.findGroup("additional").has_value();
         if (hasAdditional) {
             auto* extraSection = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-issuing-info"), group,
                                                                        documentExtraTranslationMap());
@@ -234,14 +234,21 @@ void EMRTDWidget::addGroup(const plugin::CardFieldGroup& group)
         sectionLayout->addWidget(bioSection);
     } else if (key == "security_status") {
         // Parse fields back into SecurityStatus struct
-        plugin::SecurityStatus secStatus;
+        LibreSCRS::Plugin::SecurityStatus secStatus;
         for (const auto& field : group.fields) {
+            auto textOpt = field.textValue();
+            if (!textOpt.has_value())
+                continue;
+            const auto& text = *textOpt;
             if (field.key == "overall_integrity") {
-                secStatus.overallIntegrity = plugin::statusFromString(field.asString());
+                secStatus.overallIntegrity = LibreSCRS::Plugin::statusFromString(text).value_or(
+                    LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
             } else if (field.key == "overall_authenticity") {
-                secStatus.overallAuthenticity = plugin::statusFromString(field.asString());
+                secStatus.overallAuthenticity = LibreSCRS::Plugin::statusFromString(text).value_or(
+                    LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
             } else if (field.key == "overall_genuineness") {
-                secStatus.overallGenuineness = plugin::statusFromString(field.asString());
+                secStatus.overallGenuineness = LibreSCRS::Plugin::statusFromString(text).value_or(
+                    LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
             } else if (field.key.starts_with("check_")) {
                 // Individual check fields: check_N_id, check_N_category, etc.
                 // Parse grouped by index
@@ -257,17 +264,19 @@ void EMRTDWidget::addGroup(const plugin::CardFieldGroup& group)
                     secStatus.checks.emplace_back();
                 auto& check = secStatus.checks[idx];
                 if (suffix == "id")
-                    check.checkId = field.asString();
+                    check.checkId = text;
                 else if (suffix == "category")
-                    check.category = field.asString();
+                    check.category = LibreSCRS::Plugin::categoryFromString(text).value_or(
+                        LibreSCRS::Plugin::SecurityCategory::Other);
                 else if (suffix == "status")
-                    check.status = plugin::statusFromString(field.asString());
+                    check.status = LibreSCRS::Plugin::statusFromString(text).value_or(
+                        LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
                 else if (suffix == "label")
-                    check.label = field.asString();
+                    check.label = text;
                 else if (suffix == "detail")
-                    check.detail = field.asString();
+                    check.detail = text;
                 else if (suffix == "error")
-                    check.errorDetail = field.asString();
+                    check.errorDetail = text;
             }
         }
         if (!securityStatusWidget) {
@@ -284,7 +293,7 @@ void EMRTDWidget::addGroup(const plugin::CardFieldGroup& group)
     }
 }
 
-void EMRTDWidget::showAuthRequired(const plugin::CardFieldGroup* group)
+void EMRTDWidget::showAuthRequired(const LibreSCRS::Plugin::CardFieldGroup* group)
 {
     auto* layout = qobject_cast<QVBoxLayout*>(this->layout());
 
@@ -309,7 +318,7 @@ void EMRTDWidget::showAuthRequired(const plugin::CardFieldGroup* group)
     layout->addStretch();
 }
 
-void EMRTDWidget::showError(const plugin::CardFieldGroup* group)
+void EMRTDWidget::showError(const LibreSCRS::Plugin::CardFieldGroup* group)
 {
     auto* layout = qobject_cast<QVBoxLayout*>(this->layout());
 

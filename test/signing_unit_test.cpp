@@ -8,7 +8,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
-#include <libresign/types.h>
+#include <LibreSCRS/Signing/Enums.h>
 
 // ---------------------------------------------------------------------------
 // certutils tests (public namespace functions, no hardware needed)
@@ -47,9 +47,9 @@ TEST(CertUtils, IsCertificateExpired_GarbageInput)
 }
 
 // ---------------------------------------------------------------------------
-// isValidTsaUrl — covers the R4-C1 TSA URL validator used by
-// FileSelectionPage::isValid() and SignPage::startSigning() to refuse
-// http://, missing-host, and malformed URLs before token exchange.
+// isValidTsaUrl — TSA URL validator used by FileSelectionPage::isValid()
+// and SignPage::startSigning() to refuse http://, missing-host, and
+// malformed URLs before token exchange.
 // ---------------------------------------------------------------------------
 
 TEST(IsValidTsaUrl, EmptyRejected)
@@ -95,45 +95,45 @@ TEST(IsValidTsaUrl, HttpsAccepted)
 
 namespace {
 
-libresign::SignatureFormat defaultFormatForExtension(const QString& suffix)
+LibreSCRS::Signing::SignatureFormat defaultFormatForExtension(const QString& suffix)
 {
     const QString s = suffix.toLower();
     if (s == QStringLiteral("pdf"))
-        return libresign::SignatureFormat::PAdES;
+        return LibreSCRS::Signing::SignatureFormat::Pades;
     if (s == QStringLiteral("xml") || s == QStringLiteral("xsd") || s == QStringLiteral("xsl"))
-        return libresign::SignatureFormat::XAdES;
+        return LibreSCRS::Signing::SignatureFormat::Xades;
     if (s == QStringLiteral("json"))
-        return libresign::SignatureFormat::JAdES;
-    return libresign::SignatureFormat::ASiC_E;
+        return LibreSCRS::Signing::SignatureFormat::Jades;
+    return LibreSCRS::Signing::SignatureFormat::AsicE;
 }
 
 } // namespace
 
 TEST(FormatRouting, PdfGetsPAdES)
 {
-    EXPECT_EQ(defaultFormatForExtension("pdf"), libresign::SignatureFormat::PAdES);
-    EXPECT_EQ(defaultFormatForExtension("PDF"), libresign::SignatureFormat::PAdES);
-    EXPECT_EQ(defaultFormatForExtension("Pdf"), libresign::SignatureFormat::PAdES);
+    EXPECT_EQ(defaultFormatForExtension("pdf"), LibreSCRS::Signing::SignatureFormat::Pades);
+    EXPECT_EQ(defaultFormatForExtension("PDF"), LibreSCRS::Signing::SignatureFormat::Pades);
+    EXPECT_EQ(defaultFormatForExtension("Pdf"), LibreSCRS::Signing::SignatureFormat::Pades);
 }
 
 TEST(FormatRouting, XmlGetsXAdES)
 {
-    EXPECT_EQ(defaultFormatForExtension("xml"), libresign::SignatureFormat::XAdES);
-    EXPECT_EQ(defaultFormatForExtension("xsd"), libresign::SignatureFormat::XAdES);
-    EXPECT_EQ(defaultFormatForExtension("xsl"), libresign::SignatureFormat::XAdES);
+    EXPECT_EQ(defaultFormatForExtension("xml"), LibreSCRS::Signing::SignatureFormat::Xades);
+    EXPECT_EQ(defaultFormatForExtension("xsd"), LibreSCRS::Signing::SignatureFormat::Xades);
+    EXPECT_EQ(defaultFormatForExtension("xsl"), LibreSCRS::Signing::SignatureFormat::Xades);
 }
 
 TEST(FormatRouting, JsonGetsJAdES)
 {
-    EXPECT_EQ(defaultFormatForExtension("json"), libresign::SignatureFormat::JAdES);
+    EXPECT_EQ(defaultFormatForExtension("json"), LibreSCRS::Signing::SignatureFormat::Jades);
 }
 
 TEST(FormatRouting, UnknownGetsASiCE)
 {
-    EXPECT_EQ(defaultFormatForExtension("txt"), libresign::SignatureFormat::ASiC_E);
-    EXPECT_EQ(defaultFormatForExtension("docx"), libresign::SignatureFormat::ASiC_E);
-    EXPECT_EQ(defaultFormatForExtension("png"), libresign::SignatureFormat::ASiC_E);
-    EXPECT_EQ(defaultFormatForExtension(""), libresign::SignatureFormat::ASiC_E);
+    EXPECT_EQ(defaultFormatForExtension("txt"), LibreSCRS::Signing::SignatureFormat::AsicE);
+    EXPECT_EQ(defaultFormatForExtension("docx"), LibreSCRS::Signing::SignatureFormat::AsicE);
+    EXPECT_EQ(defaultFormatForExtension("png"), LibreSCRS::Signing::SignatureFormat::AsicE);
+    EXPECT_EQ(defaultFormatForExtension(""), LibreSCRS::Signing::SignatureFormat::AsicE);
 }
 
 // ---------------------------------------------------------------------------
@@ -145,8 +145,8 @@ namespace {
 struct FileSignInfo
 {
     QString filePath;
-    libresign::SignatureFormat format;
-    libresign::SignaturePackaging packaging;
+    LibreSCRS::Signing::SignatureFormat format;
+    LibreSCRS::Signing::PackagingMode packaging;
 };
 
 QString buildOutputPath(const FileSignInfo& info, const QString& outputDir)
@@ -154,22 +154,22 @@ QString buildOutputPath(const FileSignInfo& info, const QString& outputDir)
     QFileInfo fi(info.filePath);
     QString outputPath;
     switch (info.format) {
-    case libresign::SignatureFormat::PAdES:
+    case LibreSCRS::Signing::SignatureFormat::Pades:
         outputPath = QDir(outputDir).filePath(fi.completeBaseName() + QStringLiteral("-signed.pdf"));
         break;
-    case libresign::SignatureFormat::XAdES:
-        if (info.packaging == libresign::SignaturePackaging::ENVELOPED)
+    case LibreSCRS::Signing::SignatureFormat::Xades:
+        if (info.packaging == LibreSCRS::Signing::PackagingMode::Enveloped)
             outputPath = QDir(outputDir).filePath(fi.completeBaseName() + QStringLiteral("-signed.xml"));
         else
             outputPath = QDir(outputDir).filePath(fi.fileName() + QStringLiteral(".xsig"));
         break;
-    case libresign::SignatureFormat::ASiC_E:
+    case LibreSCRS::Signing::SignatureFormat::AsicE:
         outputPath = QDir(outputDir).filePath(fi.completeBaseName() + QStringLiteral(".asice"));
         break;
-    case libresign::SignatureFormat::CAdES:
+    case LibreSCRS::Signing::SignatureFormat::Cades:
         outputPath = QDir(outputDir).filePath(fi.fileName() + QStringLiteral(".p7s"));
         break;
-    case libresign::SignatureFormat::JAdES:
+    case LibreSCRS::Signing::SignatureFormat::Jades:
         outputPath = QDir(outputDir).filePath(fi.fileName() + QStringLiteral(".jose"));
         break;
     }
@@ -180,42 +180,48 @@ QString buildOutputPath(const FileSignInfo& info, const QString& outputDir)
 
 TEST(BuildOutputPath, PAdES)
 {
-    FileSignInfo info{"/tmp/document.pdf", libresign::SignatureFormat::PAdES, libresign::SignaturePackaging::ENVELOPED};
+    FileSignInfo info{"/tmp/document.pdf", LibreSCRS::Signing::SignatureFormat::Pades,
+                      LibreSCRS::Signing::PackagingMode::Enveloped};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/document-signed.pdf"));
 }
 
 TEST(BuildOutputPath, XAdES_Enveloped)
 {
-    FileSignInfo info{"/tmp/data.xml", libresign::SignatureFormat::XAdES, libresign::SignaturePackaging::ENVELOPED};
+    FileSignInfo info{"/tmp/data.xml", LibreSCRS::Signing::SignatureFormat::Xades,
+                      LibreSCRS::Signing::PackagingMode::Enveloped};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/data-signed.xml"));
 }
 
 TEST(BuildOutputPath, XAdES_Detached)
 {
-    FileSignInfo info{"/tmp/data.xml", libresign::SignatureFormat::XAdES, libresign::SignaturePackaging::DETACHED};
+    FileSignInfo info{"/tmp/data.xml", LibreSCRS::Signing::SignatureFormat::Xades,
+                      LibreSCRS::Signing::PackagingMode::Detached};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/data.xml.xsig"));
 }
 
 TEST(BuildOutputPath, ASiCE)
 {
-    FileSignInfo info{"/tmp/report.docx", libresign::SignatureFormat::ASiC_E, libresign::SignaturePackaging::ENVELOPED};
+    FileSignInfo info{"/tmp/report.docx", LibreSCRS::Signing::SignatureFormat::AsicE,
+                      LibreSCRS::Signing::PackagingMode::Enveloped};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/report.asice"));
 }
 
 TEST(BuildOutputPath, CAdES)
 {
-    FileSignInfo info{"/tmp/file.bin", libresign::SignatureFormat::CAdES, libresign::SignaturePackaging::DETACHED};
+    FileSignInfo info{"/tmp/file.bin", LibreSCRS::Signing::SignatureFormat::Cades,
+                      LibreSCRS::Signing::PackagingMode::Detached};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/file.bin.p7s"));
 }
 
 TEST(BuildOutputPath, JAdES)
 {
-    FileSignInfo info{"/tmp/data.json", libresign::SignatureFormat::JAdES, libresign::SignaturePackaging::DETACHED};
+    FileSignInfo info{"/tmp/data.json", LibreSCRS::Signing::SignatureFormat::Jades,
+                      LibreSCRS::Signing::PackagingMode::Detached};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/data.json.jose"));
 }
@@ -223,8 +229,8 @@ TEST(BuildOutputPath, JAdES)
 TEST(BuildOutputPath, CompoundExtension)
 {
     // completeBaseName strips only the last extension
-    FileSignInfo info{"/tmp/archive.tar.gz", libresign::SignatureFormat::ASiC_E,
-                      libresign::SignaturePackaging::ENVELOPED};
+    FileSignInfo info{"/tmp/archive.tar.gz", LibreSCRS::Signing::SignatureFormat::AsicE,
+                      LibreSCRS::Signing::PackagingMode::Enveloped};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/archive.tar.asice"));
 }
@@ -235,31 +241,31 @@ TEST(BuildOutputPath, CompoundExtension)
 
 namespace {
 
-libresign::SignatureLevel parseLevel(const QString& level)
+LibreSCRS::Signing::SignatureLevel parseLevel(const QString& level)
 {
     if (level == QStringLiteral("B_B"))
-        return libresign::SignatureLevel::B_B;
+        return LibreSCRS::Signing::SignatureLevel::B_B;
     if (level == QStringLiteral("B_LT"))
-        return libresign::SignatureLevel::B_LT;
+        return LibreSCRS::Signing::SignatureLevel::B_LT;
     if (level == QStringLiteral("B_LTA"))
-        return libresign::SignatureLevel::B_LTA;
-    return libresign::SignatureLevel::B_T;
+        return LibreSCRS::Signing::SignatureLevel::B_LTA;
+    return LibreSCRS::Signing::SignatureLevel::B_T;
 }
 
 } // namespace
 
 TEST(ParseLevel, AllLevels)
 {
-    EXPECT_EQ(parseLevel("B_B"), libresign::SignatureLevel::B_B);
-    EXPECT_EQ(parseLevel("B_T"), libresign::SignatureLevel::B_T);
-    EXPECT_EQ(parseLevel("B_LT"), libresign::SignatureLevel::B_LT);
-    EXPECT_EQ(parseLevel("B_LTA"), libresign::SignatureLevel::B_LTA);
+    EXPECT_EQ(parseLevel("B_B"), LibreSCRS::Signing::SignatureLevel::B_B);
+    EXPECT_EQ(parseLevel("B_T"), LibreSCRS::Signing::SignatureLevel::B_T);
+    EXPECT_EQ(parseLevel("B_LT"), LibreSCRS::Signing::SignatureLevel::B_LT);
+    EXPECT_EQ(parseLevel("B_LTA"), LibreSCRS::Signing::SignatureLevel::B_LTA);
 }
 
 TEST(ParseLevel, UnknownDefaultsToBT)
 {
-    EXPECT_EQ(parseLevel(""), libresign::SignatureLevel::B_T);
-    EXPECT_EQ(parseLevel("INVALID"), libresign::SignatureLevel::B_T);
+    EXPECT_EQ(parseLevel(""), LibreSCRS::Signing::SignatureLevel::B_T);
+    EXPECT_EQ(parseLevel("INVALID"), LibreSCRS::Signing::SignatureLevel::B_T);
 }
 
 int main(int argc, char** argv)

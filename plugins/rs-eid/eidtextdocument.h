@@ -4,7 +4,7 @@
 #pragma once
 
 #include <QCoreApplication>
-#include <plugin/card_data.h>
+#include <LibreSCRS/Plugin/CardData.h>
 #include "textdocument.h"
 
 class EIdTextDocument : public TextDocument
@@ -12,11 +12,11 @@ class EIdTextDocument : public TextDocument
     Q_DECLARE_TR_FUNCTIONS(EIdTextDocument)
 
 public:
-    explicit EIdTextDocument(const plugin::CardData& data, QString documentPath = {}, QString cssPath = {});
+    explicit EIdTextDocument(const LibreSCRS::Plugin::CardData& data, QString documentPath = {}, QString cssPath = {});
 
 private:
     void translateDocumentData(QString& data) const;
-    void prepareDocumentData(QString& html, const plugin::CardData& cardData) const;
+    void prepareDocumentData(QString& html, const LibreSCRS::Plugin::CardData& cardData) const;
 
     bool isForeigner = false;
 };

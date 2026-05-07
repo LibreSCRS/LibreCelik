@@ -6,21 +6,21 @@
 #include "emrtdtextdocument.h"
 #include "utils/printmanager.h"
 
-QWidget* EMRTDWidgetPlugin::createWidget(const plugin::CardData& data, QWidget* parent) const
+QWidget* EMRTDWidgetPlugin::createWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent) const
 {
     auto* w = new EMRTDWidget(data, parent);
-    connect(w, &EMRTDWidget::printRequested, this, [this](const plugin::CardData& d) { print(d); });
+    connect(w, &EMRTDWidget::printRequested, this, [this](const LibreSCRS::Plugin::CardData& d) { print(d); });
     return w;
 }
 
 QWidget* EMRTDWidgetPlugin::createEmptyWidget(QWidget* parent) const
 {
     auto* w = new EMRTDWidget(parent);
-    connect(w, &EMRTDWidget::printRequested, this, [this](const plugin::CardData& d) { print(d); });
+    connect(w, &EMRTDWidget::printRequested, this, [this](const LibreSCRS::Plugin::CardData& d) { print(d); });
     return w;
 }
 
-void EMRTDWidgetPlugin::addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const
+void EMRTDWidgetPlugin::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group, QWidget* widget) const
 {
     if (auto* w = qobject_cast<EMRTDWidget*>(widget))
         w->addGroup(group);
@@ -32,7 +32,7 @@ void EMRTDWidgetPlugin::showNoDataMessage(QWidget* widget) const
         w->showNoDataMessage();
 }
 
-void EMRTDWidgetPlugin::print(const plugin::CardData& data) const
+void EMRTDWidgetPlugin::print(const LibreSCRS::Plugin::CardData& data) const
 {
     EMRTDTextDocument doc(data);
     PrintManager::printDocument(doc, qtTrId("lc-emrtd-doc-title"));

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <libresign/types.h>
+#include <LibreSCRS/Signing/VisualSignatureParams.h>
 
 #include <QWidget>
 
@@ -23,7 +23,7 @@ public:
 
     void loadPdf(const QString& path, const QString& signerName, const QString& issuer);
     bool isVisualSignatureEnabled() const;
-    libresign::VisualSignatureParams visualParams() const;
+    LibreSCRS::Signing::VisualSignatureParams visualParams() const;
     void saveSettings() const;
 
 protected:

@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 #include <QApplication>
 #include "healthtextdocument.h"
-#include <plugin/card_data.h>
+#include <LibreSCRS/Plugin/CardData.h>
 
 int main(int argc, char** argv)
 {
@@ -15,18 +15,18 @@ int main(int argc, char** argv)
 
 namespace {
 
-plugin::CardData makeHealthCardData()
+LibreSCRS::Plugin::CardData makeHealthCardData()
 {
-    plugin::CardData data;
+    LibreSCRS::Plugin::CardData data;
     data.cardType = "rs-health";
 
-    auto addText = [](plugin::CardFieldGroup& g, const std::string& key, const std::string& val) {
+    auto addText = [](LibreSCRS::Plugin::CardFieldGroup& g, const std::string& key, const std::string& val) {
         if (!val.empty())
-            g.fields.push_back({key, key, plugin::FieldType::Text, {val.begin(), val.end()}});
+            g.fields.push_back({key, key, LibreSCRS::Plugin::FieldType::Text, {val.begin(), val.end()}});
     };
 
     {
-        plugin::CardFieldGroup personal;
+        LibreSCRS::Plugin::CardFieldGroup personal;
         personal.groupKey = "personal";
         addText(personal, "given_name", "МАРКО");
         addText(personal, "family_name", "ПЕТРОВИЋ");
@@ -40,7 +40,7 @@ plugin::CardData makeHealthCardData()
         data.groups.push_back(std::move(personal));
     }
     {
-        plugin::CardFieldGroup insurance;
+        LibreSCRS::Plugin::CardFieldGroup insurance;
         insurance.groupKey = "insurance";
         addText(insurance, "insurer_name", "RFZO");
         addText(insurance, "insurer_id", "001");
@@ -50,7 +50,7 @@ plugin::CardData makeHealthCardData()
         data.groups.push_back(std::move(insurance));
     }
     {
-        plugin::CardFieldGroup address;
+        LibreSCRS::Plugin::CardFieldGroup address;
         address.groupKey = "address";
         addText(address, "street", "Knez Mihailova");
         addText(address, "address_number", "10");
@@ -60,7 +60,7 @@ plugin::CardData makeHealthCardData()
         data.groups.push_back(std::move(address));
     }
     {
-        plugin::CardFieldGroup taxpayer;
+        LibreSCRS::Plugin::CardFieldGroup taxpayer;
         taxpayer.groupKey = "taxpayer";
         addText(taxpayer, "taxpayer_name", "КОМПАНИЈА ДОО");
         addText(taxpayer, "taxpayer_id_number", "123456789");

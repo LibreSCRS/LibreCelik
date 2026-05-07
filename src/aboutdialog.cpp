@@ -17,8 +17,6 @@
 #include <QUrl>
 #include <QVBoxLayout>
 
-#include <openssl/opensslv.h>
-
 AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent)
 {
     setWindowTitle(qtTrId("lc-about-title"));
@@ -173,12 +171,18 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent)
     licenseOpenSslLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
     licenseLayout->addWidget(licenseOpenSslLabel);
 
+    licenseLiberationSansLabel = new QLabel(licenseTab);
+    licenseLiberationSansLabel->setWordWrap(true);
+    licenseLiberationSansLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
+    licenseLayout->addWidget(licenseLiberationSansLabel);
+
     licenseLayout->addSpacing(6);
 
     licenseCombo = new QComboBox(licenseTab);
     licenseCombo->addItem(QStringLiteral("GPL-3.0-or-later"), QStringLiteral(":/licenses/gpl-3.0.txt"));
     licenseCombo->addItem(QStringLiteral("LGPL-2.1-or-later"), QStringLiteral(":/licenses/lgpl-2.1.txt"));
     licenseCombo->addItem(QStringLiteral("Apache-2.0"), QStringLiteral(":/licenses/apache-2.0.txt"));
+    licenseCombo->addItem(QStringLiteral("SIL-OFL-1.1"), QStringLiteral(":/licenses/ofl-1.1.txt"));
     licenseLayout->addWidget(licenseCombo);
 
     licenseBrowser = new QTextBrowser(licenseTab);
@@ -222,9 +226,12 @@ void AboutDialog::retranslateUi()
     descriptionLabel->setText(qtTrId("lc-about-description"));
     copyrightLabel->setText(qtTrId("lc-about-copyright"));
 
-    QString components = QStringLiteral("LibreMiddleware %1 · Qt %2 · OpenSSL %3 · PC/SC")
-                             .arg(QLatin1String(LIBRECELIK_MIDDLEWARE_VERSION), QLatin1String(qVersion()),
-                                  QLatin1String(OPENSSL_VERSION_STR));
+    // OpenSSL is now an internal dependency of LibreMiddleware (4.0
+    // boundary hardening); LC neither links it directly nor surfaces its
+    // version. The License tab still acknowledges the bundled subset for
+    // compliance reasons.
+    QString components = QStringLiteral("LibreMiddleware %1 · Qt %2 · PC/SC")
+                             .arg(QLatin1String(LIBRECELIK_MIDDLEWARE_VERSION), QLatin1String(qVersion()));
     componentsLabel->setText(components);
 
     linksLabel->setText(QStringLiteral("<a href=\"https://github.com/LibreSCRS/LibreCelik\">%1</a>"
@@ -241,9 +248,13 @@ void AboutDialog::retranslateUi()
     // License tab
     licenseLibreCelikLabel->setText(QStringLiteral("<b>LibreCelik</b> — %1").arg(qtTrId("lc-about-license-gpl")));
     licenseMiddlewareLabel->setText(QStringLiteral("<b>LibreMiddleware</b> — %1").arg(qtTrId("lc-about-license-lgpl")));
-    licenseOpenSslLabel->setText(QStringLiteral("<b>OpenSSL %1</b> (%2) — %3")
-                                     .arg(QLatin1String(OPENSSL_VERSION_STR), qtTrId("lc-about-license-static"),
-                                          qtTrId("lc-about-license-apache")));
+    // OpenSSL version is intentionally not surfaced here — it is a private
+    // LibreMiddleware dependency. The license attribution remains for the
+    // bundled OpenSSL build.
+    licenseOpenSslLabel->setText(QStringLiteral("<b>OpenSSL</b> (%1) — %2")
+                                     .arg(qtTrId("lc-about-license-static"), qtTrId("lc-about-license-apache")));
+    licenseLiberationSansLabel->setText(QStringLiteral("<b>Liberation Sans</b> (%1) — %2")
+                                            .arg(qtTrId("lc-about-license-bundled"), qtTrId("lc-about-license-ofl")));
 }
 
 void AboutDialog::loadLicense(int index)

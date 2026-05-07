@@ -2,6 +2,7 @@
 // Copyright hirashix0@proton.me
 
 #include "document/emrtd/emrtdauthwidget.h"
+#include "document/emrtd/emrtdcredentials.h"
 
 #include <QApplication>
 #include <QDateEdit>
@@ -34,6 +35,7 @@ protected:
 int main(int argc, char** argv)
 {
     QApplication app(argc, argv);
+    qRegisterMetaType<EmrtdCredentials>("EmrtdCredentials");
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
@@ -130,9 +132,12 @@ TEST_F(EMRTDAuthWidgetTest, CANTabEmitsCANCredentials)
     QTest::mouseClick(authButton, Qt::LeftButton);
 
     ASSERT_EQ(spy.count(), 1);
-    auto creds = spy.first().first().value<QMap<QString, QString>>();
-    EXPECT_EQ(creds.size(), 1);
-    EXPECT_EQ(creds["can"], "123456");
+    auto creds = spy.first().first().value<EmrtdCredentials>();
+    EXPECT_EQ(creds.mode, EmrtdCredentials::Mode::CAN);
+    EXPECT_EQ(std::string(creds.can.view()), "123456");
+    EXPECT_TRUE(creds.mrzDocNumber.empty());
+    // Source widget cleared after read.
+    EXPECT_TRUE(canEdit->text().isEmpty());
 }
 
 TEST_F(EMRTDAuthWidgetTest, MRZTabEmitsThreeCredentialsInYYMMDD)
@@ -154,11 +159,14 @@ TEST_F(EMRTDAuthWidgetTest, MRZTabEmitsThreeCredentialsInYYMMDD)
     QTest::mouseClick(authButton, Qt::LeftButton);
 
     ASSERT_EQ(spy.count(), 1);
-    auto creds = spy.first().first().value<QMap<QString, QString>>();
-    EXPECT_EQ(creds.size(), 3);
-    EXPECT_EQ(creds["mrz_doc_number"], "AB1234567");
-    EXPECT_EQ(creds["mrz_dob"], "960515");
-    EXPECT_EQ(creds["mrz_expiry"], "280101");
+    auto creds = spy.first().first().value<EmrtdCredentials>();
+    EXPECT_EQ(creds.mode, EmrtdCredentials::Mode::MRZ);
+    EXPECT_EQ(std::string(creds.mrzDocNumber.view()), "AB1234567");
+    EXPECT_EQ(std::string(creds.mrzDob.view()), "960515");
+    EXPECT_EQ(std::string(creds.mrzExpiry.view()), "280101");
+    EXPECT_TRUE(creds.can.empty());
+    // Source widget cleared after read.
+    EXPECT_TRUE(docNumberEdit->text().isEmpty());
 }
 
 TEST_F(EMRTDAuthWidgetTest, SetDefaultTabPACESupportedSelectsCAN)
@@ -212,7 +220,7 @@ TEST_F(EMRTDAuthWidgetTest, MRZTabYYMMDDConversionEdgeCases)
     QTest::mouseClick(authButton, Qt::LeftButton);
 
     ASSERT_EQ(spy.count(), 1);
-    auto creds = spy.first().first().value<QMap<QString, QString>>();
-    EXPECT_EQ(creds["mrz_dob"], "051231");
-    EXPECT_EQ(creds["mrz_expiry"], "300601");
+    auto creds = spy.first().first().value<EmrtdCredentials>();
+    EXPECT_EQ(std::string(creds.mrzDob.view()), "051231");
+    EXPECT_EQ(std::string(creds.mrzExpiry.view()), "300601");
 }

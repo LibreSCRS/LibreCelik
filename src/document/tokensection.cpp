@@ -2,113 +2,67 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "tokensection.h"
+#include "certificate/cert_format.h"
 #include "certificate/certificateviewerdlg.h"
 #ifdef LIBRECELIK_SIGNING_ENABLED
 #include "signing/certutils.h"
 #endif
 
+#include <LibreSCRS/Certificate/ParsedCertificate.h>
+
 #include <QBrush>
+#include <QEasingCurve>
 #include <QEvent>
 #include <QGraphicsOpacityEffect>
 #include <QHeaderView>
 #include <QIcon>
 #include <QMenu>
-#include <QEasingCurve>
 #include <QPropertyAnimation>
-#include <QToolButton>
 #include <QScreen>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSettings>
 #include <QStringList>
+#include <QToolButton>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
 
-#include <openssl/evp.h>
-#include <openssl/x509v3.h>
-#include <climits>
 #include <cstdint>
-#include <ctime>
+
+namespace lcc = LibreSCRS::Certificate;
+namespace cf = librecelik::cert_format;
 
 namespace {
 
 struct CertInfo
 {
     QString subject;
+    QString issuer;
     QString algorithm;
     QString keyUsage;
     QString validFrom;
     QString validTo;
 };
 
-static QString asnTimeToDate(const ASN1_TIME* t)
-{
-    if (!t)
-        return {};
-    struct tm tm = {};
-    if (ASN1_TIME_to_tm(t, &tm) != 1)
-        return {};
-    char buf[16];
-    std::strftime(buf, sizeof(buf), "%d.%m.%Y", &tm);
-    return QString::fromLatin1(buf);
-}
-
-static CertInfo parseCertInfo(const std::vector<uint8_t>& der)
+CertInfo parseCertInfo(const std::vector<uint8_t>& der)
 {
     CertInfo info;
-    if (der.size() > static_cast<size_t>(LONG_MAX))
-        return info;
-    const uint8_t* p = der.data();
-    X509* cert = d2i_X509(nullptr, &p, static_cast<long>(der.size()));
+    auto cert = lcc::ParsedCertificate::fromDer(der);
     if (!cert)
         return info;
 
-    // Subject CN
-    X509_NAME* subject = X509_get_subject_name(cert);
-    int cnIdx = X509_NAME_get_index_by_NID(subject, NID_commonName, -1);
-    if (cnIdx >= 0) {
-        X509_NAME_ENTRY* entry = X509_NAME_get_entry(subject, cnIdx);
-        ASN1_STRING* data = X509_NAME_ENTRY_get_data(entry);
-        unsigned char* utf8 = nullptr;
-        int len = ASN1_STRING_to_UTF8(&utf8, data);
-        if (len > 0) {
-            info.subject = QString::fromUtf8(reinterpret_cast<char*>(utf8), len);
-            OPENSSL_free(utf8);
-        }
-    }
+    info.subject = QString::fromStdString(cert->subject().commonName());
+    info.issuer = QString::fromStdString(cert->issuer().commonName());
+    if (info.issuer.isEmpty())
+        info.issuer = qtTrId("lc-cert-unknown");
+    info.algorithm = cf::publicKeyDescription(cert->publicKey());
 
-    // Algorithm and key size
-    EVP_PKEY* pkey = X509_get0_pubkey(cert);
-    if (pkey) {
-        int id = EVP_PKEY_base_id(pkey);
-        int bits = EVP_PKEY_bits(pkey);
-        const char* name = OBJ_nid2sn(id);
-        info.algorithm = QString("%1 %2-bit").arg(name ? QString::fromLatin1(name) : "?").arg(bits);
-    }
+    if (auto ku = cert->keyUsage())
+        info.keyUsage = cf::keyUsageToStringEndEntity(*ku);
 
-    // Key usage
-    uint32_t usage = X509_get_key_usage(cert);
-    if (usage != ~uint32_t{0}) {
-        QStringList usages;
-        if (usage & KU_DIGITAL_SIGNATURE)
-            usages << qtTrId("lc-token-ku-digital-signature");
-        if (usage & KU_NON_REPUDIATION)
-            usages << qtTrId("lc-token-ku-non-repudiation");
-        if (usage & KU_KEY_ENCIPHERMENT)
-            usages << qtTrId("lc-token-ku-key-encipherment");
-        if (usage & KU_DATA_ENCIPHERMENT)
-            usages << qtTrId("lc-token-ku-data-encipherment");
-        if (usage & KU_KEY_AGREEMENT)
-            usages << qtTrId("lc-token-ku-key-agreement");
-        info.keyUsage = usages.join(", ");
-    }
-
-    // Validity
-    info.validFrom = asnTimeToDate(X509_get0_notBefore(cert));
-    info.validTo = asnTimeToDate(X509_get0_notAfter(cert));
-
-    X509_free(cert);
+    info.validFrom = cf::formatDate(cert->notBefore());
+    info.validTo = cf::formatDate(cert->notAfter());
     return info;
 }
 
@@ -121,33 +75,34 @@ constexpr int PinMaxLengthRole = Qt::UserRole + 5;
 constexpr int PinCanChangeRole = Qt::UserRole + 6;
 
 #ifdef LIBRECELIK_SIGNING_ENABLED
-static bool isSigningCapable(const plugin::CertificateData& cert)
+bool isSigningCapable(const LibreSCRS::Plugin::CertificateData& cert)
 {
-    if (cert.keyFID == 0)
+    // 4.0 ABI v6 made keyFID a std::optional<uint16_t>; a disengaged optional
+    // (or an explicit 0, preserved from the internal 0-sentinel fallback in
+    // some plugins) means "no associated private key known" → verify-only.
+    if (!cert.keyFID || *cert.keyFID == 0)
         return false;
 
-    if (cert.derBytes.size() > static_cast<size_t>(LONG_MAX))
-        return false;
-    const uint8_t* p = cert.derBytes.data();
-    X509* x509 = d2i_X509(nullptr, &p, static_cast<long>(cert.derBytes.size()));
-    if (!x509)
+    auto parsed = lcc::ParsedCertificate::fromDer(cert.derBytes);
+    if (!parsed)
         return false;
 
-    uint32_t usage = X509_get_key_usage(x509);
-    X509_free(x509);
-
-    if (usage == ~uint32_t{0})
+    auto ku = parsed->keyUsage();
+    if (!ku)
         return false;
 
-    return (usage & KU_DIGITAL_SIGNATURE) || (usage & KU_NON_REPUDIATION);
+    for (auto bit : *ku) {
+        if (bit == lcc::KeyUsageBit::DigitalSignature || bit == lcc::KeyUsageBit::NonRepudiation)
+            return true;
+    }
+    return false;
 }
-
 #endif
 
 } // namespace
 
-TokenSection::TokenSection(std::vector<std::string> certPaths, QWidget* parent)
-    : CollapsibleSection(qtTrId("lc-token-title"), parent), certPaths(std::move(certPaths))
+TokenSection::TokenSection(std::shared_ptr<const LibreSCRS::Trust::TrustStore> store, QWidget* parent)
+    : CollapsibleSection(qtTrId("lc-token-title"), parent), trustStore(std::move(store))
 {
     contentLayout = new QVBoxLayout(this);
     contentLayout->setSpacing(2);
@@ -155,15 +110,12 @@ TokenSection::TokenSection(std::vector<std::string> certPaths, QWidget* parent)
 
     // Token info banner — inserted at index 0 by setTokenInfo() when data arrives
 
-    // Tree widget
     treeWidget = new QTreeWidget(this);
     treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     treeWidget->setUniformRowHeights(true);
     treeWidget->setHeaderLabels({qtTrId("lc-token-col-object"), qtTrId("lc-token-col-details")});
     treeWidget->header()->setStretchLastSection(true);
     treeWidget->header()->resizeSection(0, 230);
-    // No internal scrollbars — tree always shows full content;
-    // outer scroll area handles overflow.
     treeWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     treeWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     treeWidget->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
@@ -182,10 +134,8 @@ TokenSection::TokenSection(std::vector<std::string> certPaths, QWidget* parent)
 
 #ifdef LIBRECELIK_SIGNING_ENABLED
     {
-        //: Button in Token section header to sign with a certificate
-        //% "Sign"
         signBtn = new QToolButton(this);
-        signBtn->setIcon(QIcon(":/images/sign-icon.svg"));
+        signBtn->setIcon(QIcon(QStringLiteral(":/images/sign-icon.svg")));
         signBtn->setIconSize(QSize(24, 24));
         signBtn->setToolTip(qtTrId("lc-sign-button"));
         signBtn->setAutoRaise(true);
@@ -208,8 +158,6 @@ TokenSection::TokenSection(std::vector<std::string> certPaths, QWidget* parent)
 
     setExpanded(false);
 
-    // When this section finishes expanding, smoothly scroll the outer scroll area
-    // to reveal it (matching the 200ms CollapsibleSection animation duration).
     connect(this, &CollapsibleSection::sectionExpanded, this, [this]() {
         for (QWidget* p = parentWidget(); p; p = p->parentWidget()) {
             if (auto* sa = qobject_cast<QScrollArea*>(p)) {
@@ -217,7 +165,7 @@ TokenSection::TokenSection(std::vector<std::string> certPaths, QWidget* parent)
                 int widgetBottom = this->mapTo(sa->widget(), QPoint(0, this->height())).y();
                 int target = qBound(0, widgetBottom - sa->viewport()->height() + 8, vbar->maximum());
                 if (target <= vbar->value())
-                    return; // already fully visible
+                    return;
                 auto* anim = new QPropertyAnimation(vbar, "value", sa);
                 anim->setDuration(200);
                 anim->setStartValue(vbar->value());
@@ -230,12 +178,14 @@ TokenSection::TokenSection(std::vector<std::string> certPaths, QWidget* parent)
     });
 }
 
-static QString formatSerialNumber(const plugin::CardField& field)
+static QString formatSerialNumber(const LibreSCRS::Plugin::CardField& field)
 {
     bool printable =
         std::all_of(field.value.begin(), field.value.end(), [](uint8_t c) { return c >= 0x20 && c < 0x7F; });
-    if (printable)
-        return QString::fromStdString(field.asString());
+    if (printable) {
+        if (auto text = field.textValue())
+            return QString::fromStdString(*text);
+    }
 
     QStringList hexParts;
     for (uint8_t b : field.value)
@@ -243,12 +193,12 @@ static QString formatSerialNumber(const plugin::CardField& field)
     return hexParts.join(':');
 }
 
-void TokenSection::setTokenInfo(const plugin::CardFieldGroup& tokenGroup)
+void TokenSection::setTokenInfo(const LibreSCRS::Plugin::CardFieldGroup& tokenGroup)
 {
     if (tokenGroup.fields.empty())
         return;
     if (headerCard)
-        return; // Already populated
+        return;
 
     std::vector<LibreSCRS::HeaderField> headerFields;
 
@@ -266,8 +216,12 @@ void TokenSection::setTokenInfo(const plugin::CardFieldGroup& tokenGroup)
         else
             labelText = QString::fromStdString(field.key);
 
-        QString valueText =
-            (field.key == "serial_number") ? formatSerialNumber(field) : QString::fromStdString(field.asString());
+        QString valueText;
+        if (field.key == "serial_number") {
+            valueText = formatSerialNumber(field);
+        } else if (auto text = field.textValue()) {
+            valueText = QString::fromStdString(*text);
+        }
 
         headerFields.push_back({labelText, valueText});
     }
@@ -275,14 +229,14 @@ void TokenSection::setTokenInfo(const plugin::CardFieldGroup& tokenGroup)
     if (headerFields.empty())
         return;
 
-    headerCard =
-        new LibreSCRS::CardHeaderCard(QIcon(":/images/certificate-icon.svg"), QSize(64, 64), headerFields, this);
+    headerCard = new LibreSCRS::CardHeaderCard(QIcon(QStringLiteral(":/images/certificate-icon.svg")), QSize(64, 64),
+                                               headerFields, this);
 
     contentLayout->insertWidget(0, headerCard);
     updateTreeMinimumHeight();
 }
 
-void TokenSection::setCertificates(const std::vector<plugin::CertificateData>& certList)
+void TokenSection::setCertificates(const std::vector<LibreSCRS::Plugin::CertificateData>& certList)
 {
     certificateList = certList;
 
@@ -305,16 +259,17 @@ void TokenSection::setCertificates(const std::vector<plugin::CertificateData>& c
         };
 
         addRow(qtTrId("lc-token-key-subject"), info.subject);
+        addRow(qtTrId("lc-cert-field-issuer"), info.issuer);
         addRow(qtTrId("lc-token-key-algorithm"), info.algorithm);
         addRow(qtTrId("lc-token-key-usage"), info.keyUsage);
 
         QString validity;
         if (!info.validFrom.isEmpty() && !info.validTo.isEmpty())
-            validity = info.validFrom + " \u2013 " + info.validTo;
+            validity = info.validFrom + " – " + info.validTo;
         addRow(qtTrId("lc-token-key-valid"), validity);
 
-        if (cert.keyFID != 0)
-            addRow(qtTrId("lc-token-key-private-key"), "\u2713");
+        if (cert.keyFID && *cert.keyFID != 0)
+            addRow(qtTrId("lc-token-key-private-key"), "✓");
     }
 
 #ifdef LIBRECELIK_SIGNING_ENABLED
@@ -333,7 +288,7 @@ void TokenSection::setCertificates(const std::vector<plugin::CertificateData>& c
     updateTreeMinimumHeight();
 }
 
-void TokenSection::setPINList(const std::vector<plugin::PinStatusEntry>& pins)
+void TokenSection::setPINList(const std::vector<LibreSCRS::Plugin::PinStatusEntry>& pins)
 {
     pinList = pins;
 
@@ -354,8 +309,8 @@ void TokenSection::setPINList(const std::vector<plugin::PinStatusEntry>& pins)
         } else if (pin.blocked) {
             item->setText(1, qtTrId("lc-eid-pin-blocked"));
             item->setForeground(1, QBrush(Qt::red));
-        } else if (pin.triesLeft >= 0)
-            item->setText(1, qtTrId("lc-eid-pin-tries-remaining").arg(pin.triesLeft));
+        } else if (pin.retriesLeft.has_value())
+            item->setText(1, qtTrId("lc-eid-pin-tries-remaining").arg(*pin.retriesLeft));
         else
             item->setText(1, qtTrId("lc-eid-pin-unknown"));
 
@@ -363,8 +318,8 @@ void TokenSection::setPINList(const std::vector<plugin::PinStatusEntry>& pins)
         item->setData(0, PinTransportRole, !pin.initialized);
         item->setData(0, PinLabelRole, QString::fromStdString(pin.label));
         item->setData(0, PinBlockedRole, pin.blocked);
-        item->setData(0, PinMinLengthRole, pin.minLength);
-        item->setData(0, PinMaxLengthRole, pin.maxLength);
+        item->setData(0, PinMinLengthRole, pin.minLength.has_value() ? static_cast<int>(*pin.minLength) : 0);
+        item->setData(0, PinMaxLengthRole, pin.maxLength.has_value() ? static_cast<int>(*pin.maxLength) : 0);
         item->setData(0, PinCanChangeRole, pin.canChange);
     }
 
@@ -375,10 +330,6 @@ void TokenSection::setPINList(const std::vector<plugin::PinStatusEntry>& pins)
 
 void TokenSection::updateTreeMinimumHeight()
 {
-    // With widgetResizable=true, outer QScrollArea uses minimumSizeHint() (not
-    // sizeHint()) to decide whether to show scrollbars. Force the tree's minimum
-    // height to its full content height so the constraint propagates up through
-    // the layout chain and the outer scroll area shows a scrollbar when needed.
     treeWidget->setMinimumHeight(treeWidget->sizeHint().height());
     updateGeometry();
 }
@@ -400,15 +351,13 @@ void TokenSection::onContextMenu(const QPoint& pos)
         connect(viewAction, &QAction::triggered, this, [this, certIndex]() {
             if (certificateList.empty())
                 return;
-            auto dlg = std::make_unique<CertificateViewerDlg>(certificateList, certPaths, this, certIndex);
+            auto dlg = std::make_unique<CertificateViewerDlg>(certificateList, trustStore, this, certIndex);
             dlg->exec();
         });
 
 #ifdef LIBRECELIK_SIGNING_ENABLED
         if (certIndex >= 0 && certIndex < static_cast<int>(certificateList.size()) &&
             isSigningCapable(certificateList[static_cast<size_t>(certIndex)])) {
-            //: Context menu action to sign with a specific certificate
-            //% "Sign with this certificate"
             QAction* signAction = menu.addAction(qtTrId("lc-sign-with-cert"));
             connect(signAction, &QAction::triggered, this, [this, certIndex]() {
                 emit signRequested(certificateList[static_cast<size_t>(certIndex)], readerName);
@@ -451,9 +400,9 @@ void TokenSection::setReaderName(const std::string& name)
     readerName = name;
 }
 
-std::vector<plugin::CertificateData> TokenSection::signingCertificates() const
+std::vector<LibreSCRS::Plugin::CertificateData> TokenSection::signingCertificates() const
 {
-    std::vector<plugin::CertificateData> result;
+    std::vector<LibreSCRS::Plugin::CertificateData> result;
     for (const auto& cert : certificateList) {
         if (isSigningCapable(cert))
             result.push_back(cert);
@@ -475,10 +424,8 @@ void TokenSection::showCertificateDropdown()
         QAction* action = menu.addAction(text);
         connect(action, &QAction::triggered, this, [this, cert]() { emit signRequested(cert, readerName); });
     }
-    // Right-align menu to button so it doesn't extend past the window
     QSize menuSize = menu.sizeHint();
     QPoint pos = signBtn->mapToGlobal(QPoint(signBtn->width() - menuSize.width(), signBtn->height()));
-    // Clamp to screen edges
     QRect screenGeo = signBtn->screen()->availableGeometry();
     if (pos.x() < screenGeo.left())
         pos.setX(screenGeo.left());
@@ -526,7 +473,6 @@ void TokenSection::retranslateUi()
         signBtn->setToolTip(qtTrId("lc-sign-button"));
 #endif
 
-    // Rebuild certificate and PIN tree items with new translations
     setCertificates(certificateList);
     setPINList(pinList);
 }

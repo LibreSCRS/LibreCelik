@@ -24,7 +24,7 @@ target_include_directories(rs-health-gui-plugin PRIVATE
 )
 target_link_libraries(rs-health-gui-plugin PRIVATE
     Qt6::Widgets
-    CardPlugin
+    LibreSCRS::Plugin
     LibreCelikPrinting
 )
 set_target_properties(rs-health-gui-plugin PROPERTIES

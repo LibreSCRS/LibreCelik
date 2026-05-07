@@ -26,7 +26,7 @@ target_include_directories(emrtd-gui-plugin PRIVATE
 )
 target_link_libraries(emrtd-gui-plugin PRIVATE
     Qt6::Widgets
-    CardPlugin
+    LibreSCRS::Plugin
     LibreCelikPrinting
 )
 set_target_properties(emrtd-gui-plugin PROPERTIES

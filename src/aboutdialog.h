@@ -47,6 +47,7 @@ private:
     QLabel* licenseLibreCelikLabel = nullptr;
     QLabel* licenseMiddlewareLabel = nullptr;
     QLabel* licenseOpenSslLabel = nullptr;
+    QLabel* licenseLiberationSansLabel = nullptr;
     QComboBox* licenseCombo = nullptr;
     QTextBrowser* licenseBrowser = nullptr;
 };

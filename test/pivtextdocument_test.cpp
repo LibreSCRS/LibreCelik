@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 #include <QApplication>
 #include "pivtextdocument.h"
-#include <plugin/card_data.h>
+#include <LibreSCRS/Plugin/CardData.h>
 
 int main(int argc, char** argv)
 {
@@ -15,18 +15,18 @@ int main(int argc, char** argv)
 
 namespace {
 
-plugin::CardData makePIVCardData()
+LibreSCRS::Plugin::CardData makePIVCardData()
 {
-    plugin::CardData data;
+    LibreSCRS::Plugin::CardData data;
     data.cardType = "piv";
 
-    auto addText = [](plugin::CardFieldGroup& g, const std::string& key, const std::string& val) {
+    auto addText = [](LibreSCRS::Plugin::CardFieldGroup& g, const std::string& key, const std::string& val) {
         if (!val.empty())
-            g.fields.push_back({key, key, plugin::FieldType::Text, {val.begin(), val.end()}});
+            g.fields.push_back({key, key, LibreSCRS::Plugin::FieldType::Text, {val.begin(), val.end()}});
     };
 
     {
-        plugin::CardFieldGroup chuid;
+        LibreSCRS::Plugin::CardFieldGroup chuid;
         chuid.groupKey = "chuid";
         addText(chuid, "guid", "3F2504E0-4F89-11D3-9A0C-0305E82C3301");
         addText(chuid, "fascn", "1234567890ABCDEF");
@@ -34,13 +34,13 @@ plugin::CardData makePIVCardData()
         data.groups.push_back(std::move(chuid));
     }
     {
-        plugin::CardFieldGroup ccc;
+        LibreSCRS::Plugin::CardFieldGroup ccc;
         ccc.groupKey = "ccc";
         addText(ccc, "cardIdentifier", "ABCDEF1234567890");
         data.groups.push_back(std::move(ccc));
     }
     {
-        plugin::CardFieldGroup printed;
+        LibreSCRS::Plugin::CardFieldGroup printed;
         printed.groupKey = "printed";
         addText(printed, "name", "John Doe");
         addText(printed, "employeeAffiliation", "Government");
@@ -51,13 +51,13 @@ plugin::CardData makePIVCardData()
         data.groups.push_back(std::move(printed));
     }
     {
-        plugin::CardFieldGroup discovery;
+        LibreSCRS::Plugin::CardFieldGroup discovery;
         discovery.groupKey = "discovery";
         addText(discovery, "pinPolicy", "Application PIN required");
         data.groups.push_back(std::move(discovery));
     }
     {
-        plugin::CardFieldGroup keyHistory;
+        LibreSCRS::Plugin::CardFieldGroup keyHistory;
         keyHistory.groupKey = "key_history";
         addText(keyHistory, "onCardCerts", "3");
         addText(keyHistory, "offCardCerts", "0");
@@ -92,7 +92,7 @@ TEST_F(PIVTextDocumentTest, ConstructionSucceeds)
 
 TEST_F(PIVTextDocumentTest, EmptyDataProducesValidDocument)
 {
-    plugin::CardData emptyData;
+    LibreSCRS::Plugin::CardData emptyData;
     emptyData.cardType = "piv";
     EXPECT_NO_THROW(PIVTextDocument doc(emptyData));
 }

@@ -13,7 +13,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-using plugin::getFieldValue;
+using LibreSCRS::Plugin::getFieldValue;
 
 static std::map<std::string, QString> chuidTranslationMap()
 {
@@ -57,7 +57,7 @@ static std::map<std::string, QString> keyHistoryTranslationMap()
     };
 }
 
-PIVWidget::PIVWidget(const plugin::CardData& cardData, QWidget* parent) : PIVWidget(parent)
+PIVWidget::PIVWidget(const LibreSCRS::Plugin::CardData& cardData, QWidget* parent) : PIVWidget(parent)
 {
     data.cardType = cardData.cardType;
     for (const auto& group : cardData.groups)
@@ -91,7 +91,7 @@ void PIVWidget::buildEmptyShell()
     outerSection->addHeaderWidget(printBtn);
 }
 
-void PIVWidget::addGroup(const plugin::CardFieldGroup& group)
+void PIVWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     data.groups.push_back(group);
 
@@ -117,7 +117,7 @@ void PIVWidget::enablePrintButton()
     }
 }
 
-void PIVWidget::addChuidGroup(const plugin::CardFieldGroup& group)
+void PIVWidget::addChuidGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     // Build CardHeaderCard with PIV icon and CHUID key fields
     std::vector<LibreSCRS::HeaderField> headerFields;
@@ -134,14 +134,14 @@ void PIVWidget::addChuidGroup(const plugin::CardFieldGroup& group)
     contentLayout->addWidget(chuidSec);
 }
 
-void PIVWidget::addCccGroup(const plugin::CardFieldGroup& group)
+void PIVWidget::addCccGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     auto* cccSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-piv-section-ccc"), group, cccTranslationMap(), {},
                                                          outerSection);
     contentLayout->addWidget(cccSec);
 }
 
-void PIVWidget::addPrintedGroup(const plugin::CardFieldGroup& group)
+void PIVWidget::addPrintedGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     auto* printedSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-piv-section-printed"), group,
                                                              printedTranslationMap(), {}, outerSection);
@@ -153,14 +153,14 @@ void PIVWidget::addPrintedGroup(const plugin::CardFieldGroup& group)
         rebuildHeader();
 }
 
-void PIVWidget::addDiscoveryGroup(const plugin::CardFieldGroup& group)
+void PIVWidget::addDiscoveryGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     auto* discoverySec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-piv-section-discovery"), group,
                                                                discoveryTranslationMap(), {}, outerSection);
     contentLayout->addWidget(discoverySec);
 }
 
-void PIVWidget::addKeyHistoryGroup(const plugin::CardFieldGroup& group)
+void PIVWidget::addKeyHistoryGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     auto* keyHistorySec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-piv-section-keyhistory"), group,
                                                                 keyHistoryTranslationMap(), {}, outerSection);

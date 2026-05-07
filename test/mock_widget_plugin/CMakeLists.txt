@@ -1,7 +1,7 @@
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 add_library(mock-widget-plugin MODULE mockwidgetplugin.cpp)
-target_link_libraries(mock-widget-plugin PRIVATE Qt6::Widgets CardPlugin)
+target_link_libraries(mock-widget-plugin PRIVATE Qt6::Widgets LibreSCRS::Plugin)
 target_include_directories(mock-widget-plugin PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )

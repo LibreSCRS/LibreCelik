@@ -2,169 +2,229 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "certificatepropertiesmodel.h"
+#include "cert_format.h"
 #include "certificateinfoitem.h"
-#include "opensslhelpers.h"
 
-#include <openssl/bio.h>
-#include <openssl/evp.h>
-#include <openssl/x509v3.h>
-#include <QRegularExpression>
+#include <LibreSCRS/Certificate/ParsedCertificate.h>
+
 #include <QString>
+#include <QStringList>
 
-CertificatePropertiesModel::CertificatePropertiesModel(X509* cert, QObject* parent) : CertificateTreeViewModel(parent)
+#include <cstdint>
+#include <span>
+#include <string>
+
+namespace lcc = LibreSCRS::Certificate;
+namespace cf = librecelik::cert_format;
+
+namespace {
+
+QString fromStd(const std::string& s)
+{
+    return QString::fromStdString(s);
+}
+
+QString formatDistinguishedName(const lcc::DistinguishedName& dn)
+{
+    QStringList lines;
+    for (const auto& comp : dn.components) {
+        const QString name =
+            comp.oid.friendlyName().empty() ? fromStd(comp.oid.dottedDecimal) : fromStd(comp.oid.friendlyName());
+        lines << QStringLiteral("%1=%2").arg(name, fromStd(comp.value));
+    }
+    return lines.join(QLatin1Char('\n'));
+}
+
+QString oidLabel(const lcc::ObjectIdentifier& oid)
+{
+    if (!oid.friendlyName().empty())
+        return fromStd(oid.friendlyName());
+    return fromStd(oid.dottedDecimal);
+}
+
+QString generalNamesToString(const std::vector<lcc::GeneralName>& names)
+{
+    QStringList parts;
+    for (const auto& n : names) {
+        if (!n.value.empty())
+            parts << QStringLiteral("%1: %2").arg(cf::generalNameTypeLabel(n.type), fromStd(n.value));
+        else
+            parts << QStringLiteral("%1: %2").arg(cf::generalNameTypeLabel(n.type), cf::bytesToHex(n.rawValue));
+    }
+    return parts.join(QLatin1Char('\n'));
+}
+
+void appendField(CertificateInfoItem* parent, const QString& label, const QString& value)
+{
+    parent->appendChild(std::make_unique<CertificateInfoItem>(label, value, parent));
+}
+
+} // namespace
+
+CertificatePropertiesModel::CertificatePropertiesModel(const lcc::ParsedCertificate* cert, QObject* parent)
+    : CertificateTreeViewModel(parent)
 {
     if (cert)
-        buildTree(cert);
+        buildTree(*cert);
+    else
+        addParseError({});
 }
 
-void CertificatePropertiesModel::buildTree(X509* cert)
+CertificatePropertiesModel::CertificatePropertiesModel(const lcc::ParsedCertificate* cert,
+                                                       std::span<const std::uint8_t> rawDer, QObject* parent)
+    : CertificateTreeViewModel(parent)
 {
-    addVersion(rootItem.get(), cert);
-    addSerialNumber(rootItem.get(), cert);
-    addSignatureAlgorithm(rootItem.get(), cert);
-    addIssuer(rootItem.get(), cert);
-    addValidity(rootItem.get(), cert);
-    addSubject(rootItem.get(), cert);
-    addPublicKeyInfo(rootItem.get(), cert);
-    addExtensions(rootItem.get(), cert);
+    if (cert)
+        buildTree(*cert);
+    else
+        addParseError(rawDer);
 }
 
-void CertificatePropertiesModel::addVersion(CertificateInfoItem* parent, X509* cert)
+void CertificatePropertiesModel::addParseError(std::span<const std::uint8_t> rawDer)
 {
-    long ver = X509_get_version(cert) + 1;
-    parent->appendChild(
-        std::make_unique<CertificateInfoItem>(qtTrId("lc-cert-field-version"), QString("V%1").arg(ver), parent));
-}
+    rootItem->appendChild(
+        std::make_unique<CertificateInfoItem>(qtTrId("lc-cert-parse-error"), QString(), rootItem.get()));
 
-void CertificatePropertiesModel::addSerialNumber(CertificateInfoItem* parent, X509* cert)
-{
-    ASN1_INTEGER* serial = X509_get_serialNumber(cert);
-    BIGNUM* bn = ASN1_INTEGER_to_BN(serial, nullptr);
-    if (bn) {
-        char* hex = BN_bn2hex(bn);
-        if (hex) {
-            parent->appendChild(std::make_unique<CertificateInfoItem>(qtTrId("lc-cert-field-serial-number"),
-                                                                      QString::fromLatin1(hex), parent));
-            OPENSSL_free(hex);
-        }
-        BN_free(bn);
-    }
-}
-
-void CertificatePropertiesModel::addSignatureAlgorithm(CertificateInfoItem* parent, X509* cert)
-{
-    const X509_ALGOR* alg = X509_get0_tbs_sigalg(cert);
-    if (alg) {
-        const ASN1_OBJECT* obj = nullptr;
-        X509_ALGOR_get0(&obj, nullptr, nullptr, alg);
-        if (obj) {
-            char buf[128];
-            OBJ_obj2txt(buf, sizeof(buf), obj, 0);
-            parent->appendChild(std::make_unique<CertificateInfoItem>(qtTrId("lc-cert-field-signature-algo"),
-                                                                      QString::fromLatin1(buf), parent));
-        }
-    }
-}
-
-void CertificatePropertiesModel::addIssuer(CertificateInfoItem* parent, X509* cert)
-{
-    X509_NAME* issuer = X509_get_issuer_name(cert);
-    parent->appendChild(
-        std::make_unique<CertificateInfoItem>(qtTrId("lc-cert-field-issuer"), nameToString(issuer), parent));
-}
-
-void CertificatePropertiesModel::addValidity(CertificateInfoItem* parent, X509* cert)
-{
-    auto validityItem = std::make_unique<CertificateInfoItem>(qtTrId("lc-cert-field-validity"), QString(), parent);
-    auto* validityPtr = validityItem.get();
-
-    validityPtr->appendChild(std::make_unique<CertificateInfoItem>(
-        qtTrId("lc-cert-field-not-before"), certutil::asnTimeToString(X509_get0_notBefore(cert)), validityPtr));
-    validityPtr->appendChild(std::make_unique<CertificateInfoItem>(
-        qtTrId("lc-cert-field-not-after"), certutil::asnTimeToString(X509_get0_notAfter(cert)), validityPtr));
-
-    parent->appendChild(std::move(validityItem));
-}
-
-void CertificatePropertiesModel::addSubject(CertificateInfoItem* parent, X509* cert)
-{
-    X509_NAME* subject = X509_get_subject_name(cert);
-    parent->appendChild(
-        std::make_unique<CertificateInfoItem>(qtTrId("lc-cert-field-subject"), nameToString(subject), parent));
-}
-
-void CertificatePropertiesModel::addPublicKeyInfo(CertificateInfoItem* parent, X509* cert)
-{
-    EVP_PKEY* pkey = X509_get0_pubkey(cert);
-    if (!pkey)
+    if (rawDer.empty())
         return;
 
-    auto pkItem = std::make_unique<CertificateInfoItem>(qtTrId("lc-cert-field-public-key-info"), QString(), parent);
-    auto* pkPtr = pkItem.get();
-
-    int keyType = EVP_PKEY_base_id(pkey);
-    const char* typeName = OBJ_nid2ln(keyType);
-    pkPtr->appendChild(std::make_unique<CertificateInfoItem>(
-        qtTrId("lc-cert-field-algorithm"), typeName ? QString::fromLatin1(typeName) : qtTrId("lc-cert-unknown"),
-        pkPtr));
-
-    int bits = EVP_PKEY_bits(pkey);
-    pkPtr->appendChild(
-        std::make_unique<CertificateInfoItem>(qtTrId("lc-cert-field-key-size"), QString("%1 bits").arg(bits), pkPtr));
-
-    parent->appendChild(std::move(pkItem));
+    // Forensic hex dump: 16 bytes per line, space-separated upper-case.
+    // "DER" is a non-localised technical acronym (Distinguished Encoding Rules);
+    // the dump itself is raw data, never translated text.
+    rootItem->appendChild(
+        std::make_unique<CertificateInfoItem>(QStringLiteral("DER"), cf::bytesToHexLines(rawDer), rootItem.get()));
 }
 
-void CertificatePropertiesModel::addExtensions(CertificateInfoItem* parent, X509* cert)
+void CertificatePropertiesModel::buildTree(const lcc::ParsedCertificate& cert)
 {
-    int extCount = X509_get_ext_count(cert);
-    if (extCount <= 0)
+    auto* root = rootItem.get();
+
+    // Version
+    appendField(root, qtTrId("lc-cert-field-version"), QStringLiteral("V%1").arg(cert.version()));
+
+    // Serial number
+    appendField(root, qtTrId("lc-cert-field-serial-number"), cf::bytesToHex(cert.serialNumber()));
+
+    // Signature algorithm
+    QString sigAlgo = fromStd(cert.signatureAlgorithmDescription());
+    if (sigAlgo.isEmpty())
+        sigAlgo = oidLabel(cert.signatureAlgorithmOid());
+    appendField(root, qtTrId("lc-cert-field-signature-algo"), sigAlgo);
+
+    // Issuer
+    appendField(root, qtTrId("lc-cert-field-issuer"), formatDistinguishedName(cert.issuer()));
+
+    // Validity
+    {
+        auto validityItem = std::make_unique<CertificateInfoItem>(qtTrId("lc-cert-field-validity"), QString(), root);
+        auto* vp = validityItem.get();
+        appendField(vp, qtTrId("lc-cert-field-not-before"), cf::formatTime(cert.notBefore()));
+        appendField(vp, qtTrId("lc-cert-field-not-after"), cf::formatTime(cert.notAfter()));
+        root->appendChild(std::move(validityItem));
+    }
+
+    // Subject
+    appendField(root, qtTrId("lc-cert-field-subject"), formatDistinguishedName(cert.subject()));
+
+    // Public key
+    {
+        const auto pk = cert.publicKey();
+        auto pkItem = std::make_unique<CertificateInfoItem>(qtTrId("lc-cert-field-public-key-info"), QString(), root);
+        auto* pkPtr = pkItem.get();
+        // publicKeyAlgorithmLabel handles the algorithm-name fallbacks
+        // (description → friendly OID → dotted OID → "Unknown") and appends
+        // the curve OID in parentheses for ECDSA, so no separate Curve row is
+        // needed (single source of truth for the public-key textual rendering).
+        appendField(pkPtr, qtTrId("lc-cert-field-algorithm"), cf::publicKeyAlgorithmLabel(pk));
+        appendField(pkPtr, qtTrId("lc-cert-field-key-size"), QStringLiteral("%1 bits").arg(pk.bitLength));
+        root->appendChild(std::move(pkItem));
+    }
+
+    // Extensions
+    const auto exts = cert.extensions();
+    if (exts.empty())
         return;
 
-    auto extItem = std::make_unique<CertificateInfoItem>(qtTrId("lc-cert-field-extensions"),
-                                                         QString("(%1)").arg(extCount), parent);
-    auto* extPtr = extItem.get();
+    auto extRoot = std::make_unique<CertificateInfoItem>(qtTrId("lc-cert-field-extensions"),
+                                                         QStringLiteral("(%1)").arg(exts.size()), root);
+    auto* extPtr = extRoot.get();
 
-    for (int i = 0; i < extCount; i++) {
-        X509_EXTENSION* ext = X509_get_ext(cert, i);
-        if (!ext)
-            continue;
+    auto addExt = [&](const QString& label, const QString& value, bool critical) {
+        QString fullLabel = label;
+        if (critical)
+            fullLabel += qtTrId("lc-cert-extension-critical");
+        extPtr->appendChild(std::make_unique<CertificateInfoItem>(fullLabel, value, critical, extPtr));
+    };
 
-        ASN1_OBJECT* obj = X509_EXTENSION_get_object(ext);
-        char oidBuf[128];
-        OBJ_obj2txt(oidBuf, sizeof(oidBuf), obj, 0);
+    for (const auto& ext : exts) {
+        const QString label = oidLabel(ext.oid);
 
-        certutil::BioPtr bio(BIO_new(BIO_s_mem()));
-        if (bio) {
-            X509V3_EXT_print(bio.get(), ext, X509V3_EXT_DUMP_UNKNOWN, 0);
-            QString value = certutil::bioToQString(bio.get());
+        // Look up typed accessor for this OID, fall back to raw hex.
+        const std::string& oidDot = ext.oid.dottedDecimal;
+        QString value;
 
-            if (value.contains(":")) {
-                value.replace(QRegularExpression("([0-9A-Fa-f]{2}):"), "\\1");
+        if (oidDot == "2.5.29.15") {
+            // Key Usage
+            if (auto ku = cert.keyUsage())
+                value = cf::keyUsageToString(*ku);
+        } else if (oidDot == "2.5.29.37") {
+            // Extended Key Usage
+            if (auto eku = cert.extendedKeyUsage()) {
+                QStringList parts;
+                for (const auto& oid : *eku)
+                    parts << oidLabel(oid);
+                value = parts.join(QStringLiteral(", "));
             }
-
-            bool critical = X509_EXTENSION_get_critical(ext);
-            QString label = QString::fromLatin1(oidBuf);
-            if (critical)
-                label += qtTrId("lc-cert-extension-critical");
-
-            extPtr->appendChild(std::make_unique<CertificateInfoItem>(label, value, critical, extPtr));
+        } else if (oidDot == "2.5.29.17") {
+            if (auto san = cert.subjectAlternativeNames())
+                value = generalNamesToString(*san);
+        } else if (oidDot == "2.5.29.18") {
+            if (auto ian = cert.issuerAlternativeNames())
+                value = generalNamesToString(*ian);
+        } else if (oidDot == "2.5.29.19") {
+            if (auto bc = cert.basicConstraints()) {
+                QStringList parts;
+                parts << (bc->isCa ? QStringLiteral("CA: TRUE") : QStringLiteral("CA: FALSE"));
+                if (bc->pathLenConstraint)
+                    parts << QStringLiteral("Path Length: %1").arg(*bc->pathLenConstraint);
+                value = parts.join(QStringLiteral(", "));
+            }
+        } else if (oidDot == "2.5.29.35") {
+            if (auto aki = cert.authorityKeyIdentifier())
+                value = cf::bytesToHex(*aki);
+        } else if (oidDot == "2.5.29.14") {
+            if (auto ski = cert.subjectKeyIdentifier())
+                value = cf::bytesToHex(*ski);
+        } else if (oidDot == "2.5.29.31") {
+            if (auto crl = cert.crlDistributionPoints()) {
+                QStringList parts;
+                for (const auto& url : *crl)
+                    parts << fromStd(url);
+                value = parts.join(QLatin1Char('\n'));
+            }
+        } else if (oidDot == "1.3.6.1.5.5.7.1.1") {
+            QStringList parts;
+            if (auto ocsp = cert.ocspResponderUrls())
+                for (const auto& url : *ocsp)
+                    parts << QStringLiteral("OCSP: %1").arg(fromStd(url));
+            if (auto ca = cert.caIssuersUrls())
+                for (const auto& url : *ca)
+                    parts << QStringLiteral("CA Issuers: %1").arg(fromStd(url));
+            value = parts.join(QLatin1Char('\n'));
+        } else if (oidDot == "2.5.29.32") {
+            if (auto pol = cert.certificatePolicies()) {
+                QStringList parts;
+                for (const auto& oid : *pol)
+                    parts << oidLabel(oid);
+                value = parts.join(QStringLiteral(", "));
+            }
         }
+
+        if (value.isEmpty())
+            value = cf::bytesToHex(ext.value);
+
+        addExt(label, value, ext.critical);
     }
 
-    parent->appendChild(std::move(extItem));
-}
-
-QString CertificatePropertiesModel::nameToString(X509_NAME* name)
-{
-    if (!name)
-        return {};
-
-    certutil::BioPtr bio(BIO_new(BIO_s_mem()));
-    if (!bio)
-        return {};
-
-    X509_NAME_print_ex(bio.get(), name, 0,
-                       (ASN1_STRFLGS_UTF8_CONVERT | XN_FLAG_MULTILINE | XN_FLAG_DN_REV) & ~ASN1_STRFLGS_ESC_MSB);
-    return certutil::bioToQString(bio.get());
+    root->appendChild(std::move(extRoot));
 }

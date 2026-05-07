@@ -5,25 +5,30 @@
 
 #include "certificatetreeviewmodel.h"
 
-typedef struct x509_st X509;
-typedef struct X509_name_st X509_NAME;
+#include <cstdint>
+#include <span>
+
+namespace LibreSCRS::Certificate {
+class ParsedCertificate;
+}
 
 class CertificatePropertiesModel : public CertificateTreeViewModel
 {
     Q_OBJECT
 public:
-    explicit CertificatePropertiesModel(X509* cert, QObject* parent = nullptr);
+    /// @brief Build the properties tree from a parsed certificate.
+    /// @param cert    Parsed certificate; if @c nullptr a single "parse error"
+    ///                row is inserted so the viewer remains visible.
+    /// @param rawDer  Optional raw DER bytes used to render a forensic hex
+    ///                dump under the parse-error row when @p cert is null.
+    ///                Ignored when @p cert is non-null.
+    explicit CertificatePropertiesModel(const LibreSCRS::Certificate::ParsedCertificate* cert,
+                                        QObject* parent = nullptr);
+
+    explicit CertificatePropertiesModel(const LibreSCRS::Certificate::ParsedCertificate* cert,
+                                        std::span<const std::uint8_t> rawDer, QObject* parent = nullptr);
 
 private:
-    void buildTree(X509* cert);
-    void addVersion(CertificateInfoItem* parent, X509* cert);
-    void addSerialNumber(CertificateInfoItem* parent, X509* cert);
-    void addSignatureAlgorithm(CertificateInfoItem* parent, X509* cert);
-    void addIssuer(CertificateInfoItem* parent, X509* cert);
-    void addValidity(CertificateInfoItem* parent, X509* cert);
-    void addSubject(CertificateInfoItem* parent, X509* cert);
-    void addPublicKeyInfo(CertificateInfoItem* parent, X509* cert);
-    void addExtensions(CertificateInfoItem* parent, X509* cert);
-
-    static QString nameToString(X509_NAME* name);
+    void buildTree(const LibreSCRS::Certificate::ParsedCertificate& cert);
+    void addParseError(std::span<const std::uint8_t> rawDer);
 };

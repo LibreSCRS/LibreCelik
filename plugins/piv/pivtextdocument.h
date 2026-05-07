@@ -4,7 +4,7 @@
 #pragma once
 
 #include <QCoreApplication>
-#include <plugin/card_data.h>
+#include <LibreSCRS/Plugin/CardData.h>
 #include "textdocument.h"
 
 class PIVTextDocument : public TextDocument
@@ -12,16 +12,16 @@ class PIVTextDocument : public TextDocument
     Q_DECLARE_TR_FUNCTIONS(PIVTextDocument)
 
 public:
-    explicit PIVTextDocument(const plugin::CardData& data, QString cssPath = ":/html/pivcard.css");
+    explicit PIVTextDocument(const LibreSCRS::Plugin::CardData& data, QString cssPath = ":/html/pivcard.css");
 
 private:
-    QString buildHtml(const plugin::CardData& cardData) const;
+    QString buildHtml(const LibreSCRS::Plugin::CardData& cardData) const;
 
-    QString buildChuidSection(const plugin::CardData& cardData) const;
-    QString buildCccSection(const plugin::CardData& cardData) const;
-    QString buildPrintedSection(const plugin::CardData& cardData) const;
-    QString buildDiscoverySection(const plugin::CardData& cardData) const;
-    QString buildKeyHistorySection(const plugin::CardData& cardData) const;
+    QString buildChuidSection(const LibreSCRS::Plugin::CardData& cardData) const;
+    QString buildCccSection(const LibreSCRS::Plugin::CardData& cardData) const;
+    QString buildPrintedSection(const LibreSCRS::Plugin::CardData& cardData) const;
+    QString buildDiscoverySection(const LibreSCRS::Plugin::CardData& cardData) const;
+    QString buildKeyHistorySection(const LibreSCRS::Plugin::CardData& cardData) const;
 
     QString emitRow(const QString& label, const QString& value) const;
 };

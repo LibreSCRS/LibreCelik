@@ -6,27 +6,27 @@
 #include "euvrctextdocument.h"
 #include "utils/printmanager.h"
 
-QWidget* EuVrcWidgetPlugin::createWidget(const plugin::CardData& data, QWidget* parent) const
+QWidget* EuVrcWidgetPlugin::createWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent) const
 {
     auto* w = new EuVrcWidget(data, parent);
-    connect(w, &EuVrcWidget::printRequested, this, [this](const plugin::CardData& d) { print(d); });
+    connect(w, &EuVrcWidget::printRequested, this, [this](const LibreSCRS::Plugin::CardData& d) { print(d); });
     return w;
 }
 
 QWidget* EuVrcWidgetPlugin::createEmptyWidget(QWidget* parent) const
 {
     auto* w = new EuVrcWidget(parent);
-    connect(w, &EuVrcWidget::printRequested, this, [this](const plugin::CardData& d) { print(d); });
+    connect(w, &EuVrcWidget::printRequested, this, [this](const LibreSCRS::Plugin::CardData& d) { print(d); });
     return w;
 }
 
-void EuVrcWidgetPlugin::print(const plugin::CardData& data) const
+void EuVrcWidgetPlugin::print(const LibreSCRS::Plugin::CardData& data) const
 {
     EuVrcTextDocument doc(data);
     PrintManager::printDocument(doc, qtTrId("lc-euvrc-print-title"));
 }
 
-void EuVrcWidgetPlugin::addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const
+void EuVrcWidgetPlugin::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group, QWidget* widget) const
 {
     if (auto* euVrcWidget = qobject_cast<EuVrcWidget*>(widget))
         euVrcWidget->addGroup(group);

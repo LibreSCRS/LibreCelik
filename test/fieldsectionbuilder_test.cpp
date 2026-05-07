@@ -6,7 +6,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include "utils/fieldsectionbuilder.h"
-#include <plugin/card_data.h>
+#include <LibreSCRS/Plugin/CardData.h>
 
 class FieldSectionBuilderTest : public ::testing::Test
 {
@@ -24,10 +24,11 @@ QApplication* FieldSectionBuilderTest::app = nullptr;
 
 TEST_F(FieldSectionBuilderTest, CreatesReadOnlyFieldsFromGroup)
 {
-    plugin::CardFieldGroup group;
+    LibreSCRS::Plugin::CardFieldGroup group;
     group.groupKey = "personal";
-    group.fields.push_back({"given_name", "Given Name", plugin::FieldType::Text, {'P', 'e', 't', 'a', 'r'}});
-    group.fields.push_back({"surname", "Surname", plugin::FieldType::Text, {'P', 'e', 't', 'r', 'o', 'v', 'i', 'c'}});
+    group.fields.push_back({"given_name", "Given Name", LibreSCRS::Plugin::FieldType::Text, {'P', 'e', 't', 'a', 'r'}});
+    group.fields.push_back(
+        {"surname", "Surname", LibreSCRS::Plugin::FieldType::Text, {'P', 'e', 't', 'r', 'o', 'v', 'i', 'c'}});
 
     auto* section = LibreSCRS::FieldSectionBuilder::build("Personal Data", group, {});
 
@@ -47,10 +48,10 @@ TEST_F(FieldSectionBuilderTest, CreatesReadOnlyFieldsFromGroup)
 
 TEST_F(FieldSectionBuilderTest, SkipsEmptyFields)
 {
-    plugin::CardFieldGroup group;
+    LibreSCRS::Plugin::CardFieldGroup group;
     group.groupKey = "test";
-    group.fields.push_back({"filled", "Filled", plugin::FieldType::Text, {'A'}});
-    group.fields.push_back({"empty", "Empty", plugin::FieldType::Text, {}});
+    group.fields.push_back({"filled", "Filled", LibreSCRS::Plugin::FieldType::Text, {'A'}});
+    group.fields.push_back({"empty", "Empty", LibreSCRS::Plugin::FieldType::Text, {}});
 
     auto* section = LibreSCRS::FieldSectionBuilder::build("Test", group, {});
     auto edits = section->findChildren<QLineEdit*>();
@@ -62,9 +63,9 @@ TEST_F(FieldSectionBuilderTest, SkipsEmptyFields)
 
 TEST_F(FieldSectionBuilderTest, UsesTranslationMap)
 {
-    plugin::CardFieldGroup group;
+    LibreSCRS::Plugin::CardFieldGroup group;
     group.groupKey = "personal";
-    group.fields.push_back({"given_name", "Given Name", plugin::FieldType::Text, {'P'}});
+    group.fields.push_back({"given_name", "Given Name", LibreSCRS::Plugin::FieldType::Text, {'P'}});
 
     std::map<std::string, QString> translations = {{"given_name", "Ime"}};
 
@@ -82,9 +83,9 @@ TEST_F(FieldSectionBuilderTest, UsesTranslationMap)
 
 TEST_F(FieldSectionBuilderTest, FallsBackToKeyWhenNoTranslation)
 {
-    plugin::CardFieldGroup group;
+    LibreSCRS::Plugin::CardFieldGroup group;
     group.groupKey = "test";
-    group.fields.push_back({"my_field", "My Field", plugin::FieldType::Text, {'X'}});
+    group.fields.push_back({"my_field", "My Field", LibreSCRS::Plugin::FieldType::Text, {'X'}});
 
     auto* section = LibreSCRS::FieldSectionBuilder::build("Test", group, {});
     auto labels = section->findChildren<QLabel*>();
@@ -100,10 +101,10 @@ TEST_F(FieldSectionBuilderTest, FallsBackToKeyWhenNoTranslation)
 
 TEST_F(FieldSectionBuilderTest, HidesFieldsInHiddenSet)
 {
-    plugin::CardFieldGroup group;
+    LibreSCRS::Plugin::CardFieldGroup group;
     group.groupKey = "personal";
-    group.fields.push_back({"visible", "Visible", plugin::FieldType::Text, {'A'}});
-    group.fields.push_back({"hidden", "Hidden", plugin::FieldType::Text, {'B'}});
+    group.fields.push_back({"visible", "Visible", LibreSCRS::Plugin::FieldType::Text, {'A'}});
+    group.fields.push_back({"hidden", "Hidden", LibreSCRS::Plugin::FieldType::Text, {'B'}});
 
     std::set<std::string> hidden = {"hidden"};
     auto* section = LibreSCRS::FieldSectionBuilder::build("Test", group, {}, hidden);

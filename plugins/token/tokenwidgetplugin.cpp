@@ -5,7 +5,7 @@
 
 #include <QVBoxLayout>
 
-QWidget* TokenWidgetPlugin::createWidget(const plugin::CardData& /*data*/, QWidget* parent) const
+QWidget* TokenWidgetPlugin::createWidget(const LibreSCRS::Plugin::CardData& /*data*/, QWidget* parent) const
 {
     auto* widget = new QWidget(parent);
     auto* layout = new QVBoxLayout(widget);

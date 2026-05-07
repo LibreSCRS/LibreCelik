@@ -5,11 +5,18 @@
 
 #include "config.h"
 
+#include <LibreSCRS/Plugin/CardPlugin.h>
+
+#include "utils/cardheadercard.h"
+#include "utils/collapsiblesection.h"
+
+#include <memory>
 #include <string>
 #include <vector>
-#include <plugin/card_plugin.h>
-#include "utils/collapsiblesection.h"
-#include "utils/cardheadercard.h"
+
+namespace LibreSCRS::Trust {
+class TrustStore;
+}
 
 class QEvent;
 class QToolButton;
@@ -21,22 +28,27 @@ class TokenSection : public CollapsibleSection
 {
     Q_OBJECT
 public:
-    explicit TokenSection(std::vector<std::string> certPaths, QWidget* parent = nullptr);
+    /// @brief Build the token section.
+    /// @param trustStore Shared trust store for certificate hierarchy / chain
+    ///                   verification in the embedded viewer dialog. May be
+    ///                   null in non-signing builds — the viewer degrades
+    ///                   gracefully (per Spec §10).
+    explicit TokenSection(std::shared_ptr<const LibreSCRS::Trust::TrustStore> trustStore, QWidget* parent = nullptr);
 
 #ifdef LIBRECELIK_SIGNING_ENABLED
     void setReaderName(const std::string& name);
 #endif
 
 public slots:
-    void setTokenInfo(const plugin::CardFieldGroup& tokenGroup);
-    void setCertificates(const std::vector<plugin::CertificateData>& certList);
-    void setPINList(const std::vector<plugin::PinStatusEntry>& pins);
+    void setTokenInfo(const LibreSCRS::Plugin::CardFieldGroup& tokenGroup);
+    void setCertificates(const std::vector<LibreSCRS::Plugin::CertificateData>& certList);
+    void setPINList(const std::vector<LibreSCRS::Plugin::PinStatusEntry>& pins);
 
 signals:
     void changePINRequested(uint8_t pinReference, const QString& pinLabel, bool isTransport, int minLength,
                             int maxLength);
 #ifdef LIBRECELIK_SIGNING_ENABLED
-    void signRequested(const plugin::CertificateData& cert, const std::string& readerName);
+    void signRequested(const LibreSCRS::Plugin::CertificateData& cert, const std::string& readerName);
 #endif
 
 private slots:
@@ -50,13 +62,13 @@ private:
     void applyTreeStyleSheet();
     void updateTreeMinimumHeight();
 #ifdef LIBRECELIK_SIGNING_ENABLED
-    std::vector<plugin::CertificateData> signingCertificates() const;
+    std::vector<LibreSCRS::Plugin::CertificateData> signingCertificates() const;
     void showCertificateDropdown();
 #endif
 
-    std::vector<std::string> certPaths;
-    std::vector<plugin::CertificateData> certificateList;
-    std::vector<plugin::PinStatusEntry> pinList;
+    std::shared_ptr<const LibreSCRS::Trust::TrustStore> trustStore;
+    std::vector<LibreSCRS::Plugin::CertificateData> certificateList;
+    std::vector<LibreSCRS::Plugin::PinStatusEntry> pinList;
 
     QVBoxLayout* contentLayout = nullptr;
     LibreSCRS::CardHeaderCard* headerCard = nullptr;

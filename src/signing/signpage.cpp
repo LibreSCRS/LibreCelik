@@ -9,11 +9,22 @@
 #include "signingcolors.h"
 #include "utils/iconutils.h"
 
-#include <libresign/signing_service.h>
-#include <smartcard/secure_buffer.h>
+#include <LibreSCRS/Auth/AuthRequirement.h>
+#include <LibreSCRS/Auth/CredentialProvider.h>
+#include <LibreSCRS/Auth/CredentialResult.h>
+#include <LibreSCRS/Plugin/CardPlugin.h>
+#include <LibreSCRS/Signing/SigningRequest.h>
+#include <LibreSCRS/Signing/SigningResult.h>
+#include <LibreSCRS/Signing/SigningService.h>
+#include <LibreSCRS/Signing/TsaProvider.h>
+#include <LibreSCRS/SmartCard/CardSession.h>
+#include <LibreSCRS/Secure/String.h>
+
+#include <filesystem>
 
 #include <QAction>
 #include <QDateTime>
+#include <QDebug>
 #include <QDir>
 #include <QEvent>
 #include <QFile>
@@ -36,8 +47,6 @@
 #include <QThread>
 #include <QUrl>
 #include <QVBoxLayout>
-
-#include <openssl/crypto.h>
 
 SignPage::SignPage(QWidget* parent) : QWidget(parent)
 {
@@ -89,8 +98,7 @@ SignPage::SignPage(QWidget* parent) : QWidget(parent)
     // CAN is a 6-digit numeric code on Serbian eID / eMRTD cards, with
     // longer variants (up to ~10 digits) defined in some EU profiles. We
     // gate input to digits only via QRegularExpressionValidator instead
-    // of QIntValidator, which overflows for maxLength > 9 (see memory:
-    // feedback_pin_validator_overflow).
+    // of QIntValidator, which overflows for maxLength > 9.
     canEdit->setMaxLength(10);
     canEdit->setValidator(new QRegularExpressionValidator(QRegularExpression(QStringLiteral("^\\d*$")), canEdit));
     canRowLayout->addWidget(canEdit);
@@ -183,18 +191,28 @@ SignPage::~SignPage()
     //
     // The wait is BOUNDED so a smart card or PKCS#11 module that hangs cannot
     // block application shutdown indefinitely. PKCS#11 sign operations are not
-    // cancellable mid-call, so if the module misbehaves we accept leaking the
-    // worker thread (the OS reaps it on process exit) rather than freezing
-    // the entire app. The PIN material is in a smartcard::SecureBuffer captured
-    // by the lambda, so the leaked thread does NOT leave PIN bytes around
-    // indefinitely either — the SecureBuffer destructor still cleanses when
-    // the thread eventually returns.
+    // cancellable mid-call (SCardCancel is a no-op for SCardTransmit on Linux),
+    // so if the module truly hangs we accept leaking the worker thread (the
+    // OS reaps it on process exit) rather than freezing the entire app. The
+    // PIN material is held in a LibreSCRS::Secure::String captured by the
+    // lambda, so the leaked thread does NOT leave PIN bytes around
+    // indefinitely either — the String destructor still cleanses when the
+    // thread eventually returns.
+    //
+    // The worker captures shared_ptr<CardPlugin> and shared_ptr<CardSession>
+    // — their lifetime is provably bounded by the captured shared_ptrs, so
+    // if the 30-second wait expires and the thread keeps running the module
+    // is still accessing live objects (no UAF). SigningService::sign itself
+    // also retains the shared_ptrs for the duration of the call.
     if (workerThread && workerThread->isRunning()) {
         workerThread->disconnect(this);
-        constexpr int kShutdownWaitMs = 5000; // 5s — matches typical PKCS#11 sign latency
+        constexpr int kShutdownWaitMs = 30000; // 30s — PC/SC transmit timeout plus PKCS#11 sign headroom
         if (!workerThread->wait(kShutdownWaitMs)) {
             qWarning("SignPage: worker thread did not finish within %dms; "
-                     "leaking thread to avoid blocking shutdown",
+                     "leaking thread to avoid blocking shutdown. The worker "
+                     "holds shared_ptr<CardPlugin> and shared_ptr<CardSession> "
+                     "so the underlying objects remain live until the thread "
+                     "eventually completes.",
                      kShutdownWaitMs);
             // Intentionally NOT calling terminate() — that would leave the
             // PKCS#11 module in undefined state. Detach instead: the existing
@@ -256,15 +274,20 @@ void SignPage::applyThemeColors()
     resultsList->setStyleSheet(QString());
 }
 
-void SignPage::configure(const Config& cfg)
+void SignPage::configure(Config cfg)
 {
+    Q_ASSERT(cfg.cardPlugin != nullptr);
+    Q_ASSERT(cfg.session != nullptr);
+
     certificate = cfg.certificate;
     readerName = cfg.readerName;
     fileInfos = cfg.fileInfos;
     sigLevel = cfg.level;
     outputDir = cfg.outputFolder;
-    visualParams = cfg.visual;
+    visualParams = std::move(cfg.visual);
     tsaUrl = cfg.tsaUrl;
+    cardPlugin = std::move(cfg.cardPlugin);
+    session = std::move(cfg.session);
     signingInProgress = false;
     signingComplete = false;
     failedCount = 0;
@@ -292,19 +315,9 @@ void SignPage::configure(const Config& cfg)
     emit pinReady(!pinEdit->text().isEmpty() && canOk);
 }
 
-void SignPage::setSigningService(libresign::SigningService* svc)
+void SignPage::setSigningService(std::shared_ptr<LibreSCRS::Signing::SigningService> svc)
 {
-    signingService = svc;
-}
-
-void SignPage::setTrustConfig(const libresign::TrustConfig& config)
-{
-    trustConfig = config;
-}
-
-void SignPage::setPrefetchCallback(std::function<bool()> cb)
-{
-    prefetchCallback = std::move(cb);
+    signingService = std::move(svc);
 }
 
 bool SignPage::hasPinInput() const
@@ -337,12 +350,32 @@ bool SignPage::hasFailures() const
     return failedCount > 0;
 }
 
+namespace {
+std::string refreshTimestampIn(std::string text)
+{
+    static const QRegularExpression dateRe(QStringLiteral("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"));
+    QString q = QString::fromStdString(text);
+    q.replace(dateRe, QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss")));
+    return q.toStdString();
+}
+
+LibreSCRS::Signing::VisualSignatureParams
+cloneWithRefreshedTimestamp(const LibreSCRS::Signing::VisualSignatureParams& src)
+{
+    LibreSCRS::Signing::VisualSignatureParams::Builder b;
+    b.pageIndex(src.pageIndex())
+        .rect(LibreSCRS::Signing::Rect{src.x(), src.y(), src.width(), src.height()})
+        .textTemplate(refreshTimestampIn(src.textTemplate()));
+    return std::move(b).build();
+}
+} // namespace
+
 void SignPage::startSigning()
 {
     if (workerThread && workerThread->isRunning())
         return;
 
-    if (!signingService || fileInfos.isEmpty())
+    if (!signingService || fileInfos.isEmpty() || !cardPlugin || !session)
         return;
 
     // Pre-flight: validate the output folder is a writable existing
@@ -382,38 +415,21 @@ void SignPage::startSigning()
     signingInProgress = true;
     emit signingStarted();
 
-    // Build PIN buffer using smartcard::SecureBuffer (RAII zeroization)
-    // BEFORE hiding the input rows. canRow->isVisible() is the CL-reader
-    // gate for the CAN:PIN path; hiding the row first would short-circuit
-    // the check and send only the raw PIN, breaking contactless signing.
-    // Moving this read up also shortens the window PIN material lives
-    // inside the QLineEdit's QString storage.
+    // Read PIN + CAN into LibreSCRS::Secure::String BEFORE hiding the input
+    // rows. canRow->isVisible() is the CL-reader gate for the CAN:PIN path;
+    // hiding the row first would short-circuit the check and send only the
+    // raw PIN, breaking contactless signing. Moving this read up also
+    // shortens the window PIN material lives inside the QLineEdit's QString
+    // storage.
     //
-    // Intermediate std::strings from QString::toStdString() are explicitly
-    // cleansed before they leave scope so PIN material doesn't leak through
-    // the QString → std::string → SecureBuffer conversion path.
-    smartcard::SecureBuffer pinBuffer;
-    {
-        std::string pinTmp;
-        if (canRow->isVisible() && !canEdit->text().isEmpty()) {
-            std::string can = canEdit->text().toStdString();
-            std::string pin = pinEdit->text().toStdString();
-            // Build CAN:PIN in-place to avoid `operator+` temporaries that
-            // would briefly hold the concatenated secret outside our control
-            // and destruct without cleanse. reserve() guarantees no further
-            // allocation during the build.
-            pinTmp.reserve(can.size() + 1 + pin.size());
-            pinTmp.assign(can);
-            pinTmp.push_back(':');
-            pinTmp.append(pin);
-            OPENSSL_cleanse(can.data(), can.size());
-            OPENSSL_cleanse(pin.data(), pin.size());
-        } else {
-            pinTmp = pinEdit->text().toStdString();
-        }
-        pinBuffer = smartcard::SecureBuffer(pinTmp);
-        OPENSSL_cleanse(pinTmp.data(), pinTmp.size());
-    }
+    // The Secure::String(std::string&&) constructor adopts the rvalue from
+    // QString::toStdString() and cleanses its bytes (including the SSO
+    // inline buffer) before the rvalue dies, so no plaintext intermediate
+    // outlives the assignment.
+    LibreSCRS::Secure::String pinSecure{pinEdit->text().toStdString()};
+    LibreSCRS::Secure::String canSecure;
+    if (canRow->isVisible() && !canEdit->text().isEmpty())
+        canSecure = LibreSCRS::Secure::String{canEdit->text().toStdString()};
 
     // PIN and CAN values are now safely in SecureBuffer. Hide the input
     // rows so the progress + results area owns the bottom half of the
@@ -430,54 +446,46 @@ void SignPage::startSigning()
 
     const QString pkcs11Path = signing::findPkcs11Module();
     const std::string keyAlias = certificate.label;
-    const libresign::SignatureLevel level = parseLevel(sigLevel);
+    const LibreSCRS::Signing::SignatureLevel level = parseLevel(sigLevel);
 
-    // Capture parameters for worker thread
     struct SignJob
     {
         QString filePath;
         QString outputPath;
-        libresign::SignatureFormat format;
-        libresign::SignaturePackaging packaging;
+        LibreSCRS::Signing::SignatureFormat format;
+        LibreSCRS::Signing::PackagingMode packaging;
     };
 
     QList<SignJob> jobs;
     for (const auto& info : fileInfos)
         jobs.append({info.filePath, buildOutputPath(info), info.format, info.packaging});
 
-    // Run signing on worker thread to keep UI responsive.
-    // A QPointer guard is captured so that QMetaObject::invokeMethod calls are
-    // silently skipped if the SignPage is destroyed before they execute.
-    auto visual = visualParams;
-    auto tsa = tsaUrl;
-    auto trust = trustConfig;
-    auto prefetch = prefetchCallback;
-    auto* svc = signingService; // outlives wizard (owned by LibreCelik)
+    auto svc = signingService;    // outlives wizard (owned by LibreCelik)
+    auto plugin = cardPlugin;     // shared — worker lambda retains ownership
+    auto activeSession = session; // shared — worker lambda retains ownership
+    auto visualTemplate = std::move(visualParams);
+    auto tsaUrlCopy = tsaUrl;
     QPointer<SignPage> guard(this);
-    // NOTE: `this` is captured for QMetaObject::invokeMethod inner lambdas that
-    // access member functions (addResultItem, clearPin, etc.) and member variables.
-    // Every inner lambda also captures the QPointer `guard` and checks `if (!guard)`
-    // before dereferencing `this`, so the raw pointer is never used after destruction.
-    // The outer lambda itself only uses `this` indirectly through those guard-protected
-    // inner lambdas — all direct work is done through value-captured locals (svc, jobs, etc.).
-    workerThread = QThread::create([this, guard, jobs, pkcs11Path, pinBuffer = std::move(pinBuffer), keyAlias, level,
-                                    totalFiles, visual, tsa, trust, prefetch, svc]() mutable {
-        // pinBuffer (smartcard::SecureBuffer) self-cleanses on destruction
-        // regardless of how this lambda exits — including via exception
-        // thrown by svc->sign(). No additional scrubber needed.
 
+    // Per-request TSA override: if the wizard's FileSelectionPage supplied a
+    // specific TSA URL (shown only for B-T and higher), each SigningRequest
+    // carries its own tsaOverride. The shared SigningService's service-level
+    // TsaProvider (installed once at startup from SigningConfiguration) is
+    // the fallback when no override is set — no service-wide state mutation,
+    // no RAII restore.
+    workerThread = QThread::create([this, guard, jobs, pinSecure = std::move(pinSecure),
+                                    canSecure = std::move(canSecure), keyAlias, level, totalFiles,
+                                    visualTemplate = std::move(visualTemplate), svc, plugin,
+                                    session = std::move(activeSession), tsaUrl = std::move(tsaUrlCopy)]() mutable {
         int succeeded = 0;
         int failed = 0;
-        // Wrap the entire worker body so an uncaught exception from
-        // svc->configure() / svc->sign() / anywhere downstream surfaces as
-        // a visible failure in the UI instead of silently leaving the
-        // progress bar spinning and the Sign button disabled.
         try {
-            bool prefetched = prefetch ? prefetch() : false;
-
-            if (!prefetched && !trust.trustedLists.empty()) {
-                svc->configure(trust);
-            }
+            // Hand the CAN to the plugin BEFORE the per-file loop so PACE
+            // runs once per signing session rather than once per file. The
+            // plugin stores its own cleansing copy; the worker-local
+            // canSecure cleanses on scope exit.
+            if (!canSecure.empty())
+                plugin->setCredentials(*session, "can", canSecure);
 
             for (int i = 0; i < jobs.count(); ++i) {
                 const auto& job = jobs.at(i);
@@ -492,27 +500,13 @@ void SignPage::startSigning()
                             progressBar->setRange(0, totalFiles);
                             progressBar->setValue(i);
                         } else {
-                            progressBar->setRange(0, 0); // indeterminate for single file
+                            progressBar->setRange(0, 0);
                         }
                     });
 
-                // Open and validate size atomically on the open handle (avoid
-                // TOCTOU between QFileInfo::size() and QFile::open() — and don't
-                // read 256MB+ into RAM only to discard it).
+                // Pre-flight: refuse files larger than 256 MiB without touching the bridge.
                 constexpr qint64 maxFileSize = 256 * 1024 * 1024;
-                QFile file(job.filePath);
-                if (!file.open(QIODevice::ReadOnly)) {
-                    QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName()]() {
-                        if (!guard)
-                            return;
-                        addResultItem(QStringLiteral("\u2718"), signing::kErrorHex,
-                                      qtTrId("lc-sign-fail-read").arg(name));
-                    });
-                    ++failed;
-                    continue;
-                }
-                if (file.size() > maxFileSize) {
-                    file.close();
+                if (fi.size() > maxFileSize) {
                     QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName()]() {
                         if (!guard)
                             return;
@@ -522,95 +516,115 @@ void SignPage::startSigning()
                     ++failed;
                     continue;
                 }
-                const QByteArray data = file.readAll();
-                if (file.error() != QFile::NoError) {
-                    file.close();
-                    QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName()]() {
-                        if (!guard)
-                            return;
-                        addResultItem(QStringLiteral("\u2718"), signing::kErrorHex,
-                                      qtTrId("lc-sign-fail-read").arg(name));
-                    });
-                    ++failed;
-                    continue;
-                }
-                file.close();
 
-                // Build request
-                libresign::SigningRequest request;
-                request.document = std::vector<uint8_t>(data.begin(), data.end());
-                request.fileName = fi.fileName().toStdString();
-                request.format = job.format;
-                request.packaging = job.packaging;
-                request.level = level;
-                if (!tsa.empty())
-                    request.tsa.url = tsa;
-                if (job.format == libresign::SignatureFormat::PAdES) {
-                    // Refresh the timestamp in the visual signature text so each
-                    // file gets the actual signing time rather than the stale
-                    // timestamp captured when the user entered the sign page.
-                    if (visual.enabled && !visual.text.empty()) {
-                        QString text = QString::fromStdString(visual.text);
-                        static const QRegularExpression dateRe(
-                            QStringLiteral("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"));
-                        text.replace(dateRe,
-                                     QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss")));
-                        visual.text = text.toStdString();
-                    }
-                    request.visual = visual;
-                }
-#ifdef LIBRESCRS_TESTING
-                // Allow signing with expired certificates (test builds only)
-                if (qEnvironmentVariableIsSet("LIBRESCRS_ALLOW_EXPIRED_CERT"))
-                    request.allowExpiredCertificate = true;
-#endif
+                LibreSCRS::Signing::SigningRequest::Builder rb;
+                rb.inputFile(std::filesystem::path(job.filePath.toStdString()));
+                rb.outputFile(std::filesystem::path(job.outputPath.toStdString()));
+                rb.format(job.format);
+                rb.packaging(job.packaging);
+                rb.level(level);
+                rb.certificateLabel(keyAlias);
+                if (!tsaUrl.empty())
+                    rb.tsaOverride(LibreSCRS::Signing::staticTsa(tsaUrl));
+                if (job.format == LibreSCRS::Signing::SignatureFormat::Pades && visualTemplate.has_value())
+                    rb.visualParams(cloneWithRefreshedTimestamp(*visualTemplate));
 
-                // Sign
-                auto result = svc->sign(request, pkcs11Path.toStdString(), pinBuffer, keyAlias);
+                LibreSCRS::Signing::SigningRequest req = std::move(rb).build();
 
-                if (result.success) {
-                    QFile outFile(job.outputPath);
-                    const qint64 expectedBytes = static_cast<qint64>(result.signedDocument.size());
-                    bool wroteOk = false;
-                    if (outFile.open(QIODevice::WriteOnly)) {
-                        const qint64 written =
-                            outFile.write(reinterpret_cast<const char*>(result.signedDocument.data()), expectedBytes);
-                        // Treat partial write or any QFile error as failure so we
-                        // don't report a corrupt signed file as success.
-                        wroteOk = (written == expectedBytes && outFile.error() == QFile::NoError);
-                        outFile.close();
-                        if (!wroteOk) {
-                            // Best-effort cleanup of the truncated/garbage file.
-                            outFile.remove();
-                        }
-                    }
-                    if (wroteOk) {
-                        QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName(),
-                                                                 outName = QFileInfo(job.outputPath).fileName()]() {
-                            if (!guard)
-                                return;
-                            addResultItem(QStringLiteral("\u2714"), signing::kSuccessHex,
-                                          qtTrId("lc-sign-ok").arg(name, outName));
-                        });
-                        ++succeeded;
-                    } else {
-                        QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName()]() {
-                            if (!guard)
-                                return;
-                            addResultItem(QStringLiteral("\u2718"), signing::kErrorHex,
-                                          qtTrId("lc-sign-fail-write").arg(name));
-                        });
-                        ++failed;
-                    }
-                } else {
+                // CredentialProvider: hands the signing PIN back in the
+                // "pin" field that AuthRequirement::forSigning declares. The
+                // CAN, when present, was installed on the plugin before the
+                // loop via setCredentials — it is not a signing credential.
+                //
+                // pinSecure is captured by reference; each invocation hands
+                // out a fresh per-copy-cleansing duplicate via Secure::String
+                // copy semantics. The CredentialResult-owned copy cleanses
+                // when the result goes out of scope.
+                auto credentialProvider =
+                    [&pinSecure](const LibreSCRS::Auth::AuthRequirement&) -> LibreSCRS::Auth::CredentialResult {
+                    std::vector<LibreSCRS::Auth::CredentialResult::Entry> values;
+                    values.emplace_back("pin", pinSecure);
+                    return LibreSCRS::Auth::CredentialResult::ok(std::move(values));
+                };
+
+                LibreSCRS::Signing::SigningResult result = svc->sign(req, credentialProvider, plugin, session);
+
+                using S = LibreSCRS::Signing::SigningResult::Status;
+                if (result.status == S::Ok) {
+                    ++succeeded;
                     QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName(),
-                                                             err = QString::fromStdString(result.errorMessage)]() {
+                                                             outName = QFileInfo(job.outputPath).fileName()]() {
                         if (!guard)
                             return;
-                        addResultItem(QStringLiteral("\u2718"), signing::kErrorHex,
-                                      qtTrId("lc-sign-fail-sign").arg(name, err));
+                        addResultItem(QStringLiteral("\u2714"), signing::kSuccessHex,
+                                      qtTrId("lc-sign-ok").arg(name, outName));
                     });
+                } else {
                     ++failed;
+                    QString msg;
+                    // Track whether the PIN pathway is now compromised so the
+                    // outer loop stops issuing further sign() calls. Every
+                    // subsequent call would re-send the same stored PIN and
+                    // consume another on-card retry (3 retries → permanent
+                    // block).
+                    bool pinCompromised = false;
+                    switch (result.status) {
+                    case S::UserCancelled:
+                        msg = qtTrId("lc-sign-fail-cancelled");
+                        break;
+                    case S::PinVerificationFailed:
+                        msg = qtTrId("lc-sign-fail-pin");
+                        pinCompromised = true;
+                        break;
+                    case S::CardBlocked:
+                        msg = qtTrId("lc-sign-fail-blocked");
+                        pinCompromised = true;
+                        break;
+                    case S::TsaUnreachable:
+                        msg = qtTrId("lc-sign-fail-tsa");
+                        break;
+                    case S::TrustStoreUnavailable:
+                        msg = qtTrId("lc-sign-fail-trust");
+                        break;
+                    case S::InvalidRequest:
+                        msg = qtTrId("lc-sign-fail-invalid");
+                        break;
+                    case S::SigningEngineError:
+                    default:
+                        msg = result.diagnosticDetail.has_value()
+                                  ? qtTrId("lc-sign-fail-sign")
+                                        .arg(fi.fileName(), QString::fromStdString(*result.diagnosticDetail))
+                                  : qtTrId("lc-sign-fail-generic");
+                        break;
+                    }
+                    QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName(), msg]() {
+                        if (!guard)
+                            return;
+                        addResultItem(QStringLiteral("\u2718"), signing::kErrorHex, msg);
+                        Q_UNUSED(name);
+                    });
+                    if (pinCompromised) {
+                        // Record every remaining job as failed with the same
+                        // PIN-related diagnostic and halt the loop. The user
+                        // will see one failure per file plus the original
+                        // PIN-failed entry; the card retry counter is only
+                        // burned once for the batch.
+                        const bool wasBlocked = (result.status == S::CardBlocked);
+                        for (int j = i + 1; j < jobs.count(); ++j) {
+                            const auto& skipJob = jobs.at(j);
+                            QFileInfo skipFi(skipJob.filePath);
+                            ++failed;
+                            const QString skipMsg =
+                                wasBlocked ? qtTrId("lc-sign-fail-blocked") : qtTrId("lc-sign-fail-pin");
+                            QMetaObject::invokeMethod(guard.data(), [guard, this, name = skipFi.fileName(), skipMsg]() {
+                                if (!guard)
+                                    return;
+                                addResultItem(QStringLiteral("\u2718"), signing::kErrorHex, skipMsg);
+                                Q_UNUSED(name);
+                            });
+                        }
+                        break;
+                    }
                 }
             }
 
@@ -668,22 +682,22 @@ QString SignPage::buildOutputPath(const FileSignInfo& info) const
     QFileInfo fi(info.filePath);
     QString outputPath;
     switch (info.format) {
-    case libresign::SignatureFormat::PAdES:
+    case LibreSCRS::Signing::SignatureFormat::Pades:
         outputPath = QDir(outputDir).filePath(fi.completeBaseName() + QStringLiteral("-signed.pdf"));
         break;
-    case libresign::SignatureFormat::XAdES:
-        if (info.packaging == libresign::SignaturePackaging::ENVELOPED)
+    case LibreSCRS::Signing::SignatureFormat::Xades:
+        if (info.packaging == LibreSCRS::Signing::PackagingMode::Enveloped)
             outputPath = QDir(outputDir).filePath(fi.completeBaseName() + QStringLiteral("-signed.xml"));
         else
             outputPath = QDir(outputDir).filePath(fi.fileName() + QStringLiteral(".xsig"));
         break;
-    case libresign::SignatureFormat::ASiC_E:
+    case LibreSCRS::Signing::SignatureFormat::AsicE:
         outputPath = QDir(outputDir).filePath(fi.completeBaseName() + QStringLiteral(".asice"));
         break;
-    case libresign::SignatureFormat::CAdES:
+    case LibreSCRS::Signing::SignatureFormat::Cades:
         outputPath = QDir(outputDir).filePath(fi.fileName() + QStringLiteral(".p7s"));
         break;
-    case libresign::SignatureFormat::JAdES:
+    case LibreSCRS::Signing::SignatureFormat::Jades:
         outputPath = QDir(outputDir).filePath(fi.fileName() + QStringLiteral(".jose"));
         break;
     }
@@ -707,15 +721,16 @@ QString SignPage::buildOutputPath(const FileSignInfo& info) const
     return outputPath;
 }
 
-libresign::SignatureLevel SignPage::parseLevel(const QString& level)
+LibreSCRS::Signing::SignatureLevel SignPage::parseLevel(const QString& level)
 {
+    using L = LibreSCRS::Signing::SignatureLevel;
     if (level == QStringLiteral("B_B"))
-        return libresign::SignatureLevel::B_B;
+        return L::B_B;
     if (level == QStringLiteral("B_LT"))
-        return libresign::SignatureLevel::B_LT;
+        return L::B_LT;
     if (level == QStringLiteral("B_LTA"))
-        return libresign::SignatureLevel::B_LTA;
-    return libresign::SignatureLevel::B_T; // default
+        return L::B_LTA;
+    return L::B_T;
 }
 
 void SignPage::addResultItem(const QString& icon, const QString& colorHex, const QString& message)

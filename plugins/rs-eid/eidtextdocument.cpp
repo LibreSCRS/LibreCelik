@@ -6,13 +6,14 @@
 #include "eidtextdocument.h"
 #include <plugin/carddatautils.h>
 
-using plugin::getFieldValue;
+using LibreSCRS::Plugin::getFieldValue;
 
-EIdTextDocument::EIdTextDocument(const plugin::CardData& cardData, QString documentPath, QString cssPath)
+EIdTextDocument::EIdTextDocument(const LibreSCRS::Plugin::CardData& cardData, QString documentPath, QString cssPath)
 {
     // Foreigner detection — matches EidWidget::isForeigner()
-    const auto* cardTypeField = cardData.findField("card_type");
-    isForeigner = cardTypeField && cardTypeField->asString() == "ForeignerIF2020";
+    auto cardTypeField = cardData.findField("card_type");
+    auto cardTypeText = cardTypeField ? cardData.fieldAt(*cardTypeField).textValue() : std::nullopt;
+    isForeigner = cardTypeText.has_value() && *cardTypeText == "ForeignerIF2020";
 
     if (documentPath.isEmpty())
         documentPath = isForeigner ? QStringLiteral(":/html/idcardIF2020.html") : QStringLiteral(":/html/idcard.html");
@@ -60,7 +61,7 @@ void EIdTextDocument::translateDocumentData(QString& data) const
     data.replace("${validity_date}", qtTrId("lc-eid-doc-valid-to"));
 }
 
-void EIdTextDocument::prepareDocumentData(QString& html, const plugin::CardData& cardData) const
+void EIdTextDocument::prepareDocumentData(QString& html, const LibreSCRS::Plugin::CardData& cardData) const
 {
     html.replace("${last_name_value}", getPreparedValue(getFieldValue(cardData, "surname")));
     html.replace("${first_name_value}", getPreparedValue(getFieldValue(cardData, "given_name")));
@@ -108,11 +109,12 @@ void EIdTextDocument::prepareDocumentData(QString& html, const plugin::CardData&
     html.replace("${validity_date_value}", getPreparedValue(getFieldValue(cardData, "expiry_date")));
 
     // Photo — raw bytes to base64 data URI
-    const auto* photoField = cardData.findField("photo");
-    if (photoField && !photoField->value.empty()) {
-        QByteArray raw(reinterpret_cast<const char*>(photoField->value.data()),
-                       static_cast<qsizetype>(photoField->value.size()));
-        QString dataUri = "data:image/png;base64, " + raw.toBase64();
-        html.replace(":/images/user.png", dataUri);
+    if (auto photoIdx = cardData.findField("photo")) {
+        const auto& value = cardData.fieldAt(*photoIdx).value;
+        if (!value.empty()) {
+            QByteArray raw(reinterpret_cast<const char*>(value.data()), static_cast<qsizetype>(value.size()));
+            QString dataUri = "data:image/png;base64, " + raw.toBase64();
+            html.replace(":/images/user.png", dataUri);
+        }
     }
 }

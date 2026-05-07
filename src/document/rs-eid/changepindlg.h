@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <LibreSCRS/Secure/String.h>
+
 #include <QDialog>
 
 class QAction;
@@ -20,10 +22,19 @@ public:
     ~ChangePinDlg();
 
 signals:
-    void pinChangeRequested(const QString& oldPin, const QString& newPin);
+    /// @brief Emitted when the user has entered both PINs and confirmed.
+    ///
+    /// The PIN material is carried as @ref LibreSCRS::Secure::String so that
+    /// the cleansing-on-destruction guarantee survives the Qt signal/slot
+    /// boundary. QString-based PIN flow leaks plaintext bytes into Qt's
+    /// implicitly-shared storage and the event queue; the Secure::String
+    /// flow keeps every copy under @c secure_allocator. Receivers MUST
+    /// register the metatype once at startup via
+    /// @c qRegisterMetaType<LibreSCRS::Secure::String>().
+    void pinChangeRequested(const LibreSCRS::Secure::String& oldPin, const LibreSCRS::Secure::String& newPin);
 
 public slots:
-    void onPinTriesLeftRead(int triesLeft, bool blocked);
+    void onPinRetriesLeftRead(int retriesLeft, bool blocked);
     void onPinChangeSuccess();
     void onPinChangeFailed(int retriesLeft, bool blocked, const QString& errorMessage);
 

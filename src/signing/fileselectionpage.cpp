@@ -27,56 +27,57 @@
 #include <QUrl>
 #include <QVBoxLayout>
 
-libresign::SignatureFormat FileSelectionPage::defaultFormatForExtension(const QString& suffix)
+LibreSCRS::Signing::SignatureFormat FileSelectionPage::defaultFormatForExtension(const QString& suffix)
 {
     const QString s = suffix.toLower();
     if (s == QStringLiteral("pdf"))
-        return libresign::SignatureFormat::PAdES;
+        return LibreSCRS::Signing::SignatureFormat::Pades;
     if (s == QStringLiteral("xml") || s == QStringLiteral("xsd") || s == QStringLiteral("xsl"))
-        return libresign::SignatureFormat::XAdES;
+        return LibreSCRS::Signing::SignatureFormat::Xades;
     if (s == QStringLiteral("json"))
-        return libresign::SignatureFormat::JAdES;
-    return libresign::SignatureFormat::ASiC_E;
+        return LibreSCRS::Signing::SignatureFormat::Jades;
+    return LibreSCRS::Signing::SignatureFormat::AsicE;
 }
 
 QList<FileFormatInfo> FileSelectionPage::availableFormatsForExtension(const QString& suffix)
 {
-    using F = libresign::SignatureFormat;
-    using P = libresign::SignaturePackaging;
+    using F = LibreSCRS::Signing::SignatureFormat;
+    using P = LibreSCRS::Signing::PackagingMode;
     const QString s = suffix.toLower();
 
     if (s == QStringLiteral("pdf"))
-        return {{F::PAdES, P::ENVELOPED}, {F::ASiC_E, P::ENVELOPED}};
+        return {{F::Pades, P::Enveloped}, {F::AsicE, P::Enveloped}};
     if (s == QStringLiteral("xml") || s == QStringLiteral("xsd") || s == QStringLiteral("xsl"))
         return {
-            {F::XAdES, P::ENVELOPED},
-            {F::XAdES, P::DETACHED},
-            {F::ASiC_E, P::ENVELOPED},
-            {F::CAdES, P::DETACHED},
+            {F::Xades, P::Enveloped},
+            {F::Xades, P::Detached},
+            {F::AsicE, P::Enveloped},
+            {F::Cades, P::Detached},
         };
     if (s == QStringLiteral("json"))
         return {
-            {F::JAdES, P::DETACHED},
-            {F::ASiC_E, P::ENVELOPED},
-            {F::CAdES, P::DETACHED},
+            {F::Jades, P::Detached},
+            {F::AsicE, P::Enveloped},
+            {F::Cades, P::Detached},
         };
-    return {{F::ASiC_E, P::ENVELOPED}, {F::CAdES, P::DETACHED}};
+    return {{F::AsicE, P::Enveloped}, {F::Cades, P::Detached}};
 }
 
-QString FileSelectionPage::formatDisplayName(libresign::SignatureFormat format, libresign::SignaturePackaging packaging)
+QString FileSelectionPage::formatDisplayName(LibreSCRS::Signing::SignatureFormat format,
+                                             LibreSCRS::Signing::PackagingMode packaging)
 {
-    using F = libresign::SignatureFormat;
-    using P = libresign::SignaturePackaging;
+    using F = LibreSCRS::Signing::SignatureFormat;
+    using P = LibreSCRS::Signing::PackagingMode;
     switch (format) {
-    case F::PAdES:
+    case F::Pades:
         return QStringLiteral("PAdES");
-    case F::CAdES:
+    case F::Cades:
         return QStringLiteral("CAdES (.p7s)");
-    case F::XAdES:
-        return packaging == P::ENVELOPED ? QStringLiteral("XAdES (enveloped)") : QStringLiteral("XAdES (detached)");
-    case F::ASiC_E:
+    case F::Xades:
+        return packaging == P::Enveloped ? QStringLiteral("XAdES (enveloped)") : QStringLiteral("XAdES (detached)");
+    case F::AsicE:
         return QStringLiteral("ASiC-E (.asice)");
-    case F::JAdES:
+    case F::Jades:
         return QStringLiteral("JAdES (.jose)");
     }
     return QStringLiteral("Unknown");
@@ -254,8 +255,9 @@ QString FileSelectionPage::firstPAdESFile() const
 {
     for (int i = 0; i < fileList->count(); ++i) {
         auto* item = fileList->item(i);
-        auto format = static_cast<libresign::SignatureFormat>(item->data(FileListDelegate::FormatRole).toInt());
-        if (format == libresign::SignatureFormat::PAdES)
+        auto format =
+            static_cast<LibreSCRS::Signing::SignatureFormat>(item->data(FileListDelegate::FormatRole).toInt());
+        if (format == LibreSCRS::Signing::SignatureFormat::Pades)
             return files.at(i);
     }
     return {};
@@ -278,27 +280,28 @@ void FileSelectionPage::recalcHasPAdES()
 {
     hasPAdES = false;
     for (int i = 0; i < fileList->count(); ++i) {
-        auto format =
-            static_cast<libresign::SignatureFormat>(fileList->item(i)->data(FileListDelegate::FormatRole).toInt());
-        if (format == libresign::SignatureFormat::PAdES) {
+        auto format = static_cast<LibreSCRS::Signing::SignatureFormat>(
+            fileList->item(i)->data(FileListDelegate::FormatRole).toInt());
+        if (format == LibreSCRS::Signing::SignatureFormat::Pades) {
             hasPAdES = true;
             return;
         }
     }
 }
 
-libresign::SignatureFormat FileSelectionPage::formatForFile(int index) const
+LibreSCRS::Signing::SignatureFormat FileSelectionPage::formatForFile(int index) const
 {
     if (index < 0 || index >= fileList->count())
-        return libresign::SignatureFormat::ASiC_E;
-    return static_cast<libresign::SignatureFormat>(fileList->item(index)->data(FileListDelegate::FormatRole).toInt());
+        return LibreSCRS::Signing::SignatureFormat::AsicE;
+    return static_cast<LibreSCRS::Signing::SignatureFormat>(
+        fileList->item(index)->data(FileListDelegate::FormatRole).toInt());
 }
 
-libresign::SignaturePackaging FileSelectionPage::packagingForFile(int index) const
+LibreSCRS::Signing::PackagingMode FileSelectionPage::packagingForFile(int index) const
 {
     if (index < 0 || index >= fileList->count())
-        return libresign::SignaturePackaging::ENVELOPED;
-    return static_cast<libresign::SignaturePackaging>(
+        return LibreSCRS::Signing::PackagingMode::Enveloped;
+    return static_cast<LibreSCRS::Signing::PackagingMode>(
         fileList->item(index)->data(FileListDelegate::PackagingRole).toInt());
 }
 
@@ -336,9 +339,10 @@ void FileSelectionPage::rebuildFileList()
         const QString suffix = fi.suffix();
         auto format = defaultFormatForExtension(suffix);
         // JAdES and CAdES default to DETACHED; PAdES, XAdES, ASiC-E default to ENVELOPED
-        auto packaging = (format == libresign::SignatureFormat::JAdES || format == libresign::SignatureFormat::CAdES)
-                             ? libresign::SignaturePackaging::DETACHED
-                             : libresign::SignaturePackaging::ENVELOPED;
+        auto packaging = (format == LibreSCRS::Signing::SignatureFormat::Jades ||
+                          format == LibreSCRS::Signing::SignatureFormat::Cades)
+                             ? LibreSCRS::Signing::PackagingMode::Detached
+                             : LibreSCRS::Signing::PackagingMode::Enveloped;
 
         auto* item = new QListWidgetItem(fileList);
         item->setData(FileListDelegate::FileNameRole, fi.fileName());
@@ -396,9 +400,10 @@ void FileSelectionPage::showFormatComboForItem(int row)
         return;
 
     auto* item = fileList->item(row);
-    auto currentFormat = static_cast<libresign::SignatureFormat>(item->data(FileListDelegate::FormatRole).toInt());
+    auto currentFormat =
+        static_cast<LibreSCRS::Signing::SignatureFormat>(item->data(FileListDelegate::FormatRole).toInt());
     auto currentPackaging =
-        static_cast<libresign::SignaturePackaging>(item->data(FileListDelegate::PackagingRole).toInt());
+        static_cast<LibreSCRS::Signing::PackagingMode>(item->data(FileListDelegate::PackagingRole).toInt());
 
     // Position combo at the format badge area (right side of the row)
     QRect itemRect = fileList->visualItemRect(item);
@@ -425,8 +430,9 @@ void FileSelectionPage::showFormatComboForItem(int row)
     connect(combo, &QComboBox::activated, this, [this, row, combo](int idx) {
         if (row < fileList->count()) {
             auto* targetItem = fileList->item(row);
-            auto format = static_cast<libresign::SignatureFormat>(combo->itemData(idx, Qt::UserRole).toInt());
-            auto packaging = static_cast<libresign::SignaturePackaging>(combo->itemData(idx, Qt::UserRole + 1).toInt());
+            auto format = static_cast<LibreSCRS::Signing::SignatureFormat>(combo->itemData(idx, Qt::UserRole).toInt());
+            auto packaging =
+                static_cast<LibreSCRS::Signing::PackagingMode>(combo->itemData(idx, Qt::UserRole + 1).toInt());
             targetItem->setData(FileListDelegate::FormatRole, static_cast<int>(format));
             targetItem->setData(FileListDelegate::PackagingRole, static_cast<int>(packaging));
             targetItem->setData(FileListDelegate::FormatDisplayRole, formatDisplayName(format, packaging));

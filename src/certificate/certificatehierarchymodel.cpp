@@ -5,17 +5,23 @@
 #include "certificateinfoitem.h"
 #include "utils/libreceliklog.h"
 
-#include <openssl/bio.h>
-#include <openssl/x509.h>
-#include <openssl/x509_vfy.h>
+#include <LibreSCRS/Certificate/ParsedCertificate.h>
+#include <LibreSCRS/Trust/TrustStore.h>
 
 #include <QIcon>
 
-CertificateHierarchyModel::CertificateHierarchyModel(X509* cert, X509_STORE* store, QObject* parent)
-    : CertificateTreeViewModel(parent)
+#include <algorithm>
+#include <span>
+
+namespace lcc = LibreSCRS::Certificate;
+namespace lct = LibreSCRS::Trust;
+
+CertificateHierarchyModel::CertificateHierarchyModel(const lcc::ParsedCertificate* leaf,
+                                                     std::shared_ptr<const lct::TrustStore> store, QObject* parent)
+    : CertificateTreeViewModel(parent), trustStore(std::move(store))
 {
-    if (cert && store)
-        buildChain(cert, store);
+    if (leaf)
+        buildChain(*leaf);
 }
 
 QVariant CertificateHierarchyModel::data(const QModelIndex& index, int role) const
@@ -25,118 +31,118 @@ QVariant CertificateHierarchyModel::data(const QModelIndex& index, int role) con
 
     if (role == Qt::DecorationRole && index.column() == 0) {
         auto* item = static_cast<CertificateInfoItem*>(index.internalPointer());
-        // Leaf item gets a status icon
+        // Only the leaf gets a status icon (it owns the verification result).
         if (item->childCount() == 0) {
-            if (verificationError == X509_V_OK)
-                return QIcon(":/images/green_checked.png");
-            else
-                return QIcon(":/images/red_exclamation.png");
+            switch (trustState) {
+            case TrustState::Trusted:
+                return QIcon(QStringLiteral(":/images/green_checked.png"));
+            case TrustState::Untrusted:
+                return QIcon(QStringLiteral(":/images/red_exclamation.png"));
+            case TrustState::Unknown:
+                // No icon — UI shows "trust unknown" text in column 1.
+                return {};
+            }
         }
     }
 
     return CertificateTreeViewModel::data(index, role);
 }
 
-void CertificateHierarchyModel::buildChain(X509* cert, X509_STORE* store)
+void CertificateHierarchyModel::buildChain(const lcc::ParsedCertificate& leaf)
 {
-    X509_STORE_CTX* ctx = X509_STORE_CTX_new();
-    if (!ctx)
-        return;
+    // Walk issuers up the chain via TrustStore::findIssuerOf. Stop when we
+    // reach a self-signed cert (issuer not found and CN of issuer == subject)
+    // or when findIssuerOf returns nullopt and the cert is not self-issued.
+    //
+    // The walk holds parsed copies (we need the DER for the next lookup).
 
-    if (X509_STORE_CTX_init(ctx, store, cert, nullptr) != 1) {
-        X509_STORE_CTX_free(ctx);
-        return;
+    std::vector<lcc::ParsedCertificate> chain;
+    chain.reserve(8);
+
+    // Add leaf — copy its DER so we own the byte block for the lifetime of
+    // the function (ParsedCertificate is move-only).
+    {
+        const auto leafDer = leaf.derBytes();
+        std::vector<std::uint8_t> derCopy(leafDer.begin(), leafDer.end());
+        if (auto parsed = lcc::ParsedCertificate::fromDer(derCopy))
+            chain.push_back(std::move(*parsed));
     }
 
-    X509_verify_cert(ctx);
-    verificationError = X509_STORE_CTX_get_error(ctx);
-
-    STACK_OF(X509)* chain = X509_STORE_CTX_get1_chain(ctx);
-    X509_STORE_CTX_free(ctx);
-
-    if (!chain)
-        return;
-
-    // Build tree from root (last in chain) to leaf (first)
-    int count = sk_X509_num(chain);
-    CertificateInfoItem* current = rootItem.get();
-
-    for (int i = count - 1; i >= 0; i--) {
-        X509* c = sk_X509_value(chain, i);
-        X509_NAME* subject = X509_get_subject_name(c);
-
-        QString label;
-        int cnIdx = X509_NAME_get_index_by_NID(subject, NID_commonName, -1);
-        if (cnIdx >= 0) {
-            X509_NAME_ENTRY* entry = X509_NAME_get_entry(subject, cnIdx);
-            if (entry) {
-                ASN1_STRING* data = X509_NAME_ENTRY_get_data(entry);
-                if (data) {
-                    unsigned char* utf8 = nullptr;
-                    int len = ASN1_STRING_to_UTF8(&utf8, data);
-                    if (len > 0) {
-                        label = QString::fromUtf8(reinterpret_cast<const char*>(utf8), len);
-                        OPENSSL_free(utf8);
-                    }
-                }
-            }
+    if (trustStore) {
+        // Walk upward up to a sane bound (chains rarely exceed 10).
+        constexpr std::size_t kMaxChain = 16;
+        while (chain.size() < kMaxChain) {
+            const auto& current = chain.back();
+            const auto curDer = current.derBytes();
+            auto issuer = trustStore->findIssuerOf(curDer);
+            if (!issuer)
+                break;
+            auto parsed = lcc::ParsedCertificate::fromDer(issuer->certificateDer);
+            if (!parsed)
+                break;
+            // Self-signed root reached — TrustStore::findIssuerOf returns the
+            // cert itself for self-signed roots present in the trust store.
+            // Test BEFORE pushing so we don't duplicate the root (or, when the
+            // leaf itself is a self-signed root, end up with [leaf, leaf]).
+            // Use the DER bytes as the identity check (cheap, robust against
+            // re-encoded DNs).
+            const auto parsedDer = parsed->derBytes();
+            const bool sameAsCurrent =
+                parsedDer.size() == curDer.size() && std::equal(parsedDer.begin(), parsedDer.end(), curDer.begin());
+            if (sameAsCurrent)
+                break; // self-signed root already in chain — stop without duplicate
+            chain.push_back(std::move(*parsed));
         }
+    }
+
+    // Validate the chain once (leaf-first views) and derive both the UI status
+    // text and the icon trust-state from the same outcome.
+    trustState = TrustState::Unknown;
+    QString statusString = qtTrId("lc-cert-verify-trust-unknown");
+    if (trustStore && !chain.empty()) {
+        std::vector<lct::CertificateView> views;
+        views.reserve(chain.size());
+        for (const auto& c : chain)
+            views.emplace_back(c.derBytes());
+        const auto status = trustStore->validateChain(views);
+        qCDebug(lcCertificates) << "Chain validation status =" << static_cast<int>(status);
+        switch (status) {
+        case lct::TrustStore::ChainStatus::Trusted:
+            trustState = TrustState::Trusted;
+            statusString = qtTrId("lc-cert-verify-valid");
+            break;
+        case lct::TrustStore::ChainStatus::UntrustedRoot:
+            trustState = TrustState::Untrusted;
+            statusString = qtTrId("lc-cert-verify-untrusted-root");
+            break;
+        case lct::TrustStore::ChainStatus::BrokenChain:
+            trustState = TrustState::Untrusted;
+            statusString = qtTrId("lc-cert-verify-no-issuer");
+            break;
+        case lct::TrustStore::ChainStatus::InvalidCertificate:
+            trustState = TrustState::Untrusted;
+            statusString = qtTrId("lc-cert-verify-unspecified-error");
+            break;
+        case lct::TrustStore::ChainStatus::Expired:
+            trustState = TrustState::Untrusted;
+            statusString = qtTrId("lc-cert-verify-expired");
+            break;
+        }
+    }
+
+    // Build the tree from root (last in chain) to leaf (first).
+    CertificateInfoItem* current = rootItem.get();
+    for (auto it = chain.rbegin(); it != chain.rend(); ++it) {
+        QString label = QString::fromStdString(it->subject().commonName());
         if (label.isEmpty())
             label = qtTrId("lc-cert-unknown");
 
-        // For the leaf, add verification status
-        QString value;
-        if (i == 0)
-            value = translateVerificationResult(verificationError);
+        const bool isLeaf = (it == chain.rend() - 1);
+        QString value = isLeaf ? statusString : QString();
 
         auto item = std::make_unique<CertificateInfoItem>(label, value, current);
         auto* ptr = item.get();
         current->appendChild(std::move(item));
         current = ptr;
-    }
-
-    sk_X509_pop_free(chain, X509_free);
-}
-
-QString CertificateHierarchyModel::translateVerificationResult(int error)
-{
-    switch (error) {
-    case X509_V_OK:
-        return qtTrId("lc-cert-verify-valid");
-    case X509_V_ERR_UNSPECIFIED:
-        return qtTrId("lc-cert-verify-unspecified-error");
-    case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
-        return qtTrId("lc-cert-verify-no-issuer");
-    case X509_V_ERR_UNABLE_TO_GET_CRL:
-        return qtTrId("lc-cert-verify-no-crl");
-    case X509_V_ERR_UNABLE_TO_DECRYPT_CERT_SIGNATURE:
-        return qtTrId("lc-cert-verify-decrypt-fail");
-    case X509_V_ERR_UNABLE_TO_DECODE_ISSUER_PUBLIC_KEY:
-        return qtTrId("lc-cert-verify-decode-fail");
-    case X509_V_ERR_CERT_NOT_YET_VALID:
-        return qtTrId("lc-cert-verify-not-yet-valid");
-    case X509_V_ERR_CERT_HAS_EXPIRED:
-        return qtTrId("lc-cert-verify-expired");
-    case X509_V_ERR_CERT_SIGNATURE_FAILURE:
-        return qtTrId("lc-cert-verify-signature-fail");
-    case X509_V_ERR_ERROR_IN_CERT_NOT_BEFORE_FIELD:
-        return qtTrId("lc-cert-verify-not-before-error");
-    case X509_V_ERR_ERROR_IN_CERT_NOT_AFTER_FIELD:
-        return qtTrId("lc-cert-verify-not-after-error");
-    case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
-        return qtTrId("lc-cert-verify-self-signed");
-    case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
-        return qtTrId("lc-cert-verify-self-signed-chain");
-    case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
-        return qtTrId("lc-cert-verify-no-local-issuer");
-    case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
-        return qtTrId("lc-cert-verify-leaf-fail");
-    case X509_V_ERR_CERT_REVOKED:
-        return qtTrId("lc-cert-verify-revoked");
-    default: {
-        qCDebug(libreCelikCertificates) << "Unhandled cert error: "
-                                        << QString::fromUtf8(X509_verify_cert_error_string(error));
-        return qtTrId("lc-cert-verify-unspecified-error");
-    }
     }
 }

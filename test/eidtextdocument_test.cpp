@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 #include <QApplication>
-#include <plugin/card_data.h>
+#include <LibreSCRS/Plugin/CardData.h>
 #include "eidtextdocument.h"
 
 // QTextDocument requires QApplication
@@ -16,26 +16,26 @@ int main(int argc, char** argv)
 
 namespace {
 
-plugin::CardData makeCitizenCardData()
+LibreSCRS::Plugin::CardData makeCitizenCardData()
 {
-    plugin::CardData data;
+    LibreSCRS::Plugin::CardData data;
     data.cardType = "rs-eid";
 
-    auto addText = [](plugin::CardFieldGroup& g, const std::string& key, const std::string& val) {
+    auto addText = [](LibreSCRS::Plugin::CardFieldGroup& g, const std::string& key, const std::string& val) {
         if (!val.empty())
-            g.fields.push_back({key, key, plugin::FieldType::Text, {val.begin(), val.end()}});
+            g.fields.push_back({key, key, LibreSCRS::Plugin::FieldType::Text, {val.begin(), val.end()}});
     };
 
     // meta group (card_type determines citizen vs foreigner)
     {
-        plugin::CardFieldGroup meta;
+        LibreSCRS::Plugin::CardFieldGroup meta;
         meta.groupKey = "meta";
         addText(meta, "card_type", "Apollo");
         data.groups.push_back(std::move(meta));
     }
     // personal group
     {
-        plugin::CardFieldGroup personal;
+        LibreSCRS::Plugin::CardFieldGroup personal;
         personal.groupKey = "personal";
         addText(personal, "surname", "PETROVIĆ");
         addText(personal, "given_name", "MARKO");
@@ -50,7 +50,7 @@ plugin::CardData makeCitizenCardData()
     }
     // address group
     {
-        plugin::CardFieldGroup address;
+        LibreSCRS::Plugin::CardFieldGroup address;
         address.groupKey = "address";
         addText(address, "street", "Knez Mihailova");
         addText(address, "house_number", "10");
@@ -62,7 +62,7 @@ plugin::CardData makeCitizenCardData()
     }
     // document group
     {
-        plugin::CardFieldGroup document;
+        LibreSCRS::Plugin::CardFieldGroup document;
         document.groupKey = "document";
         addText(document, "doc_reg_no", "006953897");
         addText(document, "issuing_date", "01.06.2020");
@@ -74,7 +74,7 @@ plugin::CardData makeCitizenCardData()
     return data;
 }
 
-plugin::CardData makeForeignerCardData()
+LibreSCRS::Plugin::CardData makeForeignerCardData()
 {
     auto data = makeCitizenCardData();
     // Change card_type to foreigner
@@ -89,13 +89,14 @@ plugin::CardData makeForeignerCardData()
         }
     }
     // Add foreigner-specific fields
-    auto* personal = data.findGroup("personal");
-    if (personal) {
+    if (auto personalIdx = data.findGroup("personal")) {
+        auto& p = data.groupAt(*personalIdx);
         std::string nat = "German";
-        personal->fields.push_back({"nationality", "Nationality", plugin::FieldType::Text, {nat.begin(), nat.end()}});
+        p.fields.push_back(
+            {"nationality", "Nationality", LibreSCRS::Plugin::FieldType::Text, {nat.begin(), nat.end()}});
         std::string status = "Stalno nastanjen";
-        personal->fields.push_back(
-            {"status_of_foreigner", "Status", plugin::FieldType::Text, {status.begin(), status.end()}});
+        p.fields.push_back(
+            {"status_of_foreigner", "Status", LibreSCRS::Plugin::FieldType::Text, {status.begin(), status.end()}});
     }
     return data;
 }

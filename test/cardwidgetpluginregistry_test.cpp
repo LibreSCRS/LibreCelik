@@ -46,7 +46,7 @@ TEST(CardWidgetPluginRegistryTest, CreateWidgetFromPlugin)
     auto* plugin = registry.findByCardType("mock");
     ASSERT_NE(plugin, nullptr);
 
-    plugin::CardData data;
+    LibreSCRS::Plugin::CardData data;
     data.cardType = "mock";
 
     QWidget parent;

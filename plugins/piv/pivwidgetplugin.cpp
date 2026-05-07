@@ -6,27 +6,27 @@
 #include "pivtextdocument.h"
 #include "utils/printmanager.h"
 
-QWidget* PIVWidgetPlugin::createWidget(const plugin::CardData& data, QWidget* parent) const
+QWidget* PIVWidgetPlugin::createWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent) const
 {
     auto* w = new PIVWidget(data, parent);
-    connect(w, &PIVWidget::printRequested, this, [this](const plugin::CardData& d) { print(d); });
+    connect(w, &PIVWidget::printRequested, this, [this](const LibreSCRS::Plugin::CardData& d) { print(d); });
     return w;
 }
 
 QWidget* PIVWidgetPlugin::createEmptyWidget(QWidget* parent) const
 {
     auto* w = new PIVWidget(parent);
-    connect(w, &PIVWidget::printRequested, this, [this](const plugin::CardData& d) { print(d); });
+    connect(w, &PIVWidget::printRequested, this, [this](const LibreSCRS::Plugin::CardData& d) { print(d); });
     return w;
 }
 
-void PIVWidgetPlugin::print(const plugin::CardData& data) const
+void PIVWidgetPlugin::print(const LibreSCRS::Plugin::CardData& data) const
 {
     PIVTextDocument doc(data);
     PrintManager::printDocument(doc, qtTrId("lc-piv-print-title"));
 }
 
-void PIVWidgetPlugin::addGroup(const plugin::CardFieldGroup& group, QWidget* widget) const
+void PIVWidgetPlugin::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group, QWidget* widget) const
 {
     if (auto* pivWidget = qobject_cast<PIVWidget*>(widget))
         pivWidget->addGroup(group);

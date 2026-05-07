@@ -5,43 +5,47 @@
 #include "qsmartcardmonitor.h"
 #include "utils/libreceliklog.h"
 
-SmartCardReaderListener& SmartCardReaderListener::instance()
+#include <QGlobalStatic>
+
+namespace {
+Q_GLOBAL_STATIC(SmartCardReaderListener, gSmartCardReaderListener)
+} // namespace
+
+SmartCardReaderListener* smartCardReaderListener()
 {
-    static SmartCardReaderListener scrl;
-    return scrl;
+    return gSmartCardReaderListener;
 }
 
 SmartCardReaderListener::SmartCardReaderListener(QObject* parent) : QObject(parent)
 {
-    qRegisterMetaType<smartcard::MonitorEvent>("smartcard::MonitorEvent");
+    qRegisterMetaType<LibreSCRS::SmartCard::MonitorEvent>("LibreSCRS::SmartCard::MonitorEvent");
 
-    monitor = std::make_unique<smartcard::Monitor>();
+    monitor = std::make_unique<LibreSCRS::SmartCard::MonitorService>();
     qtMonitor = new QSmartCardMonitor(*monitor, this);
 
     connect(qtMonitor, &QSmartCardMonitor::readerListChanged, this, [this](const QStringList& readers) {
-        qCDebug(librecSCRSCard) << "SmartCardListener (main thread) got readers:";
+        qCDebug(lcSmartCard) << "SmartCardListener (main thread) got readers:";
         for (const auto& r : readers)
-            qCInfo(librecSCRSCard) << "    " << r;
+            qCInfo(lcSmartCard) << "    " << r;
         emit smartCardReaderEnumerationChanged(readers);
     });
 
-    connect(qtMonitor, &QSmartCardMonitor::cardEvent, this, [this](const smartcard::MonitorEvent& event) {
-        qCDebug(librecSCRSCard) << "SmartCardListener received event from the reader:"
-                                << QString::fromStdString(event.readerName) << "Type:"
-                                << (event.type == smartcard::MonitorEvent::Type::CardInserted ? "CardInserted"
-                                                                                              : "CardRemoved");
+    connect(qtMonitor, &QSmartCardMonitor::cardEvent, this, [this](const LibreSCRS::SmartCard::MonitorEvent& event) {
+        using Kind = LibreSCRS::SmartCard::MonitorEvent::Kind;
+        qCDebug(lcSmartCard) << "SmartCardListener received event from the reader:"
+                             << QString::fromStdString(event.readerName)
+                             << "Kind:" << (event.kind == Kind::CardInserted ? "CardInserted" : "CardRemoved");
         emit smartCardReaderEventOccured(event);
     });
 }
 
-void SmartCardReaderListener::shutdown()
+SmartCardReaderListener::~SmartCardReaderListener()
 {
-    // Explicitly destroy monitor before static destruction order issues.
-    // QSmartCardMonitor unsubscribes in its destructor (child QObject, destroyed first),
-    // then Monitor joins the thread.
+    // QSmartCardMonitor (child QObject) is destroyed first, unsubscribing the
+    // PC/SC observer. MonitorService joins its worker thread on reset(). Q_GLOBAL_STATIC
+    // ensures we run before QApplication-managed static-destructor noise, so this
+    // ordering is deterministic.
     delete qtMonitor;
     qtMonitor = nullptr;
     monitor.reset();
 }
-
-SmartCardReaderListener::~SmartCardReaderListener() = default;

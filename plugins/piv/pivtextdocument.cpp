@@ -6,9 +6,9 @@
 #include "pivtextdocument.h"
 #include <plugin/carddatautils.h>
 
-using plugin::getFieldValue;
+using LibreSCRS::Plugin::getFieldValue;
 
-PIVTextDocument::PIVTextDocument(const plugin::CardData& cardData, QString cssPath)
+PIVTextDocument::PIVTextDocument(const LibreSCRS::Plugin::CardData& cardData, QString cssPath)
 {
     auto html = buildHtml(cardData);
     setupDocument(html, cssPath);
@@ -27,7 +27,7 @@ QString PIVTextDocument::emitRow(const QString& label, const QString& value) con
         .arg(label.toHtmlEscaped(), value.toHtmlEscaped());
 }
 
-QString PIVTextDocument::buildHtml(const plugin::CardData& cardData) const
+QString PIVTextDocument::buildHtml(const LibreSCRS::Plugin::CardData& cardData) const
 {
     QString html;
     html += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -66,7 +66,7 @@ QString PIVTextDocument::buildHtml(const plugin::CardData& cardData) const
     return html;
 }
 
-QString PIVTextDocument::buildChuidSection(const plugin::CardData& cardData) const
+QString PIVTextDocument::buildChuidSection(const LibreSCRS::Plugin::CardData& cardData) const
 {
     QString rows;
     rows += emitRow(qtTrId("lc-piv-field-guid"), getFieldValue(cardData, "guid"));
@@ -79,7 +79,7 @@ QString PIVTextDocument::buildChuidSection(const plugin::CardData& cardData) con
     return "<h2>" + qtTrId("lc-piv-section-chuid") + "</h2>\n<table>\n" + rows + "</table>\n";
 }
 
-QString PIVTextDocument::buildCccSection(const plugin::CardData& cardData) const
+QString PIVTextDocument::buildCccSection(const LibreSCRS::Plugin::CardData& cardData) const
 {
     auto row = emitRow(qtTrId("lc-piv-field-cardid"), getFieldValue(cardData, "cardIdentifier"));
     if (row.isEmpty())
@@ -88,7 +88,7 @@ QString PIVTextDocument::buildCccSection(const plugin::CardData& cardData) const
     return "<h2>" + qtTrId("lc-piv-section-ccc") + "</h2>\n<table>\n" + row + "</table>\n";
 }
 
-QString PIVTextDocument::buildPrintedSection(const plugin::CardData& cardData) const
+QString PIVTextDocument::buildPrintedSection(const LibreSCRS::Plugin::CardData& cardData) const
 {
     struct Field
     {
@@ -112,7 +112,7 @@ QString PIVTextDocument::buildPrintedSection(const plugin::CardData& cardData) c
     return "<h2>" + qtTrId("lc-piv-section-printed") + "</h2>\n<table>\n" + rows + "</table>\n";
 }
 
-QString PIVTextDocument::buildDiscoverySection(const plugin::CardData& cardData) const
+QString PIVTextDocument::buildDiscoverySection(const LibreSCRS::Plugin::CardData& cardData) const
 {
     auto row = emitRow(qtTrId("lc-piv-field-pinpolicy"), getFieldValue(cardData, "pinPolicy"));
     if (row.isEmpty())
@@ -121,7 +121,7 @@ QString PIVTextDocument::buildDiscoverySection(const plugin::CardData& cardData)
     return "<h2>" + qtTrId("lc-piv-section-discovery") + "</h2>\n<table>\n" + row + "</table>\n";
 }
 
-QString PIVTextDocument::buildKeyHistorySection(const plugin::CardData& cardData) const
+QString PIVTextDocument::buildKeyHistorySection(const LibreSCRS::Plugin::CardData& cardData) const
 {
     QString rows;
     rows += emitRow(qtTrId("lc-piv-field-oncardcerts"), getFieldValue(cardData, "onCardCerts"));

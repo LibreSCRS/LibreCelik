@@ -325,6 +325,33 @@ endif()
 
 if(LIBRECELIK_SIGNING_ENABLED)
     find_package(Qt6 REQUIRED COMPONENTS PdfWidgets)
+
+    # Paint-capture-based integration test for PdfPreviewWidget. Verifies
+    # that the preview widget renders the visual-signature appearance in
+    # agreement with LibreSCRS::Signing::layoutVisualSignature for the same
+    # (text, box) inputs. No friend classes, no test-only accessors — uses
+    # a custom QPaintEngine to record every drawText / clip / font state
+    # change during the widget's paint pass. Spec reference:
+    # knowledge/specs/2026-05-08-vis-sig-fillbox-design.md (G3 amendment).
+    add_executable(PdfPreviewWidgetTests
+        pdfpreviewwidget_test.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/pdfpreviewwidget.cpp
+    )
+    target_include_directories(PdfPreviewWidgetTests PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+        ${PROJECT_BINARY_DIR}/../src
+    )
+    target_link_libraries(PdfPreviewWidgetTests PRIVATE
+        GTest::gtest
+        Qt6::Widgets
+        Qt6::PdfWidgets
+        Qt6::Gui
+        LibreSign
+        LibreSCRS_Signing
+    )
+    set_target_properties(PdfPreviewWidgetTests PROPERTIES AUTOMOC ON)
+    gtest_discover_tests(PdfPreviewWidgetTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
     add_executable(SigningWizardE2ETests
         signingwizard_e2e_test.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/signingwizard.cpp

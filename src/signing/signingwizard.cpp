@@ -10,15 +10,46 @@
 #include "wizardheaderwidget.h"
 
 #include <LibreSCRS/Signing/SigningService.h>
+#include <LibreSCRS/Signing/VisualSignatureLayout.h>
 #include <LibreSCRS/Signing/VisualSignatureParams.h>
 
+#include <QByteArray>
 #include <QCloseEvent>
 #include <QEvent>
+#include <QFontDatabase>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QtGlobal>
 #include <QVBoxLayout>
+
+#include <mutex>
+
+namespace {
+
+// Register the bundled Liberation Sans TTF (sourced from LibreMiddleware) so
+// the LC preview surface (PdfPreviewWidget) renders appearance text using the
+// exact same font as the embedded PDF subset. Idempotent: std::once_flag
+// guarantees a single registration per process; failure is non-fatal — the
+// preview falls back to system sans-serif (per spec §8.5).
+void ensureAppearanceFontRegistered() noexcept
+{
+    static std::once_flag flag;
+    std::call_once(flag, []() noexcept {
+        const auto bytes = LibreSCRS::Signing::embeddedAppearanceFontData();
+        if (bytes.empty()) {
+            qWarning("LibreSCRS: embedded Liberation Sans data is empty; "
+                     "preview will fall back to system sans-serif");
+            return;
+        }
+        const QByteArray ba(reinterpret_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()));
+        if (QFontDatabase::addApplicationFontFromData(ba) < 0)
+            qWarning("LibreSCRS: failed to register Liberation Sans for preview; "
+                     "falling back to system sans-serif");
+    });
+}
+
+} // namespace
 
 SigningWizard::SigningWizard(const LibreSCRS::Plugin::CertificateData& cert, const std::string& readerName,
                              std::shared_ptr<LibreSCRS::Signing::SigningService> service,
@@ -29,6 +60,12 @@ SigningWizard::SigningWizard(const LibreSCRS::Plugin::CertificateData& cert, con
 {
     Q_ASSERT(cardPlugin != nullptr);
     Q_ASSERT(session != nullptr);
+
+    // Register the bundled Liberation Sans TTF on first wizard construction
+    // so PdfPreviewWidget renders with the same font as the embedded PDF
+    // subset (preview-vs-PDF parity). The function-local static guarantees
+    // a single registration per process; subsequent wizards skip the call.
+    ensureAppearanceFontRegistered();
 
     setWindowTitle(qtTrId("lc-sign-wizard-title").arg(certificateCN()));
     setMinimumSize(600, 450);

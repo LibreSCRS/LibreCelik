@@ -3,11 +3,15 @@
 
 #include "pdfpreviewwidget.h"
 
+#include <LibreSCRS/Signing/VisualSignatureLayout.h>
+#include <LibreSCRS/Signing/VisualSignatureParams.h>
+
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPen>
 #include <QtPdf/QPdfDocument>
 
+#include <algorithm>
 #include <cmath>
 
 namespace {
@@ -91,13 +95,14 @@ QRectF PdfPreviewWidget::signatureRect() const
 void PdfPreviewWidget::setSignatureRect(const QRectF& rect)
 {
     sigRect = rect;
+    cachedLayoutText.clear(); // invalidate cached LM layout (rect changed)
     update();
 }
 
 void PdfPreviewWidget::setSignatureText(const QString& text)
 {
     sigText = text;
-    cachedFontSize = -1; // invalidate FILL_BOX cache
+    cachedLayoutText.clear(); // invalidate cached LM layout (text changed)
     update();
 }
 
@@ -145,16 +150,36 @@ void PdfPreviewWidget::paintEvent(QPaintEvent* /*event*/)
         painter.setPen(pen);
         painter.drawRect(widgetSigRect);
 
-        // Signature text — FILL_BOX simulation
+        // Signature text — FILL_BOX rendering driven by LM's authoritative
+        // layout. The widget never recomputes the wrap or font size locally;
+        // it just renders `cachedLayout.lines` verbatim. Preview = PDF.
         if (!sigText.isEmpty()) {
+            recomputeLayoutIfNeeded();
+
+            painter.save();
+            if (cachedLayout.clipped)
+                painter.setClipRect(widgetSigRect);
+
             painter.setPen(kSigColor);
-            qreal pdfFontSize = computeFillBoxFontSize(sigRect, sigText);
-            QFont f = painter.font();
-            f.setPixelSize(std::max(1, static_cast<int>(std::lround(pdfFontSize * scale))));
+            QFont f(QStringLiteral("Liberation Sans"));
+            f.setPixelSize(std::max(1, static_cast<int>(std::lround(cachedLayout.fontSize * scale))));
             painter.setFont(f);
+
             const QRectF textRect = widgetSigRect.adjusted(kSigTextMargin * scale, kSigTextMargin * scale,
                                                            -kSigTextMargin * scale, -kSigTextMargin * scale);
-            painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter | Qt::TextWordWrap, sigText);
+            const qreal lineH = cachedLayout.lineHeight * scale;
+            // Baseline placement mirrors the PAdES emitter's Tm exactly:
+            //   pades_module.cpp emits topBaselineY = height − margin − fontSize
+            //   (PDF Y-up). In widget coords (Y-down mirror) that is
+            //   textRect.top() + fontSize*scale. Using lineHeight here would
+            //   shift the first line down by (leading − 1.0) × fontSize and
+            //   break preview = PDF parity.
+            qreal y = textRect.top() + cachedLayout.fontSize * scale;
+            for (const auto& line : cachedLayout.lines) {
+                painter.drawText(QPointF(textRect.left(), y), QString::fromStdString(line));
+                y += lineH;
+            }
+            painter.restore();
         }
     }
 }
@@ -362,46 +387,24 @@ QRectF PdfPreviewWidget::pdfRectToWidget(const QRectF& pdfRect) const
     return {widgetTopLeft, QSizeF{widgetW, widgetH}};
 }
 
-qreal PdfPreviewWidget::computeFillBoxFontSize(const QRectF& pdfRect, const QString& text)
+void PdfPreviewWidget::recomputeLayoutIfNeeded() const
 {
-    if (text.isEmpty() || pdfRect.isEmpty())
-        return 6.0;
+    const QSize boxSize = sigRect.size().toSize();
+    if (cachedLayoutText == sigText && cachedLayoutBoxSize == boxSize)
+        return;
 
-    // Check cache
-    if (cachedFontSize > 0 && cachedSigSize == pdfRect.size() && cachedSigText == text)
-        return cachedFontSize;
+    LibreSCRS::Signing::Rect box{};
+    box.x = 0;
+    box.y = 0;
+    // Floor to integer PDF user units (matches the public Rect contract).
+    box.width = std::max(0, static_cast<int>(std::floor(sigRect.width())));
+    box.height = std::max(0, static_cast<int>(std::floor(sigRect.height())));
 
-    // Binary search for largest font that fits in PDF point coordinates
-    const qreal margin = kSigTextMargin;
-    const int availW = static_cast<int>(pdfRect.width() - 2 * margin);
-    const int availH = static_cast<int>(pdfRect.height() - 2 * margin);
-    if (availW <= 0 || availH <= 0)
-        return 4.0;
+    const QByteArray utf8 = sigText.toUtf8();
+    cachedLayout = LibreSCRS::Signing::layoutVisualSignature(std::string_view(utf8.constData(), utf8.size()), box);
 
-    qreal lo = 4.0;
-    qreal hi = pdfRect.height() * 0.8;
-    qreal best = lo;
-
-    // Use setPixelSize to measure in PDF-point-sized units without DPI scaling.
-    // PDF points = pixels at 72 DPI; setPointSizeF would apply screen DPI conversion.
-    QFont f = font();
-    for (int i = 0; i < 15 && (hi - lo) > 0.5; ++i) {
-        qreal mid = (lo + hi) / 2.0;
-        f.setPixelSize(std::max(1, static_cast<int>(std::lround(mid))));
-        QFontMetrics fm(f);
-        QRect br = fm.boundingRect(QRect(0, 0, availW, 0), Qt::AlignLeft | Qt::TextWordWrap, text);
-        if (br.height() <= availH) {
-            best = mid;
-            lo = mid;
-        } else {
-            hi = mid;
-        }
-    }
-
-    cachedFontSize = best;
-    cachedSigSize = pdfRect.size();
-    cachedSigText = text;
-    return best;
+    cachedLayoutText = sigText;
+    cachedLayoutBoxSize = boxSize;
 }
 
 void PdfPreviewWidget::renderCurrentPage()

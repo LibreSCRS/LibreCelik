@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <LibreSCRS/Signing/VisualSignatureLayout.h>
+
 #include <QTimer>
 #include <QWidget>
 
@@ -43,7 +45,11 @@ private:
     QPointF widgetToPdf(const QPointF& widgetPt) const;
     QRectF pdfRectToWidget(const QRectF& pdfRect) const;
     void renderCurrentPage();
-    qreal computeFillBoxFontSize(const QRectF& pdfRect, const QString& text);
+    // Refresh `cachedLayout` from `LibreSCRS::Signing::layoutVisualSignature`
+    // when (sigText, sigRect.size()) has changed. Call from paintEvent before
+    // reading `cachedLayout`. `mutable` allows use from `const` paint context
+    // (paint-time caching, no observable side effect).
+    void recomputeLayoutIfNeeded() const;
 
     std::unique_ptr<QPdfDocument> document;
     QImage renderedPage;
@@ -58,9 +64,13 @@ private:
     QRectF sigRect{0, 0, 200, 50};
     QString sigText;
     bool sigVisible = true;
-    qreal cachedFontSize = -1;
-    QSizeF cachedSigSize;
-    QString cachedSigText;
+    // Cached LM layout, keyed by (cachedLayoutText, cachedLayoutBoxSize).
+    // Mutated from `paintEvent` via `recomputeLayoutIfNeeded()`; invalidated
+    // by `setSignatureRect` and `setSignatureText` (which clear
+    // `cachedLayoutText`).
+    mutable LibreSCRS::Signing::VisualSignatureLayout cachedLayout;
+    mutable QString cachedLayoutText;
+    mutable QSize cachedLayoutBoxSize;
     HitZone activeZone = HitZone::None;
     QPointF dragOffset;
     QTimer resizeTimer;

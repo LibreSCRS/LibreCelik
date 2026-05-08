@@ -243,6 +243,13 @@ void LibreCelik::onCardEventReceived(const LibreSCRS::SmartCard::MonitorEvent& e
         readerStopSource[event.readerName] = {};
         addNewReader(event.readerName);
     } else if (event.kind == Kind::CardRemoved) {
+        // Announce removal BEFORE tearing down the reader's bookkeeping so
+        // that any in-flight UI flow tied to this reader (the modal
+        // SigningWizard is the canonical one) can act while its session
+        // and plugin handles are still valid. The synchronous
+        // Qt::AutoConnection path means subscribers run on the GUI
+        // thread, in line, ahead of removeReader.
+        emit cardRemoved(QString::fromStdString(event.readerName));
         // Cancel any pending retry timers for this reader.
         readerStopSource[event.readerName].request_stop();
         removeReader(event.readerName);
@@ -741,6 +748,41 @@ void LibreCelik::connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget)
             if (!signingService)
                 return;
 
+            // Resolve the plugin BEFORE opening a fresh CardSession — if
+            // this reader has no PKI-capable plugin bound (or the
+            // AsyncCardReader entry vanished because the card was just
+            // ejected), we want to fail without paying for an SCardConnect.
+            //
+            // Use the PKI plugin AsyncCardReader has already bound to this
+            // reader — it's the plugin that produced @p cert, so the PIN
+            // it will route through `card->verifyPIN` lands in the same
+            // applet/slot the certificate lives in. Re-deriving via
+            // `findAllCandidates(...).front()` was non-deterministic for
+            // cards lacking a declared ATR (PKCS#15 generic, OpenSC
+            // fallback), and even when correct it carried no guarantee
+            // that the chosen plugin matched the one used for read.
+            auto activeIt = activeReaders.find(readerName);
+            if (activeIt == activeReaders.end() || !activeIt->second.reader) {
+                qCWarning(lcSmartCard) << "signRequested: no AsyncCardReader bound to"
+                                       << QString::fromStdString(readerName);
+                return;
+            }
+            auto cardPlugin = activeIt->second.reader->signingPlugin();
+            if (!cardPlugin) {
+                qCWarning(lcSmartCard)
+                    << "signRequested: card in" << QString::fromStdString(readerName)
+                    << "has no PKI+PinManagement-capable plugin bound (cert came from a non-signing plugin?)";
+                return;
+            }
+            qCInfo(lcSmartCard) << "signRequested: using plugin" << QString::fromStdString(cardPlugin->pluginId())
+                                << "(probePriority" << cardPlugin->probePriority() << ") for reader"
+                                << QString::fromStdString(readerName);
+
+            // Open a fresh CardSession scoped to the wizard. This is
+            // intentionally NOT the same session AsyncCardReader holds —
+            // CardSession is not designed for shared concurrent use, and
+            // the wizard's PIN/sign flow needs its own handle on the
+            // reader for the duration of `wizard.exec()`.
             std::shared_ptr<LibreSCRS::SmartCard::CardSession> session;
             {
                 auto opened = LibreSCRS::SmartCard::CardSession::open(readerName);
@@ -754,23 +796,26 @@ void LibreCelik::connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget)
                 session = std::make_shared<LibreSCRS::SmartCard::CardSession>(std::move(*opened));
             }
 
-            auto candidates = middlewarePluginRegistry->findAllCandidates(session->atr(), *session);
-            if (candidates.empty()) {
-                qCWarning(lcSmartCard) << "signRequested: no plugin handles card in"
-                                       << QString::fromStdString(readerName);
-                return;
-            }
-
-            // LM 4.0 CardPluginService hands out shared_ptr<CardPlugin>
-            // directly — the SigningWizard / SigningService::sign
-            // shared-ownership contract is satisfied without the
-            // no-op-deleter aliasing hack that v5 required.
-            auto cardPlugin = candidates.front();
             SigningWizard wizard(cert, readerName, signingService, std::move(cardPlugin), std::move(session), this);
             // Per-request TSA override now flows via SigningRequest::tsaOverride in
             // SignPage; the service-level TsaProvider installed at startup from
             // SigningConfiguration remains the fallback when no override is set.
             // No more per-wizard service-state mutation or RAII restore.
+            //
+            // Auto-close on removal of the same card mid-sign: the wizard
+            // stays QObject-decoupled from LibreCelik (the wizard unit-test
+            // target does not link our MOC), so the connect lives here at
+            // the call site. We filter by readerName so other readers'
+            // events (one of three inserted cards being ejected) do not
+            // reject this wizard. The signal is emitted from
+            // onCardEventReceived BEFORE the AsyncCardReader for this
+            // reader is torn down so any in-flight signing worker sees a
+            // clean cancel rather than a torn SCardConnect.
+            const QString readerNameQ = QString::fromStdString(readerName);
+            connect(this, &LibreCelik::cardRemoved, &wizard, [&wizard, readerNameQ](const QString& removed) {
+                if (removed == readerNameQ)
+                    wizard.done(QDialog::Rejected);
+            });
             wizard.exec();
         },
         Qt::QueuedConnection); // see changePINRequested above for the same hazard

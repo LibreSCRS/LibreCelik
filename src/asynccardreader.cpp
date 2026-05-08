@@ -84,6 +84,29 @@ bool AsyncCardReader::hasPKI() const
            (pki && LibreSCRS::Plugin::hasCapability(pki->capabilities(), LibreSCRS::Plugin::CardCapabilities::PKI));
 }
 
+std::shared_ptr<LibreSCRS::Plugin::CardPlugin> AsyncCardReader::signingPlugin() const
+{
+    using Cap = LibreSCRS::Plugin::CardCapabilities;
+    auto isSigningCapable = [](const std::shared_ptr<LibreSCRS::Plugin::CardPlugin>& p) {
+        if (!p)
+            return false;
+        const auto caps = p->capabilities();
+        return LibreSCRS::Plugin::hasCapability(caps, Cap::PKI) &&
+               LibreSCRS::Plugin::hasCapability(caps, Cap::PinManagement);
+    };
+    // pkiPlugin is set when activePlugin doesn't itself have PKI (e.g.
+    // an eMRTD identity plugin paired with a separately-loaded PKI
+    // plugin); when set, it's always the right signing plugin.
+    if (auto pki = pkiPlugin.load(); isSigningCapable(pki))
+        return pki;
+    // Common case: activePlugin (the one that read the card) is itself
+    // PKI-capable — rs-eid is the canonical example, with all of
+    // IdentityData + PKI + PinManagement.
+    if (auto active = activePlugin.load(); isSigningCapable(active))
+        return active;
+    return {};
+}
+
 void AsyncCardReader::requestData()
 {
     waitForPendingAsync();

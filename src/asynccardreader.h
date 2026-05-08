@@ -64,6 +64,26 @@ public:
     bool hasPKI() const;
     void clearPluginCredentials();
 
+    /// @brief The plugin to route signing operations through for this
+    ///        reader's currently-bound card.
+    ///
+    /// Returns the same plugin the AsyncCardReader used to read the
+    /// card's certificates — guaranteeing that any cert handed to
+    /// `signRequested` is signed via the matching applet/slot. The
+    /// returned plugin always advertises both `PKI` and `PinManagement`
+    /// capabilities (or the function returns nullptr).
+    ///
+    /// Resolution order:
+    ///  1. `pkiPlugin` (set when `activePlugin` lacks PKI — e.g., an
+    ///     eMRTD reader plugin paired with a separate PKI plugin), or
+    ///  2. `activePlugin` if it itself has PKI + PinManagement (the
+    ///     common case: rs-eid handles both identity and signing).
+    ///
+    /// Returns nullptr when no PKI-capable plugin is bound (e.g.,
+    /// read-only travel-document mode, or before the first card-data
+    /// read completes).
+    std::shared_ptr<LibreSCRS::Plugin::CardPlugin> signingPlugin() const;
+
 signals:
     void cardGroupReady(const QString& cardType, const LibreSCRS::Plugin::CardFieldGroup& group);
     void cardDataReady(const LibreSCRS::Plugin::CardData& data);

@@ -46,6 +46,17 @@ public:
     LibreCelik(QWidget* parent = nullptr);
     ~LibreCelik();
 
+signals:
+    /// @brief Emitted on every CardRemoved monitor event, BEFORE the
+    /// reader's widget + AsyncCardReader are torn down. Subscribers (the
+    /// SigningWizard, in particular) filter by readerName and react —
+    /// the wizard rejects itself when the card it is signing with goes
+    /// away. Emit-before-teardown matters: a slot connected via
+    /// `Qt::AutoConnection` from another QObject still owned by this
+    /// thread runs synchronously, so the wizard sees the signal before
+    /// AsyncCardReader's `disconnect()` clears its session.
+    void cardRemoved(QString readerName);
+
 protected:
     void changeEvent(QEvent* event) override;
 

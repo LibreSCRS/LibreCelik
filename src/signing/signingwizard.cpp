@@ -94,6 +94,14 @@ SigningWizard::SigningWizard(const LibreSCRS::Plugin::CertificateData& cert, con
         updateButtons();
     });
 
+    // Auto-close-on-removal is wired up by the caller (LibreCelik) so the
+    // wizard stays decoupled from any QObject-typed removal source: the
+    // unit-test fixture does not link the LibreCelik MOC and would
+    // otherwise see an undefined-reference at link time. See
+    // `librecelik.cpp` next to the `wizard.exec()` call site for the
+    // matching connect on `LibreCelik::cardRemoved` — it filters by the
+    // same `readerName` we hold here.
+
     // Make Next/Sign the default button so Enter triggers it
     nextBtn->setDefault(true);
 

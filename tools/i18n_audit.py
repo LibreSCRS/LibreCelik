@@ -61,7 +61,9 @@ SEVERITY: Mapping[str, str] = {
 FIX_HINTS: Mapping[str, str] = {
     "D1": (
         "override changeEvent(QEvent*); on QEvent::LanguageChange "
-        "call retranslateUi() (see April 2026 retranslation spec)"
+        "call retranslateUi() "
+        "(see knowledge/specs/archive/2026-04/2026-04-02-runtime-retranslation-design.md "
+        "or LibreCelik/tools/README-i18n-audit.md)"
     ),
     "D2": (
         "extend retranslateUi() to cover this qtTrId callsite, or "

@@ -367,6 +367,8 @@ add_executable(i18n_settings_state_test
     ${CMAKE_SOURCE_DIR}/src/utils/listitemdelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/locale_resolver.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/buttonbox.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/dialogs.cpp
 )
 target_include_directories(i18n_settings_state_test PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -468,6 +470,8 @@ if(LIBRECELIK_SIGNING_ENABLED)
         ${CMAKE_SOURCE_DIR}/src/signing/wizardheaderwidget.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/filelistdelegate.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/resultdelegate.cpp
+        ${CMAKE_SOURCE_DIR}/src/utils/buttonbox.cpp
+        ${CMAKE_SOURCE_DIR}/src/utils/dialogs.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/pkcs11utils.cpp
     )
     target_include_directories(SigningWizardE2ETests PRIVATE

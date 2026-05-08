@@ -4,6 +4,8 @@
 #include "certificateviewerdlg.h"
 #include "certificateviewerwidget.h"
 
+#include "utils/buttonbox.h"
+
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QLabel>
@@ -34,7 +36,7 @@ void CertificateViewerDlg::buildUI(const std::vector<LibreSCRS::Plugin::Certific
 
     if (certs.empty()) {
         layout->addWidget(new QLabel(qtTrId("lc-cert-no-available")));
-        auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
+        auto* buttons = new librecelik::ButtonBox(QDialogButtonBox::Close, this);
         connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
         layout->addWidget(buttons);
         return;
@@ -57,7 +59,7 @@ void CertificateViewerDlg::buildUI(const std::vector<LibreSCRS::Plugin::Certific
     if (certCombo)
         connect(certCombo, &QComboBox::currentIndexChanged, stack, &QStackedWidget::setCurrentIndex);
 
-    auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
+    auto* buttons = new librecelik::ButtonBox(QDialogButtonBox::Close, this);
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
     layout->addWidget(buttons);
 }

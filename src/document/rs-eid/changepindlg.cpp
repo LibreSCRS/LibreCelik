@@ -4,6 +4,7 @@
 #include "changepindlg.h"
 
 #include "utils/iconutils.h"
+#include "utils/buttonbox.h"
 
 #include <QAction>
 #include <QDialogButtonBox>
@@ -57,7 +58,7 @@ ChangePinDlg::ChangePinDlg(const QString& pinLabel, bool isTransport, int minLen
     statusLabel->setWordWrap(true);
     layout->addWidget(statusLabel);
 
-    buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    buttonBox = new librecelik::ButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     okButton = buttonBox->button(QDialogButtonBox::Ok);
     okButton->setEnabled(false);
     layout->addWidget(buttonBox);

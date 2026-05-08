@@ -8,6 +8,7 @@
 #include "resultdelegate.h"
 #include "signingcolors.h"
 #include "utils/iconutils.h"
+#include "utils/dialogs.h"
 
 #include <LibreSCRS/Auth/AuthRequirement.h>
 #include <LibreSCRS/Auth/CredentialProvider.h>
@@ -386,8 +387,8 @@ void SignPage::startSigning()
     {
         QFileInfo outInfo(outputDir);
         if (outputDir.isEmpty() || !outInfo.exists() || !outInfo.isDir() || !outInfo.isWritable()) {
-            QMessageBox::warning(this, qtTrId("lc-sign-output-folder-error-title"),
-                                 qtTrId("lc-sign-output-folder-error-message"));
+            librecelik::dialogs::warning(this, qtTrId("lc-sign-output-folder-error-title"),
+                                         qtTrId("lc-sign-output-folder-error-message"));
             return;
         }
     }
@@ -398,16 +399,17 @@ void SignPage::startSigning()
     // so the signing service is never handed an untrusted URL.
     if (sigLevel != QStringLiteral("B_B") && !tsaUrl.empty()) {
         if (!signing::isValidTsaUrl(QString::fromStdString(tsaUrl))) {
-            QMessageBox::warning(this, qtTrId("lc-sign-tsa-invalid-title"), qtTrId("lc-sign-tsa-invalid-message"));
+            librecelik::dialogs::warning(this, qtTrId("lc-sign-tsa-invalid-title"),
+                                         qtTrId("lc-sign-tsa-invalid-message"));
             return;
         }
     }
 
     // M4: Warn if certificate is expired and level is B-B (no revocation data embedded)
     if (sigLevel == QStringLiteral("B_B") && signing::isCertificateExpired(certificate.derBytes)) {
-        auto answer =
-            QMessageBox::warning(this, qtTrId("lc-sign-expired-cert-title"), qtTrId("lc-sign-expired-cert-message"),
-                                 QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+        auto answer = librecelik::dialogs::warning(this, qtTrId("lc-sign-expired-cert-title"),
+                                                   qtTrId("lc-sign-expired-cert-message"),
+                                                   QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
         if (answer != QMessageBox::Yes)
             return;
     }

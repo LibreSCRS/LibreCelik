@@ -2076,6 +2076,62 @@
         <source>Please enter a valid URL.</source>
         <translation>Please enter a valid URL.</translation>
     </message>
+    <message id="lc-btn-ok">
+        <source>OK</source>
+        <translation>OK</translation>
+    </message>
+    <message id="lc-btn-cancel">
+        <source>Cancel</source>
+        <translation>Cancel</translation>
+    </message>
+    <message id="lc-btn-close">
+        <source>Close</source>
+        <translation>Close</translation>
+    </message>
+    <message id="lc-btn-apply">
+        <source>Apply</source>
+        <translation>Apply</translation>
+    </message>
+    <message id="lc-btn-save">
+        <source>Save</source>
+        <translation>Save</translation>
+    </message>
+    <message id="lc-btn-reset">
+        <source>Reset</source>
+        <translation>Reset</translation>
+    </message>
+    <message id="lc-btn-restore-defaults">
+        <source>Restore Defaults</source>
+        <translation>Restore Defaults</translation>
+    </message>
+    <message id="lc-btn-yes">
+        <source>Yes</source>
+        <translation>Yes</translation>
+    </message>
+    <message id="lc-btn-no">
+        <source>No</source>
+        <translation>No</translation>
+    </message>
+    <message id="lc-btn-help">
+        <source>Help</source>
+        <translation>Help</translation>
+    </message>
+    <message id="lc-btn-abort">
+        <source>Abort</source>
+        <translation>Abort</translation>
+    </message>
+    <message id="lc-btn-retry">
+        <source>Retry</source>
+        <translation>Retry</translation>
+    </message>
+    <message id="lc-btn-ignore">
+        <source>Ignore</source>
+        <translation>Ignore</translation>
+    </message>
+    <message id="lc-btn-discard">
+        <source>Discard</source>
+        <translation>Discard</translation>
+    </message>
     <message id="lc-reader-unsupported-card">
         <location filename="../../src/librecelik.cpp" line="298"/>
         <location filename="../../src/librecelik.cpp" line="316"/>

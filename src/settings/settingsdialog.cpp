@@ -7,6 +7,8 @@
 #include "settings/tlitemdelegate.h"
 #include "signing/defaults.h"
 #include "signing/tsaitemdelegate.h"
+#include "utils/dialogs.h"
+#include "utils/buttonbox.h"
 #include "utils/locale_resolver.h"
 
 #include <QCheckBox>
@@ -173,7 +175,7 @@ SettingsDialog::SettingsDialog(QWidget* parent) : QDialog(parent)
     });
 
     // --- Button box ---
-    auto* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    auto* buttonBox = new librecelik::ButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     layout->addWidget(buttonBox);
 
     connect(buttonBox, &QDialogButtonBox::accepted, this, [this]() {
@@ -296,14 +298,15 @@ void SettingsDialog::onTsaAddRequested()
     const auto title = qtTrId("lc-sign-tsa-add-title"); // i18n-audit: ignore D2, transient input dialog — opened on
                                                         // user click, qtTrId evaluated at call time
     const auto prompt = qtTrId("lc-sign-tsa-add-prompt");
-    QString url = QInputDialog::getText(this, title, prompt);
+    QString url = librecelik::dialogs::getText(this, title, prompt);
     url = url.trimmed();
     if (url.isEmpty())
         return;
     if (!url.startsWith(QStringLiteral("https://")) && !url.startsWith(QStringLiteral("http://")))
         url.prepend(QStringLiteral("https://"));
     if (!isValidServiceUrl(url)) {
-        QMessageBox::warning(this, qtTrId("lc-settings-invalid-url-title"), qtTrId("lc-settings-invalid-url-msg"));
+        librecelik::dialogs::warning(this, qtTrId("lc-settings-invalid-url-title"),
+                                     qtTrId("lc-settings-invalid-url-msg"));
         return;
     }
     for (int i = 0; i < tsaList->count(); ++i) {
@@ -424,7 +427,7 @@ void SettingsDialog::onTlAddRequested()
     form->addRow(qtTrId("lc-settings-tl-loading"), loadCombo);
 
     layout->addLayout(form);
-    auto* btnBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
+    auto* btnBox = new librecelik::ButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
     layout->addWidget(btnBox);
     connect(btnBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
     connect(btnBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
@@ -438,7 +441,8 @@ void SettingsDialog::onTlAddRequested()
     if (!url.startsWith(QStringLiteral("https://")) && !url.startsWith(QStringLiteral("http://")))
         url.prepend(QStringLiteral("https://"));
     if (!isValidServiceUrl(url)) {
-        QMessageBox::warning(this, qtTrId("lc-settings-invalid-url-title"), qtTrId("lc-settings-invalid-url-msg"));
+        librecelik::dialogs::warning(this, qtTrId("lc-settings-invalid-url-title"),
+                                     qtTrId("lc-settings-invalid-url-msg"));
         return;
     }
 

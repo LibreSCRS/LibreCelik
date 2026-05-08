@@ -62,6 +62,10 @@ set(PROJECT_SOURCES
         utils/cardheadercard.cpp
         utils/locale_resolver.h
         utils/locale_resolver.cpp
+        utils/buttonbox.h
+        utils/buttonbox.cpp
+        utils/dialogs.h
+        utils/dialogs.cpp
         utils/fieldsectionbuilder.h
         utils/fieldsectionbuilder.cpp
         utils/listitemdelegate.h

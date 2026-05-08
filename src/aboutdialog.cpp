@@ -6,6 +6,8 @@
 
 #include <QComboBox>
 #include <QDesktopServices>
+#include "utils/buttonbox.h"
+
 #include <QDialogButtonBox>
 #include <QEvent>
 #include <QFile>
@@ -197,7 +199,7 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent)
     tabs->addTab(licenseTab, QString());
 
     // ── Button box ─────────────────────────────────────────────
-    auto* buttonBox = new QDialogButtonBox(QDialogButtonBox::Close, this);
+    auto* buttonBox = new librecelik::ButtonBox(QDialogButtonBox::Close, this);
     mainLayout->addWidget(buttonBox);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 

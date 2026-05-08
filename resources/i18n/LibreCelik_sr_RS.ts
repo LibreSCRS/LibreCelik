@@ -2076,6 +2076,62 @@
         <source>Please enter a valid URL.</source>
         <translation>Молимо унесите исправан URL.</translation>
     </message>
+    <message id="lc-btn-ok">
+        <source>OK</source>
+        <translation>У реду</translation>
+    </message>
+    <message id="lc-btn-cancel">
+        <source>Cancel</source>
+        <translation>Откажи</translation>
+    </message>
+    <message id="lc-btn-close">
+        <source>Close</source>
+        <translation>Затвори</translation>
+    </message>
+    <message id="lc-btn-apply">
+        <source>Apply</source>
+        <translation>Примени</translation>
+    </message>
+    <message id="lc-btn-save">
+        <source>Save</source>
+        <translation>Сачувај</translation>
+    </message>
+    <message id="lc-btn-reset">
+        <source>Reset</source>
+        <translation>Поништи</translation>
+    </message>
+    <message id="lc-btn-restore-defaults">
+        <source>Restore Defaults</source>
+        <translation>Врати подразумевано</translation>
+    </message>
+    <message id="lc-btn-yes">
+        <source>Yes</source>
+        <translation>Да</translation>
+    </message>
+    <message id="lc-btn-no">
+        <source>No</source>
+        <translation>Не</translation>
+    </message>
+    <message id="lc-btn-help">
+        <source>Help</source>
+        <translation>Помоћ</translation>
+    </message>
+    <message id="lc-btn-abort">
+        <source>Abort</source>
+        <translation>Прекини</translation>
+    </message>
+    <message id="lc-btn-retry">
+        <source>Retry</source>
+        <translation>Покушај поново</translation>
+    </message>
+    <message id="lc-btn-ignore">
+        <source>Ignore</source>
+        <translation>Игнориши</translation>
+    </message>
+    <message id="lc-btn-discard">
+        <source>Discard</source>
+        <translation>Одбаци</translation>
+    </message>
     <message id="lc-reader-unsupported-card">
         <location filename="../../src/librecelik.cpp" line="298"/>
         <location filename="../../src/librecelik.cpp" line="316"/>

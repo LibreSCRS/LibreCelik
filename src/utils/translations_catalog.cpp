@@ -1116,6 +1116,40 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-settings-invalid-url-title");
     //% "Please enter a valid URL."
     QT_TRID_NOOP("lc-settings-invalid-url-msg");
+
+    // Standard QDialogButtonBox button labels — registered to override KDE
+    // Plasma's kwidgetsaddons6_qt.qm translator that auto-loads on the Qt
+    // platform integration and translates these to Cyrillic Serbian
+    // regardless of the app's selected locale. Applied via
+    // librecelik::utils::applyOurButtonTexts (src/utils/standard_dialog_buttons.h).
+    //% "OK"
+    QT_TRID_NOOP("lc-btn-ok");
+    //% "Cancel"
+    QT_TRID_NOOP("lc-btn-cancel");
+    //% "Close"
+    QT_TRID_NOOP("lc-btn-close");
+    //% "Apply"
+    QT_TRID_NOOP("lc-btn-apply");
+    //% "Save"
+    QT_TRID_NOOP("lc-btn-save");
+    //% "Reset"
+    QT_TRID_NOOP("lc-btn-reset");
+    //% "Restore Defaults"
+    QT_TRID_NOOP("lc-btn-restore-defaults");
+    //% "Yes"
+    QT_TRID_NOOP("lc-btn-yes");
+    //% "No"
+    QT_TRID_NOOP("lc-btn-no");
+    //% "Help"
+    QT_TRID_NOOP("lc-btn-help");
+    //% "Abort"
+    QT_TRID_NOOP("lc-btn-abort");
+    //% "Retry"
+    QT_TRID_NOOP("lc-btn-retry");
+    //% "Ignore"
+    QT_TRID_NOOP("lc-btn-ignore");
+    //% "Discard"
+    QT_TRID_NOOP("lc-btn-discard");
 }
 
 QT_WARNING_POP

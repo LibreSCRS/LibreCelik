@@ -162,6 +162,22 @@ target_link_libraries(StringUtilsTests
 set_target_properties(StringUtilsTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(StringUtilsTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# Pure helper — only Qt::Core needed (QString, QLocale, QStringList).
+# No QApplication, no widgets; runs in milliseconds without any UI
+# fixture so the locale-fallback contract is exercised on every CI run.
+add_executable(LocaleResolverTests
+    locale_resolver_test.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/locale_resolver.cpp
+)
+target_include_directories(LocaleResolverTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+target_link_libraries(LocaleResolverTests
+    GTest::gtest_main
+    Qt6::Core
+)
+gtest_discover_tests(LocaleResolverTests)
+
 add_executable(HealthTextDocumentTests
     healthtextdocument_test.cpp
     ../plugins/rs-health/healthtextdocument.h

@@ -28,6 +28,8 @@
 #include "utils/macos_menu.h"
 #endif
 
+#include "utils/locale_resolver.h"
+
 #include <algorithm>
 #include <filesystem>
 #include <memory>
@@ -57,22 +59,9 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
     // changeEvent is guarded by uiReady to avoid calling retranslateUi before
     // setupUi has run.
     QSettings settings(settings::kOrganization, settings::kApplication);
-    QString locale = settings.value(settings::kLanguage, QString()).toString();
-
-    if (!loadLanguage(locale)) {
-        locale.clear();
-        auto langs = QLocale::system().uiLanguages();
-        for (const auto& l : std::as_const(langs)) {
-            if (loadLanguage(QLocale(l).name())) {
-                locale = QLocale(l).name();
-                break;
-            }
-        }
-        if (locale.isEmpty()) {
-            loadLanguage("en");
-            locale = "en";
-        }
-    }
+    const QString resolved = utils::resolveActiveLocale(settings.value(settings::kLanguage, QString()).toString(),
+                                                        utils::supportedLocaleCodes(), QLocale::system().uiLanguages());
+    loadLanguage(resolved);
 
     ui->setupUi(this);
     uiReady = true;

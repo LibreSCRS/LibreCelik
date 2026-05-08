@@ -60,6 +60,8 @@ set(PROJECT_SOURCES
         utils/collapsiblesection.cpp
         utils/cardheadercard.h
         utils/cardheadercard.cpp
+        utils/locale_resolver.h
+        utils/locale_resolver.cpp
         utils/fieldsectionbuilder.h
         utils/fieldsectionbuilder.cpp
         utils/listitemdelegate.h

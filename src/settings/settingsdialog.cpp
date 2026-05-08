@@ -7,6 +7,7 @@
 #include "settings/tlitemdelegate.h"
 #include "signing/defaults.h"
 #include "signing/tsaitemdelegate.h"
+#include "utils/locale_resolver.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -18,6 +19,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLocale>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
@@ -189,7 +191,17 @@ void SettingsDialog::loadSettings()
 {
     QSettings settings(settings::kOrganization, settings::kApplication);
 
-    QString locale = settings.value(settings::kLanguage, QString()).toString();
+    // Resolve "what language is the UI actually rendering in?" — the same
+    // chain LibreCelik's ctor uses. If kLanguage is empty (fresh install,
+    // never explicitly chosen), this returns the locale that the system
+    // fallback landed on, so the dropdown shows the language the user
+    // actually sees rather than a stale-but-unset preference.
+    QStringList supported;
+    for (int i = 0; i < languageCombo->count(); ++i) {
+        supported << languageCombo->itemData(i).toString();
+    }
+    const QString locale = utils::resolveActiveLocale(settings.value(settings::kLanguage, QString()).toString(),
+                                                      supported, QLocale::system().uiLanguages());
     originalLocale = locale;
     int langIdx = languageCombo->findData(locale);
     if (langIdx >= 0)

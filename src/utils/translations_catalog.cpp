@@ -1121,7 +1121,10 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     // Plasma's kwidgetsaddons6_qt.qm translator that auto-loads on the Qt
     // platform integration and translates these to Cyrillic Serbian
     // regardless of the app's selected locale. Applied via
-    // librecelik::utils::applyOurButtonTexts (src/utils/standard_dialog_buttons.h).
+    // librecelik::ButtonBox::retranslateUi (src/utils/buttonbox.h) for
+    // explicit QDialogButtonBox uses, and librecelik::dialogs::*
+    // (src/utils/dialogs.h) for QMessageBox / QInputDialog convenience
+    // calls.
     //% "OK"
     QT_TRID_NOOP("lc-btn-ok");
     //% "Cancel"

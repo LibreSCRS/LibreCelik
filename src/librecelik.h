@@ -67,7 +67,7 @@ private slots:
 private:
     void addNewReader(std::string reader, int retryCount = 0);
     void removeReader(std::string reader);
-    void connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget);
+    void connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget, const std::string& readerName);
     bool loadLanguage(const QString& locale);
     void updateAboutText();
     void retranslateMenuBar();

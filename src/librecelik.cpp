@@ -491,7 +491,7 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
 #endif
                                     pkiWidget = ts;
                                 }
-                                connectPKISignals(asyncReader, pkiWidget);
+                                connectPKISignals(asyncReader, pkiWidget, reader);
                                 containerLayout->addWidget(pkiWidget);
                                 asyncReader->requestCertificates();
                             }
@@ -528,7 +528,7 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
 #endif
                         pkiWidget = ts;
                     }
-                    connectPKISignals(asyncReader, pkiWidget);
+                    connectPKISignals(asyncReader, pkiWidget, reader);
 
                     auto* container = new QWidget(this);
                     auto* containerLayout = new QVBoxLayout(container);
@@ -698,11 +698,28 @@ void LibreCelik::removeReader(std::string reader)
     }
 }
 
-void LibreCelik::connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget)
+void LibreCelik::connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget, const std::string& readerName)
 {
     auto* tokenSection = qobject_cast<TokenSection*>(pkiWidget);
     if (!tokenSection)
         return;
+
+    // Close any open modal child dialogs (cert viewer, change-PIN, signing
+    // wizard) hanging off this TokenSection when ITS card is pulled. Without
+    // this, removeReader's deleteLater() reaps tokenSection mid-exec() of
+    // its child QDialog -> dialog destroyed while its modal event loop is
+    // unwound on the stack -> crash. We filter on the bound readerName so
+    // pulling another reader's card does not affect dialogs in this token
+    // section. We use done(QDialog::Rejected) (public) rather than reject()
+    // (protected slot).
+    const QString readerNameQ = QString::fromStdString(readerName);
+    connect(this, &LibreCelik::cardRemoved, tokenSection, [tokenSection, readerNameQ](const QString& removed) {
+        if (removed != readerNameQ)
+            return;
+        const auto dialogs = tokenSection->findChildren<QDialog*>();
+        for (QDialog* d : dialogs)
+            d->done(QDialog::Rejected);
+    });
 
     connect(reader, &AsyncCardReader::tokenInfoReady, tokenSection, &TokenSection::setTokenInfo);
     connect(reader, &AsyncCardReader::certificatesReady, tokenSection, &TokenSection::setCertificates);

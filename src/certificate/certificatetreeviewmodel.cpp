@@ -25,8 +25,15 @@ QVariant CertificateTreeViewModel::data(const QModelIndex& index, int role) cons
     if (role == Qt::UserRole)
         return item->data(1);
 
-    // Bold critical extensions, similar to Windows certificate viewer
-    if (role == Qt::FontRole && item->isCritical()) {
+    // Bold critical extensions, similar to Windows certificate viewer.
+    // For non-critical items the FontRole branch must short-circuit with
+    // an invalid QVariant — falling through to item->data() below would
+    // hand Qt a QString for FontRole, which QMetaType silently feeds to
+    // QFont::fromString and floods stderr with "Invalid description ..."
+    // for every visible cell.
+    if (role == Qt::FontRole) {
+        if (!item->isCritical())
+            return QVariant();
         QFont fnt = QApplication::font();
         fnt.setBold(true);
         return QVariant::fromValue(fnt);

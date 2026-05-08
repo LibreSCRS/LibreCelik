@@ -82,8 +82,10 @@ CertificatePropertiesModel::CertificatePropertiesModel(const lcc::ParsedCertific
 
 void CertificatePropertiesModel::addParseError(std::span<const std::uint8_t> rawDer)
 {
-    rootItem->appendChild(
-        std::make_unique<CertificateInfoItem>(qtTrId("lc-cert-parse-error"), QString(), rootItem.get()));
+    // clang-format off
+    const auto t = qtTrId("lc-cert-parse-error"); // i18n-audit: ignore D1, item-view model retranslates via Qt::DisplayRole on next paint
+    // clang-format on
+    rootItem->appendChild(std::make_unique<CertificateInfoItem>(t, QString(), rootItem.get()));
 
     if (rawDer.empty())
         return;

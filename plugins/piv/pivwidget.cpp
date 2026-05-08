@@ -66,15 +66,14 @@ PIVWidget::PIVWidget(const LibreSCRS::Plugin::CardData& cardData, QWidget* paren
 
 PIVWidget::PIVWidget(QWidget* parent) : plugin_ui::PluginWidgetBase(parent)
 {
+    outerLayout = new QVBoxLayout(this);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
     buildEmptyShell();
 }
 
 void PIVWidget::buildEmptyShell()
 {
     static const QColor pivColor(61, 90, 128);
-
-    auto* outerLayout = new QVBoxLayout(this);
-    outerLayout->setContentsMargins(0, 0, 0, 0);
 
     outerSection = new CollapsibleSection(qtTrId("lc-piv-widget-title"), pivColor, this);
     outerSection->setHeaderHeight(56);
@@ -194,8 +193,21 @@ void PIVWidget::rebuildHeader()
 
 void PIVWidget::retranslateUi()
 {
-    if (outerSection)
-        outerSection->setTitle(qtTrId("lc-piv-widget-title"));
-    if (printBtn)
-        printBtn->setToolTip(qtTrId("lc-print-tooltip"));
+    // Plugin widget rebuild-tier (April 2026 retranslate spec): tear
+    // down the shell and rebuild from cached data.groups.
+    auto cachedGroups = std::move(data.groups);
+    data.groups.clear();
+
+    if (outerSection) {
+        outerLayout->removeWidget(outerSection);
+        outerSection->deleteLater();
+        outerSection = nullptr;
+    }
+    contentLayout = nullptr;
+    headerCard = nullptr;
+    printBtn = nullptr;
+
+    buildEmptyShell();
+    for (const auto& group : cachedGroups)
+        addGroup(group);
 }

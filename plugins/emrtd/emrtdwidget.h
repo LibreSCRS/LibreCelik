@@ -42,8 +42,7 @@ protected:
     void retranslateUi() override;
 
 private:
-    void showAuthRequired(const LibreSCRS::Plugin::CardFieldGroup* group);
-    void showError(const LibreSCRS::Plugin::CardFieldGroup* group);
+    void buildShell();
 
     LibreSCRS::Plugin::CardData data;
     QToolButton* printBtn = nullptr;
@@ -54,4 +53,5 @@ private:
     QVBoxLayout* sectionLayout = nullptr;
     QLabel* photoLabel = nullptr;
     SecurityStatusWidget* securityStatusWidget = nullptr;
+    bool noDataMessageShown = false;
 };

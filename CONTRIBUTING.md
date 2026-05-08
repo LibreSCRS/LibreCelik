@@ -52,6 +52,95 @@ PATH then `~/.local/bin/clang-format-21`. Skip a single commit with
 A repo-root `.editorconfig` documents the indent / EOL / charset
 conventions for editors that support EditorConfig.
 
+## i18n discipline (runtime retranslation)
+
+LibreCelik supports live language switching: the user changes the
+locale in Settings and every visible widget retranslates immediately,
+without an application restart. Two infrastructures protect this
+property:
+
+1. **Static audit** — `tools/i18n_audit.py` scans the source tree for
+   classes that call `qtTrId()` but lack a working
+   `changeEvent(LanguageChange)` → `retranslateUi()` path, and for
+   `qtTrId` callsites outside the `retranslateUi()` transitive
+   closure (D1, D2, D3, D5, D6, D8). Run locally:
+
+   ```bash
+   python3 tools/i18n_audit.py --strict
+   ```
+
+   Exit 0 = no findings; exit 1 = active findings; exit 2 = tool
+   error. Documented end-to-end in
+   [`tools/README-i18n-audit.md`](tools/README-i18n-audit.md).
+
+2. **Runtime tests** —
+   `test/i18n_settings_state_test.cpp` (D7) and
+   `test/i18n_plugin_retranslate_test.cpp` (D9) instantiate live
+   widgets, switch translator at runtime, and verify every
+   translatable string actually changed. Both run with
+   `QT_QPA_PLATFORM=offscreen`.
+
+### When you add a `qtTrId(...)` callsite
+
+You **must**:
+
+- ensure the call is reachable from the class's `retranslateUi()`
+  method (directly or transitively via same-class helpers);
+- add the matching catalogue entry: a `QT_TRANSLATE_NOOP_UTF8`
+  (or equivalent) declaration plus translations in **both**
+  `resources/i18n/LibreCelik_en.ts` and `LibreCelik_sr_RS.ts`.
+
+If a string is genuinely transient (e.g. evaluated at click time
+inside a lambda for a modal QFileDialog whose lifetime ends with
+`exec()`), annotate the source line with the canonical inline
+allowlist:
+
+```cpp
+const QString title = qtTrId("lc-foo"); // i18n-audit: ignore D2, transient file dialog — qtTrId evaluated at click time, dialog discarded after exec()
+```
+
+The reason text is mandatory. Reviewers will check that the chosen
+reason matches one of the canonical phrasings recorded in
+[`tools/README-i18n-audit.md`](tools/README-i18n-audit.md) and in
+the spec
+[`knowledge/specs/2026-05-08-i18n-retranslate-audit-design.md`][i18n-spec]
+(private repo).
+
+[i18n-spec]: https://github.com/LibreSCRS/knowledge/blob/main/specs/2026-05-08-i18n-retranslate-audit-design.md
+
+The April 2026 retranslate spec
+[`knowledge/specs/archive/2026-04/2026-04-02-runtime-retranslation-design.md`][april-spec]
+classifies widgets as **simple** (re-apply `setText`), **rebuild**
+(clear+repopulate trees/lists), or **plugin** (rebuild across `.so`)
+and is the canonical reference for choosing a remediation pattern.
+
+[april-spec]: https://github.com/LibreSCRS/knowledge/blob/main/specs/archive/2026-04/2026-04-02-runtime-retranslation-design.md
+
+### Locale-stable wordlist amendments
+
+`test/i18n_test_support/locale_stable_words.h` lists strings that
+read identically in en and sr_RS by convention (acronyms like
+`PIN`, `PIV`, `URL`; language endonyms `English` / `Српски`; Qt
+built-in dialog button strings translated via `qt_*.qm`). Adding to
+this list requires PR review — every new entry is a tacit promise
+that the term is universally understood. Prefer to *translate*
+instead of allowlisting whenever the receiving audience may not
+recognise the English form.
+
+### Optional pre-commit i18n hook
+
+`scripts/pre-commit-i18n.sh` runs the audit in `--diff-since=HEAD`
+mode (only files staged for commit). Activate via:
+
+```bash
+# Per-clone (simplest):
+ln -s ../../scripts/pre-commit-i18n.sh .git/hooks/pre-commit-i18n
+```
+
+…then chain it from your existing `pre-commit` hook, or set
+`core.hooksPath` to a directory containing both
+`pre-commit-clang-format.sh` and `pre-commit-i18n.sh`.
+
 ## Build and test
 
 LibreCelik consumes LibreMiddleware via CMake `FetchContent`. For local

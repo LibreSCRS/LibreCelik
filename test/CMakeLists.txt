@@ -323,6 +323,110 @@ if(LIBRECELIK_SIGNING_ENABLED)
     gtest_discover_tests(SigningUnitTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()
 
+# --- i18n retranslate-audit support library + self-test (rc2) ---
+#
+# RetranslatableWidgetFixture: gtest base fixture used by D7 (settings
+# state) and D9 (plugin retranslate) test suites. The self-test
+# (i18n_test_support_self_test) verifies the fixture's snapshot walker,
+# translator install/remove lifecycle, and assertAllRetranslated rule
+# set in isolation, before any production widget depends on it.
+#
+# Header-only support files (locale_stable_words.h, mock_plugin_data.h)
+# do not need their own translation unit; they are pulled in by D7/D9
+# tests as needed.
+add_executable(LibreCelikI18nFixtureSelfTest
+    i18n_test_support_self_test.cpp
+    i18n_test_support/RetranslatableWidgetFixture.cpp
+)
+target_include_directories(LibreCelikI18nFixtureSelfTest PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${PROJECT_BINARY_DIR}/../src
+)
+target_link_libraries(LibreCelikI18nFixtureSelfTest PRIVATE
+    GTest::gtest_main
+    Qt6::Core
+    Qt6::Widgets
+    Qt6::Test
+)
+set_target_properties(LibreCelikI18nFixtureSelfTest PROPERTIES AUTOMOC ON)
+gtest_discover_tests(LibreCelikI18nFixtureSelfTest PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# --- D7 runtime test: SettingsDialog preference-state coverage ---
+#
+# Compiles the live SettingsDialog implementation directly into the
+# test binary (rather than depending on the LibreCelik executable) so
+# the test exercises the production retranslate path with no Qt
+# plugin loading. Mirrors the SigningWizardE2ETests pattern.
+add_executable(i18n_settings_state_test
+    i18n_settings_state_test.cpp
+    i18n_test_support/RetranslatableWidgetFixture.cpp
+    ${CMAKE_SOURCE_DIR}/src/settings/settingsdialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/settings/tlitemdelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/signing/tsaitemdelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/listitemdelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/locale_resolver.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
+)
+target_include_directories(i18n_settings_state_test PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${PROJECT_BINARY_DIR}/../src
+)
+target_link_libraries(i18n_settings_state_test PRIVATE
+    GTest::gtest_main
+    Qt6::Core
+    Qt6::Widgets
+    Qt6::Test
+)
+set_target_properties(i18n_settings_state_test PROPERTIES AUTOMOC ON)
+add_dependencies(i18n_settings_state_test LibreCelik_lrelease)
+gtest_discover_tests(i18n_settings_state_test PROPERTIES ENVIRONMENT
+    "QT_QPA_PLATFORM=offscreen;LIBRECELIK_TRANSLATIONS_DIR=${CMAKE_BINARY_DIR}/src")
+
+# --- D9 runtime test: plugin card-widget retranslate coverage ---
+#
+# Compiles all 5 production plugin widgets into a single test binary
+# and parameterises over them. Each plugin is built with a synthetic
+# CardData (mock_plugin_data.h), snapshotted, language-switched, and
+# re-snapshotted; the fixture asserts every shared key changed.
+add_executable(i18n_plugin_retranslate_test
+    i18n_plugin_retranslate_test.cpp
+    i18n_test_support/RetranslatableWidgetFixture.cpp
+    # Plugin widgets — compiled directly so we test their retranslate
+    # paths without spinning up Qt plugin loading.
+    ${CMAKE_SOURCE_DIR}/plugins/rs-eid/eidwidget.cpp
+    ${CMAKE_SOURCE_DIR}/plugins/rs-health/healthwidget.cpp
+    ${CMAKE_SOURCE_DIR}/plugins/emrtd/emrtdwidget.cpp
+    ${CMAKE_SOURCE_DIR}/plugins/eu-vrc/euvrcwidget.cpp
+    ${CMAKE_SOURCE_DIR}/plugins/piv/pivwidget.cpp
+    # Shared widget utilities used by every plugin.
+    ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/cardheadercard.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pluginwidgetbase.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/securitystatuswidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
+)
+target_include_directories(i18n_plugin_retranslate_test PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/plugins
+    ${PROJECT_BINARY_DIR}/../src
+)
+target_link_libraries(i18n_plugin_retranslate_test PRIVATE
+    GTest::gtest_main
+    Qt6::Core
+    Qt6::Widgets
+    Qt6::Test
+    CardPlugin_Impl
+)
+set_target_properties(i18n_plugin_retranslate_test PROPERTIES AUTOMOC ON)
+add_dependencies(i18n_plugin_retranslate_test LibreCelik_lrelease)
+gtest_discover_tests(i18n_plugin_retranslate_test PROPERTIES ENVIRONMENT
+    "QT_QPA_PLATFORM=offscreen;LIBRECELIK_TRANSLATIONS_DIR=${CMAKE_BINARY_DIR}/src")
+
 if(LIBRECELIK_SIGNING_ENABLED)
     find_package(Qt6 REQUIRED COMPONENTS PdfWidgets)
 

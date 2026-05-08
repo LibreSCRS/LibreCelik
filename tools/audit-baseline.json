@@ -1,0 +1,694 @@
+{
+  "schema_version": 1,
+  "tool": "i18n-audit",
+  "tool_version": "1.0.0",
+  "dimensions_run": [
+    "D1",
+    "D2",
+    "D3",
+    "D5",
+    "D6",
+    "D8"
+  ],
+  "findings": [
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "plugins/emrtd/emrtdtextdocument.cpp",
+      "line": 29,
+      "class": "EMRTDTextDocument",
+      "message": "EMRTDTextDocument calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/emrtd/emrtdwidget.cpp",
+      "line": 106,
+      "class": "EMRTDWidget",
+      "message": "EMRTDWidget::<ctor>() calls qtTrId() in 1 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/emrtd/emrtdwidget.cpp",
+      "line": 150,
+      "class": "EMRTDWidget",
+      "message": "EMRTDWidget::addGroup() calls qtTrId() in 12 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/emrtd/emrtdwidget.cpp",
+      "line": 300,
+      "class": "EMRTDWidget",
+      "message": "EMRTDWidget::showAuthRequired() calls qtTrId() in 2 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/emrtd/emrtdwidget.cpp",
+      "line": 325,
+      "class": "EMRTDWidget",
+      "message": "EMRTDWidget::showError() calls qtTrId() in 1 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/emrtd/emrtdwidget.cpp",
+      "line": 338,
+      "class": "EMRTDWidget",
+      "message": "EMRTDWidget::showNoDataMessage() calls qtTrId() in 1 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "plugins/emrtd/emrtdwidgetplugin.cpp",
+      "line": 38,
+      "class": "EMRTDWidgetPlugin",
+      "message": "EMRTDWidgetPlugin calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "plugins/eu-vrc/euvrctextdocument.cpp",
+      "line": 38,
+      "class": "EuVrcTextDocument",
+      "message": "EuVrcTextDocument calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/eu-vrc/euvrcwidget.cpp",
+      "line": 40,
+      "class": "EuVrcWidget",
+      "message": "EuVrcWidget::buildShell() calls qtTrId() in 1 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/eu-vrc/euvrcwidget.cpp",
+      "line": 92,
+      "class": "EuVrcWidget",
+      "message": "EuVrcWidget::addRegistrationGroup() calls qtTrId() in 3 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/eu-vrc/euvrcwidget.cpp",
+      "line": 116,
+      "class": "EuVrcWidget",
+      "message": "EuVrcWidget::addVehicleGroup() calls qtTrId() in 4 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/eu-vrc/euvrcwidget.cpp",
+      "line": 201,
+      "class": "EuVrcWidget",
+      "message": "EuVrcWidget::buildRegistrationSection() calls qtTrId() in 12 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/eu-vrc/euvrcwidget.cpp",
+      "line": 245,
+      "class": "EuVrcWidget",
+      "message": "EuVrcWidget::buildVehicleSection() calls qtTrId() in 8 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/eu-vrc/euvrcwidget.cpp",
+      "line": 296,
+      "class": "EuVrcWidget",
+      "message": "EuVrcWidget::buildEngineTechnicalSection() calls qtTrId() in 24 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/eu-vrc/euvrcwidget.cpp",
+      "line": 353,
+      "class": "EuVrcWidget",
+      "message": "EuVrcWidget::buildHolderSection() calls qtTrId() in 4 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/eu-vrc/euvrcwidget.cpp",
+      "line": 378,
+      "class": "EuVrcWidget",
+      "message": "EuVrcWidget::buildOwnerSection() calls qtTrId() in 2 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/eu-vrc/euvrcwidget.cpp",
+      "line": 413,
+      "class": "EuVrcWidget",
+      "message": "EuVrcWidget::buildUserSection() calls qtTrId() in 4 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/eu-vrc/euvrcwidget.cpp",
+      "line": 431,
+      "class": "EuVrcWidget",
+      "message": "EuVrcWidget::buildNationalSection() calls qtTrId() in 6 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "plugins/eu-vrc/euvrcwidgetplugin.cpp",
+      "line": 26,
+      "class": "EuVrcWidgetPlugin",
+      "message": "EuVrcWidgetPlugin calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "plugins/piv/pivtextdocument.cpp",
+      "line": 36,
+      "class": "PIVTextDocument",
+      "message": "PIVTextDocument calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/piv/pivwidget.cpp",
+      "line": 79,
+      "class": "PIVWidget",
+      "message": "PIVWidget::buildEmptyShell() calls qtTrId() in 1 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/piv/pivwidget.cpp",
+      "line": 124,
+      "class": "PIVWidget",
+      "message": "PIVWidget::addChuidGroup() calls qtTrId() in 3 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/piv/pivwidget.cpp",
+      "line": 139,
+      "class": "PIVWidget",
+      "message": "PIVWidget::addCccGroup() calls qtTrId() in 1 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/piv/pivwidget.cpp",
+      "line": 146,
+      "class": "PIVWidget",
+      "message": "PIVWidget::addPrintedGroup() calls qtTrId() in 1 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/piv/pivwidget.cpp",
+      "line": 158,
+      "class": "PIVWidget",
+      "message": "PIVWidget::addDiscoveryGroup() calls qtTrId() in 1 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/piv/pivwidget.cpp",
+      "line": 165,
+      "class": "PIVWidget",
+      "message": "PIVWidget::addKeyHistoryGroup() calls qtTrId() in 1 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/piv/pivwidget.cpp",
+      "line": 182,
+      "class": "PIVWidget",
+      "message": "PIVWidget::rebuildHeader() calls qtTrId() in 3 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "plugins/piv/pivwidgetplugin.cpp",
+      "line": 26,
+      "class": "PIVWidgetPlugin",
+      "message": "PIVWidgetPlugin calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "plugins/rs-eid/eidtextdocument.cpp",
+      "line": 33,
+      "class": "EIdTextDocument",
+      "message": "EIdTextDocument calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/rs-eid/eidwidget.cpp",
+      "line": 51,
+      "class": "EidWidget",
+      "message": "EidWidget::addGroup() calls qtTrId() in 2 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/rs-eid/eidwidget.cpp",
+      "line": 152,
+      "class": "EidWidget",
+      "message": "EidWidget::buildPersonalSection() calls qtTrId() in 12 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/rs-eid/eidwidget.cpp",
+      "line": 221,
+      "class": "EidWidget",
+      "message": "EidWidget::addVerificationBadges() calls qtTrId() in 3 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/rs-eid/eidwidget.cpp",
+      "line": 285,
+      "class": "EidWidget",
+      "message": "EidWidget::buildAddressSection() calls qtTrId() in 4 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/rs-eid/eidwidget.cpp",
+      "line": 338,
+      "class": "EidWidget",
+      "message": "EidWidget::buildDocumentSection() calls qtTrId() in 8 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "plugins/rs-eid/rseidwidgetplugin.cpp",
+      "line": 26,
+      "class": "RsEidWidgetPlugin",
+      "message": "RsEidWidgetPlugin calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "plugins/rs-health/healthtextdocument.cpp",
+      "line": 24,
+      "class": "HealthTextDocument",
+      "message": "HealthTextDocument calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/rs-health/healthwidget.cpp",
+      "line": 88,
+      "class": "HealthWidget",
+      "message": "HealthWidget::buildEmptyShell() calls qtTrId() in 1 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/rs-health/healthwidget.cpp",
+      "line": 134,
+      "class": "HealthWidget",
+      "message": "HealthWidget::addPersonalGroup() calls qtTrId() in 4 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/rs-health/healthwidget.cpp",
+      "line": 150,
+      "class": "HealthWidget",
+      "message": "HealthWidget::addInsuranceGroup() calls qtTrId() in 1 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/rs-health/healthwidget.cpp",
+      "line": 156,
+      "class": "HealthWidget",
+      "message": "HealthWidget::addAddressGroup() calls qtTrId() in 1 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/rs-health/healthwidget.cpp",
+      "line": 168,
+      "class": "HealthWidget",
+      "message": "HealthWidget::addCarrierGroup() calls qtTrId() in 1 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/rs-health/healthwidget.cpp",
+      "line": 176,
+      "class": "HealthWidget",
+      "message": "HealthWidget::addTaxpayerGroup() calls qtTrId() in 1 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "plugins/rs-health/healthwidget.cpp",
+      "line": 187,
+      "class": "HealthWidget",
+      "message": "HealthWidget::transformPermanentlyValid() calls qtTrId() in 2 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "plugins/rs-health/rshealthwidgetplugin.cpp",
+      "line": 26,
+      "class": "RsHealthWidgetPlugin",
+      "message": "RsHealthWidgetPlugin calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "src/aboutdialog.cpp",
+      "line": 22,
+      "class": "AboutDialog",
+      "message": "AboutDialog::<ctor>() calls qtTrId() in 1 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "src/asynccardreader.cpp",
+      "line": 132,
+      "class": "AsyncCardReader",
+      "message": "AsyncCardReader calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "src/certificate/certificatehierarchymodel.cpp",
+      "line": 101,
+      "class": "CertificateHierarchyModel",
+      "message": "CertificateHierarchyModel calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "src/certificate/certificatepropertiesmodel.cpp",
+      "line": 86,
+      "class": "CertificatePropertiesModel",
+      "message": "CertificatePropertiesModel calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "src/certificate/certificatetreeviewmodel.cpp",
+      "line": 57,
+      "class": "CertificateTreeViewModel",
+      "message": "CertificateTreeViewModel calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "src/certificate/certificateviewerdlg.cpp",
+      "line": 18,
+      "class": "CertificateViewerDlg",
+      "message": "CertificateViewerDlg calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "src/certificate/certificateviewerwidget.cpp",
+      "line": 133,
+      "class": "CertificateViewerWidget",
+      "message": "CertificateViewerWidget calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "src/document/printing/textdocument.cpp",
+      "line": 44,
+      "class": "TextDocument",
+      "message": "TextDocument calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D1",
+      "severity": "high",
+      "file": "src/document/rs-eid/changepindlg.cpp",
+      "line": 19,
+      "class": "ChangePinDlg",
+      "message": "ChangePinDlg calls qtTrId() but defines no retranslateUi() and no changeEvent(LanguageChange) branch",
+      "fix_hint": "override changeEvent(QEvent*); on QEvent::LanguageChange call retranslateUi() (see April 2026 retranslation spec)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "src/document/tokensection.cpp",
+      "line": 116,
+      "class": "TokenSection",
+      "message": "TokenSection::<ctor>() calls qtTrId() in 5 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D8",
+      "severity": "medium",
+      "file": "src/document/tokensection.cpp",
+      "line": 140,
+      "class": "TokenSection",
+      "message": "TokenSection::<ctor>() applies setToolTip/setAccessibleName/setStatusTip/setWhatsThis with qtTrId() in 1 place(s) outside retranslateUi()",
+      "fix_hint": "move setToolTip/setAccessibleName/setStatusTip/setWhatsThis into retranslateUi() (or a same-class helper reachable from it)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "src/document/tokensection.cpp",
+      "line": 211,
+      "class": "TokenSection",
+      "message": "TokenSection::setTokenInfo() calls qtTrId() in 3 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "src/document/tokensection.cpp",
+      "line": 350,
+      "class": "TokenSection",
+      "message": "TokenSection::onContextMenu() calls qtTrId() in 4 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "src/settings/settingsdialog.cpp",
+      "line": 48,
+      "class": "SettingsDialog",
+      "message": "SettingsDialog::<ctor>() calls qtTrId() in 19 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "src/settings/settingsdialog.cpp",
+      "line": 287,
+      "class": "SettingsDialog",
+      "message": "SettingsDialog::onTsaAddRequested() calls qtTrId() in 4 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "src/settings/settingsdialog.cpp",
+      "line": 394,
+      "class": "SettingsDialog",
+      "message": "SettingsDialog::onTlAddRequested() calls qtTrId() in 5 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D8",
+      "severity": "medium",
+      "file": "src/signing/fileselectionpage.cpp",
+      "line": 109,
+      "class": "FileSelectionPage",
+      "message": "FileSelectionPage::<ctor>() applies setToolTip/setAccessibleName/setStatusTip/setWhatsThis with qtTrId() in 1 place(s) outside retranslateUi()",
+      "fix_hint": "move setToolTip/setAccessibleName/setStatusTip/setWhatsThis into retranslateUi() (or a same-class helper reachable from it)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D8",
+      "severity": "medium",
+      "file": "src/signing/fileselectionpage.cpp",
+      "line": 481,
+      "class": "FileSelectionPage",
+      "message": "FileSelectionPage::changeEvent() applies setToolTip/setAccessibleName/setStatusTip/setWhatsThis with qtTrId() in 1 place(s) outside retranslateUi()",
+      "fix_hint": "move setToolTip/setAccessibleName/setStatusTip/setWhatsThis into retranslateUi() (or a same-class helper reachable from it)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D8",
+      "severity": "medium",
+      "file": "src/signing/signatureplacementpage.cpp",
+      "line": 43,
+      "class": "SignaturePlacementPage",
+      "message": "SignaturePlacementPage::<ctor>() applies setToolTip/setAccessibleName/setStatusTip/setWhatsThis with qtTrId() in 2 place(s) outside retranslateUi()",
+      "fix_hint": "move setToolTip/setAccessibleName/setStatusTip/setWhatsThis into retranslateUi() (or a same-class helper reachable from it)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D8",
+      "severity": "medium",
+      "file": "src/signing/signatureplacementpage.cpp",
+      "line": 109,
+      "class": "SignaturePlacementPage",
+      "message": "SignaturePlacementPage::changeEvent() applies setToolTip/setAccessibleName/setStatusTip/setWhatsThis with qtTrId() in 2 place(s) outside retranslateUi()",
+      "fix_hint": "move setToolTip/setAccessibleName/setStatusTip/setWhatsThis into retranslateUi() (or a same-class helper reachable from it)",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "src/utils/securitystatuswidget.cpp",
+      "line": 24,
+      "class": "SecurityStatusWidget",
+      "message": "SecurityStatusWidget::buildLayout() calls qtTrId() in 4 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "src/utils/securitystatuswidget.cpp",
+      "line": 102,
+      "class": "SecurityStatusWidget",
+      "message": "SecurityStatusWidget::statusText() calls qtTrId() in 6 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    },
+    {
+      "dim": "D2",
+      "severity": "high",
+      "file": "src/utils/securitystatuswidget.cpp",
+      "line": 126,
+      "class": "SecurityStatusWidget",
+      "message": "SecurityStatusWidget::setSecurityStatus() calls qtTrId() in 4 place(s) but is not reached transitively from retranslateUi()",
+      "fix_hint": "extend retranslateUi() to cover this qtTrId callsite, or factor it into a same-class helper called from retranslateUi()",
+      "allowlisted": false
+    }
+  ],
+  "summary": {
+    "total": 67,
+    "allowlisted": 0,
+    "by_dim": {
+      "D1": 18,
+      "D2": 44,
+      "D8": 5
+    }
+  }
+}

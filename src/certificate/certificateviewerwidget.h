@@ -36,11 +36,15 @@ public:
                                      QWidget* parent = nullptr);
     ~CertificateViewerWidget() override;
 
+protected:
+    void changeEvent(QEvent* event) override;
+
 private slots:
     void onDetailsSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
     void onCertPathSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
 
 private:
+    void retranslateUi();
     void populateGeneralTab();
     void populateUnparseableTab();
 

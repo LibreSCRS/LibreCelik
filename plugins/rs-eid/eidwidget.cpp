@@ -26,8 +26,15 @@ EidWidget::EidWidget(const LibreSCRS::Plugin::CardData& cardData, QWidget* paren
     data.cardType = cardData.cardType;
     for (const auto& group : cardData.groups)
         addGroup(group);
-    // Non-streaming: verification data may be in "meta" group rather than a
-    // separate "verification" group. Apply if streaming didn't handle it.
+    applyVerificationFromMeta();
+}
+
+void EidWidget::applyVerificationFromMeta()
+{
+    // Non-streaming path: verification data may be in "meta" group rather
+    // than a separate "verification" group. Apply if streaming didn't
+    // handle it. Extracted from the full-data ctor so retranslateUi()
+    // can re-trigger the badge step after rebuilding sections.
     if (personalSection && !data.findGroup("verification").has_value()) {
         if (auto metaIdx = data.findGroup("meta"))
             addVerificationBadges(personalSection, &data.groupAt(*metaIdx));
@@ -362,8 +369,28 @@ CollapsibleSection* EidWidget::buildDocumentSection(QWidget* parent) const
 
 void EidWidget::retranslateUi()
 {
-    if (outerSection)
-        outerSection->setTitle(isForeigner() ? qtTrId("lc-eid-title-foreigner") : qtTrId("lc-eid-title"));
-    if (printBtn)
-        printBtn->setToolTip(qtTrId("lc-print-tooltip"));
+    // Plugin widget rebuild-tier (April 2026 retranslate spec): tear
+    // down all dynamic sections and rebuild from cached data.groups so
+    // the new translator is applied to every label, header, and badge.
+    if (data.groups.empty()) {
+        // Nothing built yet (empty-shell ctor before any addGroup()).
+        return;
+    }
+
+    auto cachedGroups = std::move(data.groups);
+    data.groups.clear();
+
+    if (outerSection) {
+        outerLayout->removeWidget(outerSection);
+        outerSection->deleteLater();
+        outerSection = nullptr;
+    }
+    sectionLayout = nullptr;
+    photoLabel = nullptr;
+    personalSection = nullptr;
+    printBtn = nullptr;
+
+    for (const auto& group : cachedGroups)
+        addGroup(group);
+    applyVerificationFromMeta();
 }

@@ -98,7 +98,8 @@ void CertificateHierarchyModel::buildChain(const lcc::ParsedCertificate& leaf)
     // Validate the chain once (leaf-first views) and derive both the UI status
     // text and the icon trust-state from the same outcome.
     trustState = TrustState::Unknown;
-    QString statusString = qtTrId("lc-cert-verify-trust-unknown");
+    QString statusString = qtTrId("lc-cert-verify-trust-unknown"); // i18n-audit: ignore D1, item-view model
+                                                                   // retranslates via Qt::DisplayRole on next paint
     if (trustStore && !chain.empty()) {
         std::vector<lct::CertificateView> views;
         views.reserve(chain.size());

@@ -41,7 +41,9 @@ void TextDocument::setupDocument(const QString& htmlContent, const QString& cssP
 
 QString TextDocument::getPreparedValue(const QString& data) const
 {
-    return (data.isEmpty() || data == "01.01.0001") ? qtTrId("lc-doc-unavailable") : data;
+    const auto unavailable =
+        qtTrId("lc-doc-unavailable"); // i18n-audit: ignore D1, PDF print formatter — fresh QTextDocument per print run
+    return (data.isEmpty() || data == "01.01.0001") ? unavailable : data;
 }
 
 bool TextDocument::isMacOS()

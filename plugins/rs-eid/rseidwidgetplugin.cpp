@@ -23,7 +23,9 @@ QWidget* RsEidWidgetPlugin::createEmptyWidget(QWidget* parent) const
 void RsEidWidgetPlugin::print(const LibreSCRS::Plugin::CardData& data) const
 {
     EIdTextDocument doc(data);
-    PrintManager::printDocument(doc, qtTrId("lc-eid-print-title"));
+    PrintManager::printDocument(
+        doc,
+        qtTrId("lc-eid-print-title")); // i18n-audit: ignore D1, PDF print formatter — fresh QTextDocument per print run
 }
 
 void RsEidWidgetPlugin::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group, QWidget* widget) const

@@ -13,6 +13,7 @@
 SecurityStatusWidget::SecurityStatusWidget(QWidget* parent) : QWidget(parent)
 {
     buildLayout();
+    retranslateUi();
 }
 
 void SecurityStatusWidget::buildLayout()
@@ -21,27 +22,27 @@ void SecurityStatusWidget::buildLayout()
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(4);
 
-    section = new CollapsibleSection(qtTrId("lc-emrtd-security-status"), this);
+    // Section title is set by retranslateUi() so that LanguageChange
+    // paths are the single source of truth.
+    section = new CollapsibleSection(QString(), this);
     section->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
     auto* contentLayout = new QVBoxLayout();
     contentLayout->setSpacing(6);
 
-    // Three summary rows — initially NOT_PERFORMED
-    auto* integrityRow =
-        createStatusRow(qtTrId("lc-emrtd-security-integrity"), LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
+    // Three summary rows — created with empty labels; populated by
+    // refreshSummaryRows() (called from retranslateUi()).
+    auto* integrityRow = createStatusRow(QString(), LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
     integrityIcon = integrityRow->findChildren<QLabel*>("icon").value(0);
     integrityLabel = integrityRow->findChildren<QLabel*>("text").value(0);
     contentLayout->addWidget(integrityRow);
 
-    auto* authenticityRow = createStatusRow(qtTrId("lc-emrtd-security-authenticity"),
-                                            LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
+    auto* authenticityRow = createStatusRow(QString(), LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
     authenticityIcon = authenticityRow->findChildren<QLabel*>("icon").value(0);
     authenticityLabel = authenticityRow->findChildren<QLabel*>("text").value(0);
     contentLayout->addWidget(authenticityRow);
 
-    auto* genuinenessRow = createStatusRow(qtTrId("lc-emrtd-security-genuineness"),
-                                           LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
+    auto* genuinenessRow = createStatusRow(QString(), LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
     genuinenessIcon = genuinenessRow->findChildren<QLabel*>("icon").value(0);
     genuinenessLabel = genuinenessRow->findChildren<QLabel*>("text").value(0);
     contentLayout->addWidget(genuinenessRow);
@@ -53,6 +54,27 @@ void SecurityStatusWidget::buildLayout()
 
     section->setLayout(contentLayout);
     mainLayout->addWidget(section);
+}
+
+void SecurityStatusWidget::refreshSummaryRows()
+{
+    // Update icon colour and label text from cachedStatus (or initial
+    // NotPerformed when no status has been applied yet). Reads label
+    // text from qtTrId at call time so language-change repopulates.
+    auto updateRow = [this](QLabel* icon, QLabel* text, const QString& label,
+                            LibreSCRS::Plugin::SecurityCheck::Status s) {
+        if (icon)
+            icon->setStyleSheet(QString("background: %1; border-radius: 8px;").arg(statusColor(s)));
+        if (text)
+            text->setText(label + ": " + statusText(s));
+    };
+    using Status = LibreSCRS::Plugin::SecurityCheck::Status;
+    const Status integ = hasStatus ? cachedStatus.overallIntegrity : Status::NotPerformed;
+    const Status auth = hasStatus ? cachedStatus.overallAuthenticity : Status::NotPerformed;
+    const Status genu = hasStatus ? cachedStatus.overallGenuineness : Status::NotPerformed;
+    updateRow(integrityIcon, integrityLabel, qtTrId("lc-emrtd-security-integrity"), integ);
+    updateRow(authenticityIcon, authenticityLabel, qtTrId("lc-emrtd-security-authenticity"), auth);
+    updateRow(genuinenessIcon, genuinenessLabel, qtTrId("lc-emrtd-security-genuineness"), genu);
 }
 
 QWidget* SecurityStatusWidget::createStatusRow(const QString& label, LibreSCRS::Plugin::SecurityCheck::Status status)
@@ -114,21 +136,22 @@ QString SecurityStatusWidget::statusText(LibreSCRS::Plugin::SecurityCheck::Statu
 
 void SecurityStatusWidget::setSecurityStatus(const LibreSCRS::Plugin::SecurityStatus& status)
 {
-    // Update summary rows
-    auto updateRow = [this](QLabel* icon, QLabel* text, const QString& label,
-                            LibreSCRS::Plugin::SecurityCheck::Status s) {
-        if (icon)
-            icon->setStyleSheet(QString("background: %1; border-radius: 8px;").arg(statusColor(s)));
-        if (text)
-            text->setText(label + ": " + statusText(s));
-    };
+    // Cache for retranslate-on-language-change (per LM 4.0 retranslate
+    // pattern: rebuild dynamic content from cached state).
+    cachedStatus = status;
+    hasStatus = true;
 
-    updateRow(integrityIcon, integrityLabel, qtTrId("lc-emrtd-security-integrity"), status.overallIntegrity);
-    updateRow(authenticityIcon, authenticityLabel, qtTrId("lc-emrtd-security-authenticity"),
-              status.overallAuthenticity);
-    updateRow(genuinenessIcon, genuinenessLabel, qtTrId("lc-emrtd-security-genuineness"), status.overallGenuineness);
+    refreshSummaryRows();
+    rebuildDetailRows();
+}
 
-    // Build detail section with individual checks
+void SecurityStatusWidget::rebuildDetailRows()
+{
+    // Build detail section with individual checks. Called both from
+    // setSecurityStatus() (when fresh status arrives) and from
+    // retranslateUi() (so the "Details" header re-renders in the new
+    // language). check.label / check.detail are LM-provided std::string
+    // identifiers and are not retranslated by LC.
     if (detailWidget->layout()) {
         QLayoutItem* item;
         while ((item = detailWidget->layout()->takeAt(0)) != nullptr) {
@@ -138,47 +161,49 @@ void SecurityStatusWidget::setSecurityStatus(const LibreSCRS::Plugin::SecuritySt
         delete detailWidget->layout();
     }
 
-    if (!status.checks.empty()) {
-        auto* detailLayout = new QVBoxLayout(detailWidget);
-        detailLayout->setContentsMargins(8, 4, 4, 4);
-        detailLayout->setSpacing(2);
-
-        auto* detailTitle = new QLabel(qtTrId("lc-emrtd-security-details"));
-        detailTitle->setObjectName(QStringLiteral("detailTitle"));
-        detailTitle->setStyleSheet(
-            QString("font-size: 11px; font-weight: bold; color: %1;").arg(palette().color(QPalette::Text).name()));
-        detailLayout->addWidget(detailTitle);
-
-        for (const auto& check : status.checks) {
-            auto* checkRow = new QHBoxLayout();
-            checkRow->setSpacing(6);
-
-            auto* checkIcon = new QLabel();
-            checkIcon->setFixedSize(10, 10);
-            checkIcon->setStyleSheet(QString("background: %1; border-radius: 5px;").arg(statusColor(check.status)));
-
-            auto* checkLabel = new QLabel(QString::fromStdString(check.label));
-            checkLabel->setObjectName(QStringLiteral("checkLabel"));
-            checkLabel->setStyleSheet(
-                QString("font-size: 11px; color: %1;").arg(palette().color(QPalette::Text).name()));
-            checkLabel->setWordWrap(true);
-
-            checkRow->addWidget(checkIcon);
-            checkRow->addWidget(checkLabel, 1);
-            detailLayout->addLayout(checkRow);
-
-            if (!check.detail.empty()) {
-                auto* detailText = new QLabel(QString::fromStdString(check.detail));
-                detailText->setObjectName(QStringLiteral("detailText"));
-                detailText->setStyleSheet(QString("font-size: 10px; color: %1; margin-left: 16px;")
-                                              .arg(palette().color(QPalette::PlaceholderText).name()));
-                detailText->setWordWrap(true);
-                detailLayout->addWidget(detailText);
-            }
-        }
-
-        detailWidget->setVisible(true);
+    if (!hasStatus || cachedStatus.checks.empty()) {
+        detailWidget->setVisible(false);
+        return;
     }
+
+    auto* detailLayout = new QVBoxLayout(detailWidget);
+    detailLayout->setContentsMargins(8, 4, 4, 4);
+    detailLayout->setSpacing(2);
+
+    auto* detailTitle = new QLabel(qtTrId("lc-emrtd-security-details"));
+    detailTitle->setObjectName(QStringLiteral("detailTitle"));
+    detailTitle->setStyleSheet(
+        QString("font-size: 11px; font-weight: bold; color: %1;").arg(palette().color(QPalette::Text).name()));
+    detailLayout->addWidget(detailTitle);
+
+    for (const auto& check : cachedStatus.checks) {
+        auto* checkRow = new QHBoxLayout();
+        checkRow->setSpacing(6);
+
+        auto* checkIcon = new QLabel();
+        checkIcon->setFixedSize(10, 10);
+        checkIcon->setStyleSheet(QString("background: %1; border-radius: 5px;").arg(statusColor(check.status)));
+
+        auto* checkLabel = new QLabel(QString::fromStdString(check.label));
+        checkLabel->setObjectName(QStringLiteral("checkLabel"));
+        checkLabel->setStyleSheet(QString("font-size: 11px; color: %1;").arg(palette().color(QPalette::Text).name()));
+        checkLabel->setWordWrap(true);
+
+        checkRow->addWidget(checkIcon);
+        checkRow->addWidget(checkLabel, 1);
+        detailLayout->addLayout(checkRow);
+
+        if (!check.detail.empty()) {
+            auto* detailText = new QLabel(QString::fromStdString(check.detail));
+            detailText->setObjectName(QStringLiteral("detailText"));
+            detailText->setStyleSheet(QString("font-size: 10px; color: %1; margin-left: 16px;")
+                                          .arg(palette().color(QPalette::PlaceholderText).name()));
+            detailText->setWordWrap(true);
+            detailLayout->addWidget(detailText);
+        }
+    }
+
+    detailWidget->setVisible(true);
 }
 
 void SecurityStatusWidget::changeEvent(QEvent* event)
@@ -204,4 +229,6 @@ void SecurityStatusWidget::changeEvent(QEvent* event)
 void SecurityStatusWidget::retranslateUi()
 {
     section->setTitle(qtTrId("lc-emrtd-security-status"));
+    refreshSummaryRows();
+    rebuildDetailRows();
 }

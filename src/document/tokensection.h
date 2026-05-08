@@ -69,6 +69,11 @@ private:
     std::shared_ptr<const LibreSCRS::Trust::TrustStore> trustStore;
     std::vector<LibreSCRS::Plugin::CertificateData> certificateList;
     std::vector<LibreSCRS::Plugin::PinStatusEntry> pinList;
+    // Cached for retranslate-on-language-change: setTokenInfo() rebuilds
+    // the header card from the original CardFieldGroup; the cache lets
+    // retranslateUi re-run that path with the new translator active.
+    LibreSCRS::Plugin::CardFieldGroup tokenGroup;
+    bool hasTokenGroup = false;
 
     QVBoxLayout* contentLayout = nullptr;
     LibreSCRS::CardHeaderCard* headerCard = nullptr;

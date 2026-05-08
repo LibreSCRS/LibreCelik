@@ -16,8 +16,11 @@
 ChangePinDlg::ChangePinDlg(const QString& pinLabel, bool isTransport, int minLen, int maxLen, QWidget* parent)
     : QDialog(parent), pinMinLength(minLen > 0 ? minLen : 4), pinMaxLength(maxLen > 0 ? maxLen : 8)
 {
-    setWindowTitle(isTransport ? qtTrId("lc-changepin-initialize-title").arg(pinLabel)
-                               : qtTrId("lc-changepin-change-title").arg(pinLabel));
+    // clang-format off
+    const auto initT = qtTrId("lc-changepin-initialize-title"); // i18n-audit: ignore D1, modal dialog re-opened fresh after language switch
+    // clang-format on
+    const auto changeT = qtTrId("lc-changepin-change-title");
+    setWindowTitle(isTransport ? initT.arg(pinLabel) : changeT.arg(pinLabel));
     setMinimumWidth(350);
 
     auto* layout = new QVBoxLayout(this);

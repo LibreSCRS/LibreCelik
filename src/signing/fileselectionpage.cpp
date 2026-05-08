@@ -92,7 +92,7 @@ FileSelectionPage::FileSelectionPage(QWidget* parent) : QWidget(parent)
     layout->addWidget(dropZone);
 
     // File size limits info
-    limitsLabel = new QLabel(qtTrId("lc-sign-limits-info"), this);
+    limitsLabel = new QLabel(this);
     limitsLabel->setWordWrap(true);
     auto limitsFont = limitsLabel->font();
     limitsFont.setPointSize(limitsFont.pointSize() - 1);
@@ -105,8 +105,6 @@ FileSelectionPage::FileSelectionPage(QWidget* parent) : QWidget(parent)
     fileList->setMinimumHeight(80);
     fileList->setSelectionMode(QAbstractItemView::SingleSelection);
     fileList->setItemDelegate(new FileListDelegate(fileList));
-    //% "Select a file and press Delete to remove it"
-    fileList->setToolTip(qtTrId("lc-sign-filelist-tooltip"));
     layout->addWidget(fileList);
 
     auto* deleteShortcut = new QShortcut(QKeySequence::Delete, fileList);
@@ -124,18 +122,13 @@ FileSelectionPage::FileSelectionPage(QWidget* parent) : QWidget(parent)
     formatDesc->setVisible(false);
     layout->addWidget(formatDesc);
 
-    // Signature level
-    //% "Signature level:"
-    levelLabel = new QLabel(qtTrId("lc-sign-level-label"), this);
+    // Signature level (labels filled by retranslateUi() at end of ctor)
+    levelLabel = new QLabel(this);
     levelCombo = new QComboBox(this);
-    //% "B-B (Basic)"
-    levelCombo->addItem(qtTrId("lc-sign-level-bb"), QStringLiteral("B_B"));
-    //% "B-T (with Timestamp)"
-    levelCombo->addItem(qtTrId("lc-sign-level-bt"), QStringLiteral("B_T"));
-    //% "B-LT (Long Term)"
-    levelCombo->addItem(qtTrId("lc-sign-level-blt"), QStringLiteral("B_LT"));
-    //% "B-LTA (Long Term with Archive)"
-    levelCombo->addItem(qtTrId("lc-sign-level-blta"), QStringLiteral("B_LTA"));
+    levelCombo->addItem(QString(), QStringLiteral("B_B"));
+    levelCombo->addItem(QString(), QStringLiteral("B_T"));
+    levelCombo->addItem(QString(), QStringLiteral("B_LT"));
+    levelCombo->addItem(QString(), QStringLiteral("B_LTA"));
     {
         QSettings settings(settings::kOrganization, settings::kApplication);
         QString defaultLevel = settings.value(settings::kSigningDefaultLevel, QStringLiteral("B_B")).toString();
@@ -155,8 +148,7 @@ FileSelectionPage::FileSelectionPage(QWidget* parent) : QWidget(parent)
     tsaLayout->setSpacing(2);
 
     auto* tsaInputRow = new QHBoxLayout;
-    //% "TSA server:"
-    tsaLabel = new QLabel(qtTrId("lc-sign-tsa-label"), tsaRow);
+    tsaLabel = new QLabel(tsaRow);
     tsaCombo = new QComboBox(tsaRow);
     tsaCombo->setEditable(false);
     {
@@ -177,8 +169,7 @@ FileSelectionPage::FileSelectionPage(QWidget* parent) : QWidget(parent)
     tsaInputRow->addWidget(tsaCombo, 1);
     tsaLayout->addLayout(tsaInputRow);
 
-    //% "For a qualified signature, use a qualified TSA from your certificate authority"
-    tsaInfoLabel = new QLabel(qtTrId("lc-sign-tsa-info"), tsaRow);
+    tsaInfoLabel = new QLabel(tsaRow);
     tsaInfoLabel->setWordWrap(true);
     tsaLayout->addWidget(tsaInfoLabel);
 
@@ -199,8 +190,7 @@ FileSelectionPage::FileSelectionPage(QWidget* parent) : QWidget(parent)
     });
 
     // Output folder
-    //% "Output folder:"
-    outputLabel = new QLabel(qtTrId("lc-sign-output-folder"), this);
+    outputLabel = new QLabel(this);
     outputFolderEdit = new QLineEdit(this);
     outputFolderEdit->setReadOnly(true);
     {
@@ -208,8 +198,7 @@ FileSelectionPage::FileSelectionPage(QWidget* parent) : QWidget(parent)
         outputFolderEdit->setText(settings.value(settings::kSigningDefaultOutputFolder).toString());
     }
 
-    //% "Change..."
-    changeFolderBtn = new QPushButton(qtTrId("lc-sign-change-folder"), this);
+    changeFolderBtn = new QPushButton(this);
 
     auto* outputRow = new QHBoxLayout;
     outputRow->addWidget(outputLabel);
@@ -223,6 +212,9 @@ FileSelectionPage::FileSelectionPage(QWidget* parent) : QWidget(parent)
     connect(dropZone, &FileDropZone::filesChanged, this, &FileSelectionPage::onFilesChanged);
     connect(changeFolderBtn, &QPushButton::clicked, this, &FileSelectionPage::chooseOutputFolder);
 
+    // Apply translations once after construction; LanguageChange branch
+    // in changeEvent re-runs retranslateUi() to refresh on language switch.
+    retranslateUi();
     applyThemeColors();
 }
 
@@ -450,8 +442,10 @@ void FileSelectionPage::showFormatComboForItem(int row)
 void FileSelectionPage::chooseOutputFolder()
 {
     //% "Select output folder"
-    const QString dir =
-        QFileDialog::getExistingDirectory(this, qtTrId("lc-sign-select-output-folder"), outputFolderEdit->text());
+    const QString title =
+        qtTrId("lc-sign-select-output-folder"); // i18n-audit: ignore D2, transient file dialog — qtTrId evaluated at
+                                                // click time, dialog discarded after exec()
+    const QString dir = QFileDialog::getExistingDirectory(this, title, outputFolderEdit->text());
     if (!dir.isEmpty()) {
         outputFolderEdit->setText(dir);
         QSettings settings(settings::kOrganization, settings::kApplication);
@@ -477,22 +471,26 @@ void FileSelectionPage::changeEvent(QEvent* event)
 {
     if (event->type() == QEvent::PaletteChange)
         applyThemeColors();
-    else if (event->type() == QEvent::LanguageChange) {
-        fileList->setToolTip(qtTrId("lc-sign-filelist-tooltip"));
-        updateFormatDescription();
-        levelLabel->setText(qtTrId("lc-sign-level-label"));
-        tsaLabel->setText(qtTrId("lc-sign-tsa-label"));
-        tsaInfoLabel->setText(qtTrId("lc-sign-tsa-info"));
-        outputLabel->setText(qtTrId("lc-sign-output-folder"));
-        changeFolderBtn->setText(qtTrId("lc-sign-change-folder"));
-
-        int idx = levelCombo->currentIndex();
-        levelCombo->setItemText(0, qtTrId("lc-sign-level-bb"));
-        levelCombo->setItemText(1, qtTrId("lc-sign-level-bt"));
-        levelCombo->setItemText(2, qtTrId("lc-sign-level-blt"));
-        levelCombo->setItemText(3, qtTrId("lc-sign-level-blta"));
-        levelCombo->setCurrentIndex(idx);
-        limitsLabel->setText(qtTrId("lc-sign-limits-info"));
-    }
+    else if (event->type() == QEvent::LanguageChange)
+        retranslateUi();
     QWidget::changeEvent(event);
+}
+
+void FileSelectionPage::retranslateUi()
+{
+    fileList->setToolTip(qtTrId("lc-sign-filelist-tooltip"));
+    updateFormatDescription();
+    levelLabel->setText(qtTrId("lc-sign-level-label"));
+    tsaLabel->setText(qtTrId("lc-sign-tsa-label"));
+    tsaInfoLabel->setText(qtTrId("lc-sign-tsa-info"));
+    outputLabel->setText(qtTrId("lc-sign-output-folder"));
+    changeFolderBtn->setText(qtTrId("lc-sign-change-folder"));
+
+    int idx = levelCombo->currentIndex();
+    levelCombo->setItemText(0, qtTrId("lc-sign-level-bb"));
+    levelCombo->setItemText(1, qtTrId("lc-sign-level-bt"));
+    levelCombo->setItemText(2, qtTrId("lc-sign-level-blt"));
+    levelCombo->setItemText(3, qtTrId("lc-sign-level-blta"));
+    levelCombo->setCurrentIndex(idx);
+    limitsLabel->setText(qtTrId("lc-sign-limits-info"));
 }

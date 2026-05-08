@@ -45,6 +45,7 @@ private:
     CollapsibleSection* buildDocumentSection(QWidget* parent) const;
     CollapsibleSection* buildPersonalSection(QWidget* parent) const;
     void addVerificationBadges(CollapsibleSection* section, const LibreSCRS::Plugin::CardFieldGroup* source = nullptr);
+    void applyVerificationFromMeta();
 
     LibreSCRS::Plugin::CardData data;
 

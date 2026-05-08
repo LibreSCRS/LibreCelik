@@ -58,6 +58,7 @@ private:
     CollapsibleSection* buildOwnerSection(const LibreSCRS::Plugin::CardFieldGroup* group);
 
     LibreSCRS::Plugin::CardData data;
+    QVBoxLayout* outerLayout = nullptr;
     QVBoxLayout* contentLayout = nullptr;
     CollapsibleSection* outerSection = nullptr;
     QToolButton* printBtn = nullptr;

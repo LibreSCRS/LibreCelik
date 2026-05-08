@@ -59,3 +59,4 @@ AppDir/
 
 aqtinstall.log
 testPriint.pdf
+tools/__pycache__/

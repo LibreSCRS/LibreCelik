@@ -54,7 +54,8 @@ QVariant CertificateTreeViewModel::headerData(int section, Qt::Orientation orien
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
         switch (section) {
         case 0:
-            return qtTrId("lc-cert-tree-field");
+            return qtTrId("lc-cert-tree-field"); // i18n-audit: ignore D1, item-view model retranslates via
+                                                 // Qt::DisplayRole on next paint
         case 1:
             return qtTrId("lc-cert-tree-value");
         }

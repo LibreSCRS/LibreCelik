@@ -19,7 +19,9 @@
 
 AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent)
 {
-    setWindowTitle(qtTrId("lc-about-title"));
+    // Window title is set by retranslateUi() at the end of construction
+    // (called from line 203 below). Keeping a single source of truth
+    // ensures the dialog always uses the current language.
     setFixedSize(480, 420);
 
     auto* mainLayout = new QVBoxLayout(this);

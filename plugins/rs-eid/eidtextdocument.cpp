@@ -30,7 +30,9 @@ EIdTextDocument::EIdTextDocument(const LibreSCRS::Plugin::CardData& cardData, QS
 
 void EIdTextDocument::translateDocumentData(QString& data) const
 {
-    data.replace("${title}", qtTrId("lc-eid-doc-title"));
+    data.replace(
+        "${title}",
+        qtTrId("lc-eid-doc-title")); // i18n-audit: ignore D1, PDF print formatter — fresh QTextDocument per print run
     data.replace("${foreigner_id}", qtTrId("lc-eid-doc-foreigner-id"));
     data.replace("${printing_date}", qtTrId("lc-eid-doc-printing-date"));
     data.replace("${printing_date_value}", QDate::currentDate().toString("dd.MM.yyyy"));

@@ -25,6 +25,39 @@ jobs:
           find src test plugins -name "*.cpp" -o -name "*.h" \
             | xargs clang-format-21 --dry-run --Werror
 
+  i18n-audit:
+    # Static retranslate audit (no build required). Runs the full
+    # tools/i18n_audit.py over src+plugins, then runs its own pytest
+    # self-test. Exit non-zero on any non-allowlisted finding (--strict).
+    # JSON dump is uploaded as an artefact for PR review and historical
+    # comparison. See knowledge/specs/2026-05-08-i18n-retranslate-audit-design.md.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pytest
+        run: python3 -m pip install --break-system-packages --user pytest
+
+      - name: Run i18n audit self-test
+        run: python3 -m pytest tools/test_i18n_audit.py -v
+
+      - name: Run i18n audit (strict)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python3 tools/i18n_audit.py --strict --json /tmp/i18n-audit.json
+
+      - name: Upload audit JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i18n-audit-json
+          path: /tmp/i18n-audit.json
+
   build-linux:
     runs-on: ubuntu-latest
     steps:

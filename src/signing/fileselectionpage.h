@@ -49,6 +49,7 @@ private:
     void rebuildFileList();
     void chooseOutputFolder();
     void applyThemeColors();
+    void retranslateUi();
     void updateFormatDescription();
     void showFormatComboForItem(int row);
     void dismissFormatCombos();

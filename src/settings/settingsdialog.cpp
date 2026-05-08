@@ -45,7 +45,6 @@ bool isValidServiceUrl(const QString& url)
 
 SettingsDialog::SettingsDialog(QWidget* parent) : QDialog(parent)
 {
-    setWindowTitle(qtTrId("lc-settings-title"));
     setMinimumSize(500, 400);
     resize(600, 450);
 
@@ -61,7 +60,7 @@ SettingsDialog::SettingsDialog(QWidget* parent) : QDialog(parent)
     languageCombo = new QComboBox(generalTab);
     languageCombo->addItem(QStringLiteral("English"), QStringLiteral("en"));
     languageCombo->addItem(QStringLiteral("Српски"), QStringLiteral("sr_RS"));
-    languageLabel = new QLabel(qtTrId("lc-settings-language"), generalTab);
+    languageLabel = new QLabel(generalTab);
     generalLayout->addRow(languageLabel, languageCombo);
 
     connect(languageCombo, &QComboBox::currentIndexChanged, this, [this]() {
@@ -69,7 +68,7 @@ SettingsDialog::SettingsDialog(QWidget* parent) : QDialog(parent)
         emit languageChanged(languageCombo->currentData().toString());
     });
 
-    tabs->addTab(generalTab, qtTrId("lc-settings-tab-general"));
+    tabs->addTab(generalTab, QString());
 
     // --- Signing tab ---
     auto* signingTab = new QWidget(this);
@@ -78,32 +77,32 @@ SettingsDialog::SettingsDialog(QWidget* parent) : QDialog(parent)
     auto* signingForm = new QFormLayout;
 
     defaultLevelCombo = new QComboBox(signingTab);
-    defaultLevelCombo->addItem(qtTrId("lc-sign-level-bb"), QStringLiteral("B_B"));
-    defaultLevelCombo->addItem(qtTrId("lc-sign-level-bt"), QStringLiteral("B_T"));
-    defaultLevelCombo->addItem(qtTrId("lc-sign-level-blt"), QStringLiteral("B_LT"));
-    defaultLevelCombo->addItem(qtTrId("lc-sign-level-blta"), QStringLiteral("B_LTA"));
-    defaultLevelLabel = new QLabel(qtTrId("lc-settings-default-level"), signingTab);
+    defaultLevelCombo->addItem(QString(), QStringLiteral("B_B"));
+    defaultLevelCombo->addItem(QString(), QStringLiteral("B_T"));
+    defaultLevelCombo->addItem(QString(), QStringLiteral("B_LT"));
+    defaultLevelCombo->addItem(QString(), QStringLiteral("B_LTA"));
+    defaultLevelLabel = new QLabel(signingTab);
     signingForm->addRow(defaultLevelLabel, defaultLevelCombo);
 
     auto* outputRow = new QHBoxLayout;
     defaultOutputFolder = new QLineEdit(signingTab);
     defaultOutputFolder->setReadOnly(true);
-    defaultOutputFolder->setPlaceholderText(qtTrId("lc-settings-output-placeholder"));
-    browseOutputBtn = new QPushButton(qtTrId("lc-sign-change-folder"), signingTab);
+    browseOutputBtn = new QPushButton(signingTab);
     outputRow->addWidget(defaultOutputFolder, 1);
     outputRow->addWidget(browseOutputBtn);
-    defaultOutputLabel = new QLabel(qtTrId("lc-settings-default-output"), signingTab);
+    defaultOutputLabel = new QLabel(signingTab);
     signingForm->addRow(defaultOutputLabel, outputRow);
 
     signingLayout->addLayout(signingForm);
 
     // TSA servers
-    tsaServersLabel = new QLabel(qtTrId("lc-settings-tsa-servers"), signingTab);
+    tsaServersLabel = new QLabel(signingTab);
     signingLayout->addWidget(tsaServersLabel);
     tsaList = new QListWidget(signingTab);
     tsaList->setMinimumHeight(100);
     signingLayout->addWidget(tsaList);
-    populateTsaList();
+    // populateTsaList() seeds the list and adds the translated "Add"
+    // sentinel row; called from retranslateUi() at end of ctor.
 
     auto* tsaDelegate = new TsaItemDelegate(tsaList, this);
     tsaList->setItemDelegate(tsaDelegate);
@@ -117,11 +116,13 @@ SettingsDialog::SettingsDialog(QWidget* parent) : QDialog(parent)
 
     signingLayout->addStretch();
 
-    tabs->addTab(signingTab, qtTrId("lc-settings-tab-signing"));
+    tabs->addTab(signingTab, QString());
 
     connect(browseOutputBtn, &QPushButton::clicked, this, [this]() {
-        QString dir = QFileDialog::getExistingDirectory(this, qtTrId("lc-sign-select-output-folder"),
-                                                        defaultOutputFolder->text());
+        const QString title =
+            qtTrId("lc-sign-select-output-folder"); // i18n-audit: ignore D2, transient file dialog — qtTrId evaluated
+                                                    // at click time, dialog discarded after exec()
+        QString dir = QFileDialog::getExistingDirectory(this, title, defaultOutputFolder->text());
         if (!dir.isEmpty())
             defaultOutputFolder->setText(dir);
     });
@@ -130,12 +131,13 @@ SettingsDialog::SettingsDialog(QWidget* parent) : QDialog(parent)
     auto* trustTab = new QWidget(this);
     auto* trustLayout = new QVBoxLayout(trustTab);
 
-    tlServersLabel = new QLabel(qtTrId("lc-settings-tl-servers"), trustTab);
+    tlServersLabel = new QLabel(trustTab);
     trustLayout->addWidget(tlServersLabel);
     tlList = new QListWidget(trustTab);
     tlList->setMinimumHeight(120);
     trustLayout->addWidget(tlList);
-    populateTlList();
+    // populateTlList() seeds the list and adds the translated "Add"
+    // sentinel row; called from retranslateUi() at end of ctor.
 
     auto* tlDelegate = new TlItemDelegate(tlList, this);
     tlList->setItemDelegate(tlDelegate);
@@ -151,19 +153,21 @@ SettingsDialog::SettingsDialog(QWidget* parent) : QDialog(parent)
     auto* cacheRow = new QHBoxLayout;
     cacheDir = new QLineEdit(trustTab);
     cacheDir->setReadOnly(true);
-    browseCacheBtn = new QPushButton(qtTrId("lc-sign-change-folder"), trustTab);
+    browseCacheBtn = new QPushButton(trustTab);
     cacheRow->addWidget(cacheDir, 1);
     cacheRow->addWidget(browseCacheBtn);
-    cacheDirLabel = new QLabel(qtTrId("lc-settings-cache-dir"), trustTab);
+    cacheDirLabel = new QLabel(trustTab);
     cacheForm->addRow(cacheDirLabel, cacheRow);
     trustLayout->addLayout(cacheForm);
 
     trustLayout->addStretch();
 
-    tabs->addTab(trustTab, qtTrId("lc-settings-tab-trust"));
+    tabs->addTab(trustTab, QString());
 
     connect(browseCacheBtn, &QPushButton::clicked, this, [this]() {
-        QString dir = QFileDialog::getExistingDirectory(this, qtTrId("lc-settings-cache-dir"), cacheDir->text());
+        const QString title = qtTrId("lc-settings-cache-dir"); // i18n-audit: ignore D2, transient file dialog — qtTrId
+                                                               // evaluated at click time, dialog discarded after exec()
+        QString dir = QFileDialog::getExistingDirectory(this, title, cacheDir->text());
         if (!dir.isEmpty())
             cacheDir->setText(dir);
     });
@@ -184,6 +188,11 @@ SettingsDialog::SettingsDialog(QWidget* parent) : QDialog(parent)
         reject();
     });
 
+    // Apply translations and seed the dynamic lists. This is the single
+    // source of truth for translatable widget state; LanguageChange
+    // re-runs retranslateUi(), which re-runs populateTsaList /
+    // populateTlList so the "Add" sentinel rows pick up the new locale.
+    retranslateUi();
     loadSettings();
 }
 
@@ -284,7 +293,10 @@ void SettingsDialog::populateTsaList()
 
 void SettingsDialog::onTsaAddRequested()
 {
-    QString url = QInputDialog::getText(this, qtTrId("lc-sign-tsa-add-title"), qtTrId("lc-sign-tsa-add-prompt"));
+    const auto title = qtTrId("lc-sign-tsa-add-title"); // i18n-audit: ignore D2, transient input dialog — opened on
+                                                        // user click, qtTrId evaluated at call time
+    const auto prompt = qtTrId("lc-sign-tsa-add-prompt");
+    QString url = QInputDialog::getText(this, title, prompt);
     url = url.trimmed();
     if (url.isEmpty())
         return;
@@ -391,7 +403,8 @@ void SettingsDialog::retranslateUi()
 void SettingsDialog::onTlAddRequested()
 {
     QDialog dlg(this);
-    dlg.setWindowTitle(qtTrId("lc-settings-tl-add-title"));
+    dlg.setWindowTitle(qtTrId("lc-settings-tl-add-title")); // i18n-audit: ignore D2, transient inline dialog — qtTrId
+                                                            // evaluated at click time, dlg destructed after exec()
     dlg.setMinimumWidth(400);
     auto* layout = new QVBoxLayout(&dlg);
     auto* form = new QFormLayout;

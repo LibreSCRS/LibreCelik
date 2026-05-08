@@ -102,7 +102,7 @@ bool isSigningCapable(const LibreSCRS::Plugin::CertificateData& cert)
 } // namespace
 
 TokenSection::TokenSection(std::shared_ptr<const LibreSCRS::Trust::TrustStore> store, QWidget* parent)
-    : CollapsibleSection(qtTrId("lc-token-title"), parent), trustStore(std::move(store))
+    : CollapsibleSection(QString(), parent), trustStore(std::move(store))
 {
     contentLayout = new QVBoxLayout(this);
     contentLayout->setSpacing(2);
@@ -113,7 +113,6 @@ TokenSection::TokenSection(std::shared_ptr<const LibreSCRS::Trust::TrustStore> s
     treeWidget = new QTreeWidget(this);
     treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     treeWidget->setUniformRowHeights(true);
-    treeWidget->setHeaderLabels({qtTrId("lc-token-col-object"), qtTrId("lc-token-col-details")});
     treeWidget->header()->setStretchLastSection(true);
     treeWidget->header()->resizeSection(0, 230);
     treeWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -122,9 +121,12 @@ TokenSection::TokenSection(std::shared_ptr<const LibreSCRS::Trust::TrustStore> s
     treeWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     applyTreeStyleSheet();
 
-    tokenCertsItem = new QTreeWidgetItem(treeWidget, QStringList{qtTrId("lc-eid-tree-certificates")});
+    // Header labels and root items are populated empty here; their text
+    // is supplied by retranslateUi() at the end of construction so that
+    // LanguageChange paths share a single source of truth.
+    tokenCertsItem = new QTreeWidgetItem(treeWidget);
     tokenCertsItem->setExpanded(true);
-    tokenPinItem = new QTreeWidgetItem(treeWidget, QStringList{qtTrId("lc-eid-tree-pin")});
+    tokenPinItem = new QTreeWidgetItem(treeWidget);
     tokenPinItem->setExpanded(true);
     tokenPinItem->setHidden(true);
 
@@ -137,7 +139,6 @@ TokenSection::TokenSection(std::shared_ptr<const LibreSCRS::Trust::TrustStore> s
         signBtn = new QToolButton(this);
         signBtn->setIcon(QIcon(QStringLiteral(":/images/sign-icon.svg")));
         signBtn->setIconSize(QSize(24, 24));
-        signBtn->setToolTip(qtTrId("lc-sign-button"));
         signBtn->setAutoRaise(true);
         signBtn->setEnabled(false);
         auto* dimEffect = new QGraphicsOpacityEffect(signBtn);
@@ -157,6 +158,10 @@ TokenSection::TokenSection(std::shared_ptr<const LibreSCRS::Trust::TrustStore> s
 #endif
 
     setExpanded(false);
+
+    // Apply initial translations (title, header columns, root-item
+    // labels, signBtn tooltip).
+    retranslateUi();
 
     connect(this, &CollapsibleSection::sectionExpanded, this, [this]() {
         for (QWidget* p = parentWidget(); p; p = p->parentWidget()) {
@@ -193,12 +198,23 @@ static QString formatSerialNumber(const LibreSCRS::Plugin::CardField& field)
     return hexParts.join(':');
 }
 
-void TokenSection::setTokenInfo(const LibreSCRS::Plugin::CardFieldGroup& tokenGroup)
+void TokenSection::setTokenInfo(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
-    if (tokenGroup.fields.empty())
+    if (group.fields.empty())
         return;
-    if (headerCard)
-        return;
+
+    // Cache the raw group so retranslateUi() can rebuild the header card
+    // with the current translator (per LM 4.0 retranslate pattern). The
+    // first call populates the header; subsequent calls (e.g. invoked from
+    // retranslateUi) clear and rebuild.
+    tokenGroup = group;
+    hasTokenGroup = true;
+
+    if (headerCard) {
+        contentLayout->removeWidget(headerCard);
+        headerCard->deleteLater();
+        headerCard = nullptr;
+    }
 
     std::vector<LibreSCRS::HeaderField> headerFields;
 
@@ -347,7 +363,9 @@ void TokenSection::onContextMenu(const QPoint& pos)
     if (isCertItem || isCertChild) {
         QTreeWidgetItem* certItem = isCertItem ? item : item->parent();
         int certIndex = tokenCertsItem->indexOfChild(certItem);
-        QAction* viewAction = menu.addAction(qtTrId("lc-eid-menu-view-cert"));
+        QAction* viewAction =
+            menu.addAction(qtTrId("lc-eid-menu-view-cert")); // i18n-audit: ignore D2, transient context-menu — qtTrId
+                                                             // evaluated per right-click; menu discarded after exec()
         connect(viewAction, &QAction::triggered, this, [this, certIndex]() {
             if (certificateList.empty())
                 return;
@@ -473,6 +491,8 @@ void TokenSection::retranslateUi()
         signBtn->setToolTip(qtTrId("lc-sign-button"));
 #endif
 
+    if (hasTokenGroup)
+        setTokenInfo(tokenGroup);
     setCertificates(certificateList);
     setPINList(pinList);
 }

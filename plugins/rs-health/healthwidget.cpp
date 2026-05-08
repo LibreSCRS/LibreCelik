@@ -75,15 +75,14 @@ HealthWidget::HealthWidget(const LibreSCRS::Plugin::CardData& cardData, QWidget*
 
 HealthWidget::HealthWidget(QWidget* parent) : plugin_ui::PluginWidgetBase(parent)
 {
+    outerLayout = new QVBoxLayout(this);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
     buildEmptyShell();
 }
 
 void HealthWidget::buildEmptyShell()
 {
     static const QColor navy(34, 86, 117);
-
-    auto* outerLayout = new QVBoxLayout(this);
-    outerLayout->setContentsMargins(0, 0, 0, 0);
 
     outerSection = new CollapsibleSection(qtTrId("lc-health-title"), navy, this);
     outerSection->setHeaderHeight(56);
@@ -102,7 +101,12 @@ void HealthWidget::buildEmptyShell()
 
 void HealthWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
-    // Accumulate into data for cardData() accessor and printing
+    // Cache the raw, untransformed group (rebuild source-of-truth).
+    rawGroups.push_back(group);
+
+    // Accumulate into data for cardData() accessor and printing.
+    // (transformPermanentlyValid mutates data.groups.back() — see
+    // addInsuranceGroup — so we keep rawGroups untouched.)
     data.groups.push_back(group);
 
     const auto& key = group.groupKey;
@@ -197,10 +201,23 @@ void HealthWidget::transformPermanentlyValid(LibreSCRS::Plugin::CardFieldGroup& 
 
 void HealthWidget::retranslateUi()
 {
-    if (outerSection)
-        outerSection->setTitle(qtTrId("lc-health-title"));
-    if (printBtn)
-        printBtn->setToolTip(qtTrId("lc-print-tooltip"));
-}
+    // Plugin widget rebuild-tier (April 2026 retranslate spec): tear
+    // down the shell and rebuild from rawGroups (the immutable
+    // source-of-truth — `data.groups` has been mutated by
+    // transformPermanentlyValid).
+    auto cachedRaw = std::move(rawGroups);
+    rawGroups.clear();
+    data.groups.clear();
 
-// buildLayout() removed — full-data constructor now delegates to empty + addGroup loop
+    if (outerSection) {
+        outerLayout->removeWidget(outerSection);
+        outerSection->deleteLater();
+        outerSection = nullptr;
+    }
+    contentLayout = nullptr;
+    printBtn = nullptr;
+
+    buildEmptyShell();
+    for (const auto& group : cachedRaw)
+        addGroup(group);
+}

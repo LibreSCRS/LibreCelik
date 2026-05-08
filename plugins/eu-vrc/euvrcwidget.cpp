@@ -29,14 +29,13 @@ EuVrcWidget::EuVrcWidget(const LibreSCRS::Plugin::CardData& cardData, QWidget* p
 
 EuVrcWidget::EuVrcWidget(QWidget* parent) : plugin_ui::PluginWidgetBase(parent)
 {
+    outerLayout = new QVBoxLayout(this);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
     buildShell();
 }
 
 void EuVrcWidget::buildShell()
 {
-    auto* outerLayout = new QVBoxLayout(this);
-    outerLayout->setContentsMargins(0, 0, 0, 0);
-
     outerSection = new CollapsibleSection(qtTrId("lc-euvrc-title"), QColor(34, 86, 117), this);
     outerSection->setHeaderHeight(56);
 
@@ -471,8 +470,21 @@ CollapsibleSection* EuVrcWidget::buildNationalSection(const LibreSCRS::Plugin::C
 
 void EuVrcWidget::retranslateUi()
 {
-    if (outerSection)
-        outerSection->setTitle(qtTrId("lc-euvrc-title"));
-    if (printBtn)
-        printBtn->setToolTip(qtTrId("lc-print-tooltip"));
+    // Plugin widget rebuild-tier (April 2026 retranslate spec): tear
+    // down the shell and rebuild from cached data.groups.
+    auto cachedGroups = std::move(data.groups);
+    data.groups.clear();
+
+    if (outerSection) {
+        outerLayout->removeWidget(outerSection);
+        outerSection->deleteLater();
+        outerSection = nullptr;
+    }
+    contentLayout = nullptr;
+    headerCard = nullptr;
+    printBtn = nullptr;
+
+    buildShell();
+    for (const auto& group : cachedGroups)
+        addGroup(group);
 }

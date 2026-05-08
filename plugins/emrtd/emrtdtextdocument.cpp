@@ -26,7 +26,9 @@ EMRTDTextDocument::EMRTDTextDocument(const LibreSCRS::Plugin::CardData& cardData
 
 void EMRTDTextDocument::translateDocumentData(QString& data) const
 {
-    data.replace("${title}", qtTrId("lc-emrtd-doc-title"));
+    data.replace(
+        "${title}",
+        qtTrId("lc-emrtd-doc-title")); // i18n-audit: ignore D1, PDF print formatter — fresh QTextDocument per print run
     data.replace("${printing_date}", qtTrId("lc-emrtd-doc-printing-date"));
     data.replace("${printing_date_value}", QDate::currentDate().toString("dd.MM.yyyy"));
 

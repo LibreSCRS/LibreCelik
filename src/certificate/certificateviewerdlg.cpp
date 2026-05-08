@@ -15,7 +15,8 @@ CertificateViewerDlg::CertificateViewerDlg(const std::vector<LibreSCRS::Plugin::
                                            int initialIndex)
     : QDialog(parent), trustStore(std::move(store))
 {
-    setWindowTitle(qtTrId("lc-cert-dialog-title"));
+    setWindowTitle(
+        qtTrId("lc-cert-dialog-title")); // i18n-audit: ignore D1, modal dialog re-opened fresh after language switch
     resize(600, 500);
 
     buildUI(certs);

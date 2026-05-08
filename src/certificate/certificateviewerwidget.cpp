@@ -10,6 +10,7 @@
 #include <LibreSCRS/Auth/ErrorKeys.h>
 #include <LibreSCRS/Certificate/ParsedCertificate.h>
 
+#include <QEvent>
 #include <QLineEdit>
 
 namespace lcc = LibreSCRS::Certificate;
@@ -177,4 +178,26 @@ void CertificateViewerWidget::onCertPathSelectionChanged(const QItemSelection& s
     // for the leaf — chain validation is chain-wide, not per-cert). Leave the
     // field empty rather than fabricating a misleading "Valid" indicator.
     ui->certPathStatusEdit->setText(status);
+}
+
+void CertificateViewerWidget::changeEvent(QEvent* event)
+{
+    if (event->type() == QEvent::LanguageChange)
+        retranslateUi();
+    QWidget::changeEvent(event);
+}
+
+void CertificateViewerWidget::retranslateUi()
+{
+    // The .ui-driven labels / tab titles retranslate automatically via
+    // Ui::CertificateViewerWidget::retranslateUi() (called by Qt's
+    // changeEvent on the .ui-attached QObjects). We re-apply the
+    // hand-coded "parse error" placeholder for the unparseable case so
+    // the user-visible text in the General tab tracks the new language.
+    ui->retranslateUi(this);
+    if (leafCertDer.empty() || !parsedCert)
+        populateUnparseableTab();
+    // The two tree models (CertificatePropertiesModel /
+    // CertificateHierarchyModel) self-retranslate via Qt::DisplayRole on
+    // next paint (see model classes — flagged D1 and inline-allowlisted).
 }

@@ -23,7 +23,10 @@ QWidget* EuVrcWidgetPlugin::createEmptyWidget(QWidget* parent) const
 void EuVrcWidgetPlugin::print(const LibreSCRS::Plugin::CardData& data) const
 {
     EuVrcTextDocument doc(data);
-    PrintManager::printDocument(doc, qtTrId("lc-euvrc-print-title"));
+    // clang-format off
+    const auto t = qtTrId("lc-euvrc-print-title"); // i18n-audit: ignore D1, PDF print formatter — fresh QTextDocument per print run
+    // clang-format on
+    PrintManager::printDocument(doc, t);
 }
 
 void EuVrcWidgetPlugin::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group, QWidget* widget) const

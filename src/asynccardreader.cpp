@@ -129,7 +129,9 @@ void AsyncCardReader::requestData()
                 [this, self]() {
                     if (!self)
                         return;
-                    emit errorOccurred(qtTrId("lc-error-no-connection"));
+                    emit errorOccurred(
+                        qtTrId("lc-error-no-connection")); // i18n-audit: ignore D1, transient status-bar message —
+                                                           // qtTrId evaluated at emit time on GUI thread, not retained
                     emit readingFinished();
                 },
                 Qt::QueuedConnection);

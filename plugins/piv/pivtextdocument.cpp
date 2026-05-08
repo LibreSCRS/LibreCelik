@@ -30,13 +30,14 @@ QString PIVTextDocument::emitRow(const QString& label, const QString& value) con
 QString PIVTextDocument::buildHtml(const LibreSCRS::Plugin::CardData& cardData) const
 {
     QString html;
-    html += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-            "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">\n"
-            "<head><title>" +
-            qtTrId("lc-piv-doc-title") +
-            "</title>\n"
-            "<link rel=\"stylesheet\" type=\"text/css\" href=\":/html/pivcard.css\" title=\"Style\"/>\n"
-            "</head>\n<body>\n";
+    html +=
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">\n"
+        "<head><title>" +
+        qtTrId("lc-piv-doc-title") + // i18n-audit: ignore D1, PDF print formatter — fresh QTextDocument per print run
+        "</title>\n"
+        "<link rel=\"stylesheet\" type=\"text/css\" href=\":/html/pivcard.css\" title=\"Style\"/>\n"
+        "</head>\n<body>\n";
 
     html += "<h1>" + qtTrId("lc-piv-doc-title") + "</h1>\n";
 

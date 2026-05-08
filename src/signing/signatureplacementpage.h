@@ -36,6 +36,7 @@ private:
     void updatePageLabel();
 
     void updatePreviewText();
+    void retranslateUi();
     QString buildSignatureText() const;
 
     PdfPreviewWidget* preview = nullptr;

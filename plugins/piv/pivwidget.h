@@ -47,6 +47,7 @@ private:
     void rebuildHeader();
 
     LibreSCRS::Plugin::CardData data;
+    QVBoxLayout* outerLayout = nullptr;
     QVBoxLayout* contentLayout = nullptr;
     CollapsibleSection* outerSection = nullptr;
     QToolButton* printBtn = nullptr;

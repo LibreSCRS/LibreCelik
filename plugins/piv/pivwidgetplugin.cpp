@@ -23,7 +23,9 @@ QWidget* PIVWidgetPlugin::createEmptyWidget(QWidget* parent) const
 void PIVWidgetPlugin::print(const LibreSCRS::Plugin::CardData& data) const
 {
     PIVTextDocument doc(data);
-    PrintManager::printDocument(doc, qtTrId("lc-piv-print-title"));
+    PrintManager::printDocument(
+        doc,
+        qtTrId("lc-piv-print-title")); // i18n-audit: ignore D1, PDF print formatter — fresh QTextDocument per print run
 }
 
 void PIVWidgetPlugin::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group, QWidget* widget) const

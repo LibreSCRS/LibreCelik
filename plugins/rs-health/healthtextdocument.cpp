@@ -21,7 +21,9 @@ HealthTextDocument::HealthTextDocument(const LibreSCRS::Plugin::CardData& cardDa
 
 void HealthTextDocument::translateDocumentData(QString& data) const
 {
-    data.replace("${title}", qtTrId("lc-health-doc-title"));
+    const auto title =
+        qtTrId("lc-health-doc-title"); // i18n-audit: ignore D1, PDF print formatter — fresh QTextDocument per print run
+    data.replace("${title}", title);
     data.replace("${printing_date}", qtTrId("lc-health-doc-printing-date"));
     data.replace("${printing_date_value}", QDate::currentDate().toString("dd.MM.yyyy"));
 

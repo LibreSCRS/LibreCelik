@@ -40,7 +40,6 @@ SignaturePlacementPage::SignaturePlacementPage(QWidget* parent) : QWidget(parent
 
     prevBtn = new QPushButton(QStringLiteral("<"), this);
     prevBtn->setFixedWidth(kNavButtonWidth);
-    prevBtn->setToolTip(qtTrId("lc-sign-page-prev"));
     navGroup->addWidget(prevBtn);
 
     pageSpinBox = new QSpinBox(this);
@@ -56,14 +55,12 @@ SignaturePlacementPage::SignaturePlacementPage(QWidget* parent) : QWidget(parent
 
     nextBtn = new QPushButton(QStringLiteral(">"), this);
     nextBtn->setFixedWidth(kNavButtonWidth);
-    nextBtn->setToolTip(qtTrId("lc-sign-page-next"));
     navGroup->addWidget(nextBtn);
 
     bottomBar->addLayout(navGroup);
     bottomBar->addStretch();
 
-    //% "Add visual signature"
-    visualSigCheckbox = new QCheckBox(qtTrId("lc-sign-visual-sig"), this);
+    visualSigCheckbox = new QCheckBox(this);
     visualSigCheckbox->setChecked(true);
     bottomBar->addWidget(visualSigCheckbox);
 
@@ -73,18 +70,14 @@ SignaturePlacementPage::SignaturePlacementPage(QWidget* parent) : QWidget(parent
     auto* fieldsWidget = new QWidget(this);
     auto* fieldsRow = new QHBoxLayout(fieldsWidget);
     fieldsRow->setContentsMargins(0, 0, 0, 0);
-    //% "Reason:"
-    reasonLabel = new QLabel(qtTrId("lc-sign-visual-reason"), fieldsWidget);
+    reasonLabel = new QLabel(fieldsWidget);
     fieldsRow->addWidget(reasonLabel);
     reasonEdit = new QLineEdit(fieldsWidget);
-    reasonEdit->setPlaceholderText(qtTrId("lc-sign-visual-reason-placeholder"));
     fieldsRow->addWidget(reasonEdit, 1);
     fieldsRow->addSpacing(10);
-    //% "Location:"
-    locationLabel = new QLabel(qtTrId("lc-sign-visual-location"), fieldsWidget);
+    locationLabel = new QLabel(fieldsWidget);
     fieldsRow->addWidget(locationLabel);
     locationEdit = new QLineEdit(fieldsWidget);
-    locationEdit->setPlaceholderText(qtTrId("lc-sign-visual-location-placeholder"));
     fieldsRow->addWidget(locationEdit, 1);
     layout->addWidget(fieldsWidget);
 
@@ -101,22 +94,30 @@ SignaturePlacementPage::SignaturePlacementPage(QWidget* parent) : QWidget(parent
     QSettings settings(settings::kOrganization, settings::kApplication);
     reasonEdit->setText(settings.value(settings::kSigningReason).toString());
     locationEdit->setText(settings.value(settings::kSigningLocation).toString());
+
+    // Apply translations once at end of construction; LanguageChange
+    // re-runs retranslateUi() (single source of truth).
+    retranslateUi();
 }
 
 void SignaturePlacementPage::changeEvent(QEvent* event)
 {
-    if (event->type() == QEvent::LanguageChange) {
-        prevBtn->setToolTip(qtTrId("lc-sign-page-prev"));
-        nextBtn->setToolTip(qtTrId("lc-sign-page-next"));
-        visualSigCheckbox->setText(qtTrId("lc-sign-visual-sig"));
-        reasonLabel->setText(qtTrId("lc-sign-visual-reason"));
-        reasonEdit->setPlaceholderText(qtTrId("lc-sign-visual-reason-placeholder"));
-        locationLabel->setText(qtTrId("lc-sign-visual-location"));
-        locationEdit->setPlaceholderText(qtTrId("lc-sign-visual-location-placeholder"));
-        updatePageLabel();
-        updatePreviewText();
-    }
+    if (event->type() == QEvent::LanguageChange)
+        retranslateUi();
     QWidget::changeEvent(event);
+}
+
+void SignaturePlacementPage::retranslateUi()
+{
+    prevBtn->setToolTip(qtTrId("lc-sign-page-prev"));
+    nextBtn->setToolTip(qtTrId("lc-sign-page-next"));
+    visualSigCheckbox->setText(qtTrId("lc-sign-visual-sig"));
+    reasonLabel->setText(qtTrId("lc-sign-visual-reason"));
+    reasonEdit->setPlaceholderText(qtTrId("lc-sign-visual-reason-placeholder"));
+    locationLabel->setText(qtTrId("lc-sign-visual-location"));
+    locationEdit->setPlaceholderText(qtTrId("lc-sign-visual-location-placeholder"));
+    updatePageLabel();
+    updatePreviewText();
 }
 
 void SignaturePlacementPage::loadPdf(const QString& path, const QString& signerName, const QString& issuer)

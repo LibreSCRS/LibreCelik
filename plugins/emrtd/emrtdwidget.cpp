@@ -100,7 +100,11 @@ EMRTDWidget::EMRTDWidget(QWidget* parent) : plugin_ui::PluginWidgetBase(parent)
 {
     outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
+    buildShell();
+}
 
+void EMRTDWidget::buildShell()
+{
     // Navy outer CollapsibleSection — shell for Phase 2 travel document display
     static const QColor navy(34, 86, 117);
     outerSection = new CollapsibleSection(qtTrId("lc-emrtd-travel-document"), navy, this);
@@ -293,49 +297,11 @@ void EMRTDWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
     }
 }
 
-void EMRTDWidget::showAuthRequired(const LibreSCRS::Plugin::CardFieldGroup* group)
-{
-    auto* layout = qobject_cast<QVBoxLayout*>(this->layout());
-
-    auto* titleLabel = new QLabel(qtTrId("lc-emrtd-auth-required"));
-    titleLabel->setStyleSheet("font-size: 16px; font-weight: bold; color: #E6873C;");
-    layout->addWidget(titleLabel);
-
-    auto* statusLabel = new QLabel(getFieldValue(group, "status"));
-    layout->addWidget(statusLabel);
-
-    auto paceSupported = getFieldValue(group, "pace_supported");
-    if (paceSupported == "true") {
-        auto* paceLabel = new QLabel("PACE: " + getFieldValue(group, "pace_oids"));
-        paceLabel->setWordWrap(true);
-        layout->addWidget(paceLabel);
-    }
-
-    auto* infoLabel = new QLabel(qtTrId("lc-emrtd-insert-mrz-hint"));
-    infoLabel->setWordWrap(true);
-    layout->addWidget(infoLabel);
-
-    layout->addStretch();
-}
-
-void EMRTDWidget::showError(const LibreSCRS::Plugin::CardFieldGroup* group)
-{
-    auto* layout = qobject_cast<QVBoxLayout*>(this->layout());
-
-    auto* errorLabel = new QLabel(qtTrId("lc-emrtd-auth-failed"));
-    errorLabel->setStyleSheet("font-size: 16px; font-weight: bold; color: #E6873C;");
-    layout->addWidget(errorLabel);
-
-    auto* detailLabel = new QLabel(getFieldValue(group, "error"));
-    detailLabel->setWordWrap(true);
-    layout->addWidget(detailLabel);
-
-    layout->addStretch();
-}
-
 void EMRTDWidget::showNoDataMessage()
 {
+    noDataMessageShown = true;
     auto* msgLabel = new QLabel(qtTrId("lc-emrtd-no-data-message"), outerSection);
+    msgLabel->setObjectName(QStringLiteral("emrtdNoDataMessage"));
     msgLabel->setWordWrap(true);
     msgLabel->setStyleSheet("color: #CC3333; font-size: 13px; padding: 12px;");
     sectionLayout->addWidget(msgLabel);
@@ -350,8 +316,27 @@ void EMRTDWidget::enablePrintButton()
 
 void EMRTDWidget::retranslateUi()
 {
-    if (outerSection)
-        outerSection->setTitle(qtTrId("lc-emrtd-travel-document"));
-    if (printBtn)
-        printBtn->setToolTip(qtTrId("lc-print-tooltip"));
+    // Plugin widget rebuild-tier (April 2026 retranslate spec): tear
+    // down the shell and rebuild from cached data.groups so every label
+    // produced via translation maps refreshes with the new translator.
+    auto cachedGroups = std::move(data.groups);
+    data.groups.clear();
+    const bool hadNoData = noDataMessageShown;
+    noDataMessageShown = false;
+
+    if (outerSection) {
+        outerLayout->removeWidget(outerSection);
+        outerSection->deleteLater();
+        outerSection = nullptr;
+    }
+    sectionLayout = nullptr;
+    photoLabel = nullptr;
+    securityStatusWidget = nullptr;
+    printBtn = nullptr;
+
+    buildShell();
+    for (const auto& group : cachedGroups)
+        addGroup(group);
+    if (hadNoData)
+        showNoDataMessage();
 }

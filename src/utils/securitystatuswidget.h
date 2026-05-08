@@ -23,6 +23,8 @@ protected:
 private:
     void buildLayout();
     void retranslateUi();
+    void refreshSummaryRows();
+    void rebuildDetailRows();
     QWidget* createStatusRow(const QString& label, LibreSCRS::Plugin::SecurityCheck::Status status);
     QString statusColor(LibreSCRS::Plugin::SecurityCheck::Status status) const;
     QString statusText(LibreSCRS::Plugin::SecurityCheck::Status status) const;
@@ -36,4 +38,8 @@ private:
     QLabel* genuinenessIcon = nullptr;
     QLabel* genuinenessLabel = nullptr;
     QWidget* detailWidget = nullptr;
+    // Cached for retranslate-on-language-change. hasStatus distinguishes
+    // "never set" (initial NotPerformed display) from "real status applied".
+    LibreSCRS::Plugin::SecurityStatus cachedStatus;
+    bool hasStatus = false;
 };

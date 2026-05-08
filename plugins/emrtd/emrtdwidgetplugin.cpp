@@ -35,5 +35,7 @@ void EMRTDWidgetPlugin::showNoDataMessage(QWidget* widget) const
 void EMRTDWidgetPlugin::print(const LibreSCRS::Plugin::CardData& data) const
 {
     EMRTDTextDocument doc(data);
-    PrintManager::printDocument(doc, qtTrId("lc-emrtd-doc-title"));
+    PrintManager::printDocument(
+        doc,
+        qtTrId("lc-emrtd-doc-title")); // i18n-audit: ignore D1, PDF print formatter — fresh QTextDocument per print run
 }

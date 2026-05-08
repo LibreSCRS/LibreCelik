@@ -23,7 +23,10 @@ QWidget* RsHealthWidgetPlugin::createEmptyWidget(QWidget* parent) const
 void RsHealthWidgetPlugin::print(const LibreSCRS::Plugin::CardData& data) const
 {
     HealthTextDocument doc(data);
-    PrintManager::printDocument(doc, qtTrId("lc-health-print-title"));
+    // clang-format off
+    const auto t = qtTrId("lc-health-print-title"); // i18n-audit: ignore D1, PDF print formatter — fresh QTextDocument per print run
+    // clang-format on
+    PrintManager::printDocument(doc, t);
 }
 
 void RsHealthWidgetPlugin::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group, QWidget* widget) const

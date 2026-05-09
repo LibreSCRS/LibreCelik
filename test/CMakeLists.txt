@@ -382,9 +382,15 @@ target_link_libraries(i18n_settings_state_test PRIVATE
     Qt6::Test
 )
 set_target_properties(i18n_settings_state_test PROPERTIES AUTOMOC ON)
+target_compile_definitions(i18n_settings_state_test PRIVATE
+    # Build-tree .qm directory baked in at compile time so the fixture can
+    # find LibreCelik_*.qm without depending on a CTest ENVIRONMENT property
+    # that CMake's gtest_discover_tests fails to forward correctly when more
+    # than one var is listed (the var list is expanded as separate args).
+    LIBRECELIK_TRANSLATIONS_DIR_DEFAULT="${CMAKE_BINARY_DIR}/src")
 add_dependencies(i18n_settings_state_test LibreCelik_lrelease)
 gtest_discover_tests(i18n_settings_state_test PROPERTIES ENVIRONMENT
-    "QT_QPA_PLATFORM=offscreen;LIBRECELIK_TRANSLATIONS_DIR=${CMAKE_BINARY_DIR}/src")
+    "QT_QPA_PLATFORM=offscreen")
 
 # --- D9 runtime test: plugin card-widget retranslate coverage ---
 #
@@ -425,9 +431,11 @@ target_link_libraries(i18n_plugin_retranslate_test PRIVATE
     CardPlugin_Impl
 )
 set_target_properties(i18n_plugin_retranslate_test PROPERTIES AUTOMOC ON)
+target_compile_definitions(i18n_plugin_retranslate_test PRIVATE
+    LIBRECELIK_TRANSLATIONS_DIR_DEFAULT="${CMAKE_BINARY_DIR}/src")
 add_dependencies(i18n_plugin_retranslate_test LibreCelik_lrelease)
 gtest_discover_tests(i18n_plugin_retranslate_test PROPERTIES ENVIRONMENT
-    "QT_QPA_PLATFORM=offscreen;LIBRECELIK_TRANSLATIONS_DIR=${CMAKE_BINARY_DIR}/src")
+    "QT_QPA_PLATFORM=offscreen")
 
 if(LIBRECELIK_SIGNING_ENABLED)
     find_package(Qt6 REQUIRED COMPONENTS PdfWidgets)

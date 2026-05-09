@@ -157,15 +157,27 @@ void snapshotWidgetRoles(QWidget* w, QMap<QString, QString>& out, int& dfsCounte
 
 QString RetranslatableWidgetFixture::translationsDir()
 {
-    // Resolve via env override first (CI sets LIBRECELIK_TRANSLATIONS_DIR).
+    // 1. Env override wins (advanced users / sandboxed CI).
     const QByteArray env = qgetenv("LIBRECELIK_TRANSLATIONS_DIR");
     if (!env.isEmpty()) {
         const QString p = QString::fromLocal8Bit(env);
         if (QFileInfo(p).isDir())
             return p;
     }
-    // Walk up from the test-binary directory looking for a build-tree
-    // i18n directory containing LibreCelik_*.qm.
+    // 2. Build-tree path baked in at compile time (CMakeLists.txt for the
+    //    i18n test targets passes -DLIBRECELIK_TRANSLATIONS_DIR_DEFAULT=
+    //    "${CMAKE_BINARY_DIR}/src"). This path is reliably correct in CI
+    //    where ENVIRONMENT-property forwarding to ctest fails for multi-var
+    //    lists (gtest_discover_tests + CMake list-expansion drops elements).
+#ifdef LIBRECELIK_TRANSLATIONS_DIR_DEFAULT
+    {
+        const QString baked = QStringLiteral(LIBRECELIK_TRANSLATIONS_DIR_DEFAULT);
+        if (QDir(baked).exists())
+            return baked;
+    }
+#endif
+    // 3. Walk up from the test-binary directory looking for a build-tree
+    //    i18n directory containing LibreCelik_*.qm (install-tree fallback).
     QDir d(QCoreApplication::applicationDirPath());
     for (int i = 0; i < 6; ++i) {
         for (const QString& cand : {

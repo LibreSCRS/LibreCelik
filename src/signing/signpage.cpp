@@ -4,7 +4,6 @@
 #include "signpage.h"
 
 #include "certutils.h"
-#include "pkcs11utils.h"
 #include "resultdelegate.h"
 #include "signingcolors.h"
 #include "utils/iconutils.h"
@@ -452,7 +451,6 @@ void SignPage::startSigning()
 
     const int totalFiles = fileInfos.count();
 
-    const QString pkcs11Path = signing::findPkcs11Module();
     const std::string keyAlias = certificate.label;
     const LibreSCRS::Signing::SignatureLevel level = parseLevel(sigLevel);
 

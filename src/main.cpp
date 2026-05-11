@@ -3,7 +3,6 @@
 
 #include "librecelik.h"
 #include "config.h"
-#include "signing/pkcs11utils.h"
 #include "smartcard/smartcardreaderlistener.h"
 #include "utils/libreceliklog.h"
 
@@ -36,15 +35,6 @@ int main(int argc, char* argv[])
     // once, before any signal carrying it is connected, otherwise
     // QueuedConnection invocation aborts.
     qRegisterMetaType<LibreSCRS::Secure::String>();
-
-    // LibreMiddleware's signing engine resolves the PKCS#11 module via an
-    // exe-relative search at sign() time, but the search list is Linux-only
-    // (it relies on /proc/self/exe). Hand it the LC-resolved path through
-    // the documented LIBRESCRS_PKCS11_MODULE override so macOS dev builds
-    // and packaged .app bundles both pick up the bundled module without
-    // touching LM. Don't overwrite an explicit override the user set.
-    if (!qEnvironmentVariableIsSet("LIBRESCRS_PKCS11_MODULE"))
-        qputenv("LIBRESCRS_PKCS11_MODULE", signing::findPkcs11Module().toUtf8());
 
     qCInfo(lcGeneral) << "Starting LibreCelik - Version: " << LIBRECELIK_VERSION;
 #if defined(LIBRECELIK_LOCAL_MIDDLEWARE_VERSION) && LIBRECELIK_LOCAL_MIDDLEWARE_VERSION

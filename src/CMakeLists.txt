@@ -106,8 +106,6 @@ if(LIBRECELIK_SIGNING_ENABLED)
         signing/signatureplacementpage.cpp
         signing/signpage.h
         signing/signpage.cpp
-        signing/pkcs11utils.h
-        signing/pkcs11utils.cpp
         signing/slot_label_formatter.h
         signing/slot_label_formatter.cpp
         signing/pdfpreviewwidget.h

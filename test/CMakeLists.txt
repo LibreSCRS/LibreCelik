@@ -510,7 +510,6 @@ if(LIBRECELIK_SIGNING_ENABLED)
         ${CMAKE_SOURCE_DIR}/src/signing/resultdelegate.cpp
         ${CMAKE_SOURCE_DIR}/src/utils/buttonbox.cpp
         ${CMAKE_SOURCE_DIR}/src/utils/dialogs.cpp
-        ${CMAKE_SOURCE_DIR}/src/signing/pkcs11utils.cpp
     )
     target_include_directories(SigningWizardE2ETests PRIVATE
         ${CMAKE_SOURCE_DIR}/src

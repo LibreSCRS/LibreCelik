@@ -32,33 +32,42 @@ endif()
 
 set(MIDDLEWARE_VERSION 4.0.0)
 
-# Fetch LibreMiddleware (smartcard, rs-eid, rs-health, eu-vrc, emrtd, piv, pkcs15 libraries)
-include(FetchContent)
-FetchContent_Declare(LibreMiddleware
-    GIT_REPOSITORY https://github.com/LibreSCRS/LibreMiddleware.git
-    GIT_TAG ${MIDDLEWARE_VERSION}
-)
-FetchContent_MakeAvailable(LibreMiddleware)
+# Hybrid LM consumption: FetchContent (default) or find_package(CONFIG).
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOrUseLibreMiddleware.cmake)
 
-# Read the actual version from LibreMiddleware's own git tags.
-# When using a local checkout (FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE),
-# append "-local" so the UI clearly shows it's a development build.
-execute_process(
-    COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
-    WORKING_DIRECTORY ${libremiddleware_SOURCE_DIR}
-    OUTPUT_VARIABLE MW_GIT_VERSION
-    RESULT_VARIABLE MW_GIT_RESULT
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-if(MW_GIT_RESULT EQUAL 0 AND MW_GIT_VERSION)
-    set(MIDDLEWARE_VERSION ${MW_GIT_VERSION})
-endif()
-if(FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE)
-    set(MIDDLEWARE_VERSION "${MIDDLEWARE_VERSION}-local")
-endif()
+if(NOT LIBRECELIK_USE_INSTALLED_LM)
+    # Fetch LibreMiddleware (smartcard, rs-eid, rs-health, eu-vrc, emrtd, piv, pkcs15 libraries)
+    include(FetchContent)
+    FetchContent_Declare(LibreMiddleware
+        GIT_REPOSITORY https://github.com/LibreSCRS/LibreMiddleware.git
+        GIT_TAG ${MIDDLEWARE_VERSION}
+    )
+    FetchContent_MakeAvailable(LibreMiddleware)
 
-# Add LibreMiddleware's cmake modules to our path (for FindPCSC, FindUUID)
-list(APPEND CMAKE_MODULE_PATH "${libremiddleware_SOURCE_DIR}/cmake")
+    # Read the actual version from LibreMiddleware's own git tags.
+    # When using a local checkout (FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE),
+    # append "-local" so the UI clearly shows it's a development build.
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
+        WORKING_DIRECTORY ${libremiddleware_SOURCE_DIR}
+        OUTPUT_VARIABLE MW_GIT_VERSION
+        RESULT_VARIABLE MW_GIT_RESULT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(MW_GIT_RESULT EQUAL 0 AND MW_GIT_VERSION)
+        set(MIDDLEWARE_VERSION ${MW_GIT_VERSION})
+    endif()
+    if(FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE)
+        set(MIDDLEWARE_VERSION "${MIDDLEWARE_VERSION}-local")
+    endif()
+
+    # Add LibreMiddleware's cmake modules to our path (for FindPCSC, FindUUID)
+    list(APPEND CMAKE_MODULE_PATH "${libremiddleware_SOURCE_DIR}/cmake")
+else()
+    # CONFIG-package mode: take version from the package, and rely on the
+    # installed LibreMiddlewareConfig.cmake to have re-exposed FindPCSC etc.
+    set(MIDDLEWARE_VERSION ${LibreMiddleware_VERSION})
+endif()
 
 # Digital signing UI — requires LibreMiddleware built with BUILD_SIGNING=ON.
 # Can be independently disabled even if LM has signing support.

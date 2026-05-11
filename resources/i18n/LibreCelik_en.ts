@@ -2132,6 +2132,18 @@
         <source>Discard</source>
         <translation>Discard</translation>
     </message>
+    <message id="lc-pin-label-auth">
+        <source>Authentication</source>
+        <translation>Authentication</translation>
+    </message>
+    <message id="lc-pin-label-qscd">
+        <source>Signing (QSCD)</source>
+        <translation>Signing (QSCD)</translation>
+    </message>
+    <message id="lc-pin-label-sign">
+        <source>Signing</source>
+        <translation>Signing</translation>
+    </message>
     <message id="lc-reader-unsupported-card">
         <location filename="../../src/librecelik.cpp" line="298"/>
         <location filename="../../src/librecelik.cpp" line="316"/>

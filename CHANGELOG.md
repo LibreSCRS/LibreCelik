@@ -10,6 +10,27 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- New translation strings `lc-pin-label-auth`, `lc-pin-label-qscd`,
+  and `lc-pin-label-sign` (English + Serbian Cyrillic) used by the
+  signing wizard's PKCS#11 multi-slot dropdown.
+- New `librecelik::signing::formatSlotLabel()` helper
+  (`src/signing/slot_label_formatter.{h,cpp}`) that composes
+  `<token> — <localised PIN label>` for the wizard slot dropdown.
+  5 GTest cases (`test/slot_label_formatter_test.cpp`).
+
+### Changed
+
+- Signing wizard slot dropdown now lists each PKCS#11 slot
+  separately. Multi-PIN cards (e.g. Serbian GEO eID) show two
+  entries: `<token> — Authentication` and
+  `<token> — Signing (QSCD)`. Default selection prioritises the
+  QSCD slot, then the Signing slot, then the first slot in the
+  list. Single-PIN cards (rs-eid Apollo, PIV, plain PKCS#15)
+  continue to show a single dropdown entry — UX unchanged for
+  them.
+
 ## [4.0.0-rc2] — 2026-05-08
 
 ### Added — internationalisation (i18n) audit infrastructure

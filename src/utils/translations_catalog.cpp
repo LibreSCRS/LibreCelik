@@ -1153,6 +1153,17 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-btn-ignore");
     //% "Discard"
     QT_TRID_NOOP("lc-btn-discard");
+
+    // --- signing wizard PKCS#11 slot labels (multi-PIN cards) ---
+    // Used by librecelik::signing::formatSlotLabel to render one
+    // dropdown entry per PKCS#11 slot for cards exposing multiple
+    // PINs (e.g. Serbian GEO eID Auth + Signing (QSCD) slots).
+    //% "Authentication"
+    QT_TRID_NOOP("lc-pin-label-auth");
+    //% "Signing (QSCD)"
+    QT_TRID_NOOP("lc-pin-label-qscd");
+    //% "Signing"
+    QT_TRID_NOOP("lc-pin-label-sign");
 }
 
 QT_WARNING_POP

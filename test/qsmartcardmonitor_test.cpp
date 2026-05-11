@@ -21,8 +21,8 @@ TEST(QSmartCardMonitorTest, ConstructDestruct)
     QCoreApplication app(argc, nullptr);
     qRegisterMetaType<MonitorEvent>("LibreSCRS::SmartCard::MonitorEvent");
 
-    auto counters = std::make_shared<smartcard::MockCounters>();
-    auto mock = std::make_unique<smartcard::MockPCSCScanProvider>(counters);
+    auto counters = std::make_shared<LibreSCRS::SmartCard::Internal::MockCounters>();
+    auto mock = std::make_unique<LibreSCRS::SmartCard::Internal::MockPCSCScanProvider>(counters);
     mock->pushStatusChange({SCARD_S_SUCCESS, {SCARD_STATE_UNKNOWN}, false});
 
     auto monitor = LibreSCRS::SmartCard::detail::makeMonitorWithProvider(std::move(mock));
@@ -42,8 +42,8 @@ TEST(QSmartCardMonitorTest, CardInsertedSignalEmitted)
     QCoreApplication app(argc, nullptr);
     qRegisterMetaType<MonitorEvent>("LibreSCRS::SmartCard::MonitorEvent");
 
-    auto counters = std::make_shared<smartcard::MockCounters>();
-    auto mock = std::make_unique<smartcard::MockPCSCScanProvider>(counters);
+    auto counters = std::make_shared<LibreSCRS::SmartCard::Internal::MockCounters>();
+    auto mock = std::make_unique<LibreSCRS::SmartCard::Internal::MockPCSCScanProvider>(counters);
     mock->setReaders({"Reader A"});
 
     // PnP check: supported
@@ -79,8 +79,8 @@ TEST(QSmartCardMonitorTest, CardRemovedSignalEmitted)
     QCoreApplication app(argc, nullptr);
     qRegisterMetaType<MonitorEvent>("LibreSCRS::SmartCard::MonitorEvent");
 
-    auto counters = std::make_shared<smartcard::MockCounters>();
-    auto mock = std::make_unique<smartcard::MockPCSCScanProvider>(counters);
+    auto counters = std::make_shared<LibreSCRS::SmartCard::Internal::MockCounters>();
+    auto mock = std::make_unique<LibreSCRS::SmartCard::Internal::MockPCSCScanProvider>(counters);
     mock->setReaders({"Reader A"});
     // PnP check
     mock->pushStatusChange({SCARD_S_SUCCESS, {SCARD_STATE_CHANGED}, false});
@@ -107,8 +107,8 @@ TEST(QSmartCardMonitorTest, ReaderListContentVerified)
     int argc = 0;
     QCoreApplication app(argc, nullptr);
 
-    auto counters = std::make_shared<smartcard::MockCounters>();
-    auto mock = std::make_unique<smartcard::MockPCSCScanProvider>(counters);
+    auto counters = std::make_shared<LibreSCRS::SmartCard::Internal::MockCounters>();
+    auto mock = std::make_unique<LibreSCRS::SmartCard::Internal::MockPCSCScanProvider>(counters);
     mock->setReaders({"Reader A", "Reader B"});
     // PnP check
     mock->pushStatusChange({SCARD_S_SUCCESS, {SCARD_STATE_CHANGED}, false});

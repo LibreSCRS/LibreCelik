@@ -117,13 +117,19 @@ target_link_libraries(QSmartCardMonitorTests PRIVATE
 )
 # detail/MonitorInjection.h is internal: #error-guarded behind
 # LIBRESCRS_INTERNAL_BUILD. Mirrors LM's LibreSCRS_MonitorTests setup.
+# Only valid in FetchContent mode (LM internal headers not installed
+# in CONFIG-package consumption).
 target_compile_definitions(QSmartCardMonitorTests PRIVATE LIBRESCRS_INTERNAL_BUILD)
-target_include_directories(QSmartCardMonitorTests PRIVATE
-    ${CMAKE_SOURCE_DIR}/src
-    ${libremiddleware_SOURCE_DIR}/test
-    ${libremiddleware_SOURCE_DIR}/lib/smartcard/src
-)
-gtest_discover_tests(QSmartCardMonitorTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+if(DEFINED libremiddleware_SOURCE_DIR)
+    target_include_directories(QSmartCardMonitorTests PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+        ${libremiddleware_SOURCE_DIR}/test
+        ${libremiddleware_SOURCE_DIR}/lib/smartcard/src
+    )
+    gtest_discover_tests(QSmartCardMonitorTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+else()
+    message(STATUS "QSmartCardMonitorTests: skipped (requires FetchContent mode for LM internal headers)")
+endif()
 
 add_executable(EuVrcTextDocumentTests
     euvrctextdocument_test.cpp
@@ -161,6 +167,30 @@ target_link_libraries(StringUtilsTests
 )
 set_target_properties(StringUtilsTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(StringUtilsTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# Pure helper — exercises librecelik::signing::formatSlotLabel which
+# composes "<token> — <localised PIN label>" for the multi-PIN PKCS#11
+# slot dropdown. No widgets, no signing service; QCoreApplication is
+# fixture-installed so qtTrId() returns the catalog-default English
+# strings without a translator.
+add_executable(SlotLabelFormatterTests
+    slot_label_formatter_test.cpp
+    ${CMAKE_SOURCE_DIR}/src/signing/slot_label_formatter.cpp
+)
+target_include_directories(SlotLabelFormatterTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+target_link_libraries(SlotLabelFormatterTests
+    GTest::gtest_main
+    Qt6::Core
+)
+target_compile_definitions(SlotLabelFormatterTests PRIVATE
+    # Build-tree .qm directory baked in at compile time so the test can
+    # load LibreCelik_en.qm without depending on a CTest ENVIRONMENT
+    # property (mirrors i18n_settings_state_test).
+    LIBRECELIK_TRANSLATIONS_DIR_DEFAULT="${CMAKE_BINARY_DIR}/src")
+add_dependencies(SlotLabelFormatterTests LibreCelik_lrelease)
+gtest_discover_tests(SlotLabelFormatterTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # Pure helper — only Qt::Core needed (QString, QLocale, QStringList).
 # No QApplication, no widgets; runs in milliseconds without any UI
@@ -498,10 +528,18 @@ if(LIBRECELIK_SIGNING_ENABLED)
         LibreSCRS::Certificate
         PCSC::PCSC
     )
+    # libremiddleware_SOURCE_DIR is set in FetchContent mode; in installed-LM
+    # (CONFIG) mode the DSS jar discovery falls back to a runtime-configured
+    # path. Tests that require DSS will skip when the jar is unreachable.
+    if(NOT DEFINED libremiddleware_SOURCE_DIR)
+        set(_dss_jar_dir "")
+    else()
+        set(_dss_jar_dir "${libremiddleware_SOURCE_DIR}/tools/dss-service/target")
+    endif()
     target_compile_definitions(SigningWizardE2ETests PRIVATE
-        MIDDLEWARE_PLUGIN_DIR="$<TARGET_FILE_DIR:piv-plugin>"
+        MIDDLEWARE_PLUGIN_DIR="$<TARGET_FILE_DIR:pkcs15-plugin>"
         PKCS11_MODULE_PATH="$<TARGET_FILE:librescrs-pkcs11>"
-        DSS_JAR_DIR="${libremiddleware_SOURCE_DIR}/tools/dss-service/target"
+        DSS_JAR_DIR="${_dss_jar_dir}"
         # qt_add_translations binds the :/i18n/ resource only to the main
         # LibreCelik target, so the test binary loads the .qm from the
         # build dir directly. The path tracks where qt_add_translations
@@ -510,6 +548,6 @@ if(LIBRECELIK_SIGNING_ENABLED)
         LIBRESCRS_TESTING
     )
     set_target_properties(SigningWizardE2ETests PROPERTIES AUTOMOC ON)
-    add_dependencies(SigningWizardE2ETests piv-plugin pkcs15-plugin cardedge-plugin librescrs-pkcs11 LibreCelik_lrelease)
+    add_dependencies(SigningWizardE2ETests pkcs15-plugin librescrs-pkcs11 LibreCelik_lrelease)
     gtest_discover_tests(SigningWizardE2ETests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()

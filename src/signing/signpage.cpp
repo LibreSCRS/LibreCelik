@@ -406,12 +406,18 @@ void SignPage::startSigning()
     }
 
     // M4: Warn if certificate is expired and level is B-B (no revocation data embedded)
+    // Capture the user's accept decision so the per-job SigningRequest builder
+    // below can honour it via SigningRequest::Builder::allowExpiredCert(true);
+    // without this, the signing service would refuse the sign downstream even
+    // though the user explicitly opted in at the warning gate.
+    bool allowExpiredCert = false;
     if (sigLevel == QStringLiteral("B_B") && signing::isCertificateExpired(certificate.derBytes)) {
         auto answer = librecelik::dialogs::warning(this, qtTrId("lc-sign-expired-cert-title"),
                                                    qtTrId("lc-sign-expired-cert-message"),
                                                    QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
         if (answer != QMessageBox::Yes)
             return;
+        allowExpiredCert = true;
     }
 
     signingInProgress = true;
@@ -478,7 +484,8 @@ void SignPage::startSigning()
     workerThread = QThread::create([this, guard, jobs, pinSecure = std::move(pinSecure),
                                     canSecure = std::move(canSecure), keyAlias, level, totalFiles,
                                     visualTemplate = std::move(visualTemplate), svc, plugin,
-                                    session = std::move(activeSession), tsaUrl = std::move(tsaUrlCopy)]() mutable {
+                                    session = std::move(activeSession), tsaUrl = std::move(tsaUrlCopy),
+                                    allowExpiredCert]() mutable {
         int succeeded = 0;
         int failed = 0;
         try {
@@ -530,6 +537,8 @@ void SignPage::startSigning()
                     rb.tsaOverride(LibreSCRS::Signing::staticTsa(tsaUrl));
                 if (job.format == LibreSCRS::Signing::SignatureFormat::Pades && visualTemplate.has_value())
                     rb.visualParams(cloneWithRefreshedTimestamp(*visualTemplate));
+                if (allowExpiredCert)
+                    rb.allowExpiredCert(true);
 
                 LibreSCRS::Signing::SigningRequest req = std::move(rb).build();
 

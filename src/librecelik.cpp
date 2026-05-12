@@ -147,14 +147,24 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
             &QStackedWidget::setCurrentIndex);
 
     ui->statusbar->hide();
-    // Menu bar
+    // Menu bar. On macOS the Edit menu is omitted entirely — LC has no edit
+    // actions of its own, and QAction::PreferencesRole moves Settings into the
+    // application menu, so the Edit menu would otherwise be left empty (filled
+    // only with macOS-auto-injected Dictation/Emoji entries). Settings is then
+    // parented to helpMenu purely so the role-based promotion has an anchor;
+    // it is moved out to the application menu at runtime.
+#ifndef Q_OS_MACOS
     editMenu = ui->menubar->addMenu(qtTrId("lc-menu-edit"));
     settingsAction = editMenu->addAction(qtTrId("lc-menu-settings"));
+#endif
+    helpMenu = ui->menubar->addMenu(qtTrId("lc-menu-help"));
+#ifdef Q_OS_MACOS
+    settingsAction = helpMenu->addAction(qtTrId("lc-menu-settings"));
+#endif
     settingsAction->setMenuRole(QAction::PreferencesRole);
     settingsAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Comma));
     connect(settingsAction, &QAction::triggered, this, &LibreCelik::openSettings);
 
-    helpMenu = ui->menubar->addMenu(qtTrId("lc-menu-help"));
     aboutAction = helpMenu->addAction(qtTrId("lc-menu-about"));
     aboutAction->setMenuRole(QAction::AboutRole);
     connect(aboutAction, &QAction::triggered, this, &LibreCelik::showAboutDialog);
@@ -162,7 +172,13 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
     aboutQtAction->setMenuRole(QAction::AboutQtRole);
     connect(aboutQtAction, &QAction::triggered, qApp, &QApplication::aboutQt);
 #ifdef Q_OS_MACOS
-    macosRetranslateAppMenu(qtTrId("lc-menu-about"), qtTrId("lc-menu-settings"));
+    macosRetranslateAppMenu({.about = qtTrId("lc-menu-about"),
+                             .preferences = qtTrId("lc-menu-settings"),
+                             .services = qtTrId("lc-menu-services"),
+                             .hide = qtTrId("lc-menu-hide"),
+                             .hideOthers = qtTrId("lc-menu-hide-others"),
+                             .showAll = qtTrId("lc-menu-show-all"),
+                             .quit = qtTrId("lc-menu-quit")});
 #endif
 
     // Auto-hide the status bar once its message is cleared (e.g. after showMessage timeout
@@ -211,13 +227,20 @@ bool LibreCelik::loadLanguage(const QString& locale)
 
 void LibreCelik::retranslateMenuBar()
 {
-    editMenu->setTitle(qtTrId("lc-menu-edit"));
+    if (editMenu)
+        editMenu->setTitle(qtTrId("lc-menu-edit"));
     settingsAction->setText(qtTrId("lc-menu-settings"));
     helpMenu->setTitle(qtTrId("lc-menu-help"));
     aboutAction->setText(qtTrId("lc-menu-about"));
     aboutQtAction->setText(qtTrId("lc-menu-about-qt"));
 #ifdef Q_OS_MACOS
-    macosRetranslateAppMenu(qtTrId("lc-menu-about"), qtTrId("lc-menu-settings"));
+    macosRetranslateAppMenu({.about = qtTrId("lc-menu-about"),
+                             .preferences = qtTrId("lc-menu-settings"),
+                             .services = qtTrId("lc-menu-services"),
+                             .hide = qtTrId("lc-menu-hide"),
+                             .hideOthers = qtTrId("lc-menu-hide-others"),
+                             .showAll = qtTrId("lc-menu-show-all"),
+                             .quit = qtTrId("lc-menu-quit")});
 #endif
 }
 

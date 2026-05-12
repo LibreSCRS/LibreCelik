@@ -6,5 +6,18 @@
 #include <QtGlobal>
 
 #ifdef Q_OS_MACOS
-void macosRetranslateAppMenu(const QString& aboutText, const QString& preferencesText);
+#include <QString>
+
+struct MacOsAppMenuStrings
+{
+    QString about;
+    QString preferences;
+    QString services;
+    QString hide;
+    QString hideOthers;
+    QString showAll;
+    QString quit;
+};
+
+void macosRetranslateAppMenu(const MacOsAppMenuStrings& strings);
 #endif

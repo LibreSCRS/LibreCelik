@@ -1839,10 +1839,35 @@
         <source>About Qt</source>
         <translation>About Qt</translation>
     </message>
+    <message id="lc-menu-services">
+        <location filename="../../src/utils/translations_catalog.cpp" line="1082"/>
+        <source>Services</source>
+        <translation>Services</translation>
+    </message>
+    <message id="lc-menu-hide">
+        <location filename="../../src/utils/translations_catalog.cpp" line="1084"/>
+        <source>Hide LibreCelik</source>
+        <translation>Hide LibreCelik</translation>
+    </message>
+    <message id="lc-menu-hide-others">
+        <location filename="../../src/utils/translations_catalog.cpp" line="1086"/>
+        <source>Hide Others</source>
+        <translation>Hide Others</translation>
+    </message>
+    <message id="lc-menu-show-all">
+        <location filename="../../src/utils/translations_catalog.cpp" line="1088"/>
+        <source>Show All</source>
+        <translation>Show All</translation>
+    </message>
+    <message id="lc-menu-quit">
+        <location filename="../../src/utils/translations_catalog.cpp" line="1090"/>
+        <source>Quit LibreCelik</source>
+        <translation>Quit LibreCelik</translation>
+    </message>
     <message id="lc-about-title">
         <location filename="../../src/aboutdialog.cpp" line="22"/>
         <location filename="../../src/aboutdialog.cpp" line="216"/>
-        <location filename="../../src/utils/translations_catalog.cpp" line="1082"/>
+        <location filename="../../src/utils/translations_catalog.cpp" line="1092"/>
         <source>About LibreCelik</source>
         <translation>About Libre Celik</translation>
     </message>

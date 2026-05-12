@@ -1078,6 +1078,16 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-menu-about");
     //% "About Qt"
     QT_TRID_NOOP("lc-menu-about-qt");
+    //% "Services"
+    QT_TRID_NOOP("lc-menu-services");
+    //% "Hide LibreCelik"
+    QT_TRID_NOOP("lc-menu-hide");
+    //% "Hide Others"
+    QT_TRID_NOOP("lc-menu-hide-others");
+    //% "Show All"
+    QT_TRID_NOOP("lc-menu-show-all");
+    //% "Quit LibreCelik"
+    QT_TRID_NOOP("lc-menu-quit");
     //% "About LibreCelik"
     QT_TRID_NOOP("lc-about-title");
 

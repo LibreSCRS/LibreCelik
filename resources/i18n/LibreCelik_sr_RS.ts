@@ -1830,7 +1830,7 @@
         <location filename="../../src/librecelik.cpp" line="206"/>
         <location filename="../../src/utils/translations_catalog.cpp" line="1078"/>
         <source>About LibreCelik</source>
-        <translation>О програму Слободни Челик</translation>
+        <translation>О Слободном Челику</translation>
     </message>
     <message id="lc-menu-about-qt">
         <location filename="../../src/librecelik.cpp" line="147"/>
@@ -1839,12 +1839,37 @@
         <source>About Qt</source>
         <translation>О библиотеци Qt</translation>
     </message>
+    <message id="lc-menu-services">
+        <location filename="../../src/utils/translations_catalog.cpp" line="1082"/>
+        <source>Services</source>
+        <translation>Услуге</translation>
+    </message>
+    <message id="lc-menu-hide">
+        <location filename="../../src/utils/translations_catalog.cpp" line="1084"/>
+        <source>Hide LibreCelik</source>
+        <translation>Сакриј Слободни Челик</translation>
+    </message>
+    <message id="lc-menu-hide-others">
+        <location filename="../../src/utils/translations_catalog.cpp" line="1086"/>
+        <source>Hide Others</source>
+        <translation>Сакриј остале</translation>
+    </message>
+    <message id="lc-menu-show-all">
+        <location filename="../../src/utils/translations_catalog.cpp" line="1088"/>
+        <source>Show All</source>
+        <translation>Прикажи све</translation>
+    </message>
+    <message id="lc-menu-quit">
+        <location filename="../../src/utils/translations_catalog.cpp" line="1090"/>
+        <source>Quit LibreCelik</source>
+        <translation>Затвори Слободни Челик</translation>
+    </message>
     <message id="lc-about-title">
         <location filename="../../src/aboutdialog.cpp" line="22"/>
         <location filename="../../src/aboutdialog.cpp" line="216"/>
-        <location filename="../../src/utils/translations_catalog.cpp" line="1082"/>
+        <location filename="../../src/utils/translations_catalog.cpp" line="1092"/>
         <source>About LibreCelik</source>
-        <translation>О програму Слободни Челик</translation>
+        <translation>О Слободном Челику</translation>
     </message>
     <message id="lc-about-app-name">
         <location filename="../../src/aboutdialog.cpp" line="224"/>

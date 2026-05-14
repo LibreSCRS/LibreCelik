@@ -51,6 +51,36 @@
 #include <QThread>
 #include <QVBoxLayout>
 
+namespace {
+
+/// Returns a hex-formatted snippet of the first `maxBytes` of an ATR,
+/// e.g., "3B F9 96 00 00 80" plus " ..." if truncated. Used for
+/// user-facing unsupported-card messages so users can paste the value
+/// into bug reports.
+QString formatAtrSnippet(const std::vector<std::uint8_t>& atr, int maxBytes)
+{
+    QStringList parts;
+    int n = std::min(static_cast<int>(atr.size()), maxBytes);
+    parts.reserve(n + 1);
+    for (int i = 0; i < n; ++i) {
+        parts << QString::asprintf("%02X", atr[i]);
+    }
+    if (static_cast<int>(atr.size()) > maxBytes)
+        parts << QStringLiteral("...");
+    return parts.join(QLatin1Char(' '));
+}
+
+QString atrToHexFlat(const std::vector<std::uint8_t>& atr)
+{
+    QString s;
+    s.reserve(static_cast<qsizetype>(atr.size()) * 2);
+    for (auto b : atr)
+        s += QString::asprintf("%02x", b);
+    return s;
+}
+
+} // namespace
+
 LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreCelik)
 {
     qCDebug(lcGeneral, "Setting up GUI");
@@ -259,6 +289,9 @@ void LibreCelik::onCardEventReceived(const LibreSCRS::SmartCard::MonitorEvent& e
     using Kind = LibreSCRS::SmartCard::MonitorEvent::Kind;
     qCDebug(lcGeneral) << "MonitorEvent:" << (event.kind == Kind::CardInserted ? "CardInserted" : "CardRemoved")
                        << "received on reader:" << QString::fromStdString(event.readerName);
+    qCDebug(lcProbeQuieting) << "LC-EVENT kind=" << (event.kind == Kind::CardInserted ? "CardInserted" : "CardRemoved")
+                             << "reader=" << QString::fromStdString(event.readerName)
+                             << "activeReaders=" << activeReaders.size();
     if (event.kind == Kind::CardInserted) {
         // Invalidate any pending retries from a previous event on this reader
         // and create a fresh stop_source for this card insertion.
@@ -304,6 +337,9 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
 {
     qCDebug(lcGeneral) << "addNewReader:" << QString::fromStdString(reader) << "retry=" << retryCount
                        << "activeReaders.count=" << activeReaders.count(reader);
+    qCDebug(lcProbeQuieting) << "LC-ADD-ENTRY reader=" << QString::fromStdString(reader) << "retry=" << retryCount
+                             << "activeReaders.has=" << (activeReaders.count(reader) > 0)
+                             << "caller=" << (retryCount == 0 ? "event" : "timer");
 
     if (retryCount == 0) {
         // Fresh card event: defensively remove any stale widget left over from a
@@ -332,6 +368,8 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
         if (!opened.has_value()) {
             if (retryCount < 6) {
                 int delay = 200 + retryCount * 150; // progressive: 350, 500, 650, 800, 950ms
+                qCDebug(lcProbeQuieting) << "LC-PROBE-RETRY reader=" << QString::fromStdString(reader)
+                                         << "retry=" << retryCount << "delay=" << delay;
                 QTimer::singleShot(delay, this, [this, reader, retryCount, stopToken]() {
                     if (stopToken.stop_requested())
                         return;
@@ -346,19 +384,18 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
         session = std::make_shared<LibreSCRS::SmartCard::CardSession>(std::move(*opened));
     }
 
+    qCDebug(lcProbeQuieting) << "LC-SESSION-OPEN reader=" << QString::fromStdString(reader) << "retry=" << retryCount
+                             << "atr=" << atrToHexFlat(session->atr());
+    qCDebug(lcProbeQuieting) << "LC-PROBE-CALL reader=" << QString::fromStdString(reader) << "retry=" << retryCount
+                             << "atr=" << atrToHexFlat(session->atr());
     auto candidates = middlewarePluginRegistry->findAllCandidates(session->atr(), *session);
     if (candidates.empty()) {
-        if (retryCount < 6) {
-            int delay = 200 + retryCount * 150; // progressive: 350, 500, 650, 800, 950ms
-            QTimer::singleShot(delay, this, [this, reader, retryCount, stopToken]() {
-                if (stopToken.stop_requested())
-                    return;
-                addNewReader(reader, retryCount + 1);
-            });
-        } else {
-            ui->statusbar->show();
-            ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card"));
-        }
+        // Session opened successfully but no plugin matched — card is
+        // definitively unsupported. The middleware plugin chain has had full
+        // APDU access to the card; retrying changes nothing.
+        QString atrSnippet = formatAtrSnippet(session->atr(), 6);
+        ui->statusbar->show();
+        ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card-with-atr").arg(atrSnippet));
         return;
     }
 
@@ -649,6 +686,8 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
 void LibreCelik::removeReader(std::string reader)
 {
     auto it = activeReaders.find(reader);
+    qCDebug(lcProbeQuieting) << "LC-REMOVE reader=" << QString::fromStdString(reader)
+                             << "hadAsync=" << (it != activeReaders.end());
     if (it == activeReaders.end())
         return;
 

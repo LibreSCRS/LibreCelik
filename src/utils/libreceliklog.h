@@ -25,3 +25,9 @@ Q_DECLARE_LOGGING_CATEGORY(lcSmartCard)
 Q_DECLARE_LOGGING_CATEGORY(lcPrinting)
 Q_DECLARE_LOGGING_CATEGORY(lcCertificates)
 Q_DECLARE_LOGGING_CATEGORY(lcPluginRegistry)
+// Cross-process trace category for probe state machine investigation.
+// LM emits to stderr via LibreSCRS::Internal::probeTrace; LC emits via
+// qCDebug(lcProbeQuieting). Both share the prefix "librescrs.probe-quieting"
+// so a single grep collects interleaved cross-process trace.
+// Enable LC side via QT_LOGGING_RULES="librescrs.probe-quieting.debug=true".
+Q_DECLARE_LOGGING_CATEGORY(lcProbeQuieting)

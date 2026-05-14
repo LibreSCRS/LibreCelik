@@ -20,6 +20,11 @@ set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_
 
 project(LibreCelik VERSION ${PROJECT_VERSION} LANGUAGES CXX)
 
+# CMake's project(VERSION X.Y.Z) strips pre-release suffixes; keep the full
+# version (with -rcN / -beta / -local) here so user-facing banners can show it.
+set(LIBRECELIK_VERSION_FULL "4.1.0-rc1" CACHE STRING "Full version string including pre-release suffix")
+add_compile_definitions(LIBRECELIK_VERSION_FULL="${LIBRECELIK_VERSION_FULL}")
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()

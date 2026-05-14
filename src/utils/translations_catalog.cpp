@@ -32,6 +32,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-main-about-librecelik");
     //% "Card in reader is not supported."
     QT_TRID_NOOP("lc-reader-unsupported-card");
+    //% "Card type %1 is not supported (no driver match)."
+    QT_TRID_NOOP("lc-reader-unsupported-card-with-atr");
     //% "Reading card..."
     QT_TRID_NOOP("lc-reading-card");
     //% "<b>LibreMiddleware</b> :: Version %1 :: <a
@@ -68,6 +70,16 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-about-license-bundled");
     //% "SIL Open Font License 1.1"
     QT_TRID_NOOP("lc-about-license-ofl");
+    //% "LGPL-2.1-or-later — statically linked, modified fork"
+    QT_TRID_NOOP("lc-about-license-opensc");
+    //% "MIT — vendored"
+    QT_TRID_NOOP("lc-about-license-json");
+    //% "MIT — vendored"
+    QT_TRID_NOOP("lc-about-license-miniz");
+    //% "zlib license — transitive dependency"
+    QT_TRID_NOOP("lc-about-license-zlib");
+    //% "The complete corresponding source code is publicly available at <a href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a> and <a href=\"https://github.com/LibreSCRS/LibreCelik\">github.com/LibreSCRS/LibreCelik</a>. This offer is valid for as long as we distribute this software."
+    QT_TRID_NOOP("lc-about-source-offer");
     //% "About"
     QT_TRID_NOOP("lc-about-tab-about");
     //% "Credits"

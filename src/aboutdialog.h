@@ -46,8 +46,13 @@ private:
     // License tab
     QLabel* licenseLibreCelikLabel = nullptr;
     QLabel* licenseMiddlewareLabel = nullptr;
+    QLabel* licenseOpenScLabel = nullptr;
     QLabel* licenseOpenSslLabel = nullptr;
+    QLabel* licenseJsonLabel = nullptr;
+    QLabel* licenseMinizLabel = nullptr;
+    QLabel* licenseZlibLabel = nullptr;
     QLabel* licenseLiberationSansLabel = nullptr;
+    QLabel* sourceOfferLabel = nullptr;
     QComboBox* licenseCombo = nullptr;
     QTextBrowser* licenseBrowser = nullptr;
 };

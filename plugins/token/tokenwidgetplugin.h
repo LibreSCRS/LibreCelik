@@ -25,7 +25,7 @@ public:
     }
     QStringList additionalCardTypes() const override
     {
-        return {QStringLiteral("pkcs15"), QStringLiteral("cardedge")};
+        return {QStringLiteral("pkcs15"), QStringLiteral("cardedge"), QStringLiteral("opensc")};
     }
     QWidget* createWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent) const override;
 };

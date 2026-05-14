@@ -54,3 +54,17 @@ hook.
 ## License
 
 GPL-3.0-or-later — see [LICENSE](LICENSE) for details.
+
+## Source availability
+
+LibreCelik is licensed under GPL-3.0-or-later. It bundles statically
+linked components covered by other free-software licences, including
+LGPL-2.1-or-later (LibreMiddleware, OpenSC).
+
+The complete corresponding source code for this software, including
+all modified LGPL components, is publicly available at:
+
+- https://github.com/LibreSCRS/LibreMiddleware
+- https://github.com/LibreSCRS/LibreCelik
+
+This offer is valid for as long as we distribute this software.

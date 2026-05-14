@@ -86,6 +86,7 @@ gtest_discover_tests(CardWidgetPluginRegistryTests PROPERTIES ENVIRONMENT "QT_QP
 add_executable(AsyncCardReaderTests
     asynccardreader_test.cpp
     ${CMAKE_SOURCE_DIR}/src/asynccardreader.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
 )
 target_include_directories(AsyncCardReaderTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src

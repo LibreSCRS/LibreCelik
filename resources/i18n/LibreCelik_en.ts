@@ -1949,6 +1949,31 @@
         <source>SIL Open Font License 1.1</source>
         <translation>SIL Open Font License 1.1</translation>
     </message>
+    <message id="lc-about-license-opensc">
+        <location filename="../../src/utils/translations_catalog.cpp" line="73"/>
+        <source>LGPL-2.1-or-later — statically linked, modified fork</source>
+        <translation>LGPL-2.1-or-later — statically linked, modified fork</translation>
+    </message>
+    <message id="lc-about-license-json">
+        <location filename="../../src/utils/translations_catalog.cpp" line="75"/>
+        <source>MIT — vendored</source>
+        <translation>MIT — vendored</translation>
+    </message>
+    <message id="lc-about-license-miniz">
+        <location filename="../../src/utils/translations_catalog.cpp" line="77"/>
+        <source>MIT — vendored</source>
+        <translation>MIT — vendored</translation>
+    </message>
+    <message id="lc-about-license-zlib">
+        <location filename="../../src/utils/translations_catalog.cpp" line="79"/>
+        <source>zlib license — transitive dependency</source>
+        <translation>zlib license — transitive dependency</translation>
+    </message>
+    <message id="lc-about-source-offer">
+        <location filename="../../src/utils/translations_catalog.cpp" line="81"/>
+        <source>The complete corresponding source code is publicly available at &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt; and &lt;a href=&quot;https://github.com/LibreSCRS/LibreCelik&quot;&gt;github.com/LibreSCRS/LibreCelik&lt;/a&gt;. This offer is valid for as long as we distribute this software.</source>
+        <translation>The complete corresponding source code is publicly available at &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt; and &lt;a href=&quot;https://github.com/LibreSCRS/LibreCelik&quot;&gt;github.com/LibreSCRS/LibreCelik&lt;/a&gt;. This offer is valid for as long as we distribute this software.</translation>
+    </message>
     <message id="lc-about-tab-about">
         <location filename="../../src/aboutdialog.cpp" line="219"/>
         <location filename="../../src/utils/translations_catalog.cpp" line="72"/>
@@ -2176,6 +2201,10 @@
         <location filename="../../src/utils/translations_catalog.cpp" line="34"/>
         <source>Card in reader is not supported.</source>
         <translation>Card in reader is not supported.</translation>
+    </message>
+    <message id="lc-reader-unsupported-card-with-atr">
+        <source>Card type %1 is not supported (no driver match).</source>
+        <translation>Card type %1 is not supported (no driver match).</translation>
     </message>
     <message id="lc-reading-card">
         <location filename="../../src/librecelik.cpp" line="337"/>

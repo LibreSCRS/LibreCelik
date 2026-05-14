@@ -3,12 +3,16 @@
 
 #include "asynccardreader.h"
 
+#include "utils/libreceliklog.h"
+
 #include <LibreSCRS/Auth/ErrorKeys.h>
+#include <LibreSCRS/Plugin/CardPlugin.h>
 #include <LibreSCRS/Secure/String.h>
 
 #include <QMetaObject>
 #include <QMetaType>
 #include <QPointer>
+#include <QStringList>
 
 #include <utility>
 
@@ -17,6 +21,12 @@ AsyncCardReader::AsyncCardReader(std::vector<std::shared_ptr<LibreSCRS::Plugin::
                                  std::shared_ptr<LibreSCRS::SmartCard::CardSession> session, QObject* parent)
     : QObject(parent), candidates(std::move(candidates)), allPlugins(std::move(allPlugins)), session(std::move(session))
 {
+    QStringList ids;
+    ids.reserve(static_cast<qsizetype>(this->candidates.size()));
+    for (const auto& p : this->candidates)
+        ids << QString::fromStdString(p->pluginId());
+    qCDebug(lcProbeQuieting) << "LC-ASYNC-INIT candidates=" << this->candidates.size() << "pluginIds=["
+                             << ids.join(QLatin1Char(',')) << "]";
     qRegisterMetaType<LibreSCRS::Plugin::CardData>("LibreSCRS::Plugin::CardData");
     qRegisterMetaType<LibreSCRS::Plugin::CardFieldGroup>("LibreSCRS::Plugin::CardFieldGroup");
     qRegisterMetaType<std::vector<LibreSCRS::Plugin::CertificateData>>(

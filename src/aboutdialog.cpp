@@ -24,7 +24,7 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent)
     // Window title is set by retranslateUi() at the end of construction
     // (called from line 203 below). Keeping a single source of truth
     // ensures the dialog always uses the current language.
-    setFixedSize(480, 420);
+    setFixedSize(520, 560);
 
     auto* mainLayout = new QVBoxLayout(this);
 
@@ -170,10 +170,30 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent)
     licenseMiddlewareLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
     licenseLayout->addWidget(licenseMiddlewareLabel);
 
+    licenseOpenScLabel = new QLabel(licenseTab);
+    licenseOpenScLabel->setWordWrap(true);
+    licenseOpenScLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
+    licenseLayout->addWidget(licenseOpenScLabel);
+
     licenseOpenSslLabel = new QLabel(licenseTab);
     licenseOpenSslLabel->setWordWrap(true);
     licenseOpenSslLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
     licenseLayout->addWidget(licenseOpenSslLabel);
+
+    licenseJsonLabel = new QLabel(licenseTab);
+    licenseJsonLabel->setWordWrap(true);
+    licenseJsonLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
+    licenseLayout->addWidget(licenseJsonLabel);
+
+    licenseMinizLabel = new QLabel(licenseTab);
+    licenseMinizLabel->setWordWrap(true);
+    licenseMinizLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
+    licenseLayout->addWidget(licenseMinizLabel);
+
+    licenseZlibLabel = new QLabel(licenseTab);
+    licenseZlibLabel->setWordWrap(true);
+    licenseZlibLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
+    licenseLayout->addWidget(licenseZlibLabel);
 
     licenseLiberationSansLabel = new QLabel(licenseTab);
     licenseLiberationSansLabel->setWordWrap(true);
@@ -182,11 +202,24 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent)
 
     licenseLayout->addSpacing(6);
 
+    sourceOfferLabel = new QLabel(licenseTab);
+    sourceOfferLabel->setWordWrap(true);
+    sourceOfferLabel->setOpenExternalLinks(true);
+    sourceOfferLabel->setTextFormat(Qt::RichText);
+    sourceOfferLabel->setStyleSheet(QStringLiteral("color: gray; font-size: 11px;"));
+    licenseLayout->addWidget(sourceOfferLabel);
+
+    licenseLayout->addSpacing(6);
+
     licenseCombo = new QComboBox(licenseTab);
     licenseCombo->addItem(QStringLiteral("GPL-3.0-or-later"), QStringLiteral(":/licenses/gpl-3.0.txt"));
     licenseCombo->addItem(QStringLiteral("LGPL-2.1-or-later"), QStringLiteral(":/licenses/lgpl-2.1.txt"));
     licenseCombo->addItem(QStringLiteral("Apache-2.0"), QStringLiteral(":/licenses/apache-2.0.txt"));
     licenseCombo->addItem(QStringLiteral("SIL-OFL-1.1"), QStringLiteral(":/licenses/ofl-1.1.txt"));
+    licenseCombo->addItem(QStringLiteral("OpenSC LGPL-2.1"), QStringLiteral(":/licenses/opensc-copying.txt"));
+    licenseCombo->addItem(QStringLiteral("nlohmann/json MIT"), QStringLiteral(":/licenses/json-mit.txt"));
+    licenseCombo->addItem(QStringLiteral("miniz MIT"), QStringLiteral(":/licenses/miniz-mit.txt"));
+    licenseCombo->addItem(QStringLiteral("zlib"), QStringLiteral(":/licenses/zlib.txt"));
     licenseLayout->addWidget(licenseCombo);
 
     licenseBrowser = new QTextBrowser(licenseTab);
@@ -252,13 +285,19 @@ void AboutDialog::retranslateUi()
     // License tab
     licenseLibreCelikLabel->setText(QStringLiteral("<b>LibreCelik</b> — %1").arg(qtTrId("lc-about-license-gpl")));
     licenseMiddlewareLabel->setText(QStringLiteral("<b>LibreMiddleware</b> — %1").arg(qtTrId("lc-about-license-lgpl")));
+    licenseOpenScLabel->setText(QStringLiteral("<b>OpenSC</b> — %1").arg(qtTrId("lc-about-license-opensc")));
     // OpenSSL version is intentionally not surfaced here — it is a private
     // LibreMiddleware dependency. The license attribution remains for the
     // bundled OpenSSL build.
     licenseOpenSslLabel->setText(QStringLiteral("<b>OpenSSL</b> (%1) — %2")
                                      .arg(qtTrId("lc-about-license-static"), qtTrId("lc-about-license-apache")));
+    licenseJsonLabel->setText(QStringLiteral("<b>nlohmann/json</b> — %1").arg(qtTrId("lc-about-license-json")));
+    licenseMinizLabel->setText(QStringLiteral("<b>miniz</b> — %1").arg(qtTrId("lc-about-license-miniz")));
+    licenseZlibLabel->setText(QStringLiteral("<b>zlib</b> — %1").arg(qtTrId("lc-about-license-zlib")));
     licenseLiberationSansLabel->setText(QStringLiteral("<b>Liberation Sans</b> (%1) — %2")
                                             .arg(qtTrId("lc-about-license-bundled"), qtTrId("lc-about-license-ofl")));
+
+    sourceOfferLabel->setText(qtTrId("lc-about-source-offer"));
 }
 
 void AboutDialog::loadLicense(int index)

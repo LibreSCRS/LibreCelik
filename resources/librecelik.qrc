@@ -40,6 +40,10 @@
         <file>licenses/lgpl-2.1.txt</file>
         <file>licenses/apache-2.0.txt</file>
         <file>licenses/ofl-1.1.txt</file>
+        <file>licenses/opensc-copying.txt</file>
+        <file>licenses/json-mit.txt</file>
+        <file>licenses/miniz-mit.txt</file>
+        <file>licenses/zlib.txt</file>
     </qresource>
 
 </RCC>

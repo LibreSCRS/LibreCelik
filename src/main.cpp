@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
     // QueuedConnection invocation aborts.
     qRegisterMetaType<LibreSCRS::Secure::String>();
 
-    qCInfo(lcGeneral) << "Starting LibreCelik - Version: " << LIBRECELIK_VERSION;
+    qCInfo(lcGeneral) << "Starting LibreCelik - Version: " << LIBRECELIK_VERSION_FULL;
 #if defined(LIBRECELIK_LOCAL_MIDDLEWARE_VERSION) && LIBRECELIK_LOCAL_MIDDLEWARE_VERSION
     qCInfo(lcGeneral) << "Using LibreMiddleware - Version: LOCAL";
 #else

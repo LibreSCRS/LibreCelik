@@ -53,30 +53,39 @@
 
 namespace {
 
-/// Returns a hex-formatted snippet of the first `maxBytes` of an ATR,
-/// e.g., "3B F9 96 00 00 80" plus " ..." if truncated. Used for
-/// user-facing unsupported-card messages so users can paste the value
-/// into bug reports.
-QString formatAtrSnippet(const std::vector<std::uint8_t>& atr, int maxBytes)
+/// Format ATR (or any byte sequence) as a hex QString.
+///
+/// `sep == '\0'`        flat, no separator: "3bf99600"
+/// `sep == ' '`         display:            "3B F9 96 00"
+/// `sep == ':'`         canonical:          "3B:F9:96:00"
+/// `upper`              true → uppercase hex digits (A-F)
+/// `maxBytes`           0 → format all; >0 → truncate to first N bytes
+///                      and append " ..." when the source is longer
+///                      (truncation marker is space-prefixed regardless
+///                      of `sep`, so log + display forms both read clean).
+QString atrToHex(const std::vector<std::uint8_t>& bytes, char sep = '\0', bool upper = false, int maxBytes = 0)
 {
-    QStringList parts;
-    int n = std::min(static_cast<int>(atr.size()), maxBytes);
-    parts.reserve(n + 1);
-    for (int i = 0; i < n; ++i) {
-        parts << QString::asprintf("%02X", atr[i]);
-    }
-    if (static_cast<int>(atr.size()) > maxBytes)
-        parts << QStringLiteral("...");
-    return parts.join(QLatin1Char(' '));
-}
+    const char* fmt = upper ? "%02X" : "%02x";
+    const int total = static_cast<int>(bytes.size());
+    const int n = (maxBytes > 0 && maxBytes < total) ? maxBytes : total;
+    const bool truncated = n < total;
 
-QString atrToHexFlat(const std::vector<std::uint8_t>& atr)
-{
-    QString s;
-    s.reserve(static_cast<qsizetype>(atr.size()) * 2);
-    for (auto b : atr)
-        s += QString::asprintf("%02x", b);
-    return s;
+    qsizetype cap = static_cast<qsizetype>(n) * 2;
+    if (sep != '\0' && n > 1)
+        cap += n - 1;
+    if (truncated)
+        cap += 4;
+
+    QString out;
+    out.reserve(cap);
+    for (int i = 0; i < n; ++i) {
+        if (i > 0 && sep != '\0')
+            out.append(QLatin1Char(sep));
+        out.append(QString::asprintf(fmt, bytes[i]));
+    }
+    if (truncated)
+        out.append(QStringLiteral(" ..."));
+    return out;
 }
 
 } // namespace
@@ -385,15 +394,15 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
     }
 
     qCDebug(lcProbeQuieting) << "LC-SESSION-OPEN reader=" << QString::fromStdString(reader) << "retry=" << retryCount
-                             << "atr=" << atrToHexFlat(session->atr());
+                             << "atr=" << atrToHex(session->atr());
     qCDebug(lcProbeQuieting) << "LC-PROBE-CALL reader=" << QString::fromStdString(reader) << "retry=" << retryCount
-                             << "atr=" << atrToHexFlat(session->atr());
+                             << "atr=" << atrToHex(session->atr());
     auto candidates = middlewarePluginRegistry->findAllCandidates(session->atr(), *session);
     if (candidates.empty()) {
         // Session opened successfully but no plugin matched — card is
         // definitively unsupported. The middleware plugin chain has had full
         // APDU access to the card; retrying changes nothing.
-        QString atrSnippet = formatAtrSnippet(session->atr(), 6);
+        QString atrSnippet = atrToHex(session->atr(), ' ', /*upper=*/true, /*maxBytes=*/6);
         ui->statusbar->show();
         ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card-with-atr").arg(atrSnippet));
         return;

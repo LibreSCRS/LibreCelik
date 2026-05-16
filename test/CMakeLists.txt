@@ -8,7 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Core Widgets Test PrintSupport)
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Test PrintSupport)
-# PCSC is found by LibreMiddleware; UUID is used directly by tests
+# UUID is used directly by uuid_test.cpp; LC production code has no UUID
+# dependency. PCSC is brought in transitively by LM's public SmartCard alias.
 find_package(UUID)
 
 set(CMAKE_AUTOMOC ON)
@@ -49,8 +50,7 @@ add_executable(
 target_link_libraries(
     ${PROJECT_NAME}
     GTest::gtest_main
-    CardPlugin_Impl
-    RsEId
+    LibreSCRS::Plugin
     UUID::UUID
     Qt6::Core
     Qt6::Widgets
@@ -70,7 +70,7 @@ target_include_directories(CardWidgetPluginRegistryTests PRIVATE
 target_link_libraries(CardWidgetPluginRegistryTests
     GTest::gtest_main
     Qt6::Widgets
-    CardPlugin_Impl
+    LibreSCRS::Plugin
 )
 target_sources(CardWidgetPluginRegistryTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src/plugin/cardwidgetpluginregistry.cpp
@@ -93,8 +93,8 @@ target_include_directories(AsyncCardReaderTests PRIVATE
 )
 target_link_libraries(AsyncCardReaderTests
     GTest::gtest_main
-    CardPlugin_Impl
-    SmartCard_Impl
+    LibreSCRS::Plugin
+    LibreSCRS::SmartCard
     Qt6::Core
     Qt6::Widgets
     Qt6::Test
@@ -112,14 +112,17 @@ target_link_libraries(QSmartCardMonitorTests PRIVATE
     GTest::gtest_main
     Qt6::Core
     Qt6::Test
+    # SmartCard_Impl: required because the test #includes
+    # <LibreSCRS/SmartCard/detail/MonitorInjection.h>, an internal-only
+    # header #error-guarded behind LIBRESCRS_INTERNAL_BUILD. Mirrors LM's
+    # LibreSCRS_MonitorTests setup. Only valid in FetchContent mode.
     SmartCard_Impl
-    LibreSCRS_SmartCard
+    LibreSCRS::SmartCard
     Threads::Threads
 )
-# detail/MonitorInjection.h is internal: #error-guarded behind
-# LIBRESCRS_INTERNAL_BUILD. Mirrors LM's LibreSCRS_MonitorTests setup.
-# Only valid in FetchContent mode (LM internal headers not installed
-# in CONFIG-package consumption).
+# LIBRESCRS_INTERNAL_BUILD unlocks the detail/MonitorInjection.h
+# #error guard. Only valid in FetchContent mode (LM internal headers
+# are not installed in CONFIG-package consumption).
 target_compile_definitions(QSmartCardMonitorTests PRIVATE LIBRESCRS_INTERNAL_BUILD)
 if(DEFINED libremiddleware_SOURCE_DIR)
     target_include_directories(QSmartCardMonitorTests PRIVATE
@@ -148,7 +151,7 @@ target_include_directories(EuVrcTextDocumentTests PRIVATE
 )
 target_link_libraries(EuVrcTextDocumentTests
     GTest::gtest
-    CardPlugin_Impl
+    LibreSCRS::Plugin
     LibreCelikPrinting
     Qt6::Widgets
     Qt6::PrintSupport
@@ -225,7 +228,7 @@ target_include_directories(HealthTextDocumentTests PRIVATE
 )
 target_link_libraries(HealthTextDocumentTests
     GTest::gtest
-    CardPlugin_Impl
+    LibreSCRS::Plugin
     LibreCelikPrinting
     Qt6::Widgets
     Qt6::PrintSupport
@@ -249,7 +252,7 @@ target_include_directories(EIdTextDocumentTests PRIVATE
 )
 target_link_libraries(EIdTextDocumentTests
     GTest::gtest
-    CardPlugin_Impl
+    LibreSCRS::Plugin
     LibreCelikPrinting
     Qt6::Widgets
     Qt6::PrintSupport
@@ -273,7 +276,7 @@ target_include_directories(PIVTextDocumentTests PRIVATE
 )
 target_link_libraries(PIVTextDocumentTests
     GTest::gtest
-    CardPlugin_Impl
+    LibreSCRS::Plugin
     LibreCelikPrinting
     Qt6::Widgets
     Qt6::PrintSupport
@@ -313,7 +316,7 @@ if(LIBRECELIK_SIGNING_ENABLED)
     target_link_libraries(signingconfiguration_test PRIVATE
         GTest::gtest_main
         Qt6::Core
-        LibreSCRS_Signing
+        LibreSCRS::Signing
     )
     gtest_discover_tests(signingconfiguration_test PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
@@ -330,7 +333,7 @@ if(LIBRECELIK_SIGNING_ENABLED)
     target_link_libraries(signingservice_startup_test PRIVATE
         GTest::gtest_main
         Qt6::Core
-        LibreSCRS_Signing
+        LibreSCRS::Signing
     )
     gtest_discover_tests(signingservice_startup_test PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()
@@ -348,8 +351,7 @@ if(LIBRECELIK_SIGNING_ENABLED)
         GTest::gtest
         Qt6::Core
         LibreSCRS::Certificate
-        LibreSign
-        LibreSCRS_Signing
+        LibreSCRS::Signing
     )
     gtest_discover_tests(SigningUnitTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()
@@ -459,7 +461,7 @@ target_link_libraries(i18n_plugin_retranslate_test PRIVATE
     Qt6::Core
     Qt6::Widgets
     Qt6::Test
-    CardPlugin_Impl
+    LibreSCRS::Plugin
 )
 set_target_properties(i18n_plugin_retranslate_test PROPERTIES AUTOMOC ON)
 target_compile_definitions(i18n_plugin_retranslate_test PRIVATE
@@ -491,8 +493,7 @@ if(LIBRECELIK_SIGNING_ENABLED)
         Qt6::Widgets
         Qt6::PdfWidgets
         Qt6::Gui
-        LibreSign
-        LibreSCRS_Signing
+        LibreSCRS::Signing
     )
     set_target_properties(PdfPreviewWidgetTests PROPERTIES AUTOMOC ON)
     gtest_discover_tests(PdfPreviewWidgetTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
@@ -521,12 +522,10 @@ if(LIBRECELIK_SIGNING_ENABLED)
         Qt6::Widgets
         Qt6::Test
         Qt6::PdfWidgets
-        CardPlugin_Impl
-        SmartCard_Impl
-        LibreSign
-        LibreSCRS_Signing
+        LibreSCRS::Plugin
+        LibreSCRS::SmartCard
+        LibreSCRS::Signing
         LibreSCRS::Certificate
-        PCSC::PCSC
     )
     # libremiddleware_SOURCE_DIR is set in FetchContent mode; in installed-LM
     # (CONFIG) mode the DSS jar discovery falls back to a runtime-configured

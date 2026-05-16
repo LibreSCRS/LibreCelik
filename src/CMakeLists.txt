@@ -12,8 +12,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets LinguistTools PrintSupport)
 find_package(Qt6 REQUIRED COMPONENTS Widgets LinguistTools PrintSupport)
-# PCSC is found by LibreMiddleware; UUID is used directly by the app
-find_package(UUID)
 
 configure_file (
     "${PROJECT_SOURCE_DIR}/src/config.h.in"
@@ -168,19 +166,16 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::PrintSupport
     LibreCelikPrinting
     LibreSCRS::Plugin
-    SmartCard_Impl
     LibreSCRS::SmartCard
     LibreSCRS::Trust
-    LibreSCRS::Certificate
-    PCSC::PCSC
-    UUID::UUID)
+    LibreSCRS::Certificate)
 
 if(APPLE)
     target_link_libraries(${PROJECT_NAME} PRIVATE "-framework AppKit")
 endif()
 
 if(LIBRECELIK_SIGNING_ENABLED)
-    target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::PdfWidgets LibreSign LibreSCRS_Signing)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::PdfWidgets LibreSCRS::Signing)
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

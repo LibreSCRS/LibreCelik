@@ -15,8 +15,8 @@ namespace librecelik::signing {
 /// cards whose AODF emits non-canonical strings.
 ///
 /// Multi-PIN cards (e.g. Serbian GEO eID) expose one PKCS#11 slot
-/// per PIN object after the 4.1 multi-PIN refactor. The wizard
-/// dropdown shows one entry per slot using this formatter.
+/// per PIN object. The wizard dropdown shows one entry per slot
+/// using this formatter.
 ///
 /// Examples:
 /// @code

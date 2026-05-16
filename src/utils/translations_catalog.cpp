@@ -78,7 +78,10 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-about-license-miniz");
     //% "zlib license — transitive dependency"
     QT_TRID_NOOP("lc-about-license-zlib");
+    // lupdate //% markers must stay single-line; clang-format would wrap them.
+    // clang-format off
     //% "The complete corresponding source code is publicly available at <a href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a> and <a href=\"https://github.com/LibreSCRS/LibreCelik\">github.com/LibreSCRS/LibreCelik</a>. This offer is valid for as long as we distribute this software."
+    // clang-format on
     QT_TRID_NOOP("lc-about-source-offer");
     //% "About"
     QT_TRID_NOOP("lc-about-tab-about");

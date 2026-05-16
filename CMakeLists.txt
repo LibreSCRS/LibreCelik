@@ -35,7 +35,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_link_options(-fexperimental-library)
 endif()
 
-set(MIDDLEWARE_VERSION 4.0.0)
+set(MIDDLEWARE_VERSION 4.1.0)
 
 # Hybrid LM consumption: FetchContent (default) or find_package(CONFIG).
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOrUseLibreMiddleware.cmake)

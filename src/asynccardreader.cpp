@@ -565,9 +565,10 @@ void AsyncCardReader::requestDataWithCredentials(EmrtdCredentials credentials)
                  probedPki, pki, certReadFailed]() {
                     if (!self2)
                         return;
-                    // pkiPlugin is std::atomic<std::shared_ptr<...>>; reads
-                    // and writes here are race-free against any worker
-                    // thread that may be inspecting it.
+                    // pkiPlugin is librecelik::detail::AtomicSharedPtr<...>
+                    // (libc++-portable shim); reads and writes here are
+                    // race-free against any worker thread that may be
+                    // inspecting it.
                     if (probedPki && !pkiPlugin.load())
                         pkiPlugin.store(probedPki);
                     if (certReadFailed && pkiPlugin.load() == pki)

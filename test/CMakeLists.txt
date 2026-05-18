@@ -178,8 +178,8 @@ gtest_discover_tests(StringUtilsTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=of
 # fixture-installed so qtTrId() returns the catalog-default English
 # strings without a translator.
 add_executable(SlotLabelFormatterTests
-    slot_label_formatter_test.cpp
-    ${CMAKE_SOURCE_DIR}/src/signing/slot_label_formatter.cpp
+    slotlabelformattertest.cpp
+    ${CMAKE_SOURCE_DIR}/src/signing/slotlabelformatter.cpp
 )
 target_include_directories(SlotLabelFormatterTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src
@@ -200,8 +200,8 @@ gtest_discover_tests(SlotLabelFormatterTests PROPERTIES ENVIRONMENT "QT_QPA_PLAT
 # No QApplication, no widgets; runs in milliseconds without any UI
 # fixture so the locale-fallback contract is exercised on every CI run.
 add_executable(LocaleResolverTests
-    locale_resolver_test.cpp
-    ${CMAKE_SOURCE_DIR}/src/utils/locale_resolver.cpp
+    localeresolvertest.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/localeresolver.cpp
 )
 target_include_directories(LocaleResolverTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src
@@ -398,7 +398,7 @@ add_executable(i18n_settings_state_test
     ${CMAKE_SOURCE_DIR}/src/settings/tlitemdelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/signing/tsaitemdelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/listitemdelegate.cpp
-    ${CMAKE_SOURCE_DIR}/src/utils/locale_resolver.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/localeresolver.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/buttonbox.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/dialogs.cpp

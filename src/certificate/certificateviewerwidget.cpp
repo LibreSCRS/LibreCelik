@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "certificateviewerwidget.h"
-#include "cert_format.h"
+#include "certformat.h"
 #include "certificatehierarchymodel.h"
 #include "certificatepropertiesmodel.h"
 #include "ui_certificateviewerwidget.h"
@@ -14,7 +14,7 @@
 #include <QLineEdit>
 
 namespace lcc = LibreSCRS::Certificate;
-namespace cf = librecelik::cert_format;
+namespace cf = librecelik::certformat;
 
 namespace {
 

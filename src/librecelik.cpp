@@ -28,7 +28,7 @@
 #include "utils/macos_menu.h"
 #endif
 
-#include "utils/locale_resolver.h"
+#include "utils/localeresolver.h"
 
 #include <algorithm>
 #include <filesystem>

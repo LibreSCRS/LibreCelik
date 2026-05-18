@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 hirashix0
 
-#include "cert_format.h"
+#include "certformat.h"
 
 #include <LibreSCRS/Certificate/ObjectIdentifier.h>
 
@@ -11,7 +11,7 @@
 
 namespace lcc = LibreSCRS::Certificate;
 
-namespace librecelik::cert_format {
+namespace librecelik::certformat {
 
 QString bytesToHex(std::span<const std::uint8_t> bytes)
 {
@@ -206,4 +206,4 @@ QString publicKeyDescription(const lcc::PublicKeyInfo& pk)
     return desc;
 }
 
-} // namespace librecelik::cert_format
+} // namespace librecelik::certformat

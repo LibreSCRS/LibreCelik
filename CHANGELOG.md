@@ -16,9 +16,9 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
   and `lc-pin-label-sign` (English + Serbian Cyrillic) used by the
   signing wizard's PKCS#11 multi-slot dropdown.
 - New `librecelik::signing::formatSlotLabel()` helper
-  (`src/signing/slot_label_formatter.{h,cpp}`) that composes
+  (`src/signing/slotlabelformatter.{h,cpp}`) that composes
   `<token> — <localised PIN label>` for the wizard slot dropdown.
-  5 GTest cases (`test/slot_label_formatter_test.cpp`).
+  5 GTest cases (`test/slotlabelformattertest.cpp`).
 
 ### Changed
 

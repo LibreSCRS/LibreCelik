@@ -11,7 +11,7 @@
 #include <span>
 #include <vector>
 
-namespace librecelik::cert_format {
+namespace librecelik::certformat {
 
 /// Colon-separated upper-case hex (e.g. `1A:2B:3C`) for serial numbers, key
 /// identifiers, signature values displayed inline.
@@ -59,4 +59,4 @@ namespace librecelik::cert_format {
 /// ECDSA when known (e.g. `"ECDSA 256-bit (P-256)"`).
 [[nodiscard]] QString publicKeyDescription(const LibreSCRS::Certificate::PublicKeyInfo& pk);
 
-} // namespace librecelik::cert_format
+} // namespace librecelik::certformat

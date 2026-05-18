@@ -27,7 +27,7 @@
 
 #include "settings/settingsdialog.h"
 #include "settings/settingskeys.h"
-#include "utils/locale_resolver.h"
+#include "utils/localeresolver.h"
 
 #include <QApplication>
 #include <QComboBox>

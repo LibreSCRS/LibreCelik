@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "certificatepropertiesmodel.h"
-#include "cert_format.h"
+#include "certformat.h"
 #include "certificateinfoitem.h"
 
 #include <LibreSCRS/Certificate/ParsedCertificate.h>
@@ -15,7 +15,7 @@
 #include <string>
 
 namespace lcc = LibreSCRS::Certificate;
-namespace cf = librecelik::cert_format;
+namespace cf = librecelik::certformat;
 
 namespace {
 

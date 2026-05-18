@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "tokensection.h"
-#include "certificate/cert_format.h"
+#include "certificate/certformat.h"
 #include "certificate/certificateviewerdlg.h"
 #ifdef LIBRECELIK_SIGNING_ENABLED
 #include "signing/certutils.h"
@@ -31,7 +31,7 @@
 #include <cstdint>
 
 namespace lcc = LibreSCRS::Certificate;
-namespace cf = librecelik::cert_format;
+namespace cf = librecelik::certformat;
 
 namespace {
 

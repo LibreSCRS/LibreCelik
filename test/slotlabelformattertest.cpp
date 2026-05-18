@@ -6,7 +6,7 @@
 #include <QString>
 #include <QTranslator>
 
-#include "signing/slot_label_formatter.h"
+#include "signing/slotlabelformatter.h"
 
 using librecelik::signing::formatSlotLabel;
 
@@ -19,7 +19,7 @@ namespace {
 // baked at compile time via LIBRECELIK_TRANSLATIONS_DIR_DEFAULT (see
 // test/CMakeLists.txt) — same pattern as i18n_settings_state_test.
 int dummyArgc = 1;
-char dummyArgv0[] = "slot_label_formatter_test";
+char dummyArgv0[] = "slotlabelformattertest";
 char* dummyArgv[] = {dummyArgv0, nullptr};
 QCoreApplication* g_app = nullptr;
 QTranslator* g_translator = nullptr;

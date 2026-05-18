@@ -39,8 +39,8 @@ set(PROJECT_SOURCES
         document/rs-eid/changepindlg.cpp
         document/emrtd/emrtdauthwidget.h
         document/emrtd/emrtdauthwidget.cpp
-        certificate/cert_format.h
-        certificate/cert_format.cpp
+        certificate/certformat.h
+        certificate/certformat.cpp
         certificate/certificateinfoitem.h
         certificate/certificateinfoitem.cpp
         certificate/certificatetreeviewmodel.h
@@ -58,8 +58,8 @@ set(PROJECT_SOURCES
         utils/collapsiblesection.cpp
         utils/cardheadercard.h
         utils/cardheadercard.cpp
-        utils/locale_resolver.h
-        utils/locale_resolver.cpp
+        utils/localeresolver.h
+        utils/localeresolver.cpp
         utils/buttonbox.h
         utils/buttonbox.cpp
         utils/dialogs.h
@@ -104,8 +104,8 @@ if(LIBRECELIK_SIGNING_ENABLED)
         signing/signatureplacementpage.cpp
         signing/signpage.h
         signing/signpage.cpp
-        signing/slot_label_formatter.h
-        signing/slot_label_formatter.cpp
+        signing/slotlabelformatter.h
+        signing/slotlabelformatter.cpp
         signing/pdfpreviewwidget.h
         signing/pdfpreviewwidget.cpp
         signing/filedropzone.h

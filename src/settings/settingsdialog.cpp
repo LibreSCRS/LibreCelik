@@ -9,7 +9,7 @@
 #include "signing/tsaitemdelegate.h"
 #include "utils/dialogs.h"
 #include "utils/buttonbox.h"
-#include "utils/locale_resolver.h"
+#include "utils/localeresolver.h"
 
 #include <QCheckBox>
 #include <QComboBox>

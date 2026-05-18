@@ -340,6 +340,24 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Authentication failed"
     QT_TRID_NOOP("lc-error-auth-failed");
 
+    // --- LibreMiddleware signing-failure LocalizedText keys ---
+    // These IDs match Auth::ErrorKeys builders. LM ships an English fallback
+    // in the LocalizedText value; LC registers the same keys here so the Qt
+    // translator can resolve them when SigningResult::userMessage flows
+    // through the GUI.
+    //% "The timestamp authority server is unreachable."
+    QT_TRID_NOOP("librescrs.error.sign.tsa_unreachable");
+    //% "Certificate revocation data could not be fetched."
+    QT_TRID_NOOP("librescrs.error.sign.revocation_fetch_failed");
+    //% "Smart card communication error during signing."
+    QT_TRID_NOOP("librescrs.error.sign.card_error");
+    //% "The PIN entered for signing is incorrect."
+    QT_TRID_NOOP("librescrs.error.sign.pin_verification_failed");
+    //% "The signing request is invalid."
+    QT_TRID_NOOP("librescrs.error.sign.invalid_request");
+    //% "The signing request does not satisfy the configured policy."
+    QT_TRID_NOOP("librescrs.error.sign.policy_violation");
+
     // --- eMRTD ---
     //% "Insert the MRZ data from the bottom of the document"
     QT_TRID_NOOP("lc-emrtd-insert-mrz-hint");

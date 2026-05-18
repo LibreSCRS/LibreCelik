@@ -41,7 +41,7 @@ set(MIDDLEWARE_VERSION 4.1.0)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOrUseLibreMiddleware.cmake)
 
 if(NOT LIBRECELIK_USE_INSTALLED_LM)
-    # Fetch LibreMiddleware (smartcard, rs-eid, rs-health, eu-vrc, emrtd, piv, pkcs15 libraries)
+    # Fetch LibreMiddleware (smartcard, rs-eid, rs-health, eu-vrc, emrtd, pkcs15 libraries)
     include(FetchContent)
     FetchContent_Declare(LibreMiddleware
         GIT_REPOSITORY https://github.com/LibreSCRS/LibreMiddleware.git

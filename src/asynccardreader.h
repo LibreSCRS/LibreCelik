@@ -64,6 +64,22 @@ public:
     bool hasPKI() const;
     void clearPluginCredentials();
 
+    /// @brief The live CardSession this reader holds.
+    ///
+    /// Exposed so the signing wizard can reuse the display-time session
+    /// (PACE handshake already completed against the AsyncCardReader's
+    /// PC/SC handle) rather than opening a second PC/SC handle on the
+    /// same reader. Two parallel PACE-protected handles on one card
+    /// invalidate one another at the card-OS layer — the second
+    /// handshake reseats the card's SM context, and the first handle's
+    /// subsequent wrapped APDUs then return SW=6988 ("Incorrect SM
+    /// data objects"). Callers must cancel() any in-flight async work
+    /// before driving APDUs on the shared session.
+    std::shared_ptr<LibreSCRS::SmartCard::CardSession> sessionHandle() const noexcept
+    {
+        return session;
+    }
+
     /// @brief The plugin to route signing operations through for this
     ///        reader's currently-bound card.
     ///

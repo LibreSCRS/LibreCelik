@@ -145,9 +145,8 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
         }
     }
     // SigningConfiguration::makeTsaProvider returns a dynamic provider; the
-    // std::function is always non-empty post commit 2233ddb (review D2).
-    // sign() surfaces TsaUnreachable if the resolved URL is empty or the
-    // TSA is offline.
+    // std::function is always non-empty. sign() surfaces TsaUnreachable
+    // if the resolved URL is empty or the TSA is offline.
     signingService =
         std::make_shared<LibreSCRS::Signing::SigningService>(trustService, signingConfiguration->makeTsaProvider());
 #endif
@@ -866,22 +865,19 @@ void LibreCelik::connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget, 
                                 << "(probePriority" << cardPlugin->probePriority() << ") for reader"
                                 << QString::fromStdString(readerName);
 
-            // Open a fresh CardSession scoped to the wizard. This is
-            // intentionally NOT the same session AsyncCardReader holds —
-            // CardSession is not designed for shared concurrent use, and
-            // the wizard's PIN/sign flow needs its own handle on the
-            // reader for the duration of `wizard.exec()`.
-            std::shared_ptr<LibreSCRS::SmartCard::CardSession> session;
-            {
-                auto opened = LibreSCRS::SmartCard::CardSession::open(readerName);
-                if (!opened.has_value()) {
-                    const auto& openErr = opened.error();
-                    const std::string diag = openErr.diagnosticDetail.value_or(std::string{"?"});
-                    qCWarning(lcSmartCard) << "signRequested: cannot open CardSession for"
-                                           << QString::fromStdString(readerName) << ":" << QString::fromStdString(diag);
-                    return;
-                }
-                session = std::make_shared<LibreSCRS::SmartCard::CardSession>(std::move(*opened));
+            // Reuse the AsyncCardReader's CardSession so signing rides the
+            // same PC/SC handle that the display flow established. A
+            // second handle against the same reader invalidates any live
+            // SM tunnel on the card. The wizard takes over the session;
+            // cancel() first so in-flight async APDUs drain before the
+            // wizard issues its own. See AsyncCardReader::sessionHandle()
+            // for the lifetime contract.
+            activeIt->second.reader->cancel();
+            auto session = activeIt->second.reader->sessionHandle();
+            if (!session) {
+                qCWarning(lcSmartCard) << "signRequested: AsyncCardReader for" << QString::fromStdString(readerName)
+                                       << "has no session";
+                return;
             }
 
             SigningWizard wizard(cert, readerName, signingService, std::move(cardPlugin), std::move(session), this);

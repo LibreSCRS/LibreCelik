@@ -551,7 +551,7 @@ void SignPage::startSigning()
                 // when the result goes out of scope.
                 auto credentialProvider =
                     [&pinSecure](const LibreSCRS::Auth::AuthRequirement&) -> LibreSCRS::Auth::CredentialResult {
-                    std::vector<LibreSCRS::Auth::CredentialResult::Entry> values;
+                    std::vector<LibreSCRS::Auth::CredentialEntry> values;
                     values.emplace_back("pin", pinSecure);
                     return LibreSCRS::Auth::CredentialResult::ok(std::move(values));
                 };

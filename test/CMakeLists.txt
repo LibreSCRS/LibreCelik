@@ -118,6 +118,12 @@ target_link_libraries(QSmartCardMonitorTests PRIVATE
     # LibreSCRS_MonitorTests setup. Only valid in FetchContent mode.
     SmartCard_Impl
     LibreSCRS::SmartCard
+    # The test-only injection helpers (detail::makeMonitorWithProvider,
+    # detail::makeSubscriptionIdForTest) deliberately do not ship in the
+    # production libLibreSCRS_SmartCard's dynamic export set; their bodies
+    # live in this build-tree-only OBJECT archive. Mirrors LM's
+    # LibreSCRS_MonitorTests wiring. Only valid in FetchContent mode.
+    LibreSCRS_SmartCard_TestHelpers
     Threads::Threads
 )
 # LIBRESCRS_INTERNAL_BUILD unlocks the detail/MonitorInjection.h

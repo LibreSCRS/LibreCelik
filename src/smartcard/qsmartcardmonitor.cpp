@@ -67,17 +67,18 @@ QSmartCardMonitor::QSmartCardMonitor(LibreSCRS::SmartCard::MonitorService& monit
 
 QSmartCardMonitor::~QSmartCardMonitor()
 {
-    // Use unsubscribe() rather than unsubscribeAndDrain() because:
+    // Use unsubscribe() with the default DrainPolicy::FireAndForget rather
+    // than DrainPolicy::Drain because:
     //   1. The lambda registered in the ctor captures QPointer<this> (weak),
     //      so any in-flight callback that fires after destruction will
     //      detect the dangling pointer and early-out without dispatching.
     //   2. The lambda uses Qt::QueuedConnection to marshal events back to
     //      the Qt main thread, and Qt drops queued events whose receiver
     //      has been destroyed.
-    // Together these eliminate the unsubscribeAndDrain race window.
+    // Together these eliminate the drain race window.
     //
     // CAUTION: if a future refactor captures `this` raw or invokes the
     // callback synchronously, this safety vanishes and the destructor
-    // MUST switch to unsubscribeAndDrain.
+    // MUST pass DrainPolicy::Drain.
     monitor.unsubscribe(subscriptionId);
 }

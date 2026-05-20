@@ -77,6 +77,16 @@ public:
     bool isSigningInProgress() const;
     bool hasFailures() const;
 
+    // True iff the wizard must collect CAN from the user before signing:
+    // contactless reader AND no Secure Messaging tunnel already up on the
+    // shared CardSession. False in every other case (contact card; or
+    // contactless where the display flow already established PACE+CAN on
+    // the inherited session). Pure function, no widget state touched.
+    static constexpr bool needsCanInput(bool isCL, bool smAlreadyUp) noexcept
+    {
+        return isCL && !smAlreadyUp;
+    }
+
 signals:
     void pinReady(bool ready);
     void signingStarted();

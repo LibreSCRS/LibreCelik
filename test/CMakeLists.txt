@@ -356,6 +356,7 @@ if(LIBRECELIK_SIGNING_ENABLED)
     target_link_libraries(SigningUnitTests PRIVATE
         GTest::gtest
         Qt6::Core
+        Qt6::Widgets
         LibreSCRS::Certificate
         LibreSCRS::Signing
     )

@@ -142,14 +142,18 @@ TEST(FormatRouting, UnknownGetsASiCE)
 
 namespace {
 
-struct FileSignInfo
+// Local mirror of the production FileSignInfo (defined in signing/signpage.h)
+// used by these output-path tests. Renamed to avoid a name clash with the
+// production type now that signing/signpage.h is included at the bottom of
+// this file for the SignPage::needsCanInput predicate tests.
+struct BuildPathInput
 {
     QString filePath;
     LibreSCRS::Signing::SignatureFormat format;
     LibreSCRS::Signing::PackagingMode packaging;
 };
 
-QString buildOutputPath(const FileSignInfo& info, const QString& outputDir)
+QString buildOutputPath(const BuildPathInput& info, const QString& outputDir)
 {
     QFileInfo fi(info.filePath);
     QString outputPath;
@@ -180,7 +184,7 @@ QString buildOutputPath(const FileSignInfo& info, const QString& outputDir)
 
 TEST(BuildOutputPath, PAdES)
 {
-    FileSignInfo info{"/tmp/document.pdf", LibreSCRS::Signing::SignatureFormat::Pades,
+    BuildPathInput info{"/tmp/document.pdf", LibreSCRS::Signing::SignatureFormat::Pades,
                       LibreSCRS::Signing::PackagingMode::Enveloped};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/document-signed.pdf"));
@@ -188,7 +192,7 @@ TEST(BuildOutputPath, PAdES)
 
 TEST(BuildOutputPath, XAdES_Enveloped)
 {
-    FileSignInfo info{"/tmp/data.xml", LibreSCRS::Signing::SignatureFormat::Xades,
+    BuildPathInput info{"/tmp/data.xml", LibreSCRS::Signing::SignatureFormat::Xades,
                       LibreSCRS::Signing::PackagingMode::Enveloped};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/data-signed.xml"));
@@ -196,7 +200,7 @@ TEST(BuildOutputPath, XAdES_Enveloped)
 
 TEST(BuildOutputPath, XAdES_Detached)
 {
-    FileSignInfo info{"/tmp/data.xml", LibreSCRS::Signing::SignatureFormat::Xades,
+    BuildPathInput info{"/tmp/data.xml", LibreSCRS::Signing::SignatureFormat::Xades,
                       LibreSCRS::Signing::PackagingMode::Detached};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/data.xml.xsig"));
@@ -204,7 +208,7 @@ TEST(BuildOutputPath, XAdES_Detached)
 
 TEST(BuildOutputPath, ASiCE)
 {
-    FileSignInfo info{"/tmp/report.docx", LibreSCRS::Signing::SignatureFormat::AsicE,
+    BuildPathInput info{"/tmp/report.docx", LibreSCRS::Signing::SignatureFormat::AsicE,
                       LibreSCRS::Signing::PackagingMode::Enveloped};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/report.asice"));
@@ -212,7 +216,7 @@ TEST(BuildOutputPath, ASiCE)
 
 TEST(BuildOutputPath, CAdES)
 {
-    FileSignInfo info{"/tmp/file.bin", LibreSCRS::Signing::SignatureFormat::Cades,
+    BuildPathInput info{"/tmp/file.bin", LibreSCRS::Signing::SignatureFormat::Cades,
                       LibreSCRS::Signing::PackagingMode::Detached};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/file.bin.p7s"));
@@ -220,7 +224,7 @@ TEST(BuildOutputPath, CAdES)
 
 TEST(BuildOutputPath, JAdES)
 {
-    FileSignInfo info{"/tmp/data.json", LibreSCRS::Signing::SignatureFormat::Jades,
+    BuildPathInput info{"/tmp/data.json", LibreSCRS::Signing::SignatureFormat::Jades,
                       LibreSCRS::Signing::PackagingMode::Detached};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/data.json.jose"));
@@ -229,7 +233,7 @@ TEST(BuildOutputPath, JAdES)
 TEST(BuildOutputPath, CompoundExtension)
 {
     // completeBaseName strips only the last extension
-    FileSignInfo info{"/tmp/archive.tar.gz", LibreSCRS::Signing::SignatureFormat::AsicE,
+    BuildPathInput info{"/tmp/archive.tar.gz", LibreSCRS::Signing::SignatureFormat::AsicE,
                       LibreSCRS::Signing::PackagingMode::Enveloped};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/archive.tar.asice"));
@@ -266,6 +270,42 @@ TEST(ParseLevel, UnknownDefaultsToBT)
 {
     EXPECT_EQ(parseLevel(""), LibreSCRS::Signing::SignatureLevel::B_T);
     EXPECT_EQ(parseLevel("INVALID"), LibreSCRS::Signing::SignatureLevel::B_T);
+}
+
+// ---------------------------------------------------------------------------
+// SignPage::needsCanInput — pure predicate gating CAN row visibility.
+// True iff the reader is contactless AND no SM tunnel is yet up on the
+// shared CardSession.
+// ---------------------------------------------------------------------------
+
+#include "signing/signpage.h"
+
+TEST(NeedsCanInput, ContactReaderHidesRow)
+{
+    EXPECT_FALSE(SignPage::needsCanInput(/*isCL=*/false, /*smAlreadyUp=*/false));
+    EXPECT_FALSE(SignPage::needsCanInput(/*isCL=*/false, /*smAlreadyUp=*/true));
+}
+
+TEST(NeedsCanInput, ContactlessWithLiveSmHidesRow)
+{
+    // After LC 8ed0c75: display flow established PACE+CAN on the shared
+    // session; wizard does not need to re-collect CAN.
+    EXPECT_FALSE(SignPage::needsCanInput(/*isCL=*/true, /*smAlreadyUp=*/true));
+}
+
+TEST(NeedsCanInput, ContactlessWithoutLiveSmShowsRow)
+{
+    // Fallback: wizard opened before display flow deposited CAN, or
+    // hasLiveSecureChannel() returned false on lock failure. User must
+    // re-enter CAN; PACE re-runs idempotently.
+    EXPECT_TRUE(SignPage::needsCanInput(/*isCL=*/true, /*smAlreadyUp=*/false));
+}
+
+TEST(NeedsCanInput, NoexceptContract)
+{
+    // The predicate must be noexcept so SignPage::configure can call it
+    // without exception-safety bookkeeping.
+    static_assert(noexcept(SignPage::needsCanInput(true, false)));
 }
 
 int main(int argc, char** argv)

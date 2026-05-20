@@ -185,7 +185,7 @@ QString buildOutputPath(const BuildPathInput& info, const QString& outputDir)
 TEST(BuildOutputPath, PAdES)
 {
     BuildPathInput info{"/tmp/document.pdf", LibreSCRS::Signing::SignatureFormat::Pades,
-                      LibreSCRS::Signing::PackagingMode::Enveloped};
+                        LibreSCRS::Signing::PackagingMode::Enveloped};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/document-signed.pdf"));
 }
@@ -193,7 +193,7 @@ TEST(BuildOutputPath, PAdES)
 TEST(BuildOutputPath, XAdES_Enveloped)
 {
     BuildPathInput info{"/tmp/data.xml", LibreSCRS::Signing::SignatureFormat::Xades,
-                      LibreSCRS::Signing::PackagingMode::Enveloped};
+                        LibreSCRS::Signing::PackagingMode::Enveloped};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/data-signed.xml"));
 }
@@ -201,7 +201,7 @@ TEST(BuildOutputPath, XAdES_Enveloped)
 TEST(BuildOutputPath, XAdES_Detached)
 {
     BuildPathInput info{"/tmp/data.xml", LibreSCRS::Signing::SignatureFormat::Xades,
-                      LibreSCRS::Signing::PackagingMode::Detached};
+                        LibreSCRS::Signing::PackagingMode::Detached};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/data.xml.xsig"));
 }
@@ -209,7 +209,7 @@ TEST(BuildOutputPath, XAdES_Detached)
 TEST(BuildOutputPath, ASiCE)
 {
     BuildPathInput info{"/tmp/report.docx", LibreSCRS::Signing::SignatureFormat::AsicE,
-                      LibreSCRS::Signing::PackagingMode::Enveloped};
+                        LibreSCRS::Signing::PackagingMode::Enveloped};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/report.asice"));
 }
@@ -217,7 +217,7 @@ TEST(BuildOutputPath, ASiCE)
 TEST(BuildOutputPath, CAdES)
 {
     BuildPathInput info{"/tmp/file.bin", LibreSCRS::Signing::SignatureFormat::Cades,
-                      LibreSCRS::Signing::PackagingMode::Detached};
+                        LibreSCRS::Signing::PackagingMode::Detached};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/file.bin.p7s"));
 }
@@ -225,7 +225,7 @@ TEST(BuildOutputPath, CAdES)
 TEST(BuildOutputPath, JAdES)
 {
     BuildPathInput info{"/tmp/data.json", LibreSCRS::Signing::SignatureFormat::Jades,
-                      LibreSCRS::Signing::PackagingMode::Detached};
+                        LibreSCRS::Signing::PackagingMode::Detached};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/data.json.jose"));
 }
@@ -234,7 +234,7 @@ TEST(BuildOutputPath, CompoundExtension)
 {
     // completeBaseName strips only the last extension
     BuildPathInput info{"/tmp/archive.tar.gz", LibreSCRS::Signing::SignatureFormat::AsicE,
-                      LibreSCRS::Signing::PackagingMode::Enveloped};
+                        LibreSCRS::Signing::PackagingMode::Enveloped};
     QString result = buildOutputPath(info, "/out");
     EXPECT_EQ(result, QStringLiteral("/out/archive.tar.asice"));
 }

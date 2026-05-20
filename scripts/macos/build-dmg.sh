@@ -87,15 +87,19 @@ MW_PLUGIN_DIR="$BUILD_DIR/plugins"
 GUI_PLUGIN_DIR="$BUILD_DIR/gui-plugins"
 
 # --- PKCS#11 module (for digital signing via PKCS#11 tokens) ---
-PKCS11_DYLIB="$BUILD_DIR/lib/pkcs11/librescrs-pkcs11.dylib"
-if [[ -f "$PKCS11_DYLIB" ]]; then
+# lib/pkcs11/CMakeLists.txt forces SUFFIX ".so" on every POSIX (including
+# macOS), so the file is librescrs-pkcs11.so (unversioned symlink pointing
+# to librescrs-pkcs11.<VERSION>.so on macOS, librescrs-pkcs11.so.<VERSION>
+# on Linux). cp follows the symlink and copies the real versioned file in.
+PKCS11_LIB="$BUILD_DIR/lib/pkcs11/librescrs-pkcs11.so"
+if [[ -e "$PKCS11_LIB" ]]; then
     echo "Copying PKCS#11 module..."
     # Frameworks/ is created later by macdeployqt; pre-create so we can stage here first.
     mkdir -p "$APP_STAGING/Contents/Frameworks"
-    cp "$PKCS11_DYLIB" "$APP_STAGING/Contents/Frameworks/"
-    echo "  $(basename "$PKCS11_DYLIB")"
+    cp "$PKCS11_LIB" "$APP_STAGING/Contents/Frameworks/librescrs-pkcs11.so"
+    echo "  librescrs-pkcs11.so"
 else
-    echo "ERROR: PKCS#11 module not found at $PKCS11_DYLIB — signing would not work."
+    echo "ERROR: PKCS#11 module not found at $PKCS11_LIB — signing would not work."
     echo "       Ensure LibreMiddleware builds librescrs-pkcs11 with LIBRARY_OUTPUT_DIRECTORY set to \${CMAKE_BINARY_DIR}/lib/pkcs11."
     exit 1
 fi

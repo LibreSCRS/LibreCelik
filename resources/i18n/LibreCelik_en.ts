@@ -23,30 +23,6 @@
         <source>Authentication failed</source>
         <translation>Authentication failed</translation>
     </message>
-    <message id="librescrs.error.sign.tsa_unreachable">
-        <source>The timestamp authority server is unreachable.</source>
-        <translation>The timestamp authority server is unreachable.</translation>
-    </message>
-    <message id="librescrs.error.sign.revocation_fetch_failed">
-        <source>Certificate revocation data could not be fetched.</source>
-        <translation>Certificate revocation data could not be fetched.</translation>
-    </message>
-    <message id="librescrs.error.sign.card_error">
-        <source>Smart card communication error during signing.</source>
-        <translation>Smart card communication error during signing.</translation>
-    </message>
-    <message id="librescrs.error.sign.pin_verification_failed">
-        <source>The PIN entered for signing is incorrect.</source>
-        <translation>The PIN entered for signing is incorrect.</translation>
-    </message>
-    <message id="librescrs.error.sign.invalid_request">
-        <source>The signing request is invalid.</source>
-        <translation>The signing request is invalid.</translation>
-    </message>
-    <message id="librescrs.error.sign.policy_violation">
-        <source>The signing request does not satisfy the configured policy.</source>
-        <translation>The signing request does not satisfy the configured policy.</translation>
-    </message>
     <message id="lc-doc-unavailable">
         <source>Unavailable</source>
         <translation>Unavailable</translation>

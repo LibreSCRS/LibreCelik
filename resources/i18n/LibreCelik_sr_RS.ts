@@ -23,30 +23,6 @@
         <source>Authentication failed</source>
         <translation>Аутентификација неуспешна</translation>
     </message>
-    <message id="librescrs.error.sign.tsa_unreachable">
-        <source>The timestamp authority server is unreachable.</source>
-        <translation>Сервер за временске жигове није доступан.</translation>
-    </message>
-    <message id="librescrs.error.sign.revocation_fetch_failed">
-        <source>Certificate revocation data could not be fetched.</source>
-        <translation>Подаци о опозиву сертификата нису доступни.</translation>
-    </message>
-    <message id="librescrs.error.sign.card_error">
-        <source>Smart card communication error during signing.</source>
-        <translation>Грешка у комуникацији са картицом приликом потписивања.</translation>
-    </message>
-    <message id="librescrs.error.sign.pin_verification_failed">
-        <source>The PIN entered for signing is incorrect.</source>
-        <translation>Унети PIN за потписивање није исправан.</translation>
-    </message>
-    <message id="librescrs.error.sign.invalid_request">
-        <source>The signing request is invalid.</source>
-        <translation>Захтев за потписивање није исправан.</translation>
-    </message>
-    <message id="librescrs.error.sign.policy_violation">
-        <source>The signing request does not satisfy the configured policy.</source>
-        <translation>Захтев за потписивање не задовољава подешену политику.</translation>
-    </message>
     <message id="lc-doc-unavailable">
         <source>Unavailable</source>
         <translation>Недоступно</translation>

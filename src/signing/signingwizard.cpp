@@ -207,6 +207,7 @@ void SigningWizard::goNext()
                 filePage->tsaUrl().toStdString(),
                 cardPlugin,
                 session,
+                session && session->hasLiveSecureChannel(),
             });
             stack->setCurrentIndex(2);
         }
@@ -226,6 +227,7 @@ void SigningWizard::goNext()
             filePage->tsaUrl().toStdString(),
             cardPlugin,
             session,
+            session && session->hasLiveSecureChannel(),
         });
         stack->setCurrentIndex(2);
     } else if (current == 2) {

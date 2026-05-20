@@ -50,6 +50,10 @@ jobs:
         with:
           languages: cpp
           queries: security-and-quality
+          # Exclude FetchContent _deps/ + LM's vendored thirdparty/ — those
+          # carry upstream OpenSC code, not LibreCelik-authored. See
+          # .github/codeql/codeql-config.yml for path-ignore details.
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: Configure & Build
         env:

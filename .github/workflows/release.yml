@@ -146,7 +146,12 @@ jobs:
           fetch-depth: 0
 
       - name: Install build tools
-        run: brew install ninja
+        # autoconf/automake/libtool/pkg-config are required by the vendored
+        # OpenSC autoconf bootstrap that LibreMiddleware (pulled via
+        # FetchContent) builds for the librescrs-opensc-pkcs11 fallback
+        # module. Without them, configure step of opensc_external fails
+        # with `autoreconf: command not found`.
+        run: brew install ninja autoconf automake libtool pkg-config
 
       - name: Install Qt 6.10
         uses: jurplel/install-qt-action@v4

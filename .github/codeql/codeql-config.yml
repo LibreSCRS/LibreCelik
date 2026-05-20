@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# SPDX-FileCopyrightText: 2026 hirashix0
+#
+# CodeQL configuration for the LibreCelik C++ analysis.
+#
+# LibreCelik consumes LibreMiddleware via CMake FetchContent, which checks
+# the LM source tree out under `build/_deps/libremiddleware-src/`. That
+# tree carries LM's own `thirdparty/opensc-source/` submodule — vendored
+# upstream OpenSC that we do not author. Path-injection warnings on
+# OpenSC's CLI tools and inconsistent-null-check style findings in the
+# pkcs15init / card-* drivers are upstream issues; surfacing them in
+# LibreCelik's security tab is noise.
+#
+# Exclude both the local `_deps/` FetchContent output and the LM-vendored
+# `thirdparty/` tree from analysis so security alerts track only
+# LibreCelik-authored code.
+
+name: "LibreCelik CodeQL"
+
+paths-ignore:
+  - _deps
+  - "**/thirdparty/**"

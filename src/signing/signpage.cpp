@@ -296,7 +296,8 @@ void SignPage::configure(Config cfg)
     const QString readerQ = QString::fromStdString(cfg.readerName);
     const bool isCL = readerQ.contains(QStringLiteral("CL"), Qt::CaseInsensitive) ||
                       readerQ.contains(QStringLiteral("Contactless"), Qt::CaseInsensitive);
-    canRow->setVisible(isCL);
+    canRow->setVisible(needsCanInput(isCL, cfg.smAlreadyUp));
+    canEdit->clear();
 
     certValueLabel->setText(QString::fromStdString(cfg.certificate.label));
     filesValueLabel->setText(QString::number(cfg.fileInfos.count()));

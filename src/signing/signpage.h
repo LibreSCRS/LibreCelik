@@ -67,6 +67,12 @@ public:
         // their lifetime past a wizard close.
         std::shared_ptr<LibreSCRS::Plugin::CardPlugin> cardPlugin;
         std::shared_ptr<LibreSCRS::SmartCard::CardSession> session;
+        // True iff the inherited CardSession already has a live Secure
+        // Messaging tunnel (CardSession::hasLiveSecureChannel() returned
+        // true at configure time). Sampled once by SigningWizard::goNext;
+        // not polled. Default false keeps fallback (mandatory CAN row)
+        // intact for any caller that does not opt in.
+        bool smAlreadyUp = false;
     };
 
     void configure(Config cfg);

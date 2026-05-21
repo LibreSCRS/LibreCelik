@@ -557,3 +557,52 @@ if(LIBRECELIK_SIGNING_ENABLED)
     add_dependencies(SigningWizardE2ETests pkcs15-plugin librescrs-pkcs11 LibreCelik_lrelease)
     gtest_discover_tests(SigningWizardE2ETests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()
+
+# Header-card placeholder render guard. Exercises TokenSection::setTokenInfo
+# against an empty CardFieldGroup and against a group containing a field
+# with an empty value, asserting the header still renders and the em-dash
+# (U+2014) placeholder appears in the rendered value cell. Compiles the
+# full TokenSection translation unit + its presentation dependencies; the
+# heavyweight pattern mirrors SigningWizardE2ETests because TokenSection
+# transitively references CertificateViewerDlg via onContextMenu.
+add_executable(TokenSectionTests
+    tokensection_placeholder_test.cpp
+    ${CMAKE_SOURCE_DIR}/src/document/tokensection.cpp
+    ${CMAKE_SOURCE_DIR}/src/certificate/certformat.cpp
+    ${CMAKE_SOURCE_DIR}/src/certificate/certificateviewerdlg.cpp
+    ${CMAKE_SOURCE_DIR}/src/certificate/certificateviewerwidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/certificate/certificateviewerwidget.ui
+    ${CMAKE_SOURCE_DIR}/src/certificate/certificatehierarchymodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/certificate/certificatetreeviewmodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/certificate/certificatepropertiesmodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/certificate/certificateinfoitem.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/cardheadercard.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/buttonbox.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
+)
+target_include_directories(TokenSectionTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${PROJECT_BINARY_DIR}/../src
+)
+target_link_libraries(TokenSectionTests PRIVATE
+    GTest::gtest_main
+    Qt6::Widgets
+    Qt6::Test
+    LibreSCRS::Plugin
+    LibreSCRS::SmartCard
+    LibreSCRS::Trust
+    LibreSCRS::Certificate
+)
+if(LIBRECELIK_SIGNING_ENABLED)
+    target_sources(TokenSectionTests PRIVATE
+        ${CMAKE_SOURCE_DIR}/src/signing/certutils.cpp
+    )
+    target_link_libraries(TokenSectionTests PRIVATE LibreSCRS::Signing)
+endif()
+set_target_properties(TokenSectionTests PROPERTIES
+    AUTOMOC ON
+    AUTOUIC ON
+    AUTORCC ON
+)
+gtest_discover_tests(TokenSectionTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

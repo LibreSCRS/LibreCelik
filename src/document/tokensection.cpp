@@ -101,6 +101,20 @@ bool isSigningCapable(const LibreSCRS::Plugin::CertificateData& cert)
 
 } // namespace
 
+namespace librecelik::document {
+
+QString formatFieldOrPlaceholder(const QString& value)
+{
+    // U+2014 EM DASH. Use the universal-character-name escape (not raw
+    // \xe2\x80\x94 bytes) because QStringLiteral treats each \x escape as
+    // a Latin-1 QChar, which would yield three U+00E2/U+0080/U+0094 chars
+    // and a six-byte UTF-8 round-trip instead of the intended single
+    // em-dash. \u escapes feed a true code point to the string-pool.
+    return value.isEmpty() ? QStringLiteral("—") : value;
+}
+
+} // namespace librecelik::document
+
 TokenSection::TokenSection(std::shared_ptr<const LibreSCRS::Trust::TrustStore> store, QWidget* parent)
     : CollapsibleSection(QString(), parent), trustStore(std::move(store))
 {
@@ -200,9 +214,6 @@ static QString formatSerialNumber(const LibreSCRS::Plugin::CardField& field)
 
 void TokenSection::setTokenInfo(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
-    if (group.fields.empty())
-        return;
-
     // Cache the raw group so retranslateUi() can rebuild the header card
     // with the current translator (per LM 4.0 retranslate pattern). The
     // first call populates the header; subsequent calls (e.g. invoked from
@@ -219,9 +230,6 @@ void TokenSection::setTokenInfo(const LibreSCRS::Plugin::CardFieldGroup& group)
     std::vector<LibreSCRS::HeaderField> headerFields;
 
     for (const auto& field : tokenGroup.fields) {
-        if (field.value.empty())
-            continue;
-
         QString labelText;
         if (field.key == "label")
             labelText = qtTrId("lc-pki-token-label");
@@ -233,17 +241,25 @@ void TokenSection::setTokenInfo(const LibreSCRS::Plugin::CardFieldGroup& group)
             labelText = QString::fromStdString(field.key);
 
         QString valueText;
-        if (field.key == "serial_number") {
+        if (field.key == "serial_number" && !field.value.empty()) {
             valueText = formatSerialNumber(field);
         } else if (auto text = field.textValue()) {
             valueText = QString::fromStdString(*text);
         }
 
-        headerFields.push_back({labelText, valueText});
+        headerFields.push_back({labelText, librecelik::document::formatFieldOrPlaceholder(valueText)});
     }
 
-    if (headerFields.empty())
-        return;
+    // Empty-group fallback: render the three canonical token rows with
+    // em-dash placeholders so the header is always structurally present.
+    // This is the load-bearing recovery path when the pkcs15 plugin
+    // returned no fields (e.g. acquireChannel failure on session restore).
+    if (headerFields.empty()) {
+        const QString placeholder = librecelik::document::formatFieldOrPlaceholder(QString());
+        headerFields.push_back({qtTrId("lc-pki-token-label"), placeholder});
+        headerFields.push_back({qtTrId("lc-pki-token-serial"), placeholder});
+        headerFields.push_back({qtTrId("lc-pki-token-manufacturer"), placeholder});
+    }
 
     headerCard = new LibreSCRS::CardHeaderCard(QIcon(QStringLiteral(":/images/certificate-icon.svg")), QSize(64, 64),
                                                headerFields, this);

@@ -24,6 +24,20 @@ class QTreeWidget;
 class QTreeWidgetItem;
 class QVBoxLayout;
 
+namespace librecelik::document {
+
+/// @brief Returns @p value if non-empty, otherwise the em-dash placeholder
+///        @c "—" (U+2014).
+///
+/// Used by @ref TokenSection to render token header fields whose values
+/// the middleware could not populate (partial card data). The header card
+/// is structural UX and must render even when individual values are
+/// missing; the placeholder makes the gap visually explicit instead of
+/// silently producing a blank cell.
+[[nodiscard]] QString formatFieldOrPlaceholder(const QString& value);
+
+} // namespace librecelik::document
+
 class TokenSection : public CollapsibleSection
 {
     Q_OBJECT

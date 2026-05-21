@@ -246,18 +246,19 @@ void AsyncCardReader::requestCertificates()
         if (stopRequested)
             return;
         try {
-            // Read token info first
+            // Read token info first.
+            // Emit unconditionally: TokenSection inserts em-dash placeholders
+            // for missing fields, so the header still renders when the plugin
+            // returns an empty TokenInfo (e.g. read fault, unsupported card).
             auto tokenInfo = pki->readTokenInfo(*session);
-            if (!tokenInfo.fields.empty()) {
-                QMetaObject::invokeMethod(
-                    self,
-                    [self, tokenInfo = std::move(tokenInfo)]() {
-                        if (!self)
-                            return;
-                        emit self->tokenInfoReady(tokenInfo);
-                    },
-                    Qt::QueuedConnection);
-            }
+            QMetaObject::invokeMethod(
+                self,
+                [self, tokenInfo = std::move(tokenInfo)]() {
+                    if (!self)
+                        return;
+                    emit self->tokenInfoReady(tokenInfo);
+                },
+                Qt::QueuedConnection);
 
             if (stopRequested)
                 return;
@@ -576,8 +577,10 @@ void AsyncCardReader::requestDataWithCredentials(EmrtdCredentials credentials)
                     certsAlreadyQueued = !certs.empty();
                     emit cardDataReady(data);
                     emit readingFinished();
-                    if (!tokenInfo.fields.empty())
-                        emit tokenInfoReady(tokenInfo);
+                    // Emit unconditionally: TokenSection inserts em-dash
+                    // placeholders for missing fields, so the header still
+                    // renders when TokenInfo is empty.
+                    emit tokenInfoReady(tokenInfo);
                     if (!certs.empty()) {
                         QMetaObject::invokeMethod(
                             self2,

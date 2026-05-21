@@ -121,10 +121,11 @@ ls "$APP_STAGING/Contents/PlugIns/gui-plugins/"
 # ---------------------------------------------------------------------------
 # Bundle the middleware certificate directory.
 #
-# The runtime walker (see LM commit 56c8f4d) resolves the certs dir relative
-# to the executable. macOS bundle layout: <exe>/../Resources/certificates.
-# LM_SRC env override supports a local LibreMiddleware checkout
-# (FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE); default is the FetchContent path.
+# The runtime walker resolves the certs dir from <exe>/../Resources/
+# certificates at load time. macOS bundle layout:
+# <exe>/../Resources/certificates. LM_SRC env override supports a local
+# LibreMiddleware checkout (FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE);
+# default is the FetchContent path.
 # ---------------------------------------------------------------------------
 LM_SRC="${LM_SRC:-$BUILD_DIR/_deps/libremiddleware-src}"
 CERT_SRC="$LM_SRC/thirdparty/certificates"

@@ -367,10 +367,11 @@ fi
 # ---------------------------------------------------------------------------
 # Phase 2c — Bundle the middleware certificate directory.
 #
-# The runtime walker (see LM commit 56c8f4d) resolves the certs dir relative
-# to the executable. Linux FHS layout: <exe>/../share/librescrs/certificates.
-# LM_SRC env override supports a local LibreMiddleware checkout
-# (FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE); default is the FetchContent path.
+# The runtime walker resolves the certs dir from <exe>/../share/librescrs/
+# certificates at load time. Linux FHS layout: <exe>/../share/librescrs/
+# certificates. LM_SRC env override supports a local LibreMiddleware
+# checkout (FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE); default is the
+# FetchContent path.
 # ---------------------------------------------------------------------------
 LM_SRC="${LM_SRC:-$BUILD_DIR/_deps/libremiddleware-src}"
 CERT_SRC="$LM_SRC/thirdparty/certificates"

@@ -365,6 +365,28 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Phase 2c — Bundle the middleware certificate directory.
+#
+# The runtime walker (see LM commit 56c8f4d) resolves the certs dir relative
+# to the executable. Linux FHS layout: <exe>/../share/librescrs/certificates.
+# LM_SRC env override supports a local LibreMiddleware checkout
+# (FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE); default is the FetchContent path.
+# ---------------------------------------------------------------------------
+LM_SRC="${LM_SRC:-$BUILD_DIR/_deps/libremiddleware-src}"
+CERT_SRC="$LM_SRC/thirdparty/certificates"
+APPDIR_CERT_DIR="$APPDIR/usr/share/librescrs/certificates"
+if [[ -d "$CERT_SRC" ]]; then
+    echo "Bundling middleware certificates..."
+    mkdir -p "$APPDIR_CERT_DIR"
+    cp -r "$CERT_SRC/." "$APPDIR_CERT_DIR/"
+    echo "[appimage] copied bundled certs to $APPDIR_CERT_DIR"
+else
+    echo "ERROR: middleware certs directory not found at $CERT_SRC"
+    echo "       Set LM_SRC=<libremiddleware-source> if using a custom checkout."
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
 # Phase 3 — Package with appimagetool.
 # ---------------------------------------------------------------------------
 echo ""

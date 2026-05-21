@@ -119,6 +119,28 @@ done
 ls "$APP_STAGING/Contents/PlugIns/gui-plugins/"
 
 # ---------------------------------------------------------------------------
+# Bundle the middleware certificate directory.
+#
+# The runtime walker (see LM commit 56c8f4d) resolves the certs dir relative
+# to the executable. macOS bundle layout: <exe>/../Resources/certificates.
+# LM_SRC env override supports a local LibreMiddleware checkout
+# (FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE); default is the FetchContent path.
+# ---------------------------------------------------------------------------
+LM_SRC="${LM_SRC:-$BUILD_DIR/_deps/libremiddleware-src}"
+CERT_SRC="$LM_SRC/thirdparty/certificates"
+DMG_CERT_DIR="$APP_STAGING/Contents/Resources/certificates"
+if [[ -d "$CERT_SRC" ]]; then
+    echo "Bundling middleware certificates..."
+    mkdir -p "$DMG_CERT_DIR"
+    cp -R "$CERT_SRC/." "$DMG_CERT_DIR/"
+    echo "[dmg] copied bundled certs to $DMG_CERT_DIR"
+else
+    echo "ERROR: middleware certs directory not found at $CERT_SRC"
+    echo "       Set LM_SRC=<libremiddleware-source> if using a custom checkout."
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
 # Run macdeployqt — bundles Qt frameworks, plugins, and .qm translations
 # ---------------------------------------------------------------------------
 echo "Running macdeployqt..."

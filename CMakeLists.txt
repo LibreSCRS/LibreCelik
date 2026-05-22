@@ -41,21 +41,6 @@ set(MIDDLEWARE_VERSION 4.1.0)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOrUseLibreMiddleware.cmake)
 
 if(NOT LIBRECELIK_USE_INSTALLED_LM)
-    # Build LM as SHARED so the in-tree PKCS#11 module, signing plugins,
-    # libresign, and LibreCelik itself all resolve LM symbols against a
-    # single libLibreSCRS_*.so.4 instance. Cross-`.so` shared state — most
-    # critically SessionPresence — depends on this: with STATIC LM each
-    # plugin would carry its own internal copy of the registry singleton,
-    # causing the in-process auto-register / probe handshake to silently
-    # operate on disjoint maps.
-    #
-    # LibreKDE already mandates SHARED LM (find_package(LibreMiddleware
-    # CONFIG) in its CMakeLists). Defaulting LC to the same mode keeps the
-    # LibreSCRS distribution consistent.
-    set(LIBREMIDDLEWARE_BUILD_SHARED ON CACHE BOOL
-        "Build LibreMiddleware as a set of SHARED libraries (required for "
-        "cross-`.so` SessionPresence to operate on a single instance).")
-
     # Fetch LibreMiddleware (smartcard, rs-eid, rs-health, eu-vrc, emrtd, pkcs15 libraries)
     include(FetchContent)
     FetchContent_Declare(LibreMiddleware

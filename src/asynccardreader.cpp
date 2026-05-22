@@ -14,6 +14,8 @@
 #include <QPointer>
 #include <QStringList>
 
+#include <cstdlib>
+#include <iostream>
 #include <utility>
 
 AsyncCardReader::AsyncCardReader(std::vector<std::shared_ptr<LibreSCRS::Plugin::CardPlugin>> candidates,
@@ -245,6 +247,10 @@ void AsyncCardReader::requestCertificates()
     futurePKI = std::async(std::launch::async, [this, self, pki]() {
         if (stopRequested)
             return;
+        if (std::getenv("LIBRESCRS_PROBE_TRACE")) {
+            std::clog << "[PROBE_TRACE] hasLiveSecureChannel(reader=" << session->readerName()
+                      << ")=" << (session->hasLiveSecureChannel() ? "true" : "false") << "\n";
+        }
         try {
             // Read token info first.
             // Emit unconditionally: TokenSection inserts em-dash placeholders
@@ -501,6 +507,11 @@ void AsyncCardReader::requestDataWithCredentials(EmrtdCredentials credentials)
                 return;
             }
             auto data = std::move(*rr.data);
+
+            if (std::getenv("LIBRESCRS_PROBE_TRACE")) {
+                std::clog << "[PROBE_TRACE] hasLiveSecureChannel(reader=" << session->readerName()
+                          << ")=" << (session->hasLiveSecureChannel() ? "true" : "false") << "\n";
+            }
 
             // PKI fallback — SM filter stays active (installed by eMRTD plugin
             // after PACE). Re-probe for PKI plugins that require authentication

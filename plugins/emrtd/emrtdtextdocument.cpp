@@ -7,7 +7,7 @@
 #include <plugin/carddatautils.h>
 #include <LibreSCRS/Plugin/SecurityCheck.h>
 
-using LibreSCRS::Plugin::getFieldValue;
+using librecelik::plugin::getFieldValue;
 
 EMRTDTextDocument::EMRTDTextDocument(const LibreSCRS::Plugin::CardData& cardData, QString documentPath, QString cssPath)
 {

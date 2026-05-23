@@ -6,7 +6,7 @@
 #include "eidtextdocument.h"
 #include <plugin/carddatautils.h>
 
-using LibreSCRS::Plugin::getFieldValue;
+using librecelik::plugin::getFieldValue;
 
 EIdTextDocument::EIdTextDocument(const LibreSCRS::Plugin::CardData& cardData, QString documentPath, QString cssPath)
 {

@@ -30,7 +30,7 @@ TEST_F(FieldSectionBuilderTest, CreatesReadOnlyFieldsFromGroup)
     group.fields.push_back(
         {"surname", "Surname", LibreSCRS::Plugin::FieldType::Text, {'P', 'e', 't', 'r', 'o', 'v', 'i', 'c'}});
 
-    auto* section = LibreSCRS::FieldSectionBuilder::build("Personal Data", group, {});
+    auto* section = librecelik::utils::FieldSectionBuilder::build("Personal Data", group, {});
 
     ASSERT_NE(section, nullptr);
     auto edits = section->findChildren<QLineEdit*>();
@@ -53,7 +53,7 @@ TEST_F(FieldSectionBuilderTest, SkipsEmptyFields)
     group.fields.push_back({"filled", "Filled", LibreSCRS::Plugin::FieldType::Text, {'A'}});
     group.fields.push_back({"empty", "Empty", LibreSCRS::Plugin::FieldType::Text, {}});
 
-    auto* section = LibreSCRS::FieldSectionBuilder::build("Test", group, {});
+    auto* section = librecelik::utils::FieldSectionBuilder::build("Test", group, {});
     auto edits = section->findChildren<QLineEdit*>();
     ASSERT_EQ(edits.size(), 1);
     EXPECT_EQ(edits[0]->text(), "A");
@@ -69,7 +69,7 @@ TEST_F(FieldSectionBuilderTest, UsesTranslationMap)
 
     std::map<std::string, QString> translations = {{"given_name", "Ime"}};
 
-    auto* section = LibreSCRS::FieldSectionBuilder::build("Personal", group, translations);
+    auto* section = librecelik::utils::FieldSectionBuilder::build("Personal", group, translations);
     auto labels = section->findChildren<QLabel*>();
     bool found = false;
     for (auto* label : labels) {
@@ -87,7 +87,7 @@ TEST_F(FieldSectionBuilderTest, FallsBackToKeyWhenNoTranslation)
     group.groupKey = "test";
     group.fields.push_back({"my_field", "My Field", LibreSCRS::Plugin::FieldType::Text, {'X'}});
 
-    auto* section = LibreSCRS::FieldSectionBuilder::build("Test", group, {});
+    auto* section = librecelik::utils::FieldSectionBuilder::build("Test", group, {});
     auto labels = section->findChildren<QLabel*>();
     bool found = false;
     for (auto* label : labels) {
@@ -107,7 +107,7 @@ TEST_F(FieldSectionBuilderTest, HidesFieldsInHiddenSet)
     group.fields.push_back({"hidden", "Hidden", LibreSCRS::Plugin::FieldType::Text, {'B'}});
 
     std::set<std::string> hidden = {"hidden"};
-    auto* section = LibreSCRS::FieldSectionBuilder::build("Test", group, {}, hidden);
+    auto* section = librecelik::utils::FieldSectionBuilder::build("Test", group, {}, hidden);
     auto edits = section->findChildren<QLineEdit*>();
     ASSERT_EQ(edits.size(), 1);
     EXPECT_EQ(edits[0]->text(), "A");

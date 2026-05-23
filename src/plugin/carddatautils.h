@@ -9,7 +9,10 @@
 #include <optional>
 #include <utility>
 
-namespace LibreSCRS::Plugin {
+namespace librecelik::plugin {
+
+using ::LibreSCRS::Plugin::CardData;
+using ::LibreSCRS::Plugin::CardFieldGroup;
 
 /// @brief Look up a field value by key within a group, returning its text
 /// representation (empty QString if the group is missing, the field is
@@ -65,4 +68,4 @@ inline QString getFieldValue(const CardData& data, const std::string& key)
     return {};
 }
 
-} // namespace LibreSCRS::Plugin
+} // namespace librecelik::plugin

@@ -9,7 +9,7 @@
 #include <QPalette>
 #include <QVBoxLayout>
 
-namespace LibreSCRS {
+namespace librecelik::utils {
 
 CollapsibleSection* FieldSectionBuilder::build(const QString& title, const LibreSCRS::Plugin::CardFieldGroup& group,
                                                const std::map<std::string, QString>& translationMap,
@@ -101,4 +101,4 @@ void FieldSectionBuilder::highlightExpiredDates(CollapsibleSection* section,
     }
 }
 
-} // namespace LibreSCRS
+} // namespace librecelik::utils

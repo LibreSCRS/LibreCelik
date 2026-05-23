@@ -227,7 +227,7 @@ void TokenSection::setTokenInfo(const LibreSCRS::Plugin::CardFieldGroup& group)
         headerCard = nullptr;
     }
 
-    std::vector<LibreSCRS::HeaderField> headerFields;
+    std::vector<librecelik::utils::HeaderField> headerFields;
 
     for (const auto& field : tokenGroup.fields) {
         QString labelText;
@@ -261,8 +261,8 @@ void TokenSection::setTokenInfo(const LibreSCRS::Plugin::CardFieldGroup& group)
         headerFields.push_back({qtTrId("lc-pki-token-manufacturer"), placeholder});
     }
 
-    headerCard = new LibreSCRS::CardHeaderCard(QIcon(QStringLiteral(":/images/certificate-icon.svg")), QSize(64, 64),
-                                               headerFields, this);
+    headerCard = new librecelik::utils::CardHeaderCard(QIcon(QStringLiteral(":/images/certificate-icon.svg")),
+                                                       QSize(64, 64), headerFields, this);
 
     contentLayout->insertWidget(0, headerCard);
     updateTreeMinimumHeight();

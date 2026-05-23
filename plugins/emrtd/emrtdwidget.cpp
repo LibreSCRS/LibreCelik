@@ -20,7 +20,7 @@
 #include <QPixmap>
 #include <QVBoxLayout>
 
-using LibreSCRS::Plugin::getFieldValue;
+using librecelik::plugin::getFieldValue;
 
 namespace {
 
@@ -151,16 +151,16 @@ void EMRTDWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
         photoLabel->setFixedSize(190, 250);
         photoRow->addWidget(photoLabel, 0, Qt::AlignTop);
 
-        auto* personalSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-personal-data-title"), group,
-                                                                  personalTranslationMap(), {}, outerSection);
+        auto* personalSec = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-personal-data-title"), group,
+                                                                          personalTranslationMap(), {}, outerSection);
         personalSec->setCollapsible(false);
         photoRow->addWidget(personalSec, 1);
 
         sectionLayout->insertLayout(0, photoRow);
     } else if (key == "document") {
-        auto* docSection =
-            LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-document-data"), group, documentTranslationMap());
-        LibreSCRS::FieldSectionBuilder::highlightExpiredDates(docSection, group, {"date_of_expiry"});
+        auto* docSection = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-emrtd-document-data"), group,
+                                                                         documentTranslationMap());
+        librecelik::utils::FieldSectionBuilder::highlightExpiredDates(docSection, group, {"date_of_expiry"});
         sectionLayout->addWidget(docSection);
     } else if (key == "photo") {
         if (!photoLabel || group.fields.empty() || group.fields[0].value.empty())
@@ -186,20 +186,20 @@ void EMRTDWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
             sectionLayout->addWidget(sigSection);
         }
     } else if (key == "additional") {
-        auto* additionalSection =
-            LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-additional"), group, additionalTranslationMap());
+        auto* additionalSection = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-emrtd-additional"), group,
+                                                                                additionalTranslationMap());
         sectionLayout->addWidget(additionalSection);
     } else if (key == "document_extra") {
         // If "additional" already added, show as separate "Issuing Information" section
         // Otherwise show as "Additional"
         bool hasAdditional = data.findGroup("additional").has_value();
         if (hasAdditional) {
-            auto* extraSection = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-issuing-info"), group,
-                                                                       documentExtraTranslationMap());
+            auto* extraSection = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-emrtd-issuing-info"), group,
+                                                                               documentExtraTranslationMap());
             sectionLayout->addWidget(extraSection);
         } else {
-            auto* extraSection = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-additional"), group,
-                                                                       documentExtraTranslationMap());
+            auto* extraSection = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-emrtd-additional"), group,
+                                                                               documentExtraTranslationMap());
             sectionLayout->addWidget(extraSection);
         }
     } else if (key == "presence") {
@@ -223,7 +223,7 @@ void EMRTDWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
         }
     } else if (key == "contacts") {
         auto* contactsSection =
-            LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-contacts"), group, contactsTranslationMap());
+            librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-emrtd-contacts"), group, contactsTranslationMap());
         sectionLayout->addWidget(contactsSection);
     } else if (key == "biometric_fingerprint" || key == "biometric_iris") {
         QString title = (key == "biometric_fingerprint") ? qtTrId("lc-emrtd-biometric-fingerprint")
@@ -291,8 +291,8 @@ void EMRTDWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
         // Always insert at top of section
         sectionLayout->insertWidget(0, securityStatusWidget);
     } else if (key == "national") {
-        auto* nationalSection =
-            LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-emrtd-national-data"), group, nationalTranslationMap());
+        auto* nationalSection = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-emrtd-national-data"), group,
+                                                                              nationalTranslationMap());
         sectionLayout->addWidget(nationalSection);
     }
 }

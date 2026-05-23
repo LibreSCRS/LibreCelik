@@ -90,7 +90,7 @@ private:
     bool hasTokenGroup = false;
 
     QVBoxLayout* contentLayout = nullptr;
-    LibreSCRS::CardHeaderCard* headerCard = nullptr;
+    librecelik::utils::CardHeaderCard* headerCard = nullptr;
     QTreeWidget* treeWidget = nullptr;
     QTreeWidgetItem* tokenCertsItem = nullptr;
     QTreeWidgetItem* tokenPinItem = nullptr;

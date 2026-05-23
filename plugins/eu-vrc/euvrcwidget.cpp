@@ -18,7 +18,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-using LibreSCRS::Plugin::getFieldValue;
+using librecelik::plugin::getFieldValue;
 
 EuVrcWidget::EuVrcWidget(const LibreSCRS::Plugin::CardData& cardData, QWidget* parent) : EuVrcWidget(parent)
 {
@@ -87,14 +87,14 @@ void EuVrcWidget::addRegistrationGroup(const LibreSCRS::Plugin::CardFieldGroup& 
     auto expiry = getFieldValue(&group, "expiry_date");
     auto memberState = getFieldValue(&group, "member_state");
 
-    std::vector<LibreSCRS::HeaderField> headerFields = {
+    std::vector<librecelik::utils::HeaderField> headerFields = {
         {qtTrId("lc-euvrc-hdr-registration"), regNumber, 2},
         {qtTrId("lc-euvrc-hdr-member-state"), memberState},
         {qtTrId("lc-euvrc-hdr-valid-to"), expiry},
     };
 
-    headerCard =
-        new LibreSCRS::CardHeaderCard(QIcon(":/images/vehicle-icon.svg"), QSize(80, 80), headerFields, outerSection);
+    headerCard = new librecelik::utils::CardHeaderCard(QIcon(":/images/vehicle-icon.svg"), QSize(80, 80), headerFields,
+                                                       outerSection);
     contentLayout->addWidget(headerCard);
 
     contentLayout->addWidget(buildRegistrationSection(&group));
@@ -111,15 +111,15 @@ void EuVrcWidget::addVehicleGroup(const LibreSCRS::Plugin::CardFieldGroup& group
             auto memberState = getFieldValue(&regGroup, "member_state");
             auto make = getFieldValue(&group, "vehicle_make");
 
-            std::vector<LibreSCRS::HeaderField> headerFields = {
+            std::vector<librecelik::utils::HeaderField> headerFields = {
                 {qtTrId("lc-euvrc-hdr-registration"), regNumber, 2},
                 {qtTrId("lc-euvrc-hdr-make"), make},
                 {qtTrId("lc-euvrc-hdr-member-state"), memberState},
                 {qtTrId("lc-euvrc-hdr-valid-to"), expiry},
             };
 
-            auto* newHeader = new LibreSCRS::CardHeaderCard(QIcon(":/images/vehicle-icon.svg"), QSize(80, 80),
-                                                            headerFields, outerSection);
+            auto* newHeader = new librecelik::utils::CardHeaderCard(QIcon(":/images/vehicle-icon.svg"), QSize(80, 80),
+                                                                    headerFields, outerSection);
             delete contentLayout->replaceWidget(headerCard, newHeader);
             headerCard->deleteLater();
             headerCard = newHeader;
@@ -210,10 +210,11 @@ CollapsibleSection* EuVrcWidget::buildRegistrationSection(const LibreSCRS::Plugi
         {"previous_document", qtTrId("lc-euvrc-reg-previous-document")},
     };
 
-    auto* section = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-registration"), regGroup, labels);
+    auto* section =
+        librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-registration"), regGroup, labels);
 
     // Apply orange highlight to expiry date if expired
-    LibreSCRS::FieldSectionBuilder::highlightExpiredDates(section, regGroup, {"expiry_date"});
+    librecelik::utils::FieldSectionBuilder::highlightExpiredDates(section, regGroup, {"expiry_date"});
 
     return section;
 }
@@ -250,7 +251,7 @@ CollapsibleSection* EuVrcWidget::buildVehicleSection(const LibreSCRS::Plugin::Ca
         {"max_speed", qtTrId("lc-euvrc-veh-max-speed")},
     };
 
-    return LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-vehicle"), vehGroup, labels);
+    return librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-vehicle"), vehGroup, labels);
 }
 
 CollapsibleSection* EuVrcWidget::buildEngineTechnicalSection(const LibreSCRS::Plugin::CardFieldGroup* group)
@@ -317,7 +318,7 @@ CollapsibleSection* EuVrcWidget::buildEngineTechnicalSection(const LibreSCRS::Pl
         {"fuel_tank_capacity", qtTrId("lc-euvrc-eng-fuel-tank")},
     };
 
-    return LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-engine"), techGroup, labels);
+    return librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-engine"), techGroup, labels);
 }
 
 CollapsibleSection* EuVrcWidget::buildHolderSection(const LibreSCRS::Plugin::CardFieldGroup* group)
@@ -354,7 +355,7 @@ CollapsibleSection* EuVrcWidget::buildHolderSection(const LibreSCRS::Plugin::Car
         {"holder_address", qtTrId("lc-euvrc-holder-address")},
     };
 
-    return LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-holder"), holderGroup, labels);
+    return librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-holder"), holderGroup, labels);
 }
 
 CollapsibleSection* EuVrcWidget::buildOwnerSection(const LibreSCRS::Plugin::CardFieldGroup* group)
@@ -377,7 +378,7 @@ CollapsibleSection* EuVrcWidget::buildOwnerSection(const LibreSCRS::Plugin::Card
         {"owner2_name", qtTrId("lc-euvrc-owner-name")},
     };
 
-    return LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-owner"), ownerGroup, labels);
+    return librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-owner"), ownerGroup, labels);
 }
 
 CollapsibleSection* EuVrcWidget::buildUserSection(const LibreSCRS::Plugin::CardFieldGroup* group)
@@ -414,7 +415,7 @@ CollapsibleSection* EuVrcWidget::buildUserSection(const LibreSCRS::Plugin::CardF
         {"user_address", qtTrId("lc-euvrc-user-address")},
     };
 
-    auto* section = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-user"), userGroup, labels);
+    auto* section = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-user"), userGroup, labels);
 
     // Hide when all fields are empty
     if (userGroup.fields.empty())
@@ -463,7 +464,8 @@ CollapsibleSection* EuVrcWidget::buildNationalSection(const LibreSCRS::Plugin::C
         }
     }
 
-    auto* section = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-national"), natGroup, labels);
+    auto* section =
+        librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-national"), natGroup, labels);
 
     return section;
 }

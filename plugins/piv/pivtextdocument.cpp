@@ -6,7 +6,7 @@
 #include "pivtextdocument.h"
 #include <plugin/carddatautils.h>
 
-using LibreSCRS::Plugin::getFieldValue;
+using librecelik::plugin::getFieldValue;
 
 PIVTextDocument::PIVTextDocument(const LibreSCRS::Plugin::CardData& cardData, QString cssPath)
 {

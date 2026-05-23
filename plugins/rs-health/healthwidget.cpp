@@ -14,7 +14,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-using LibreSCRS::Plugin::getFieldValue;
+using librecelik::plugin::getFieldValue;
 
 static std::map<std::string, QString> insuranceTranslationMap()
 {
@@ -134,14 +134,14 @@ void HealthWidget::addPersonalGroup(const LibreSCRS::Plugin::CardFieldGroup& gro
 {
     // Build CardHeaderCard with health icon and key personal fields.
     // Insurance fields are not yet available, so only personal fields appear in header.
-    std::vector<LibreSCRS::HeaderField> headerFields;
+    std::vector<librecelik::utils::HeaderField> headerFields;
     headerFields.push_back({qtTrId("lc-health-label-given-name"), getFieldValue(&group, "given_name")});
     headerFields.push_back({qtTrId("lc-health-label-family-name"), getFieldValue(&group, "family_name")});
     headerFields.push_back({qtTrId("lc-health-label-jmbg"), getFieldValue(&group, "personal_number")});
     headerFields.push_back({qtTrId("lc-health-label-lbo"), getFieldValue(&group, "insurant_number")});
 
     QIcon healthIcon(QStringLiteral(":/images/health-icon.svg"));
-    auto* headerCard = new LibreSCRS::CardHeaderCard(healthIcon, QSize(80, 80), headerFields, outerSection);
+    auto* headerCard = new librecelik::utils::CardHeaderCard(healthIcon, QSize(80, 80), headerFields, outerSection);
     contentLayout->addWidget(headerCard);
 }
 
@@ -150,15 +150,15 @@ void HealthWidget::addInsuranceGroup(const LibreSCRS::Plugin::CardFieldGroup& /*
     // Transform permanently_valid in accumulated data
     transformPermanentlyValid(data.groups.back());
 
-    auto* insuranceSec = LibreSCRS::FieldSectionBuilder::build(
+    auto* insuranceSec = librecelik::utils::FieldSectionBuilder::build(
         qtTrId("lc-health-section-insurance"), data.groups.back(), insuranceTranslationMap(), {}, outerSection);
     contentLayout->addWidget(insuranceSec);
 }
 
 void HealthWidget::addAddressGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
-    auto* addressSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-address"), group,
-                                                             addressTranslationMap(), {}, outerSection);
+    auto* addressSec = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-health-section-address"), group,
+                                                                     addressTranslationMap(), {}, outerSection);
     contentLayout->addWidget(addressSec);
 }
 
@@ -169,16 +169,16 @@ void HealthWidget::addCarrierGroup(const LibreSCRS::Plugin::CardFieldGroup& grou
     bool showCarrier = hasData || familyMember == "true";
 
     if (showCarrier) {
-        auto* carrierSection = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-carrier"), group,
-                                                                     carrierTranslationMap(), {}, outerSection);
+        auto* carrierSection = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-health-section-carrier"), group,
+                                                                             carrierTranslationMap(), {}, outerSection);
         contentLayout->addWidget(carrierSection);
     }
 }
 
 void HealthWidget::addTaxpayerGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
-    auto* taxpayerSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-health-section-taxpayer"), group,
-                                                              taxpayerTranslationMap(), {}, outerSection);
+    auto* taxpayerSec = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-health-section-taxpayer"), group,
+                                                                      taxpayerTranslationMap(), {}, outerSection);
     contentLayout->addWidget(taxpayerSec);
 }
 

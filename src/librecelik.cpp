@@ -483,7 +483,7 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
                     // the existing widget instead of creating a duplicate.
                     if (auto* existing = qobject_cast<EMRTDAuthWidget*>(it->second.widget)) {
                         if (auto errGroup = data.findGroup("error")) {
-                            auto errMsg = LibreSCRS::Plugin::getFieldValue(data, errGroup, "error");
+                            auto errMsg = librecelik::plugin::getFieldValue(data, errGroup, "error");
                             existing->onAuthFailed(errMsg.isEmpty() ? qtTrId("lc-error-auth-failed") : errMsg);
                         }
                         return;
@@ -491,7 +491,7 @@ void LibreCelik::addNewReader(std::string reader, int retryCount)
 
                     auto* authWidget = new EMRTDAuthWidget(this);
                     auto paceFlag =
-                        LibreSCRS::Plugin::getFieldValue(data, data.findGroup("auth_required"), "pace_supported");
+                        librecelik::plugin::getFieldValue(data, data.findGroup("auth_required"), "pace_supported");
                     authWidget->setDefaultTab(paceFlag == "true");
 
                     connect(authWidget, &EMRTDAuthWidget::credentialsEntered, asyncReader,

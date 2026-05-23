@@ -7,7 +7,7 @@
 
 #include <LibreSCRS/Plugin/CardData.h>
 
-namespace LibreSCRS {
+namespace librecelik::utils {
 class CardHeaderCard;
 }
 
@@ -62,5 +62,5 @@ private:
     QVBoxLayout* contentLayout = nullptr;
     CollapsibleSection* outerSection = nullptr;
     QToolButton* printBtn = nullptr;
-    LibreSCRS::CardHeaderCard* headerCard = nullptr;
+    librecelik::utils::CardHeaderCard* headerCard = nullptr;
 };

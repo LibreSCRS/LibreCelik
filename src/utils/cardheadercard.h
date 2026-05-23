@@ -14,7 +14,7 @@ class QLabel;
 class QPixmap;
 class QVBoxLayout;
 
-namespace LibreSCRS {
+namespace librecelik::utils {
 
 struct HeaderField
 {
@@ -47,4 +47,4 @@ private:
     QVBoxLayout* rightColumnLayout = nullptr;
 };
 
-} // namespace LibreSCRS
+} // namespace librecelik::utils

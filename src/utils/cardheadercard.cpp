@@ -12,7 +12,7 @@
 #include <QPixmap>
 #include <QVBoxLayout>
 
-namespace LibreSCRS {
+namespace librecelik::utils {
 
 CardHeaderCard::CardHeaderCard(const QIcon& icon, const QSize& iconSize, const std::vector<HeaderField>& fields,
                                QWidget* parent)
@@ -90,4 +90,4 @@ void CardHeaderCard::changeEvent(QEvent* event)
     QWidget::changeEvent(event);
 }
 
-} // namespace LibreSCRS
+} // namespace librecelik::utils

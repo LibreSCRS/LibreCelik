@@ -10,7 +10,7 @@
 #include <set>
 #include <string>
 
-namespace LibreSCRS {
+namespace librecelik::utils {
 
 class FieldSectionBuilder
 {
@@ -29,4 +29,4 @@ public:
                                       const std::set<std::string>& dateFieldKeys);
 };
 
-} // namespace LibreSCRS
+} // namespace librecelik::utils

@@ -7,7 +7,7 @@
 #include "utils/stringutils.h"
 #include <plugin/carddatautils.h>
 
-using LibreSCRS::Plugin::getFieldValue;
+using librecelik::plugin::getFieldValue;
 
 EuVrcTextDocument::EuVrcTextDocument(const LibreSCRS::Plugin::CardData& cardData, QString cssPath)
 {

@@ -19,7 +19,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-using LibreSCRS::Plugin::getFieldValue;
+using librecelik::plugin::getFieldValue;
 
 EidWidget::EidWidget(const LibreSCRS::Plugin::CardData& cardData, QWidget* parent) : EidWidget(parent)
 {
@@ -205,8 +205,8 @@ CollapsibleSection* EidWidget::buildPersonalSection(QWidget* parent) const
         }
     }
 
-    auto* section = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-personal-data-title"), modifiedGroup,
-                                                          translationMap, hiddenFields, parent);
+    auto* section = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-personal-data-title"), modifiedGroup,
+                                                                  translationMap, hiddenFields, parent);
     section->setCollapsible(false);
     return section;
 }
@@ -216,21 +216,21 @@ void EidWidget::addVerificationBadges(CollapsibleSection* section, const LibreSC
     if (!section)
         return;
 
-    auto toResult = [](const QString& val) -> LibreSCRS::VerificationStatus::Result {
+    auto toResult = [](const QString& val) -> librecelik::utils::VerificationStatus::Result {
         if (val == "valid")
-            return LibreSCRS::VerificationStatus::Valid;
+            return librecelik::utils::VerificationStatus::Valid;
         if (val == "invalid")
-            return LibreSCRS::VerificationStatus::Invalid;
-        return LibreSCRS::VerificationStatus::Unknown;
+            return librecelik::utils::VerificationStatus::Invalid;
+        return librecelik::utils::VerificationStatus::Unknown;
     };
 
-    std::vector<LibreSCRS::VerificationStatus> results = {
-        {qtTrId("lc-eid-label-card-verification"),
-         source ? toResult(getFieldValue(source, "card_verification")) : LibreSCRS::VerificationStatus::Unknown},
-        {qtTrId("lc-eid-label-fixed-verification"),
-         source ? toResult(getFieldValue(source, "fixed_verification")) : LibreSCRS::VerificationStatus::Unknown},
-        {qtTrId("lc-eid-label-variable-verification"),
-         source ? toResult(getFieldValue(source, "variable_verification")) : LibreSCRS::VerificationStatus::Unknown},
+    std::vector<librecelik::utils::VerificationStatus> results = {
+        {qtTrId("lc-eid-label-card-verification"), source ? toResult(getFieldValue(source, "card_verification"))
+                                                          : librecelik::utils::VerificationStatus::Unknown},
+        {qtTrId("lc-eid-label-fixed-verification"), source ? toResult(getFieldValue(source, "fixed_verification"))
+                                                           : librecelik::utils::VerificationStatus::Unknown},
+        {qtTrId("lc-eid-label-variable-verification"), source ? toResult(getFieldValue(source, "variable_verification"))
+                                                              : librecelik::utils::VerificationStatus::Unknown},
     };
 
     // Remove previous badge widgets (tagged with "verificationBadge" object name)
@@ -253,17 +253,17 @@ void EidWidget::addVerificationBadges(CollapsibleSection* section, const LibreSC
         auto* text = new QLabel(r.label, badgeContainer);
 
         switch (r.result) {
-        case LibreSCRS::VerificationStatus::Valid:
+        case librecelik::utils::VerificationStatus::Valid:
             icon->setText(QStringLiteral("\u2714"));
             icon->setStyleSheet("color: #4CAF50; font-size: 12px;");
             text->setStyleSheet("color: #4CAF50; font-size: 10px;");
             break;
-        case LibreSCRS::VerificationStatus::Invalid:
+        case librecelik::utils::VerificationStatus::Invalid:
             icon->setText(QStringLiteral("\u2718"));
             icon->setStyleSheet("color: #F44336; font-size: 12px;");
             text->setStyleSheet("color: #F44336; font-size: 10px;");
             break;
-        case LibreSCRS::VerificationStatus::Unknown:
+        case librecelik::utils::VerificationStatus::Unknown:
             icon->setText(QStringLiteral("?"));
             icon->setStyleSheet("color: #9E9E9E; font-size: 12px;");
             text->setStyleSheet("color: #9E9E9E; font-size: 10px;");
@@ -361,9 +361,9 @@ CollapsibleSection* EidWidget::buildDocumentSection(QWidget* parent) const
         return section;
     }
 
-    auto* section = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-eid-label-document"), *docGroup, translationMap,
-                                                          hiddenFields, parent);
-    LibreSCRS::FieldSectionBuilder::highlightExpiredDates(section, *docGroup, {"expiry_date"});
+    auto* section = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-eid-label-document"), *docGroup,
+                                                                  translationMap, hiddenFields, parent);
+    librecelik::utils::FieldSectionBuilder::highlightExpiredDates(section, *docGroup, {"expiry_date"});
     return section;
 }
 

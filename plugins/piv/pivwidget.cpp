@@ -13,7 +13,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-using LibreSCRS::Plugin::getFieldValue;
+using librecelik::plugin::getFieldValue;
 
 static std::map<std::string, QString> chuidTranslationMap()
 {
@@ -119,31 +119,31 @@ void PIVWidget::enablePrintButton()
 void PIVWidget::addChuidGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     // Build CardHeaderCard with PIV icon and CHUID key fields
-    std::vector<LibreSCRS::HeaderField> headerFields;
+    std::vector<librecelik::utils::HeaderField> headerFields;
     headerFields.push_back({qtTrId("lc-piv-field-guid"), getFieldValue(&group, "guid")});
     headerFields.push_back({qtTrId("lc-piv-field-expiration"), getFieldValue(&group, "expirationDate")});
 
     QIcon pivIcon(QStringLiteral(":/images/piv-icon.svg"));
-    headerCard = new LibreSCRS::CardHeaderCard(pivIcon, QSize(80, 80), headerFields, outerSection);
+    headerCard = new librecelik::utils::CardHeaderCard(pivIcon, QSize(80, 80), headerFields, outerSection);
     contentLayout->addWidget(headerCard);
 
     // CHUID details section
-    auto* chuidSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-piv-section-chuid"), group, chuidTranslationMap(),
-                                                           {}, outerSection);
+    auto* chuidSec = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-piv-section-chuid"), group,
+                                                                   chuidTranslationMap(), {}, outerSection);
     contentLayout->addWidget(chuidSec);
 }
 
 void PIVWidget::addCccGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
-    auto* cccSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-piv-section-ccc"), group, cccTranslationMap(), {},
-                                                         outerSection);
+    auto* cccSec = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-piv-section-ccc"), group,
+                                                                 cccTranslationMap(), {}, outerSection);
     contentLayout->addWidget(cccSec);
 }
 
 void PIVWidget::addPrintedGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
-    auto* printedSec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-piv-section-printed"), group,
-                                                             printedTranslationMap(), {}, outerSection);
+    auto* printedSec = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-piv-section-printed"), group,
+                                                                     printedTranslationMap(), {}, outerSection);
     contentLayout->addWidget(printedSec);
 
     // Rebuild header with name if available
@@ -154,15 +154,15 @@ void PIVWidget::addPrintedGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 
 void PIVWidget::addDiscoveryGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
-    auto* discoverySec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-piv-section-discovery"), group,
-                                                               discoveryTranslationMap(), {}, outerSection);
+    auto* discoverySec = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-piv-section-discovery"), group,
+                                                                       discoveryTranslationMap(), {}, outerSection);
     contentLayout->addWidget(discoverySec);
 }
 
 void PIVWidget::addKeyHistoryGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
-    auto* keyHistorySec = LibreSCRS::FieldSectionBuilder::build(qtTrId("lc-piv-section-keyhistory"), group,
-                                                                keyHistoryTranslationMap(), {}, outerSection);
+    auto* keyHistorySec = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-piv-section-keyhistory"), group,
+                                                                        keyHistoryTranslationMap(), {}, outerSection);
     contentLayout->addWidget(keyHistorySec);
 }
 
@@ -176,14 +176,14 @@ void PIVWidget::rebuildHeader()
     auto guid = getFieldValue(data, "guid");
     auto expiration = getFieldValue(data, "expirationDate");
 
-    std::vector<LibreSCRS::HeaderField> headerFields;
+    std::vector<librecelik::utils::HeaderField> headerFields;
     if (!name.isEmpty())
         headerFields.push_back({qtTrId("lc-piv-field-name"), name});
     headerFields.push_back({qtTrId("lc-piv-field-guid"), guid});
     headerFields.push_back({qtTrId("lc-piv-field-expiration"), expiration});
 
-    auto* newHeader =
-        new LibreSCRS::CardHeaderCard(QIcon(":/images/piv-icon.svg"), QSize(80, 80), headerFields, outerSection);
+    auto* newHeader = new librecelik::utils::CardHeaderCard(QIcon(":/images/piv-icon.svg"), QSize(80, 80), headerFields,
+                                                            outerSection);
 
     auto* item = contentLayout->replaceWidget(headerCard, newHeader);
     delete item;

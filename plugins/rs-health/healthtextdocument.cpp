@@ -6,7 +6,7 @@
 #include "healthtextdocument.h"
 #include <plugin/carddatautils.h>
 
-using LibreSCRS::Plugin::getFieldValue;
+using librecelik::plugin::getFieldValue;
 
 HealthTextDocument::HealthTextDocument(const LibreSCRS::Plugin::CardData& cardData, QString documentPath,
                                        QString cssPath)

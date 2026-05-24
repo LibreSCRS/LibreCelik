@@ -57,7 +57,7 @@ QSmartCardMonitor::QSmartCardMonitor(LibreSCRS::SmartCard::MonitorService& monit
                 case Kind::ReaderAdded:
                 case Kind::ReaderRemoved:
                     // Reader-list changes are surfaced via the snapshot
-                    // subscription below; ignored here to avoid double-fire.
+                    // subscription registered above; ignored here to avoid double-fire.
                     break;
                 case Kind::CardInserted:
                 case Kind::CardRemoved:

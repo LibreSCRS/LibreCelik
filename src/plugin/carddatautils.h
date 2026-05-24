@@ -4,10 +4,13 @@
 #pragma once
 
 #include <LibreSCRS/Plugin/CardData.h>
+#include <LibreSCRS/Plugin/CardDataAccess.h>
 #include <QString>
 
+#include <cstddef>
 #include <optional>
-#include <utility>
+#include <string>
+#include <string_view>
 
 namespace librecelik::plugin {
 
@@ -17,6 +20,12 @@ using ::LibreSCRS::Plugin::CardFieldGroup;
 /// @brief Look up a field value by key within a group, returning its text
 /// representation (empty QString if the group is missing, the field is
 /// absent, or the field is non-textual).
+///
+/// @note LM has no equivalent — the Wave 6 accessors operate on @ref CardData,
+/// not on a pre-fetched @ref CardFieldGroup pointer. This overload remains
+/// hand-rolled because most LC widget call sites already hold a group
+/// pointer (cached from an earlier @ref CardData::findGroup) and would
+/// otherwise pay for a redundant second lookup.
 inline QString getFieldValue(const CardFieldGroup* group, const std::string& key)
 {
     if (!group)
@@ -32,19 +41,20 @@ inline QString getFieldValue(const CardFieldGroup* group, const std::string& key
 }
 
 /// @brief Overload accepting a @ref CardData + group key — looks up the
-/// group and then the field, collapsing the two-step index dance the
-/// `findGroup(optional<size_t>)` API requires.
+/// group and then the field. Delegates to @ref LibreSCRS::Plugin::textValue
+/// (LM 4.2 Wave 6); this wrapper exists only to adapt the LM
+/// `std::optional<std::string>` return to LC's QString convention.
 inline QString getFieldValue(const CardData& data, const std::string& groupKey, const std::string& fieldKey)
 {
-    auto idx = data.findGroup(groupKey);
-    if (!idx)
-        return {};
-    return getFieldValue(&data.groupAt(*idx), fieldKey);
+    if (auto value = ::LibreSCRS::Plugin::textValue(data, std::string_view{groupKey}, std::string_view{fieldKey}))
+        return QString::fromStdString(*value);
+    return {};
 }
 
 /// @brief Overload accepting the optional-index returned by
 /// @ref CardData::findGroup paired with the owning @ref CardData (needed to
-/// dereference the index).
+/// dereference the index). Delegates to @ref LibreSCRS::Plugin::textValueAt
+/// (LM 4.2 Wave 6) when the index is engaged.
 ///
 /// @ref CardData::findGroup returns `std::optional<std::size_t>` — a raw
 /// index that is stable against pimpl moves and encodes the lifetime
@@ -54,9 +64,18 @@ inline QString getFieldValue(const CardData& data, std::optional<std::size_t> gr
 {
     if (!groupIndex)
         return {};
-    return getFieldValue(&data.groupAt(*groupIndex), fieldKey);
+    if (auto value = ::LibreSCRS::Plugin::textValueAt(data, *groupIndex, std::string_view{fieldKey}))
+        return QString::fromStdString(*value);
+    return {};
 }
 
+/// @brief Flat field-key lookup across all groups (first match wins).
+///
+/// @note LM has no equivalent flat accessor — @ref LibreSCRS::Plugin::textValue
+/// requires both a group key and a field key, and @ref textValueAt requires
+/// an explicit group index. This overload stays hand-rolled because LC
+/// textdocument formatters (the dominant call site, e.g. emrtdtextdocument.cpp)
+/// query by field key alone and do not have a group key on hand.
 inline QString getFieldValue(const CardData& data, const std::string& key)
 {
     auto idx = data.findField(key);

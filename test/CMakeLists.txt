@@ -141,6 +141,20 @@ else()
     message(STATUS "QSmartCardMonitorTests: skipped (requires FetchContent mode for LM internal headers)")
 endif()
 
+add_executable(CardDataUtilsTests
+    carddatautils_test.cpp
+    ../src/plugin/carddatautils.h
+)
+target_link_libraries(CardDataUtilsTests PRIVATE
+    GTest::gtest_main
+    Qt6::Core
+    LibreSCRS::Plugin
+)
+target_include_directories(CardDataUtilsTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+)
+gtest_discover_tests(CardDataUtilsTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
 add_executable(EuVrcTextDocumentTests
     euvrctextdocument_test.cpp
     ../plugins/eu-vrc/euvrctextdocument.h

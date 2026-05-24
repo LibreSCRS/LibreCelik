@@ -120,11 +120,13 @@ TEST(QSmartCardMonitorTest, ReaderListContentVerified)
     QSmartCardMonitor qtMonitor(*monitor);
 
     QSignalSpy readerSpy(&qtMonitor, &QSmartCardMonitor::readerListChanged);
-    // The public MonitorService synthesises one ReaderAdded event per reader from the
-    // initial snapshot diff; QSmartCardMonitor accumulates these and emits
-    // readerListChanged with the growing set each time. The FINAL emission
-    // carries the complete reader list — wait until we've accumulated both.
-    QTRY_VERIFY_WITH_TIMEOUT(readerSpy.count() >= 2, 5000);
+    // Wave 6: MonitorService::subscribeReaderList delivers a single
+    // post-change snapshot per reader-list change. With 2 readers present at
+    // subscription time, the bootstrap fire delivers exactly one emission
+    // carrying both. The pre-Wave-6 "accumulating set" behaviour (one
+    // emission per per-reader event) is gone; QSmartCardMonitor must not
+    // re-introduce per-event synthesis on top of the snapshot subscription.
+    QTRY_VERIFY_WITH_TIMEOUT(readerSpy.count() >= 1, 5000);
 
     auto readers = readerSpy.last().at(0).value<QStringList>();
     EXPECT_EQ(readers.size(), 2);

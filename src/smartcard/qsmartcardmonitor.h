@@ -9,9 +9,6 @@
 #include <QObject>
 #include <QStringList>
 
-#include <set>
-#include <string>
-
 // Qt6 auto-registers copy-constructible POD-like types through the metatype
 // system at first use. No Q_DECLARE_METATYPE needed for
 // LibreSCRS::SmartCard::MonitorEvent — qRegisterMetaType at runtime is
@@ -46,21 +43,17 @@ public:
 
 signals:
     void cardEvent(const LibreSCRS::SmartCard::MonitorEvent& event);
-    /// @brief Emitted once per individual ReaderAdded / ReaderRemoved event
-    ///        from the underlying public MonitorService — NOT once per full-list
-    ///        diff. On startup with N readers plugged, N signals fire in
-    ///        sequence (each carrying a growing set). Consumers that care
-    ///        only about the final membership should debounce or wait for
-    ///        quiescence; `LibreCelik::onSmartCardReaderEnumerationChanged`
-    ///        is idempotent and safely handles this.
+    /// @brief Emitted with the full post-change reader-list snapshot whenever
+    ///        the aggregate set of PC/SC readers known to the underlying
+    ///        MonitorService changes. Fires once at subscription time with the
+    ///        current snapshot (possibly empty), then once per subsequent
+    ///        change — driven directly by the LM 4.2
+    ///        @ref LibreSCRS::SmartCard::MonitorService::subscribeReaderList
+    ///        callback (no LC-side fold of per-reader events).
     void readerListChanged(const QStringList& readers);
 
 private:
     LibreSCRS::SmartCard::MonitorService& monitor;
-    LibreSCRS::SmartCard::MonitorService::SubscriptionId subscriptionId{};
-    // Tracks the set of currently known readers so we can synthesise a
-    // full-list QStringList from the public MonitorService's per-reader
-    // ReaderAdded / ReaderRemoved events. Touched only on the Qt main thread
-    // (via QueuedConnection marshal in the callback).
-    std::set<std::string> knownReaders;
+    LibreSCRS::SmartCard::MonitorService::SubscriptionId eventSubscriptionId{};
+    LibreSCRS::SmartCard::MonitorService::SubscriptionId readerListSubscriptionId{};
 };

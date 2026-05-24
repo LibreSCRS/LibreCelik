@@ -17,11 +17,11 @@
 
 namespace {
 
+using librecelik::plugin::getFieldValue;
 using LibreSCRS::Plugin::CardData;
 using LibreSCRS::Plugin::CardField;
 using LibreSCRS::Plugin::CardFieldGroup;
 using LibreSCRS::Plugin::FieldType;
-using librecelik::plugin::getFieldValue;
 
 CardData makeFixture()
 {

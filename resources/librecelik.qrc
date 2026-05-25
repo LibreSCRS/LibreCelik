@@ -44,6 +44,9 @@
         <file>licenses/json-mit.txt</file>
         <file>licenses/miniz-mit.txt</file>
         <file>licenses/zlib.txt</file>
+        <file>licenses/lgpl-3.0.txt</file>
+        <file>licenses/curl.txt</file>
+        <file>licenses/libxml2.txt</file>
     </qresource>
 
 </RCC>

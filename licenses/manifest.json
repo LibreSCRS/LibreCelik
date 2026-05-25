@@ -1,0 +1,677 @@
+{
+  "macos_bootstrapped": false,
+  "internal_sonames": [
+    "librescrs-pkcs11.so",
+    "lib*-plugin.so",
+    "*-gui-plugin.so",
+    "libLibreSCRS_*.so",
+    "libresign*.so"
+  ],
+  "exclude_not_bundled": [
+    "libpcsclite.so",
+    "libGL.so",
+    "libEGL.so",
+    "libdbus-1.so",
+    "libwayland*.so"
+  ],
+  "components": [
+    {
+      "match": "libQt6*.so",
+      "name": "Qt 6",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libQt6VirtualKeyboard.so",
+      "name": "Qt Virtual Keyboard",
+      "spdx": "GPL-3.0-only",
+      "text": "resources/licenses/gpl-3.0.txt",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "match": "libqtvirtualkeyboardplugin.so",
+      "name": "Qt Virtual Keyboard",
+      "spdx": "GPL-3.0-only",
+      "text": "resources/licenses/gpl-3.0.txt",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    {
+      "match": "libq*backend.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libqxcb.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libqxcb-egl-integration.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libqxcb-glx-integration.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libqgif.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libqicns.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libqico.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libqjp2.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libqjpeg.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libqmng.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libqsvg.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libqtga.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libqtiff.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libqwbmp.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libqwebp.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libqpdf.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libcomposeplatforminputcontextplugin.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libibusplatforminputcontextplugin.so",
+      "name": "Qt 6 plugins",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libnghttp2.so",
+      "name": "nghttp2",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libnghttp3.so",
+      "name": "nghttp3",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libngtcp2.so",
+      "name": "ngtcp2",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libngtcp2_crypto_ossl.so",
+      "name": "ngtcp2 crypto (OpenSSL)",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libpsl.so",
+      "name": "libpsl",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libffi.so",
+      "name": "libffi",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "liblcms2.so",
+      "name": "Little CMS",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libdeflate.so",
+      "name": "libdeflate",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libmd4c.so",
+      "name": "md4c",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libduktape.so",
+      "name": "Duktape",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libbrotlicommon.so",
+      "name": "Brotli",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libbrotlidec.so",
+      "name": "Brotli",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libbrotlienc.so",
+      "name": "Brotli",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libXau.so",
+      "name": "libXau (X.Org)",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libXdmcp.so",
+      "name": "libXdmcp (X.Org)",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libxkbcommon.so",
+      "name": "libxkbcommon",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libxkbcommon-x11.so",
+      "name": "libxkbcommon-x11",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libxcb-*.so",
+      "name": "libxcb (X.Org)",
+      "spdx": "MIT",
+      "text": "resources/licenses/mit.txt",
+      "sha256": "b05785f9f18e6716bab63424b11454513b9943a222595b70411009202fc592b5"
+    },
+    {
+      "match": "libkrb5.so",
+      "name": "MIT Kerberos",
+      "spdx": "MIT",
+      "text": "resources/licenses/krb5.txt",
+      "sha256": "d37fcb886de2ad1c602f61c99c6893bcbd9a1949f54d9a6bb40d191204eb605e"
+    },
+    {
+      "match": "libk5crypto.so",
+      "name": "MIT Kerberos",
+      "spdx": "MIT",
+      "text": "resources/licenses/krb5.txt",
+      "sha256": "d37fcb886de2ad1c602f61c99c6893bcbd9a1949f54d9a6bb40d191204eb605e"
+    },
+    {
+      "match": "libgssapi_krb5.so",
+      "name": "MIT Kerberos",
+      "spdx": "MIT",
+      "text": "resources/licenses/krb5.txt",
+      "sha256": "d37fcb886de2ad1c602f61c99c6893bcbd9a1949f54d9a6bb40d191204eb605e"
+    },
+    {
+      "match": "libkrb5support.so",
+      "name": "MIT Kerberos",
+      "spdx": "MIT",
+      "text": "resources/licenses/krb5.txt",
+      "sha256": "d37fcb886de2ad1c602f61c99c6893bcbd9a1949f54d9a6bb40d191204eb605e"
+    },
+    {
+      "match": "libssh2.so",
+      "name": "libssh2",
+      "spdx": "BSD-3-Clause",
+      "text": "resources/licenses/bsd-3.txt",
+      "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d"
+    },
+    {
+      "match": "libp11-kit.so",
+      "name": "p11-kit",
+      "spdx": "BSD-3-Clause",
+      "text": "resources/licenses/bsd-3.txt",
+      "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d"
+    },
+    {
+      "match": "libpcre2-8.so",
+      "name": "PCRE2",
+      "spdx": "BSD-3-Clause",
+      "text": "resources/licenses/bsd-3.txt",
+      "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d"
+    },
+    {
+      "match": "libpcre2-16.so",
+      "name": "PCRE2",
+      "spdx": "BSD-3-Clause",
+      "text": "resources/licenses/bsd-3.txt",
+      "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d"
+    },
+    {
+      "match": "libzstd.so",
+      "name": "Zstandard",
+      "spdx": "BSD-3-Clause",
+      "text": "resources/licenses/bsd-3.txt",
+      "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d"
+    },
+    {
+      "match": "libwebp.so",
+      "name": "WebP",
+      "spdx": "BSD-3-Clause",
+      "text": "resources/licenses/bsd-3.txt",
+      "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d"
+    },
+    {
+      "match": "libwebpdemux.so",
+      "name": "WebP",
+      "spdx": "BSD-3-Clause",
+      "text": "resources/licenses/bsd-3.txt",
+      "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d"
+    },
+    {
+      "match": "libwebpmux.so",
+      "name": "WebP",
+      "spdx": "BSD-3-Clause",
+      "text": "resources/licenses/bsd-3.txt",
+      "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d"
+    },
+    {
+      "match": "libsharpyuv.so",
+      "name": "WebP (sharpyuv)",
+      "spdx": "BSD-3-Clause",
+      "text": "resources/licenses/bsd-3.txt",
+      "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d"
+    },
+    {
+      "match": "libdouble-conversion.so",
+      "name": "double-conversion",
+      "spdx": "BSD-3-Clause",
+      "text": "resources/licenses/bsd-3.txt",
+      "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d"
+    },
+    {
+      "match": "libopenjp2.so",
+      "name": "OpenJPEG",
+      "spdx": "BSD-2-Clause",
+      "text": "resources/licenses/bsd-2.txt",
+      "sha256": "f32fb3b417a194167cfad068223fc975ba96c5960513a10f66a3c28720aec1df"
+    },
+    {
+      "match": "libleancrypto.so",
+      "name": "leancrypto",
+      "spdx": "BSD-2-Clause",
+      "text": "resources/licenses/bsd-2.txt",
+      "sha256": "f32fb3b417a194167cfad068223fc975ba96c5960513a10f66a3c28720aec1df"
+    },
+    {
+      "match": "libglib-2.0.so",
+      "name": "GLib",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "libgio-2.0.so",
+      "name": "GLib (GIO)",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "libgobject-2.0.so",
+      "name": "GLib (GObject)",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "libgmodule-2.0.so",
+      "name": "GLib (GModule)",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "libsystemd.so",
+      "name": "systemd (libsystemd)",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "libblkid.so",
+      "name": "util-linux (libblkid)",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "libmount.so",
+      "name": "util-linux (libmount)",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "libavahi-client.so",
+      "name": "Avahi",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "libavahi-common.so",
+      "name": "Avahi",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "libtasn1.so",
+      "name": "libtasn1",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "libgnutls.so",
+      "name": "GnuTLS",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "libkeyutils.so",
+      "name": "keyutils",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "libgraphite2.so",
+      "name": "Graphite2",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "libproxy.so",
+      "name": "libproxy",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "libpxbackend-1.0.so",
+      "name": "libproxy (backend)",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "liburing.so",
+      "name": "liburing",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+    },
+    {
+      "match": "libidn2.so",
+      "name": "libidn2",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libunistring.so",
+      "name": "libunistring",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libnettle.so",
+      "name": "Nettle",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libhogweed.so",
+      "name": "Nettle (Hogweed)",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1"
+    },
+    {
+      "match": "libcrypto.so",
+      "name": "OpenSSL",
+      "spdx": "Apache-2.0",
+      "text": "resources/licenses/apache-2.0.txt",
+      "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a"
+    },
+    {
+      "match": "libssl.so",
+      "name": "OpenSSL",
+      "spdx": "Apache-2.0",
+      "text": "resources/licenses/apache-2.0.txt",
+      "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a"
+    },
+    {
+      "match": "libcups.so",
+      "name": "CUPS",
+      "spdx": "Apache-2.0",
+      "text": "resources/licenses/apache-2.0.txt",
+      "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a"
+    },
+    {
+      "match": "libcupsprintersupport.so",
+      "name": "CUPS",
+      "spdx": "Apache-2.0",
+      "text": "resources/licenses/apache-2.0.txt",
+      "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a"
+    },
+    {
+      "match": "libjbig.so",
+      "name": "JBIG-KIT",
+      "spdx": "GPL-2.0-or-later",
+      "text": "resources/licenses/gpl-2.0.txt",
+      "sha256": "aaf135472f81c5b4a0dca9367e5bb5e9750032b5bebe5442b36e4c0a47430df3"
+    },
+    {
+      "match": "libgomp.so",
+      "name": "GCC libgomp",
+      "spdx": "GPL-3.0-only WITH GCC-exception-3.1",
+      "text": "resources/licenses/gcc-runtime-exception.txt",
+      "sha256": "df021a1dc36fc2a16caf773fa8742e3ddf44f370d8a6d5f2d84d8bf5720f7e65"
+    },
+    {
+      "match": "libcurl.so",
+      "name": "curl",
+      "spdx": "curl",
+      "text": "resources/licenses/curl.txt",
+      "sha256": "82f2f4427d6545ee5aaac4f0b80428da6cc8ba41c2cf5da3a03680ec327b9681"
+    },
+    {
+      "match": "libpng16.so",
+      "name": "libpng",
+      "spdx": "Libpng",
+      "text": "resources/licenses/libpng.txt",
+      "sha256": "bdb0a645ea18c60507d0368379b1ac5474b92255fcc2d115e07486a7672ba526"
+    },
+    {
+      "match": "libjpeg.so",
+      "name": "libjpeg-turbo",
+      "spdx": "IJG AND BSD-3-Clause AND Zlib",
+      "text": "resources/licenses/jpeg-ijg.txt",
+      "sha256": "d56f7bdb1197eb5a4e16c46c5ddee426c854648d5409abb09fe7a17f94c3c5fd"
+    },
+    {
+      "match": "libicudata.so",
+      "name": "ICU",
+      "spdx": "ICU",
+      "text": "resources/licenses/icu.txt",
+      "sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af"
+    },
+    {
+      "match": "libicui18n.so",
+      "name": "ICU",
+      "spdx": "ICU",
+      "text": "resources/licenses/icu.txt",
+      "sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af"
+    },
+    {
+      "match": "libicuuc.so",
+      "name": "ICU",
+      "spdx": "ICU",
+      "text": "resources/licenses/icu.txt",
+      "sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af"
+    },
+    {
+      "match": "libxml2.so",
+      "name": "libxml2",
+      "spdx": "MIT",
+      "text": "resources/licenses/libxml2.txt",
+      "sha256": "5d4873884a890122a4b9b20ad56ac6f7da1d796a5bfcf04a427970ac96217626"
+    },
+    {
+      "match": "liblzma.so",
+      "name": "xz / liblzma",
+      "spdx": "0BSD",
+      "text": "resources/licenses/0bsd.txt",
+      "sha256": "e3f18c71e10d673590eb9856c1d79dd3b4b0d65404efb5e8584dbede7edd608b"
+    },
+    {
+      "match": "libbz2.so",
+      "name": "bzip2 / libbzip2",
+      "spdx": "bzip2-1.0.6",
+      "text": "resources/licenses/bzip2.txt",
+      "sha256": "c6dbbf828498be844a89eaa3b84adbab3199e342eb5cb2ed2f0d4ba7ec0f38a3"
+    },
+    {
+      "match": "libb2.so",
+      "name": "libb2 (BLAKE2)",
+      "spdx": "CC0-1.0",
+      "text": "resources/licenses/cc0.txt",
+      "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499"
+    },
+    {
+      "match": "libjasper.so",
+      "name": "JasPer",
+      "spdx": "JasPer-2.0",
+      "text": "resources/licenses/jasper.txt",
+      "sha256": "4ad1bb42aff888c4403d792e6e2c5f1716d6c279fea70b296333c9d577d30b81"
+    },
+    {
+      "match": "libtiff.so",
+      "name": "libtiff",
+      "spdx": "libtiff",
+      "text": "resources/licenses/libtiff.txt",
+      "sha256": "0e27c2382d7b8147972bbb746e04059a1152c8d0fda9d03ef1399d1a433c4ade"
+    },
+    {
+      "match": "libmng.so",
+      "name": "libmng",
+      "spdx": "libmng-2.0",
+      "text": "resources/licenses/mng.txt",
+      "sha256": "ba280734838eb3f22a85b92a7e62de357d4d4c325029dce723b0cb125c417c35"
+    }
+  ]
+}

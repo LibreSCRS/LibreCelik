@@ -388,6 +388,19 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Verify every bundled shared library has a documented license. Runs after the
+# AppDir is fully assembled (all libs + plugins deployed) and before sealing.
+# Fail-closed: an unmapped/missing/hash-mismatched library aborts the build.
+# ---------------------------------------------------------------------------
+echo "Verifying bundled-license completeness..."
+python3 "$PROJECT_ROOT/ci/scripts/check-bundled-licenses.py" \
+    --check "$APPDIR" \
+    --manifest "$PROJECT_ROOT/licenses/manifest.json" || {
+        echo "ERROR: bundled-license check failed — a bundled library lacks a documented license (see ::error:: lines above)." >&2
+        exit 1
+    }
+
+# ---------------------------------------------------------------------------
 # Phase 3 — Package with appimagetool.
 # ---------------------------------------------------------------------------
 echo ""

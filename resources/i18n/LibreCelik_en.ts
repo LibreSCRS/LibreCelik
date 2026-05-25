@@ -1272,9 +1272,25 @@
         <source>zlib license — transitive dependency</source>
         <translation>zlib license — transitive dependency</translation>
     </message>
+    <message id="lc-about-license-qt">
+        <source>GNU Lesser General Public License v3.0 — dynamically linked</source>
+        <translation>GNU Lesser General Public License v3.0 — dynamically linked</translation>
+    </message>
+    <message id="lc-about-license-curl">
+        <source>curl license (MIT/X derivate)</source>
+        <translation>curl license (MIT/X derivate)</translation>
+    </message>
+    <message id="lc-about-license-libxml2">
+        <source>MIT License</source>
+        <translation>MIT License</translation>
+    </message>
+    <message id="lc-about-full-notices">
+        <source>Full third-party notices</source>
+        <translation>Full third-party notices</translation>
+    </message>
     <message id="lc-about-source-offer">
-        <source>The complete corresponding source code is publicly available at &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt; and &lt;a href=&quot;https://github.com/LibreSCRS/LibreCelik&quot;&gt;github.com/LibreSCRS/LibreCelik&lt;/a&gt;. This offer is valid for as long as we distribute this software.</source>
-        <translation>The complete corresponding source code is publicly available at &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt; and &lt;a href=&quot;https://github.com/LibreSCRS/LibreCelik&quot;&gt;github.com/LibreSCRS/LibreCelik&lt;/a&gt;. This offer is valid for as long as we distribute this software.</translation>
+        <source>The complete corresponding source code for LibreCelik, LibreMiddleware and the bundled LGPL/GPL third-party libraries (Qt, GnuTLS, GLib, libidn2 and others) is publicly available at &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt; and &lt;a href=&quot;https://github.com/LibreSCRS/LibreCelik&quot;&gt;github.com/LibreSCRS/LibreCelik&lt;/a&gt;, or on request. This offer is valid for as long as we distribute this software.</source>
+        <translation>The complete corresponding source code for LibreCelik, LibreMiddleware and the bundled LGPL/GPL third-party libraries (Qt, GnuTLS, GLib, libidn2 and others) is publicly available at &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt; and &lt;a href=&quot;https://github.com/LibreSCRS/LibreCelik&quot;&gt;github.com/LibreSCRS/LibreCelik&lt;/a&gt;, or on request. This offer is valid for as long as we distribute this software.</translation>
     </message>
     <message id="lc-about-tab-about">
         <source>About</source>

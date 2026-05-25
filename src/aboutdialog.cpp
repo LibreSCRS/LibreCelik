@@ -200,6 +200,21 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent)
     licenseLiberationSansLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
     licenseLayout->addWidget(licenseLiberationSansLabel);
 
+    licenseQtLabel = new QLabel(licenseTab);
+    licenseQtLabel->setWordWrap(true);
+    licenseQtLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
+    licenseLayout->addWidget(licenseQtLabel);
+
+    licenseCurlLabel = new QLabel(licenseTab);
+    licenseCurlLabel->setWordWrap(true);
+    licenseCurlLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
+    licenseLayout->addWidget(licenseCurlLabel);
+
+    licenseLibXml2Label = new QLabel(licenseTab);
+    licenseLibXml2Label->setWordWrap(true);
+    licenseLibXml2Label->setStyleSheet(QStringLiteral("font-size: 12px;"));
+    licenseLayout->addWidget(licenseLibXml2Label);
+
     licenseLayout->addSpacing(6);
 
     sourceOfferLabel = new QLabel(licenseTab);
@@ -220,6 +235,13 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent)
     licenseCombo->addItem(QStringLiteral("nlohmann/json MIT"), QStringLiteral(":/licenses/json-mit.txt"));
     licenseCombo->addItem(QStringLiteral("miniz MIT"), QStringLiteral(":/licenses/miniz-mit.txt"));
     licenseCombo->addItem(QStringLiteral("zlib"), QStringLiteral(":/licenses/zlib.txt"));
+    licenseCombo->addItem(QStringLiteral("Qt 6 LGPL-3.0"), QStringLiteral(":/licenses/lgpl-3.0.txt"));
+    licenseCombo->addItem(QStringLiteral("curl"), QStringLiteral(":/licenses/curl.txt"));
+    licenseCombo->addItem(QStringLiteral("libxml2 MIT"), QStringLiteral(":/licenses/libxml2.txt"));
+    // The "full notices" entry is translatable; its label is set in
+    // retranslateUi() by index so it follows runtime language switches.
+    fullNoticesIndex = licenseCombo->count();
+    licenseCombo->addItem(QString(), QStringLiteral(":/licenses/THIRD-PARTY-LICENSES.txt"));
     licenseLayout->addWidget(licenseCombo);
 
     licenseBrowser = new QTextBrowser(licenseTab);
@@ -296,6 +318,12 @@ void AboutDialog::retranslateUi()
     licenseZlibLabel->setText(QStringLiteral("<b>zlib</b> — %1").arg(qtTrId("lc-about-license-zlib")));
     licenseLiberationSansLabel->setText(QStringLiteral("<b>Liberation Sans</b> (%1) — %2")
                                             .arg(qtTrId("lc-about-license-bundled"), qtTrId("lc-about-license-ofl")));
+    licenseQtLabel->setText(QStringLiteral("<b>Qt 6</b> — %1").arg(qtTrId("lc-about-license-qt")));
+    licenseCurlLabel->setText(QStringLiteral("<b>curl</b> — %1").arg(qtTrId("lc-about-license-curl")));
+    licenseLibXml2Label->setText(QStringLiteral("<b>libxml2</b> — %1").arg(qtTrId("lc-about-license-libxml2")));
+
+    if (fullNoticesIndex >= 0)
+        licenseCombo->setItemText(fullNoticesIndex, qtTrId("lc-about-full-notices"));
 
     sourceOfferLabel->setText(qtTrId("lc-about-source-offer"));
 }

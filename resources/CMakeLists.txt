@@ -14,3 +14,37 @@ set(MACOSX_BUNDLE_ICON_FILE "smartcard-id.icns" CACHE INTERNAL "app_bundle_icon_
 set(APP_ICON_MACOS "${PROJECT_SOURCE_DIR}/resources/smartcard-id.icns" CACHE INTERNAL "app_icon_macos")
 # App icon
 set(APP_ICON "${PROJECT_SOURCE_DIR}/resources/smartcard-id-512.png" CACHE INTERNAL "app_icon")
+
+# ---------------------------------------------------------------------------
+# Build-time third-party license notice.
+#
+# gen-third-party-notices.py merges the LibreCelik license manifest with the
+# (optional) LibreMiddleware thirdparty manifest and renders a single verbatim
+# THIRD-PARTY-LICENSES.txt into the build tree. A generated .qrc embeds it at
+# :/licenses/THIRD-PARTY-LICENSES.txt so the running app can display every
+# bundled component's license without shipping a loose file.
+# ---------------------------------------------------------------------------
+# Inputs are resolved here; the actual add_custom_command that produces the
+# notice lives in src/CMakeLists.txt (the same directory scope as the
+# LibreCelik target) so the Makefile generator can see the rule. The
+# configured .qrc references the generated file by absolute build-tree path.
+set(THIRD_PARTY_NOTICE_GEN "${PROJECT_SOURCE_DIR}/ci/scripts/gen-third-party-notices.py"
+    CACHE INTERNAL "third_party_notice_generator")
+set(THIRD_PARTY_MANIFEST "${PROJECT_SOURCE_DIR}/licenses/manifest.json"
+    CACHE INTERNAL "third_party_manifest")
+# Produced into the src build dir alongside the qrc autogen output.
+set(THIRD_PARTY_NOTICE_FILE "${PROJECT_BINARY_DIR}/src/THIRD-PARTY-LICENSES.txt"
+    CACHE INTERNAL "third_party_notice_txt_path")
+
+# A .qrc that references the generated notice by absolute build-tree path.
+set(THIRD_PARTY_NOTICE_QRC "${PROJECT_BINARY_DIR}/src/third-party-notices.qrc")
+configure_file(
+    "${PROJECT_SOURCE_DIR}/resources/third-party-notices.qrc.in"
+    "${THIRD_PARTY_NOTICE_QRC}"
+    @ONLY)
+
+# Tie the generated .qrc to the notice file so rcc only runs after generation.
+set_source_files_properties("${THIRD_PARTY_NOTICE_QRC}"
+    PROPERTIES OBJECT_DEPENDS "${THIRD_PARTY_NOTICE_FILE}")
+
+set(THIRD_PARTY_NOTICE_RESOURCE "${THIRD_PARTY_NOTICE_QRC}" CACHE INTERNAL "third_party_notice_qrc")

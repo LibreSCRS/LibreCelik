@@ -52,7 +52,11 @@ private:
     QLabel* licenseMinizLabel = nullptr;
     QLabel* licenseZlibLabel = nullptr;
     QLabel* licenseLiberationSansLabel = nullptr;
+    QLabel* licenseQtLabel = nullptr;
+    QLabel* licenseCurlLabel = nullptr;
+    QLabel* licenseLibXml2Label = nullptr;
     QLabel* sourceOfferLabel = nullptr;
     QComboBox* licenseCombo = nullptr;
     QTextBrowser* licenseBrowser = nullptr;
+    int fullNoticesIndex = -1;
 };

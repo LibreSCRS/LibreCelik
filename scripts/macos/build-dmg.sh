@@ -148,6 +148,37 @@ echo "Running macdeployqt..."
 "$MACDEPLOYQT" "$APP_STAGING" -verbose=1
 
 # ---------------------------------------------------------------------------
+# Verify every bundled library has a documented license. Runs after the bundle
+# is fully populated (macdeployqt done) and before signing seals it.
+#
+# Bootstrap gate: the manifest currently maps Linux sonames only. Until the
+# macOS .dylib entries (platforms:["macos"]) are authored and the manifest's
+# "macos_bootstrapped" flag is flipped to true, a fail-closed check would block
+# every macOS release. So while not bootstrapped we only EMIT the candidate
+# dylib list as a non-fatal informational warning; once bootstrapped we enforce
+# fail-closed exactly like the Linux AppImage path.
+# ---------------------------------------------------------------------------
+LICENSE_CHECKER="$PROJECT_ROOT/ci/scripts/check-bundled-licenses.py"
+LICENSE_MANIFEST="$PROJECT_ROOT/licenses/manifest.json"
+MACOS_BOOTSTRAPPED="$(python3 -c "import json,sys; print('true' if json.load(open(sys.argv[1])).get('macos_bootstrapped') else 'false')" "$LICENSE_MANIFEST")"
+
+if [[ "$MACOS_BOOTSTRAPPED" == "true" ]]; then
+    echo "Verifying bundled-license completeness..."
+    python3 "$LICENSE_CHECKER" \
+        --check "$APP_STAGING" \
+        --manifest "$LICENSE_MANIFEST" || {
+            echo "ERROR: bundled-license check failed — a bundled library lacks a documented license (see ::error:: lines above)." >&2
+            exit 1
+        }
+else
+    echo "::warning::macOS license manifest not yet bootstrapped — author these entries (platforms:[\"macos\"]) and set macos_bootstrapped=true to enforce."
+    echo "::warning::Candidate dylibs found in the app bundle:"
+    python3 "$LICENSE_CHECKER" \
+        --emit-candidates "$APP_STAGING" \
+        --manifest "$LICENSE_MANIFEST" || true
+fi
+
+# ---------------------------------------------------------------------------
 # Ad-hoc sign — satisfies macOS's basic integrity check without an Apple ID.
 # Users on non-developer machines will still see a Gatekeeper warning on first
 # launch; they can bypass it with right-click → Open.

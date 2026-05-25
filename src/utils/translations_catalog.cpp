@@ -78,9 +78,17 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-about-license-miniz");
     //% "zlib license — transitive dependency"
     QT_TRID_NOOP("lc-about-license-zlib");
+    //% "GNU Lesser General Public License v3.0 — dynamically linked"
+    QT_TRID_NOOP("lc-about-license-qt");
+    //% "curl license (MIT/X derivate)"
+    QT_TRID_NOOP("lc-about-license-curl");
+    //% "MIT License"
+    QT_TRID_NOOP("lc-about-license-libxml2");
+    //% "Full third-party notices"
+    QT_TRID_NOOP("lc-about-full-notices");
     // lupdate //% markers must stay single-line; clang-format would wrap them.
     // clang-format off
-    //% "The complete corresponding source code is publicly available at <a href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a> and <a href=\"https://github.com/LibreSCRS/LibreCelik\">github.com/LibreSCRS/LibreCelik</a>. This offer is valid for as long as we distribute this software."
+    //% "The complete corresponding source code for LibreCelik, LibreMiddleware and the bundled LGPL/GPL third-party libraries (Qt, GnuTLS, GLib, libidn2 and others) is publicly available at <a href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a> and <a href=\"https://github.com/LibreSCRS/LibreCelik\">github.com/LibreSCRS/LibreCelik</a>, or on request. This offer is valid for as long as we distribute this software."
     // clang-format on
     QT_TRID_NOOP("lc-about-source-offer");
     //% "About"

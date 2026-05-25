@@ -124,12 +124,42 @@ if(LIBRECELIK_SIGNING_ENABLED)
     )
 endif()
 
+# Produce THIRD-PARTY-LICENSES.txt in this directory scope so the rule is
+# visible to the LibreCelik target's rcc dependency (cross-directory custom
+# command OUTPUTs are not resolvable by the Makefile generator). Inputs were
+# resolved in resources/CMakeLists.txt.
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(_tpn_args --manifest "${THIRD_PARTY_MANIFEST}" -o "${THIRD_PARTY_NOTICE_FILE}")
+set(_tpn_deps "${THIRD_PARTY_NOTICE_GEN}" "${THIRD_PARTY_MANIFEST}")
+# Depend on the license texts themselves so editing a body (not just the
+# manifest) regenerates the notice. New files still need a reconfigure.
+file(GLOB _tpn_texts CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/resources/licenses/*.txt")
+list(APPEND _tpn_deps ${_tpn_texts})
+if(libremiddleware_SOURCE_DIR AND EXISTS "${libremiddleware_SOURCE_DIR}/thirdparty/licenses.json")
+    list(APPEND _tpn_args --lm-manifest "${libremiddleware_SOURCE_DIR}/thirdparty/licenses.json")
+    list(APPEND _tpn_deps "${libremiddleware_SOURCE_DIR}/thirdparty/licenses.json")
+endif()
+add_custom_command(
+    OUTPUT "${THIRD_PARTY_NOTICE_FILE}"
+    COMMAND ${Python3_EXECUTABLE} "${THIRD_PARTY_NOTICE_GEN}" ${_tpn_args}
+    DEPENDS ${_tpn_deps}
+    COMMENT "Generating THIRD-PARTY-LICENSES.txt"
+    VERBATIM)
+
 set(RESOURCE_SOURCES
         ${RESOURCE_FILE}
+        ${THIRD_PARTY_NOTICE_RESOURCE}
+        ${THIRD_PARTY_NOTICE_FILE}
         ${TS_PROJECT_FILES}
         ${APP_ICON}
         ${APP_ICON_MACOS}
 )
+
+# The generated notice .txt is an add_custom_command OUTPUT, not a real
+# source: mark it GENERATED so CMake wires the dependency without trying to
+# compile it directly.
+set_source_files_properties(${THIRD_PARTY_NOTICE_FILE} PROPERTIES
+    GENERATED TRUE HEADER_FILE_ONLY TRUE)
 
 set_source_files_properties(${APP_ICON_MACOS} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 

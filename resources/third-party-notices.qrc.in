@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/licenses">
+        <file alias="THIRD-PARTY-LICENSES.txt">@THIRD_PARTY_NOTICE_FILE@</file>
+    </qresource>
+</RCC>

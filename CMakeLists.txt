@@ -35,7 +35,11 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_link_options(-fexperimental-library)
 endif()
 
-set(MIDDLEWARE_VERSION 4.1.0)
+# TEMPORARY (4.2 cross-platform testing phase): track LibreMiddleware `main`
+# so Linux/macOS testers build against the latest LM without a local-source
+# override. MUST revert to a real tag (`4.2.0`) before tagging LibreCelik
+# 4.2.0 — releases require reproducible tag-pinned dependencies.
+set(MIDDLEWARE_VERSION main)
 
 # Hybrid LM consumption: FetchContent (default) or find_package(CONFIG).
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOrUseLibreMiddleware.cmake)

@@ -15,6 +15,8 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QTabWidget>
+#include <QFrame>
+#include <QScrollArea>
 #include <QTextBrowser>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -160,69 +162,85 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent)
     licenseLayout->setContentsMargins(16, 12, 16, 12);
     licenseLayout->setSpacing(6);
 
-    licenseLibreCelikLabel = new QLabel(licenseTab);
+    // The per-component attribution lines live in a capped scroll area so
+    // the (long) list never starves the license-text viewer below it.
+    auto* attribContainer = new QWidget(licenseTab);
+    auto* attribLayout = new QVBoxLayout(attribContainer);
+    attribLayout->setContentsMargins(0, 0, 0, 0);
+    attribLayout->setSpacing(6);
+
+    licenseLibreCelikLabel = new QLabel(attribContainer);
     licenseLibreCelikLabel->setWordWrap(true);
     licenseLibreCelikLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
-    licenseLayout->addWidget(licenseLibreCelikLabel);
+    attribLayout->addWidget(licenseLibreCelikLabel);
 
-    licenseMiddlewareLabel = new QLabel(licenseTab);
+    licenseMiddlewareLabel = new QLabel(attribContainer);
     licenseMiddlewareLabel->setWordWrap(true);
     licenseMiddlewareLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
-    licenseLayout->addWidget(licenseMiddlewareLabel);
+    attribLayout->addWidget(licenseMiddlewareLabel);
 
-    licenseOpenScLabel = new QLabel(licenseTab);
+    licenseOpenScLabel = new QLabel(attribContainer);
     licenseOpenScLabel->setWordWrap(true);
     licenseOpenScLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
-    licenseLayout->addWidget(licenseOpenScLabel);
+    attribLayout->addWidget(licenseOpenScLabel);
 
-    licenseOpenSslLabel = new QLabel(licenseTab);
+    licenseOpenSslLabel = new QLabel(attribContainer);
     licenseOpenSslLabel->setWordWrap(true);
     licenseOpenSslLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
-    licenseLayout->addWidget(licenseOpenSslLabel);
+    attribLayout->addWidget(licenseOpenSslLabel);
 
-    licenseJsonLabel = new QLabel(licenseTab);
+    licenseJsonLabel = new QLabel(attribContainer);
     licenseJsonLabel->setWordWrap(true);
     licenseJsonLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
-    licenseLayout->addWidget(licenseJsonLabel);
+    attribLayout->addWidget(licenseJsonLabel);
 
-    licenseMinizLabel = new QLabel(licenseTab);
+    licenseMinizLabel = new QLabel(attribContainer);
     licenseMinizLabel->setWordWrap(true);
     licenseMinizLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
-    licenseLayout->addWidget(licenseMinizLabel);
+    attribLayout->addWidget(licenseMinizLabel);
 
-    licenseZlibLabel = new QLabel(licenseTab);
+    licenseZlibLabel = new QLabel(attribContainer);
     licenseZlibLabel->setWordWrap(true);
     licenseZlibLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
-    licenseLayout->addWidget(licenseZlibLabel);
+    attribLayout->addWidget(licenseZlibLabel);
 
-    licenseLiberationSansLabel = new QLabel(licenseTab);
+    licenseLiberationSansLabel = new QLabel(attribContainer);
     licenseLiberationSansLabel->setWordWrap(true);
     licenseLiberationSansLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
-    licenseLayout->addWidget(licenseLiberationSansLabel);
+    attribLayout->addWidget(licenseLiberationSansLabel);
 
-    licenseQtLabel = new QLabel(licenseTab);
+    licenseQtLabel = new QLabel(attribContainer);
     licenseQtLabel->setWordWrap(true);
     licenseQtLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
-    licenseLayout->addWidget(licenseQtLabel);
+    attribLayout->addWidget(licenseQtLabel);
 
-    licenseCurlLabel = new QLabel(licenseTab);
+    licenseCurlLabel = new QLabel(attribContainer);
     licenseCurlLabel->setWordWrap(true);
     licenseCurlLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
-    licenseLayout->addWidget(licenseCurlLabel);
+    attribLayout->addWidget(licenseCurlLabel);
 
-    licenseLibXml2Label = new QLabel(licenseTab);
+    licenseLibXml2Label = new QLabel(attribContainer);
     licenseLibXml2Label->setWordWrap(true);
     licenseLibXml2Label->setStyleSheet(QStringLiteral("font-size: 12px;"));
-    licenseLayout->addWidget(licenseLibXml2Label);
+    attribLayout->addWidget(licenseLibXml2Label);
 
-    licenseLayout->addSpacing(6);
+    attribLayout->addSpacing(6);
 
-    sourceOfferLabel = new QLabel(licenseTab);
+    sourceOfferLabel = new QLabel(attribContainer);
     sourceOfferLabel->setWordWrap(true);
     sourceOfferLabel->setOpenExternalLinks(true);
     sourceOfferLabel->setTextFormat(Qt::RichText);
     sourceOfferLabel->setStyleSheet(QStringLiteral("color: gray; font-size: 11px;"));
-    licenseLayout->addWidget(sourceOfferLabel);
+    attribLayout->addWidget(sourceOfferLabel);
+    attribLayout->addStretch(1);
+
+    auto* attribScroll = new QScrollArea(licenseTab);
+    attribScroll->setWidget(attribContainer);
+    attribScroll->setWidgetResizable(true);
+    attribScroll->setFrameShape(QFrame::NoFrame);
+    attribScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    attribScroll->setMaximumHeight(140);
+    licenseLayout->addWidget(attribScroll);
 
     licenseLayout->addSpacing(6);
 

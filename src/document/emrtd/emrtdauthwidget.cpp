@@ -11,6 +11,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QRegularExpressionValidator>
+#include <QShowEvent>
 #include <QTabBar>
 #include <QTabWidget>
 #include <QVBoxLayout>
@@ -168,6 +169,19 @@ EMRTDAuthWidget::EMRTDAuthWidget(QWidget* parent)
 void EMRTDAuthWidget::setDefaultTab(bool paceSupported)
 {
     tabWidget->setCurrentIndex(paceSupported ? 0 : 1);
+}
+
+void EMRTDAuthWidget::showEvent(QShowEvent* event)
+{
+    // Focus the active tab's primary input once the widget is actually shown.
+    // setDefaultTab() runs before the widget is visible, so a setFocus() there
+    // does not stick; applying it on show makes the default focus reliable for
+    // both tabs (CAN field on the CAN tab, document number on the MRZ tab).
+    QWidget::showEvent(event);
+    if (tabWidget->currentIndex() == 0)
+        canEdit->setFocus();
+    else
+        docNumberEdit->setFocus();
 }
 
 void EMRTDAuthWidget::onAuthenticateClicked()

@@ -34,6 +34,7 @@ signals:
 
 protected:
     void changeEvent(QEvent* event) override;
+    void showEvent(QShowEvent* event) override;
 
 public slots:
     void onAuthFailed(const QString& errorMessage);

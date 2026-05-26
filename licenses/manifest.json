@@ -5,7 +5,12 @@
     "lib*-plugin.so",
     "*-gui-plugin.so",
     "libLibreSCRS_*.so",
-    "libresign*.so"
+    "libresign*.so",
+    "librescrs-pkcs11.dylib",
+    "lib*-plugin.dylib",
+    "*-gui-plugin.dylib",
+    "libLibreSCRS_*.dylib",
+    "libresign*.dylib"
   ],
   "exclude_not_bundled": [
     "libpcsclite.so",

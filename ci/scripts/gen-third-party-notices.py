@@ -39,6 +39,34 @@ _HEADER = (
 )
 
 
+def _component_applies_to_platform(comp, current_platform) -> bool:
+    """Return True if ``comp`` is in scope for ``current_platform``.
+
+    Intentionally mirrors ``check-bundled-licenses.py``'s helper of the same
+    name. The two scripts must agree byte-for-byte on platform semantics so a
+    single manifest drives BOTH the fail-closed bundle check AND the rendered
+    Tier-2 notice baked into the binary. The helper is duplicated rather than
+    imported because the checker's filename is hyphenated and cannot be
+    ``import``ed without ``importlib.util`` gymnastics.
+
+    Filtering rules:
+
+    - A component WITHOUT a ``platforms`` key is cross-platform and applies
+      on every platform.
+    - A component WITH a ``platforms`` list applies only when
+      ``current_platform`` is in that list.
+    - When ``current_platform`` is ``None`` (no ``--platform`` flag was
+      passed) every component applies. This preserves legacy behavior for
+      callers that have not yet been updated to pass an explicit platform.
+    """
+    platforms = comp.get("platforms")
+    if platforms is None:
+        return True
+    if current_platform is None:
+        return True
+    return current_platform in platforms
+
+
 def _resolve_text_path(component, base_dirs):
     """Resolve a component's ``text`` against its source base directory.
 
@@ -135,6 +163,16 @@ def main(argv=None):
         required=True,
         help="Path to write the generated notice file.",
     )
+    parser.add_argument(
+        "--platform",
+        choices=("linux", "macos"),
+        default=None,
+        help="Scope the rendered notice to a single platform. Components "
+        "with a ``platforms`` list are emitted only when the current "
+        "platform is in that list; components without the key are "
+        "cross-platform. Omit the flag to render every component (legacy "
+        "behavior, matches the checker's --platform semantics).",
+    )
     args = parser.parse_args(argv)
 
     # LC text paths are repo-root-relative; manifest.json lives at
@@ -149,6 +187,14 @@ def main(argv=None):
         lm_dir = os.path.dirname(os.path.abspath(args.lm_manifest))
         base_dirs["lm"] = lm_dir
         components += _load_components(args.lm_manifest, "lm")
+
+    # Filter components by platform BEFORE rendering so the embedded notice
+    # lists only what actually ships in this artifact. When --platform is
+    # absent every component renders (legacy behavior).
+    components = [
+        c for c in components
+        if _component_applies_to_platform(c, args.platform)
+    ]
 
     text = render(components, base_dirs)
 

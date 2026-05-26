@@ -130,6 +130,16 @@ endif()
 # resolved in resources/CMakeLists.txt.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(_tpn_args --manifest "${THIRD_PARTY_MANIFEST}" -o "${THIRD_PARTY_NOTICE_FILE}")
+# Scope the rendered notice to the current platform so the binary ships a
+# notice listing only the libraries actually bundled in this artifact (a
+# macOS DMG must not list Linux-only deps like Avahi/X11/Kerberos and vice
+# versa). On platforms we don't ship to, omit the flag — the generator
+# falls back to rendering every component (legacy behavior).
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    list(APPEND _tpn_args --platform linux)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    list(APPEND _tpn_args --platform macos)
+endif()
 set(_tpn_deps "${THIRD_PARTY_NOTICE_GEN}" "${THIRD_PARTY_MANIFEST}")
 # Depend on the license texts themselves so editing a body (not just the
 # manifest) regenerates the notice. New files still need a reconfigure.

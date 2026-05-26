@@ -395,7 +395,8 @@ fi
 echo "Verifying bundled-license completeness..."
 python3 "$PROJECT_ROOT/ci/scripts/check-bundled-licenses.py" \
     --check "$APPDIR" \
-    --manifest "$PROJECT_ROOT/licenses/manifest.json" || {
+    --manifest "$PROJECT_ROOT/licenses/manifest.json" \
+    --platform linux || {
         echo "ERROR: bundled-license check failed — a bundled library lacks a documented license (see ::error:: lines above)." >&2
         exit 1
     }

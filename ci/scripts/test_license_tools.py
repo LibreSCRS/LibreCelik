@@ -32,6 +32,25 @@ def test_normalize_soname():
     assert checker.normalize("plain-name") == "plain-name"
 
 
+def test_normalize_macos_version_before_extension():
+    """macOS dylibs put the version segment BEFORE the extension
+    (``libssl.3.dylib``), unlike Linux sonames which put it AFTER
+    (``libssl.so.3``). The checker must collapse both shapes to the same
+    bare-extension form so a single manifest entry covers both platforms.
+    """
+    assert checker.normalize("libssl.3.dylib") == "libssl.dylib"
+    assert checker.normalize("libssl.3.0.0.dylib") == "libssl.dylib"
+    assert checker.normalize("libcrypto.3.dylib") == "libcrypto.dylib"
+    # Multi-component name with version-before-extension.
+    assert checker.normalize("libQt6Core.6.dylib") == "libQt6Core.dylib"
+    # Don't strip a non-numeric segment — only digits-with-dots is a
+    # version, otherwise we'd corrupt names like libfoo.helper.dylib.
+    assert checker.normalize("libfoo.helper.dylib") == "libfoo.helper.dylib"
+    # Hyphen-version dylibs (e.g. Homebrew openssl@3 packaging) have no
+    # numeric .N segment; the hyphenated suffix is part of the bare name.
+    assert checker.normalize("libssl-3.dylib") == "libssl-3.dylib"
+
+
 def test_normalize_requires_extension_boundary():
     # A ".so"/".dylib" substring that is NOT a real extension boundary
     # must not be mis-normalized (would otherwise misattribute a license).
@@ -79,6 +98,30 @@ def test_internal_skipped():
     assert not checker.is_internal("libcurl.so", ["*-gui-plugin.so"])
 
 
+def test_internal_skipped_macos_dylib_mirrors():
+    """LibreSCRS-owned modules ship as .dylib on macOS (build-dmg.sh renames
+    the .so artifacts). The shipped manifest's internal_sonames must cover
+    BOTH extensions so the same plugin isn't reported as a third-party
+    dependency just because the bundle layout uses Apple's convention.
+    """
+    import json
+    import pathlib
+
+    manifest_path = (
+        pathlib.Path(__file__).resolve().parents[2] / "licenses" / "manifest.json"
+    )
+    manifest = json.loads(manifest_path.read_text())
+    internal = manifest["internal_sonames"]
+
+    # PKCS#11 module and the SmartCard core library both ship from LM.
+    assert checker.is_internal("librescrs-pkcs11.dylib", internal)
+    assert checker.is_internal("libLibreSCRS_SmartCard.dylib", internal)
+    # Plugin family globs must also match the .dylib mirrors.
+    assert checker.is_internal("libid-card-plugin.dylib", internal)
+    assert checker.is_internal("piv-gui-plugin.dylib", internal)
+    assert checker.is_internal("libresign-core.dylib", internal)
+
+
 def test_enumerate_dedupes_symlinks(tmp_path):
     lib = tmp_path / "usr" / "lib"
     lib.mkdir(parents=True)
@@ -94,6 +137,42 @@ def test_enumerate_finds_dylib(tmp_path):
     (lib / "libfoo.dylib").write_bytes(b"")
     names = [n for n, _rp in checker.enumerate_assets(str(tmp_path))]
     assert "libfoo.dylib" in names
+
+
+def test_enumerate_finds_framework_bundle(tmp_path):
+    """macdeployqt copies Qt as ``QtCore.framework/Versions/A/QtCore`` —
+    the binary inside has no ``.so``/``.dylib`` extension, so the
+    enumerator must recognise the surrounding ``.framework`` directory
+    and yield the bundle name. Otherwise every bundled Qt module is
+    invisible to the bundle check and ships without a license entry.
+    """
+    fw = tmp_path / "Contents" / "Frameworks" / "QtFoo.framework"
+    (fw / "Versions" / "A").mkdir(parents=True)
+    (fw / "Versions" / "A" / "QtFoo").write_bytes(b"")
+    # Realistic extras inside the framework — must NOT be yielded.
+    (fw / "Versions" / "A" / "Resources").mkdir()
+    (fw / "Versions" / "A" / "Resources" / "Info.plist").write_text("")
+
+    names = [n for n, _rp in checker.enumerate_assets(str(tmp_path))]
+    assert "QtFoo.framework" in names
+
+
+def test_enumerate_framework_does_not_double_count_inner_dylib(tmp_path):
+    """If a framework happens to contain an inner ``.dylib``/``.so`` file
+    (rare but possible — e.g. a helper library), enumeration should
+    yield ONLY the framework bundle name, not the inner file. Otherwise
+    the bundle check would flag the inner helper as an unmapped
+    third-party library duplicating the framework entry.
+    """
+    fw = tmp_path / "Contents" / "Frameworks" / "QtBar.framework"
+    (fw / "Versions" / "A").mkdir(parents=True)
+    (fw / "Versions" / "A" / "QtBar").write_bytes(b"")
+    # An inner shared object inside the framework — must be hidden.
+    (fw / "Versions" / "A" / "libhelper.dylib").write_bytes(b"")
+
+    names = [n for n, _rp in checker.enumerate_assets(str(tmp_path))]
+    assert "QtBar.framework" in names
+    assert "libhelper.dylib" not in names
 
 
 def test_enumerate_skips_non_libraries(tmp_path):
@@ -206,6 +285,142 @@ def test_internal_and_excluded_skipped(tmp_path):
     assert checker.run_check(str(tmp_path / "app"), m, str(tmp_path)) == 0
 
 
+# --- per-component `platforms` filter ----------------------------------
+
+
+def test_platforms_linux_only_component_ignored_on_macos():
+    """A component tagged ``platforms:["linux"]`` must NOT match when the
+    current platform is macOS — even if a matching basename appears in the
+    bundle. With ``--platform macos`` the linux-only entry is invisible to
+    ``match_component`` so the asset is reported as unmapped.
+    """
+    linux_only = {
+        "match": "libavahi-client.so",
+        "name": "Avahi",
+        "spdx": "LGPL-2.1-or-later",
+        "text": "x",
+        "sha256": "y",
+        "platforms": ["linux"],
+    }
+    # macOS: linux-only entry must NOT match.
+    assert (
+        checker.match_component("libavahi-client.so", [linux_only], "macos")
+        is None
+    )
+    # Linux: linux-only entry MUST match.
+    assert (
+        checker.match_component("libavahi-client.so", [linux_only], "linux")
+        is linux_only
+    )
+
+
+def test_platforms_macos_only_component_ignored_on_linux():
+    """Symmetric: a component tagged ``platforms:["macos"]`` must NOT
+    match on Linux but MUST match on macOS.
+    """
+    macos_only = {
+        "match": "libfoo.dylib",
+        "name": "Foo",
+        "spdx": "MIT",
+        "text": "x",
+        "sha256": "y",
+        "platforms": ["macos"],
+    }
+    assert (
+        checker.match_component("libfoo.dylib", [macos_only], "linux") is None
+    )
+    assert (
+        checker.match_component("libfoo.dylib", [macos_only], "macos")
+        is macos_only
+    )
+
+
+def test_platforms_absent_matches_all():
+    """A component WITHOUT a ``platforms`` key is cross-platform: it must
+    match under both ``--platform linux`` and ``--platform macos``.
+    """
+    cross = {
+        "match": "libcurl.so",
+        "name": "curl",
+        "spdx": "curl",
+        "text": "x",
+        "sha256": "y",
+    }
+    assert checker.match_component("libcurl.so", [cross], "linux") is cross
+    assert checker.match_component("libcurl.so", [cross], "macos") is cross
+
+
+def test_platforms_absent_matches_when_no_flag():
+    """Backward-compat: when no ``--platform`` arg is passed (current
+    platform is ``None``), every component matches regardless of its
+    ``platforms`` key. This preserves the legacy fail-closed behavior on
+    callers that haven't been updated yet (e.g. the test suite).
+    """
+    linux_only = {
+        "match": "libavahi-client.so",
+        "name": "Avahi",
+        "spdx": "LGPL-2.1-or-later",
+        "text": "x",
+        "sha256": "y",
+        "platforms": ["linux"],
+    }
+    macos_only = {
+        "match": "libfoo.dylib",
+        "name": "Foo",
+        "spdx": "MIT",
+        "text": "x",
+        "sha256": "y",
+        "platforms": ["macos"],
+    }
+    cross = {
+        "match": "libcurl.so",
+        "name": "curl",
+        "spdx": "curl",
+        "text": "x",
+        "sha256": "y",
+    }
+    # No platform passed (None) — everything matches.
+    assert checker.match_component("libavahi-client.so", [linux_only], None) is linux_only
+    assert checker.match_component("libfoo.dylib", [macos_only], None) is macos_only
+    assert checker.match_component("libcurl.so", [cross], None) is cross
+
+
+def test_emit_candidates_respects_platform_filter(tmp_path):
+    """A component scoped to a platform OTHER than the current one must
+    NOT shield a bundled library from the candidate list. Otherwise a
+    Linux-only entry would silently cover a macOS-bundled basename of the
+    same soname even though no license text would be emitted for it.
+    """
+    lib = tmp_path / "app"
+    lib.mkdir()
+    (lib / "libcurl.so.4").write_bytes(b"")
+
+    # Component matches the asset BUT is scoped to macOS only.
+    manifest = {
+        "internal_sonames": [],
+        "exclude_not_bundled": [],
+        "components": [
+            {
+                "match": "libcurl.so",
+                "name": "curl",
+                "spdx": "curl",
+                "text": "x",
+                "sha256": "y",
+                "platforms": ["macos"],
+            }
+        ],
+    }
+
+    # On Linux: the macOS-only component does NOT cover libcurl, so it
+    # appears as an unmapped candidate.
+    out = checker.emit_candidates(str(tmp_path / "app"), manifest, "linux")
+    assert [c["match"] for c in out] == ["libcurl.so"]
+
+    # On macOS: the component covers libcurl, so no candidate is emitted.
+    out_macos = checker.emit_candidates(str(tmp_path / "app"), manifest, "macos")
+    assert out_macos == []
+
+
 # --- gen-third-party-notices.py ----------------------------------------
 
 
@@ -253,3 +468,101 @@ def test_render_sorted_case_insensitive(tmp_path):
     out = gen.render(components, {"lc": str(tmp_path)})
     # "apple" section header precedes "Zebra" (case-insensitive name sort).
     assert out.index("apple") < out.index("Zebra")
+
+
+def test_render_respects_platform_filter(tmp_path):
+    """The Tier-2 notice baked into the binary must list ONLY components that
+    actually ship in the current platform's artifact. A linux-only entry must
+    be omitted when the build's ``--platform`` is ``macos`` and vice versa;
+    cross-platform entries (no ``platforms`` key) always render.
+
+    This mirrors the checker's :func:`_component_applies_to_platform` rule so
+    a single manifest drives both verification AND the rendered notice.
+    """
+    lic = tmp_path / "resources" / "licenses"
+    lic.mkdir(parents=True)
+    (lic / "mit.txt").write_text("MIT LICENSE BODY")
+    (lic / "lgpl.txt").write_text("LGPL LICENSE BODY")
+    (lic / "bsd.txt").write_text("BSD LICENSE BODY")
+    components = [
+        {
+            "name": "libcross",
+            "spdx": "MIT",
+            "text": "resources/licenses/mit.txt",
+        },
+        {
+            "name": "libavahi-client",
+            "spdx": "LGPL-2.1-or-later",
+            "text": "resources/licenses/lgpl.txt",
+            "platforms": ["linux"],
+        },
+        {
+            "name": "libSecurityFoundation",
+            "spdx": "APSL-2.0",
+            "text": "resources/licenses/bsd.txt",
+            "platforms": ["macos"],
+        },
+    ]
+    base_dirs = {"lc": str(tmp_path)}
+
+    # Render the macOS notice: filter out components whose platforms list
+    # excludes "macos", then render the remainder.
+    filtered = [
+        c for c in components
+        if gen._component_applies_to_platform(c, "macos")
+    ]
+    out = gen.render(filtered, base_dirs)
+
+    assert "libcross" in out
+    assert "libSecurityFoundation" in out
+    assert "libavahi-client" not in out
+
+    # Symmetric direction: filtering for linux must drop the macOS-only
+    # entry — guards against a typo like ``current_platform == "macos"``
+    # being hardcoded instead of using the membership check.
+    filtered_linux = [
+        c for c in components
+        if gen._component_applies_to_platform(c, "linux")
+    ]
+    out_linux = gen.render(filtered_linux, base_dirs)
+    assert "libcross" in out_linux
+    assert "libavahi-client" in out_linux
+    assert "libSecurityFoundation" not in out_linux
+
+
+def test_gen_main_end_to_end_platform_filter(tmp_path):
+    """End-to-end ``main()`` invocation with ``--platform macos`` must drive
+    the filter through argparse → load → render → file write. Guards against
+    a future refactor that drops the filter step from main() while keeping
+    the helper intact (the helper-only test above would still pass).
+    """
+    # gen.main() resolves the LC repo root as dirname(dirname(manifest)),
+    # so the manifest must live two levels below the asset tree root.
+    lic = tmp_path / "resources" / "licenses"
+    lic.mkdir(parents=True)
+    (lic / "mit.txt").write_text("MIT LICENSE BODY")
+    (lic / "lgpl.txt").write_text("LGPL LICENSE BODY")
+    manifest_dir = tmp_path / "licenses"
+    manifest_dir.mkdir()
+    manifest = manifest_dir / "manifest.json"
+    import json
+    manifest.write_text(json.dumps({
+        "components": [
+            {"name": "libcross", "spdx": "MIT",
+             "text": "resources/licenses/mit.txt"},
+            {"name": "libavahi-client", "spdx": "LGPL-2.1-or-later",
+             "text": "resources/licenses/lgpl.txt",
+             "platforms": ["linux"]},
+        ]
+    }))
+    out_file = tmp_path / "THIRD-PARTY-LICENSES.txt"
+
+    rc = gen.main([
+        "--manifest", str(manifest),
+        "-o", str(out_file),
+        "--platform", "macos",
+    ])
+    assert rc == 0
+    text = out_file.read_text()
+    assert "libcross" in text
+    assert "libavahi-client" not in text

@@ -31,19 +31,43 @@ import sys
 # component as "libcurl.so".
 _EXT = re.compile(r"\.(so|dylib)(\.|$)")
 
+# macOS convention puts the version BEFORE the extension:
+# ``libssl.3.dylib`` / ``libssl.3.0.0.dylib``. Collapse those to the
+# bare ``libssl.dylib`` form so a single manifest entry covers the
+# library regardless of how the version segment is spelled. Only digits
+# (with dots between) are considered a version — a non-numeric segment
+# (e.g. ``libfoo.helper.dylib``) is a real part of the name and is left
+# untouched. Linux-style ``.so.<N>`` is handled separately by ``_EXT``.
+_DYLIB_VERSIONED = re.compile(r"^(lib[^.]+)(?:\.\d+)+\.dylib$")
+
 
 def normalize(basename: str) -> str:
-    """Strip trailing version segments after the ``.so``/``.dylib`` extension.
+    """Strip version segments around the ``.so``/``.dylib`` extension.
+
+    Handles both conventions:
+
+    - Linux soname: version AFTER the extension (``libcurl.so.4.8.0``).
+    - macOS dylib: version BEFORE the extension (``libssl.3.dylib``).
 
     Examples::
 
-        libcurl.so.4.8.0   -> libcurl.so
+        libcurl.so.4.8.0     -> libcurl.so
         libQt6Core.so.6.10.0 -> libQt6Core.so
-        libicudata.so.74.2 -> libicudata.so
-        libfoo.dylib       -> libfoo.dylib
-        libfoo.solics      -> libfoo.solics (not a real .so boundary)
-        plain-name         -> plain-name (no extension, returned unchanged)
+        libicudata.so.74.2   -> libicudata.so
+        libssl.3.dylib       -> libssl.dylib
+        libssl.3.0.0.dylib   -> libssl.dylib
+        libfoo.dylib         -> libfoo.dylib
+        libfoo.helper.dylib  -> libfoo.helper.dylib (non-numeric segment)
+        libfoo.solics        -> libfoo.solics (not a real .so boundary)
+        plain-name           -> plain-name (no extension, unchanged)
     """
+    # macOS version-before-extension form. Check this first because the
+    # name still ends in ``.dylib`` (a valid _EXT match that would
+    # otherwise leave the embedded version segments in place).
+    m = _DYLIB_VERSIONED.match(basename)
+    if m:
+        return m.group(1) + ".dylib"
+
     m = _EXT.search(basename)
     if not m:
         return basename
@@ -61,17 +85,47 @@ def is_internal(name: str, internal_globs) -> bool:
     return any(fnmatch.fnmatch(name, g) for g in internal_globs)
 
 
-def match_component(name: str, components):
+def _component_applies_to_platform(comp, current_platform) -> bool:
+    """Return True if ``comp`` is in scope for ``current_platform``.
+
+    Filtering rules:
+
+    - A component WITHOUT a ``platforms`` key is cross-platform and
+      applies on every platform (this is the default — keep most
+      entries unscoped so a single record covers both Linux and macOS).
+    - A component WITH a ``platforms`` list applies only when
+      ``current_platform`` is in that list.
+    - When ``current_platform`` is ``None`` (no ``--platform`` flag was
+      passed) every component applies regardless of its ``platforms``
+      key. This preserves the legacy fail-closed behavior for callers
+      that have not been updated to pass an explicit platform.
+    """
+    platforms = comp.get("platforms")
+    if platforms is None:
+        return True
+    if current_platform is None:
+        return True
+    return current_platform in platforms
+
+
+def match_component(name: str, components, current_platform=None):
     """Return the most-specific component matching ``name``, else None.
 
     Globs are matched case-sensitively against the whole normalized
     basename. When several entries match, the one whose ``match`` pattern
     has the most non-wildcard characters (the most specific) wins, so a
     literal soname always beats a family glob.
+
+    When ``current_platform`` is supplied, components whose ``platforms``
+    list excludes it are invisible to the match: a Linux-only entry
+    cannot satisfy a macOS bundle and vice versa. See
+    :func:`_component_applies_to_platform` for the full rule set.
     """
     best = None
     best_specificity = -1
     for c in components:
+        if not _component_applies_to_platform(c, current_platform):
+            continue
         if fnmatch.fnmatchcase(name, c["match"]):
             specificity = len(c["match"].replace("*", "").replace("?", ""))
             if specificity > best_specificity:
@@ -80,15 +134,42 @@ def match_component(name: str, components):
     return best
 
 
-def enumerate_assets(root: str):
-    """Yield ``(normalized_name, realpath)`` for every shared library.
+def _is_framework_dir(name: str) -> bool:
+    """True if ``name`` is the basename of a macOS framework bundle."""
+    return name.endswith(".framework")
 
-    Walks the entire staging tree under ``root`` and yields each
-    ``.so*``/``.dylib`` file exactly once, deduped by ``os.path.realpath``
-    so a symlink and its target are counted a single time.
+
+def enumerate_assets(root: str):
+    """Yield ``(normalized_name, realpath)`` for every bundled artefact.
+
+    Walks the staging tree under ``root`` and yields each artefact
+    exactly once, deduped by ``os.path.realpath`` so a symlink and its
+    target are counted a single time.
+
+    Two kinds of artefacts are emitted:
+
+    - Plain shared libraries (``*.so*``/``*.dylib*``) — yielded with
+      their normalized basename (``libcurl.so``, ``libssl.dylib``).
+    - macOS framework bundles (``QtCore.framework`` under e.g.
+      ``Contents/Frameworks/``) — yielded with the bundle directory's
+      basename (``QtCore.framework``). The inner files (binary at
+      ``Versions/A/QtCore``, helper ``.dylib``s, ``Resources/``) are
+      NOT also yielded, so a framework counts as a single licensable
+      unit rather than being double-counted by its internals.
     """
     seen = set()
-    for dirpath, _dirs, files in os.walk(root):
+    for dirpath, dirs, files in os.walk(root):
+        # When the current directory is itself a framework bundle, emit
+        # the bundle once and stop descending — every inner file belongs
+        # to the framework and must not be enumerated separately.
+        if _is_framework_dir(os.path.basename(dirpath)):
+            rp = os.path.realpath(dirpath)
+            if rp not in seen:
+                seen.add(rp)
+                yield os.path.basename(dirpath), rp
+            dirs[:] = []
+            continue
+
         for f in files:
             if not _EXT.search(f):
                 continue
@@ -100,7 +181,7 @@ def enumerate_assets(root: str):
             yield normalize(f), rp
 
 
-def emit_candidates(root: str, manifest):
+def emit_candidates(root: str, manifest, current_platform=None):
     """Enumerate unmapped bundled libraries under ``root``.
 
     Walks the staging tree via :func:`enumerate_assets` and returns one
@@ -115,6 +196,12 @@ def emit_candidates(root: str, manifest):
     Each remaining (unmapped) name yields a placeholder entry with empty
     ``name``/``spdx``/``text``/``sha256`` for hand-authoring. The result
     is sorted by name and deduplicated.
+
+    ``current_platform`` is forwarded to :func:`match_component` so that
+    a platform-scoped component does NOT shield a bundled asset on a
+    different platform — otherwise a Linux-only entry would silently
+    cover a macOS-bundled soname of the same name while no license text
+    would actually ship for it.
     """
     internal = manifest.get("internal_sonames", [])
     excluded = manifest.get("exclude_not_bundled", [])
@@ -126,7 +213,7 @@ def emit_candidates(root: str, manifest):
             continue
         if any(fnmatch.fnmatch(name, g) for g in excluded):
             continue
-        if match_component(name, components) is not None:
+        if match_component(name, components, current_platform) is not None:
             continue
         unmapped.add(name)
 
@@ -144,7 +231,9 @@ def _sha256_file(path: str) -> str:
     return h.hexdigest()
 
 
-def run_check(staging_root: str, manifest, manifest_dir: str) -> int:
+def run_check(
+    staging_root: str, manifest, manifest_dir: str, current_platform=None
+) -> int:
     """Fail-closed verdict over a packaging staging tree.
 
     Enumerates every bundled shared library under ``staging_root`` and
@@ -157,6 +246,14 @@ def run_check(staging_root: str, manifest, manifest_dir: str) -> int:
     ``::warning::`` (stale or platform-scoped — not a failure). License
     texts are resolved relative to ``manifest_dir`` (the repo root), since
     each component ``text`` value is repo-root-relative.
+
+    ``current_platform`` selects which components are considered in
+    scope. A component whose ``platforms`` list excludes the current
+    platform is treated as if it weren't in the manifest at all — it
+    cannot satisfy an asset on the wrong platform, and the stale-entry
+    warning is suppressed (since "not matched on macOS because it's
+    Linux-only" is by design, not stale). See
+    :func:`_component_applies_to_platform` for the full rule set.
 
     Returns 0 when no errors were found, non-zero otherwise.
     """
@@ -177,7 +274,7 @@ def run_check(staging_root: str, manifest, manifest_dir: str) -> int:
             continue
 
         rel = os.path.relpath(rp, staging_root)
-        comp = match_component(name, components)
+        comp = match_component(name, components, current_platform)
         if comp is None:
             errors.append(
                 f"::error::{name} ({rel}) is bundled but maps to no license "
@@ -204,6 +301,11 @@ def run_check(staging_root: str, manifest, manifest_dir: str) -> int:
             )
 
     for c in components:
+        # Skip the stale-entry warning for components scoped to a
+        # different platform: an Avahi entry that doesn't match anything
+        # under `--platform macos` is correct, not stale.
+        if not _component_applies_to_platform(c, current_platform):
+            continue
         if id(c) not in matched_components:
             print(
                 f"::warning::component '{c['name']}' (match '{c['match']}') "
@@ -258,11 +360,23 @@ def main(argv=None):
         "a manifest component with a verbatim license text. Non-zero on "
         "any unmapped library, missing text, or sha256 mismatch.",
     )
+    parser.add_argument(
+        "--platform",
+        choices=("linux", "macos"),
+        default=None,
+        help="Scope the check/candidate enumeration to a single platform. "
+        "Components with a ``platforms`` list apply only when the current "
+        "platform is in that list; components without the key are "
+        "cross-platform. Omit the flag to disable platform filtering "
+        "(legacy behavior: every component applies).",
+    )
     args = parser.parse_args(argv)
 
     if args.emit_candidates:
         manifest = _load_manifest(args.manifest)
-        candidates = emit_candidates(args.emit_candidates, manifest)
+        candidates = emit_candidates(
+            args.emit_candidates, manifest, args.platform
+        )
         print(json.dumps(candidates, indent=2, ensure_ascii=False))
         return 0
 
@@ -274,7 +388,7 @@ def main(argv=None):
         manifest_dir = os.path.dirname(
             os.path.dirname(os.path.abspath(args.manifest))
         )
-        return run_check(args.check, manifest, manifest_dir)
+        return run_check(args.check, manifest, manifest_dir, args.platform)
 
     parser.error("no mode selected (expected --emit-candidates or --check)")
 

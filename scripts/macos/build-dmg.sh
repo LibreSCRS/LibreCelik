@@ -123,11 +123,16 @@ ls "$APP_STAGING/Contents/PlugIns/gui-plugins/"
 #
 # The runtime walker resolves the certs dir from <exe>/../Resources/
 # certificates at load time. macOS bundle layout:
-# <exe>/../Resources/certificates. LM_SRC env override supports a local
-# LibreMiddleware checkout (FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE);
-# default is the FetchContent path.
+# <exe>/../Resources/certificates.
+#
+# Source dir resolution cascade (highest priority first):
+#   1. LM_SRC env override (explicit)
+#   2. FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE (the standard CMake env
+#      var consumers already set for an in-tree LM checkout — no need
+#      to duplicate it as LM_SRC)
+#   3. Default FetchContent fetch path inside BUILD_DIR
 # ---------------------------------------------------------------------------
-LM_SRC="${LM_SRC:-$BUILD_DIR/_deps/libremiddleware-src}"
+LM_SRC="${LM_SRC:-${FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE:-$BUILD_DIR/_deps/libremiddleware-src}}"
 CERT_SRC="$LM_SRC/thirdparty/certificates"
 DMG_CERT_DIR="$APP_STAGING/Contents/Resources/certificates"
 if [[ -d "$CERT_SRC" ]]; then
@@ -137,7 +142,8 @@ if [[ -d "$CERT_SRC" ]]; then
     echo "[dmg] copied bundled certs to $DMG_CERT_DIR"
 else
     echo "ERROR: middleware certs directory not found at $CERT_SRC"
-    echo "       Set LM_SRC=<libremiddleware-source> if using a custom checkout."
+    echo "       Set LM_SRC or FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE"
+    echo "       to point at an in-tree LibreMiddleware checkout."
     exit 1
 fi
 
@@ -166,7 +172,8 @@ if [[ "$MACOS_BOOTSTRAPPED" == "true" ]]; then
     echo "Verifying bundled-license completeness..."
     python3 "$LICENSE_CHECKER" \
         --check "$APP_STAGING" \
-        --manifest "$LICENSE_MANIFEST" || {
+        --manifest "$LICENSE_MANIFEST" \
+        --platform macos || {
             echo "ERROR: bundled-license check failed — a bundled library lacks a documented license (see ::error:: lines above)." >&2
             exit 1
         }
@@ -175,7 +182,8 @@ else
     echo "::warning::Candidate dylibs found in the app bundle:"
     python3 "$LICENSE_CHECKER" \
         --emit-candidates "$APP_STAGING" \
-        --manifest "$LICENSE_MANIFEST" || true
+        --manifest "$LICENSE_MANIFEST" \
+        --platform macos || true
 fi
 
 # ---------------------------------------------------------------------------

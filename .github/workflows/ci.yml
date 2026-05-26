@@ -58,6 +58,28 @@ jobs:
           name: i18n-audit-json
           path: /tmp/i18n-audit.json
 
+  license-tools:
+    # Pytest coverage for the bundled-license tooling
+    # (check-bundled-licenses.py + gen-third-party-notices.py): normalize,
+    # framework enumeration, internal_sonames .dylib mirrors, --platform
+    # filter (both directions, checker + generator + end-to-end main()).
+    # 27 cases. Catches drift in the manifest schema or filter logic
+    # before the release-only AppImage / DMG fail-closed check fires.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pytest
+        run: python3 -m pip install --break-system-packages --user pytest
+
+      - name: Run license-tools tests
+        run: python3 -m pytest ci/scripts/test_license_tools.py -v
+
   build-linux:
     runs-on: ubuntu-latest
     steps:

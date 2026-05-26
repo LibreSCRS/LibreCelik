@@ -1051,6 +1051,22 @@
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
       "platforms": ["macos"]
+    },
+    {
+      "match": "libssl.dylib",
+      "name": "OpenSSL",
+      "spdx": "Apache-2.0",
+      "text": "resources/licenses/apache-2.0.txt",
+      "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
+      "platforms": ["macos"]
+    },
+    {
+      "match": "libcrypto.dylib",
+      "name": "OpenSSL",
+      "spdx": "Apache-2.0",
+      "text": "resources/licenses/apache-2.0.txt",
+      "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
+      "platforms": ["macos"]
     }
   ]
 }

@@ -1067,6 +1067,134 @@
       "text": "resources/licenses/apache-2.0.txt",
       "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
       "platforms": ["macos"]
+    },
+    {
+      "match": "libssh.so",
+      "name": "libssh",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "libgcrypt.so",
+      "name": "libgcrypt",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "librtmp.so",
+      "name": "RTMPDump (librtmp)",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "libgthread-2.0.so",
+      "name": "GLib (gthread)",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "libbsd.so",
+      "name": "libbsd",
+      "spdx": "BSD-3-Clause",
+      "text": "resources/licenses/bsd-3.txt",
+      "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "libmd.so",
+      "name": "libmd",
+      "spdx": "BSD-3-Clause",
+      "text": "resources/licenses/bsd-3.txt",
+      "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "libcap.so",
+      "name": "libcap",
+      "spdx": "BSD-3-Clause OR GPL-2.0-only",
+      "text": "resources/licenses/bsd-3.txt",
+      "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "liblz4.so",
+      "name": "LZ4",
+      "spdx": "BSD-2-Clause",
+      "text": "resources/licenses/bsd-2.txt",
+      "sha256": "f32fb3b417a194167cfad068223fc975ba96c5960513a10f66a3c28720aec1df",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "libatomic.so",
+      "name": "GCC libatomic",
+      "spdx": "GPL-3.0-only WITH GCC-exception-3.1",
+      "text": "resources/licenses/gcc-runtime-exception.txt",
+      "sha256": "df021a1dc36fc2a16caf773fa8742e3ddf44f370d8a6d5f2d84d8bf5720f7e65",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "liblber.so",
+      "name": "OpenLDAP (liblber)",
+      "spdx": "OLDAP-2.8",
+      "text": "resources/licenses/openldap.txt",
+      "sha256": "80196f58cdbf7ca529102004dd7e2d02e4ab16ec836b939a3e4b00f8cc47d2cf",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "libldap.so",
+      "name": "OpenLDAP (libldap)",
+      "spdx": "OLDAP-2.8",
+      "text": "resources/licenses/openldap.txt",
+      "sha256": "80196f58cdbf7ca529102004dd7e2d02e4ab16ec836b939a3e4b00f8cc47d2cf",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "libselinux.so",
+      "name": "libselinux",
+      "spdx": "LicenseRef-libselinux-public-domain",
+      "text": "resources/licenses/libselinux.txt",
+      "sha256": "3346695a9b80efbc94931da9518f94dbf2595f2ed6dcbf849abdd945119f764a",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "libsasl2.so",
+      "name": "Cyrus SASL",
+      "spdx": "BSD-4-Clause",
+      "text": "resources/licenses/cyrus-sasl.txt",
+      "sha256": "c320547c02aa722162a378cefa337a1cd3a60942cc9ba73857782b19d67241a7",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "libqglib.so",
+      "name": "Qt 6 GLib network plugin",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "libqnetworkmanager.so",
+      "name": "Qt 6 NetworkManager plugin",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "libqpdf.dylib",
+      "name": "Qt PDF image-format plugin",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
+      "platforms": ["macos"]
     }
   ]
 }

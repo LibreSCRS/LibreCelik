@@ -22,7 +22,7 @@ project(LibreCelik VERSION ${PROJECT_VERSION} LANGUAGES CXX)
 
 # CMake's project(VERSION X.Y.Z) strips pre-release suffixes; keep the full
 # version (with -rcN / -beta / -local) here so user-facing banners can show it.
-set(LIBRECELIK_VERSION_FULL "4.1.0" CACHE STRING "Full version string including pre-release suffix")
+set(LIBRECELIK_VERSION_FULL "4.2.0" CACHE STRING "Full version string including pre-release suffix")
 add_compile_definitions(LIBRECELIK_VERSION_FULL="${LIBRECELIK_VERSION_FULL}")
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
@@ -35,11 +35,9 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_link_options(-fexperimental-library)
 endif()
 
-# TEMPORARY (4.2 cross-platform testing phase): track LibreMiddleware `main`
-# so Linux/macOS testers build against the latest LM without a local-source
-# override. MUST revert to a real tag (`4.2.0`) before tagging LibreCelik
-# 4.2.0 — releases require reproducible tag-pinned dependencies.
-set(MIDDLEWARE_VERSION main)
+# Pin the LibreMiddleware release this build consumes. Releases require a
+# reproducible tag-pinned dependency; FetchContent pulls this exact tag.
+set(MIDDLEWARE_VERSION 4.2.0)
 
 # Hybrid LM consumption: FetchContent (default) or find_package(CONFIG).
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOrUseLibreMiddleware.cmake)

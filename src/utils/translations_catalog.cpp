@@ -868,6 +868,14 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-emrtd-security-details");
 
     // --- eMRTD new DG sections ---
+    //% "Authentication"
+    QT_TRID_NOOP("lc-emrtd-presence");
+    //% "Data Groups"
+    QT_TRID_NOOP("lc-emrtd-data-groups");
+    //% "Authentication Method"
+    QT_TRID_NOOP("lc-emrtd-auth-method");
+    //% "Sex"
+    QT_TRID_NOOP("lc-emrtd-sex");
     //% "Portrait"
     QT_TRID_NOOP("lc-emrtd-portrait");
     //% "Contacts"

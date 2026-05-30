@@ -52,6 +52,7 @@ std::map<std::string, QString> personalTranslationMap()
         {"surname", qtTrId("lc-emrtd-surname")},
         {"nationality", qtTrId("lc-emrtd-nationality")},
         {"date_of_birth", qtTrId("lc-emrtd-date-of-birth")},
+        {"sex", qtTrId("lc-emrtd-sex")},
     };
 }
 
@@ -76,6 +77,14 @@ std::map<std::string, QString> contactsTranslationMap()
         {"name", qtTrId("lc-emrtd-contact-name")},
         {"telephone", qtTrId("lc-emrtd-telephone")},
         {"address", qtTrId("lc-emrtd-address")},
+    };
+}
+
+std::map<std::string, QString> presenceTranslationMap()
+{
+    return {
+        {"data_groups", qtTrId("lc-emrtd-data-groups")},
+        {"auth_method", qtTrId("lc-emrtd-auth-method")},
     };
 }
 
@@ -203,7 +212,9 @@ void EMRTDWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
             sectionLayout->addWidget(extraSection);
         }
     } else if (key == "presence") {
-        // Presence group — informational, no widget needed
+        auto* presenceSection =
+            librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-emrtd-presence"), group, presenceTranslationMap());
+        sectionLayout->addWidget(presenceSection);
     } else if (key == "portrait") {
         // DG5 portrait image — similar to signature display
         if (!group.fields.empty() && !group.fields[0].value.empty()) {

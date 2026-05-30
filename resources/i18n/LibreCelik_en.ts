@@ -1007,6 +1007,22 @@
         <source>Detailed Checks</source>
         <translation>Detailed Checks</translation>
     </message>
+    <message id="lc-emrtd-presence">
+        <source>Authentication</source>
+        <translation>Authentication</translation>
+    </message>
+    <message id="lc-emrtd-data-groups">
+        <source>Data Groups</source>
+        <translation>Data Groups</translation>
+    </message>
+    <message id="lc-emrtd-auth-method">
+        <source>Authentication Method</source>
+        <translation>Authentication Method</translation>
+    </message>
+    <message id="lc-emrtd-sex">
+        <source>Sex</source>
+        <translation>Sex</translation>
+    </message>
     <message id="lc-emrtd-portrait">
         <source>Portrait</source>
         <translation>Portrait</translation>

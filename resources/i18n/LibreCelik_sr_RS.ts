@@ -1007,6 +1007,22 @@
         <source>Detailed Checks</source>
         <translation>Детаљне провере</translation>
     </message>
+    <message id="lc-emrtd-presence">
+        <source>Authentication</source>
+        <translation>Аутентификација</translation>
+    </message>
+    <message id="lc-emrtd-data-groups">
+        <source>Data Groups</source>
+        <translation>Групе података</translation>
+    </message>
+    <message id="lc-emrtd-auth-method">
+        <source>Authentication Method</source>
+        <translation>Метода аутентификације</translation>
+    </message>
+    <message id="lc-emrtd-sex">
+        <source>Sex</source>
+        <translation>Пол</translation>
+    </message>
     <message id="lc-emrtd-portrait">
         <source>Portrait</source>
         <translation>Фотографија</translation>

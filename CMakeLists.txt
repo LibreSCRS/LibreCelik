@@ -35,9 +35,10 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_link_options(-fexperimental-library)
 endif()
 
-# Pin the LibreMiddleware release this build consumes. Releases require a
-# reproducible tag-pinned dependency; FetchContent pulls this exact tag.
-set(MIDDLEWARE_VERSION 4.2.0)
+# LibreMiddleware ref this build consumes. During the active development cycle
+# this tracks LM main, which carries the unreleased work LibreCelik builds
+# against; re-pin to a reproducible release tag when cutting a release.
+set(MIDDLEWARE_VERSION main)
 
 # Hybrid LM consumption: FetchContent (default) or find_package(CONFIG).
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOrUseLibreMiddleware.cmake)

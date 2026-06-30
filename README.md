@@ -6,12 +6,15 @@ LibreCelik (Слободни Челик) is a free and open-source smart card re
 
 ## Supported Cards
 
-- **eMRTD / ePassport** — any ICAO 9303 compliant passport or national ID card
-- **Serbian eID** — Gemalto 2014+, IF2020 Foreigner
-- **Serbian Vehicle Registration (EU VRC)** — all EU mandatory and optional fields, print support
-- **Serbian Health Insurance (RFZO)**
-- **PIV (NIST SP 800-73)** — US federal ID standard
-- **PKCS#15 / PKI Tokens** — generic certificate and PIN management
+- **Full PKI through OpenSC.** OpenSC is the PKI engine. It works with every
+  card OpenSC supports — the Serbian CardEdge cards (eID,
+  qualified-signature/PKS, health) via the `srbeid` driver, plus IAS-ECC,
+  CardOS, PIV, OpenPGP and more. Where OpenSC does not cover something, a
+  built-in PKCS#15 plugin fills the gap (for example, on-card SHA-256 signing
+  on the NAM card).
+- **Card data through plugins.** Built-in plugins read the document data:
+  Serbian eID, Serbian health insurance, EU vehicle registration, and
+  electronic passports (eMRTD).
 
 ## Features
 
@@ -20,7 +23,7 @@ LibreCelik (Слободни Челик) is a free and open-source smart card re
 - Progressive data reading with streaming display
 - Formatted document printing
 - Multi-PIN support and PIN management
-- Document signing wizard (PAdES, XAdES, CAdES, JAdES, ASiC) with optional
+- Document signing wizard (PAdES, XAdES, CAdES, JAdES, ASiC-E) with optional
   TSA timestamping and Trusted-List-driven validation
 - Bilingual interface (English / Serbian Cyrillic)
 

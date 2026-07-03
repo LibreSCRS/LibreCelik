@@ -122,11 +122,14 @@ protected:
         }
 
         // --- PINs (per-card-type, fallback to generic) ---
-        // LIBRESCRS_TEST_PIN_PIV, LIBRESCRS_TEST_PIN_PKCS15, LIBRESCRS_TEST_PIN_CARDEDGE
-        // LIBRESCRS_TEST_PIN_PKCS15_CL for eMRTD+PKCS#15 on contactless (CAN:PIN format)
-        // fall back to LIBRESCRS_TEST_PIN if card-specific not set
+        // Keys match the card's plugin id (see cardType = pluginId() below), so
+        // OPENSC covers cards served by the bundled OpenSC driver chain (Serbian
+        // CardEdge / srbeid, PIV-over-opensc, generic), which outranks the plain
+        // pkcs15 emulator. Env: LIBRESCRS_TEST_PIN_PIV, _PKCS15, _CARDEDGE, _OPENSC;
+        // the _CL variants (LIBRESCRS_TEST_PIN_<TYPE>_CL, CAN:PIN format) select the
+        // contactless secret. Fall back to LIBRESCRS_TEST_PIN if none is card-specific.
         const char* genericPin = std::getenv("LIBRESCRS_TEST_PIN");
-        for (const auto& type : {"PIV", "PKCS15", "CARDEDGE", "PKCS15_CL"}) {
+        for (const auto& type : {"PIV", "PKCS15", "CARDEDGE", "PKCS15_CL", "OPENSC", "OPENSC_CL"}) {
             std::string envName = std::string("LIBRESCRS_TEST_PIN_") + type;
             const char* pin = std::getenv(envName.c_str());
             if (pin && std::string(pin).length() > 0)

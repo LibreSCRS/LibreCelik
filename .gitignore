@@ -33,6 +33,7 @@
 
 # Build
 build/
+build-release*/
 CMakeLists.txt.user
 
 # Generated translation files (compiled from .ts by qt_add_translations at build time)
@@ -60,3 +61,4 @@ AppDir/
 aqtinstall.log
 testPriint.pdf
 tools/__pycache__/
+__pycache__/

@@ -106,14 +106,15 @@ std::shared_ptr<LibreSCRS::Plugin::CardPlugin> AsyncCardReader::signingPlugin() 
         return LibreSCRS::Plugin::hasCapability(caps, Cap::PKI) &&
                LibreSCRS::Plugin::hasCapability(caps, Cap::PinManagement);
     };
-    // pkiPlugin is set when activePlugin doesn't itself have PKI (e.g.
-    // an eMRTD identity plugin paired with a separately-loaded PKI
-    // plugin); when set, it's always the right signing plugin.
+    // pkiPlugin is set when activePlugin doesn't itself have PKI. That is
+    // the shape of every identity plugin: rs-eid and emrtd declare
+    // IdentityData only, and PKI + PIN management come from the
+    // separately-loaded opensc plugin (srbeid driver for Serbian eID) or
+    // pkcs15 plugin. When set, it's always the right signing plugin.
     if (auto pki = pkiPlugin.load(); isSigningCapable(pki))
         return pki;
     // Common case: activePlugin (the one that read the card) is itself
-    // PKI-capable — rs-eid is the canonical example, with all of
-    // IdentityData + PKI + PinManagement.
+    // PKI-capable — opensc/pkcs15 on a pure PKI card.
     if (auto active = activePlugin.load(); isSigningCapable(active))
         return active;
     return {};

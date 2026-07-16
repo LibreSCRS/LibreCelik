@@ -177,3 +177,127 @@ jobs:
 
       - name: Test (LibreMiddleware)
         run: ctest --output-on-failure --test-dir build/_deps/libremiddleware-build/test
+
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      packaging: ${{ steps.filter.outputs.packaging }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            packaging:
+              - 'CMakeLists.txt'
+              - '**/CMakeLists.txt'
+              - 'cmake/**'
+              - 'scripts/linux/**'
+              - 'licenses/**'
+              - '.github/workflows/ci.yml'
+
+  license-drift-guard:
+    needs: changes
+    if: ${{ needs.changes.outputs.packaging == 'true' }}
+    runs-on: ubuntu-latest
+    # Path-filtered (packaging paths only, owner-chosen trigger). Builds the
+    # AppImage, whose build-appimage.sh runs check-bundled-licenses.py --check
+    # and fails closed on any unmapped bundled library. Steps mirror the
+    # release.yml build-linux job. Known limitation: a packaging-path filter
+    # does not fire for toolchain / linuxdeploy / non-packaging drift.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build python3-jsonschema patchelf
+
+      - name: Install Qt 6.10
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.10.*'
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          modules: 'qtpdf'
+          cache: true
+
+      - name: Install jsonschema into Qt's Python
+        run: python3 -m pip install --break-system-packages --user jsonschema
+
+      - name: Build JasPer and qtimageformats for JPEG2000 support
+        run: |
+          # JasPer is not in Ubuntu repos; build from source
+          git clone --depth 1 https://github.com/jasper-software/jasper.git /tmp/jasper
+          cmake -B /tmp/jasper-build -S /tmp/jasper \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DJAS_ENABLE_PROGRAMS=OFF -DJAS_ENABLE_DOC=OFF -G Ninja
+          cmake --build /tmp/jasper-build
+          sudo cmake --install /tmp/jasper-build
+          sudo ldconfig
+
+          # Build qtimageformats against aqtinstall Qt + JasPer
+          QT_DIR="$(qmake6 -query QT_INSTALL_PREFIX)"
+          git clone --depth 1 --branch "$(qmake6 -query QT_VERSION)" \
+            https://code.qt.io/qt/qtimageformats.git /tmp/qtimageformats || \
+          git clone --depth 1 --branch "v$(qmake6 -query QT_VERSION)" \
+            https://code.qt.io/qt/qtimageformats.git /tmp/qtimageformats
+          # Verify JasPer is findable
+          echo "JasPer installed files:"
+          ls /usr/local/lib/libjasper* /usr/local/include/jasper/jasper.h 2>/dev/null || echo "WARNING: JasPer not found in /usr/local"
+
+          # Patch FindWrapJasper.cmake in BOTH source tree and Qt install
+          JASPER_FIND='if(TARGET WrapJasper::WrapJasper)\n  set(WrapJasper_FOUND TRUE)\n  return()\nendif()\nadd_library(WrapJasper::WrapJasper INTERFACE IMPORTED)\ntarget_link_libraries(WrapJasper::WrapJasper INTERFACE /usr/local/lib/libjasper.so)\ntarget_include_directories(WrapJasper::WrapJasper INTERFACE /usr/local/include)\nset(WrapJasper_FOUND TRUE)'
+          printf "$JASPER_FIND\n" > /tmp/qtimageformats/cmake/FindWrapJasper.cmake
+          printf "$JASPER_FIND\n" > "$QT_DIR/lib/cmake/Qt6/FindWrapJasper.cmake"
+          echo "Patched FindWrapJasper.cmake in source and Qt install"
+
+          cmake -B /tmp/qtimageformats-build -S /tmp/qtimageformats \
+            -DCMAKE_PREFIX_PATH="$QT_DIR" \
+            -DCMAKE_BUILD_TYPE=Release -G Ninja
+          cmake --build /tmp/qtimageformats-build
+          cmake --install /tmp/qtimageformats-build --prefix "$QT_DIR"
+          # Re-patch FindWrapJasper (cmake --install overwrites it)
+          printf '%s\n' \
+            'if(TARGET WrapJasper::WrapJasper)' \
+            '  set(WrapJasper_FOUND TRUE)' \
+            '  return()' \
+            'endif()' \
+            'add_library(WrapJasper::WrapJasper INTERFACE IMPORTED)' \
+            'target_link_libraries(WrapJasper::WrapJasper INTERFACE /usr/local/lib/libjasper.so)' \
+            'target_include_directories(WrapJasper::WrapJasper INTERFACE /usr/local/include)' \
+            'set(WrapJasper_FOUND TRUE)' \
+            > "$QT_DIR/lib/cmake/Qt6/FindWrapJasper.cmake"
+          echo "Installed imageformat plugins:"
+          ls "$QT_DIR/plugins/imageformats/"
+          # Verify JP2 plugin was built
+          if [[ ! -f "$QT_DIR/plugins/imageformats/libqjp2.so" ]]; then
+            echo "::error::libqjp2.so was NOT built — check config.summary:"
+            cat /tmp/qtimageformats-build/config.summary
+            exit 1
+          fi
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
+
+      - name: Build
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: cmake --build build
+
+      # No test run here: build-linux already runs the suites. This guard's
+      # only job is to build the AppImage so the bundled-license check fires.
+
+      - name: Cache linuxdeploy tools
+        uses: actions/cache@v4
+        with:
+          path: scripts/linux/tools
+          key: linuxdeploy-continuous-v1
+
+      - name: Build AppImage
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: scripts/linux/build-appimage.sh build

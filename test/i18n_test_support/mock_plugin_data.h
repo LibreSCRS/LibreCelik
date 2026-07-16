@@ -111,6 +111,10 @@ inline LibreSCRS::Plugin::CardData makeHealthMock()
                                               textField("insurer_name", "Insurer", "RFZO"),
                                               textField("insurer_id", "Insurer ID", "01"),
                                               dateField("date_of_expiry", "Expiry", "2026-12-31"),
+                                              // Exercises HealthWidget::transformPermanentlyValid (true -> Yes/Да)
+                                              // across a language switch: regression guard that the render-only
+                                              // transform + retranslate rebuild never mutate the source-of-truth.
+                                              textField("permanently_valid", "Permanently valid", "true"),
                                           }));
     // Address keys per healthwidget.cpp::addressTranslationMap().
     d.groups.push_back(group("address", {

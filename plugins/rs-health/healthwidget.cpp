@@ -101,12 +101,10 @@ void HealthWidget::buildEmptyShell()
 
 void HealthWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
-    // Cache the raw, untransformed group (rebuild source-of-truth).
-    rawGroups.push_back(group);
-
-    // Accumulate into data for cardData() accessor and printing.
-    // (transformPermanentlyValid mutates data.groups.back() — see
-    // addInsuranceGroup — so we keep rawGroups untouched.)
+    // Accumulate the raw group for the cardData() accessor, printing, and
+    // retranslate rebuilds. Presentation transforms (e.g. localizing
+    // permanently_valid) run on a render-only copy, never on this
+    // source-of-truth.
     data.groups.push_back(group);
 
     const auto& key = group.groupKey;
@@ -145,13 +143,16 @@ void HealthWidget::addPersonalGroup(const LibreSCRS::Plugin::CardFieldGroup& gro
     contentLayout->addWidget(headerCard);
 }
 
-void HealthWidget::addInsuranceGroup(const LibreSCRS::Plugin::CardFieldGroup& /*group*/)
+void HealthWidget::addInsuranceGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
-    // Transform permanently_valid in accumulated data
-    transformPermanentlyValid(data.groups.back());
+    // Localize permanently_valid (true/false -> Yes/No) on a render-only copy;
+    // data.groups stays raw so printing and language switches see the card
+    // data, not the presentation string.
+    auto displayGroup = group;
+    transformPermanentlyValid(displayGroup);
 
     auto* insuranceSec = librecelik::utils::FieldSectionBuilder::build(
-        qtTrId("lc-health-section-insurance"), data.groups.back(), insuranceTranslationMap(), {}, outerSection);
+        qtTrId("lc-health-section-insurance"), displayGroup, insuranceTranslationMap(), {}, outerSection);
     contentLayout->addWidget(insuranceSec);
 }
 
@@ -201,12 +202,11 @@ void HealthWidget::transformPermanentlyValid(LibreSCRS::Plugin::CardFieldGroup& 
 
 void HealthWidget::retranslateUi()
 {
-    // Plugin widget rebuild-tier (April 2026 retranslate spec): tear
-    // down the shell and rebuild from rawGroups (the immutable
-    // source-of-truth — `data.groups` has been mutated by
-    // transformPermanentlyValid).
-    auto cachedRaw = std::move(rawGroups);
-    rawGroups.clear();
+    // Plugin widget rebuild-tier (April 2026 retranslate spec): tear down the
+    // shell and rebuild from the raw groups. data.groups is the immutable
+    // source-of-truth (presentation transforms run on render-only copies), so
+    // it reproduces correctly in the newly selected language.
+    auto cachedGroups = std::move(data.groups);
     data.groups.clear();
 
     if (outerSection) {
@@ -218,6 +218,6 @@ void HealthWidget::retranslateUi()
     printBtn = nullptr;
 
     buildEmptyShell();
-    for (const auto& group : cachedRaw)
+    for (const auto& group : cachedGroups)
         addGroup(group);
 }

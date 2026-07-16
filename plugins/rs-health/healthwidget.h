@@ -48,12 +48,6 @@ private:
     void addTaxpayerGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
 
     LibreSCRS::Plugin::CardData data;
-    // Raw, untransformed groups as received from the plugin. Used by
-    // retranslateUi() to rebuild from the original source-of-truth (the
-    // visible CardData stored in `data` is mutated by
-    // transformPermanentlyValid, so reusing it across language switches
-    // would not yield the new "Yes"/"No" translation).
-    std::vector<LibreSCRS::Plugin::CardFieldGroup> rawGroups;
     QVBoxLayout* outerLayout = nullptr;
     CollapsibleSection* outerSection = nullptr;
     QVBoxLayout* contentLayout = nullptr;

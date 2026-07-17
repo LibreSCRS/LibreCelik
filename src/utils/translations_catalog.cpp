@@ -108,8 +108,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Unavailable"
     QT_TRID_NOOP("lc-doc-unavailable");
 
-    // --- eID reader errors ---
-    //% "Failed to connect to card."
     // --- eID print document field labels ---
     //% "ELECTRONIC ID CARD READER: DATA PRINTING"
     QT_TRID_NOOP("lc-eid-doc-title");
@@ -165,7 +163,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-eid-label-jmbg");
     //% "EBS"
     QT_TRID_NOOP("lc-eid-label-ebs");
-    //% "Identity card"
+    //% "Address"
     QT_TRID_NOOP("lc-eid-label-address");
     //% "Address"
     QT_TRID_NOOP("lc-eid-label-address-foreigner");
@@ -205,7 +203,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-eid-label-fixed-verification");
     //% "Variable Data"
     QT_TRID_NOOP("lc-eid-label-variable-verification");
-    //% "can sign"
+    //% "BLOCKED"
     QT_TRID_NOOP("lc-eid-pin-blocked");
     //% "%1 tries remaining"
     QT_TRID_NOOP("lc-eid-pin-tries-remaining");
@@ -355,7 +353,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     // --- Health insurance card ---
     //% "Health Insurance Card"
     QT_TRID_NOOP("lc-health-title");
-    //% "Failed to connect to card."
+    //% "Print Document"
     QT_TRID_NOOP("lc-health-print-title");
     //% "HEALTH INSURANCE CARD READER: DATA PRINTING"
     QT_TRID_NOOP("lc-health-doc-title");
@@ -373,11 +371,11 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-health-section-taxpayer");
     //% "Name"
     QT_TRID_NOOP("lc-health-label-given-name");
-    //% "Name (Latin)"
+    //% "Surname"
     QT_TRID_NOOP("lc-health-label-family-name");
-    //% "Surname (Latin)"
+    //% "Parent name"
     QT_TRID_NOOP("lc-health-label-parent-name");
-    //% "Parent name (Latin)"
+    //% "Date of birth"
     QT_TRID_NOOP("lc-health-label-dob");
     //% "Gender"
     QT_TRID_NOOP("lc-health-label-gender");
@@ -485,8 +483,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Print"
     QT_TRID_NOOP("lc-print-tooltip");
 
-    // --- Vehicle registration ---
-    //% "Vehicle Registration"
     // --- EU VRC (Vehicle Registration Certificate) ---
     //% "Vehicle Registration"
     QT_TRID_NOOP("lc-euvrc-title");
@@ -749,7 +745,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Fuel tank capacity (W)"
     QT_TRID_NOOP("lc-euvrc-doc-fuel-tank");
 
-    //% "Vehicle registration card reader"
     // eMRTD (Electronic Passport)
     //% "Authentication Required"
     QT_TRID_NOOP("lc-emrtd-auth-required");
@@ -769,7 +764,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-emrtd-nationality");
     //% "Date of Birth"
     QT_TRID_NOOP("lc-emrtd-date-of-birth");
-    //% "Sex"
+    //% "Document Data"
     QT_TRID_NOOP("lc-emrtd-document-data");
     //% "Document Number"
     QT_TRID_NOOP("lc-emrtd-doc-number");
@@ -785,7 +780,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-emrtd-additional");
     //% "Issuing Information"
     QT_TRID_NOOP("lc-emrtd-issuing-info");
-    //% "Electronic Passport Authentication"
+    //% "CAN"
     QT_TRID_NOOP("lc-emrtd-auth-can-title");
     //% "6-digit number on card front"
     QT_TRID_NOOP("lc-emrtd-auth-can-desc");

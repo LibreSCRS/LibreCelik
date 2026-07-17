@@ -28,9 +28,8 @@
         <translation>Unavailable</translation>
     </message>
     <message id="lc-eid-doc-title">
-        <source>Failed to connect to card.ELECTRONIC ID CARD READER: DATA PRINTING</source>
-        <oldsource>ELECTRONIC ID CARD READER: DATA PRINTING</oldsource>
-        <translation type="unfinished">ELECTRONIC ID CARD READER: DATA PRINTING</translation>
+        <source>ELECTRONIC ID CARD READER: DATA PRINTING</source>
+        <translation>ELECTRONIC ID CARD READER: DATA PRINTING</translation>
     </message>
     <message id="lc-eid-doc-foreigner-id">
         <source>Foreigner id</source>
@@ -85,9 +84,8 @@
         <translation>Address</translation>
     </message>
     <message id="lc-eid-label-address">
-        <source>Identity card</source>
-        <oldsource>Address</oldsource>
-        <translation type="unfinished">Address</translation>
+        <source>Address</source>
+        <translation>Address</translation>
     </message>
     <message id="lc-eid-doc-address-change-date">
         <source>Date of address change</source>
@@ -214,9 +212,8 @@
         <translation>Variable Data</translation>
     </message>
     <message id="lc-eid-pin-blocked">
-        <source>can sign</source>
-        <oldsource>BLOCKED</oldsource>
-        <translation type="unfinished">BLOCKED</translation>
+        <source>BLOCKED</source>
+        <translation>BLOCKED</translation>
     </message>
     <message id="lc-eid-pin-tries-remaining">
         <source>%1 tries remaining</source>
@@ -479,9 +476,8 @@
         <translation>No plugin could read this card.</translation>
     </message>
     <message id="lc-euvrc-title">
-        <source>Vehicle RegistrationVehicle Registration</source>
-        <oldsource>Vehicle Registration</oldsource>
-        <translation type="unfinished">Vehicle Registration</translation>
+        <source>Vehicle Registration</source>
+        <translation>Vehicle Registration</translation>
     </message>
     <message id="lc-euvrc-print-title">
         <source>Print Document</source>
@@ -1485,9 +1481,8 @@
         <translation>Health Insurance Card</translation>
     </message>
     <message id="lc-health-print-title">
-        <source>Failed to connect to card.</source>
-        <oldsource>Print Document</oldsource>
-        <translation type="unfinished">Print Document</translation>
+        <source>Print Document</source>
+        <translation>Print Document</translation>
     </message>
     <message id="lc-health-doc-title">
         <source>HEALTH INSURANCE CARD READER: DATA PRINTING</source>
@@ -1522,19 +1517,16 @@
         <translation>Name</translation>
     </message>
     <message id="lc-health-label-family-name">
-        <source>Name (Latin)</source>
-        <oldsource>Surname</oldsource>
-        <translation type="unfinished">Surname</translation>
+        <source>Surname</source>
+        <translation>Surname</translation>
     </message>
     <message id="lc-health-label-parent-name">
-        <source>Surname (Latin)</source>
-        <oldsource>Parent name</oldsource>
-        <translation type="unfinished">Parent name</translation>
+        <source>Parent name</source>
+        <translation>Parent name</translation>
     </message>
     <message id="lc-health-label-dob">
-        <source>Parent name (Latin)</source>
-        <oldsource>Date of birth</oldsource>
-        <translation type="unfinished">Date of birth</translation>
+        <source>Date of birth</source>
+        <translation>Date of birth</translation>
     </message>
     <message id="lc-health-label-gender">
         <source>Gender</source>
@@ -1681,9 +1673,8 @@
         <translation>Print</translation>
     </message>
     <message id="lc-emrtd-auth-required">
-        <source>Vehicle registration card readerAuthentication Required</source>
-        <oldsource>Authentication Required</oldsource>
-        <translation type="unfinished">Authentication Required</translation>
+        <source>Authentication Required</source>
+        <translation>Authentication Required</translation>
     </message>
     <message id="lc-emrtd-auth-failed">
         <source>Authentication Failed</source>
@@ -1722,9 +1713,8 @@
         <translation>Date of Birth</translation>
     </message>
     <message id="lc-emrtd-document-data">
-        <source>Sex</source>
-        <oldsource>Document Data</oldsource>
-        <translation type="unfinished">Document Data</translation>
+        <source>Document Data</source>
+        <translation>Document Data</translation>
     </message>
     <message id="lc-emrtd-doc-number">
         <source>Document Number</source>
@@ -1815,9 +1805,8 @@
         <translation>Personal Data</translation>
     </message>
     <message id="lc-emrtd-auth-can-title">
-        <source>Electronic Passport Authentication</source>
-        <oldsource>CAN</oldsource>
-        <translation type="unfinished">CAN</translation>
+        <source>CAN</source>
+        <translation>CAN</translation>
     </message>
     <message id="lc-emrtd-auth-can-desc">
         <source>6-digit number on card front</source>

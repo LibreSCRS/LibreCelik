@@ -28,9 +28,8 @@
         <translation>Недоступно</translation>
     </message>
     <message id="lc-eid-doc-title">
-        <source>Failed to connect to card.ELECTRONIC ID CARD READER: DATA PRINTING</source>
-        <oldsource>ELECTRONIC ID CARD READER: DATA PRINTING</oldsource>
-        <translation type="unfinished">ЧИТАЧ ЕЛЕКТРОНСКЕ ЛИЧНЕ КАРТЕ: ШТАМПА ПОДАТАКА</translation>
+        <source>ELECTRONIC ID CARD READER: DATA PRINTING</source>
+        <translation>ЧИТАЧ ЕЛЕКТРОНСКЕ ЛИЧНЕ КАРТЕ: ШТАМПА ПОДАТАКА</translation>
     </message>
     <message id="lc-eid-doc-foreigner-id">
         <source>Foreigner id</source>
@@ -85,9 +84,8 @@
         <translation>Адреса</translation>
     </message>
     <message id="lc-eid-label-address">
-        <source>Identity card</source>
-        <oldsource>Address</oldsource>
-        <translation type="unfinished">Адреса</translation>
+        <source>Address</source>
+        <translation>Адреса</translation>
     </message>
     <message id="lc-eid-doc-address-change-date">
         <source>Date of address change</source>
@@ -214,9 +212,8 @@
         <translation>Променљиви подаци</translation>
     </message>
     <message id="lc-eid-pin-blocked">
-        <source>can sign</source>
-        <oldsource>BLOCKED</oldsource>
-        <translation type="unfinished">БЛОКИРАН</translation>
+        <source>BLOCKED</source>
+        <translation>БЛОКИРАН</translation>
     </message>
     <message id="lc-eid-pin-tries-remaining">
         <source>%1 tries remaining</source>
@@ -479,9 +476,8 @@
         <translation>Ниједан додатак не може да прочита ову картицу.</translation>
     </message>
     <message id="lc-euvrc-title">
-        <source>Vehicle RegistrationVehicle Registration</source>
-        <oldsource>Vehicle Registration</oldsource>
-        <translation type="unfinished">Саобраћајна дозвола</translation>
+        <source>Vehicle Registration</source>
+        <translation>Саобраћајна дозвола</translation>
     </message>
     <message id="lc-euvrc-print-title">
         <source>Print Document</source>
@@ -1485,9 +1481,8 @@
         <translation>Здравствена картица</translation>
     </message>
     <message id="lc-health-print-title">
-        <source>Failed to connect to card.</source>
-        <oldsource>Print Document</oldsource>
-        <translation type="unfinished">Штампај документ</translation>
+        <source>Print Document</source>
+        <translation>Штампај документ</translation>
     </message>
     <message id="lc-health-doc-title">
         <source>HEALTH INSURANCE CARD READER: DATA PRINTING</source>
@@ -1522,19 +1517,16 @@
         <translation>Име</translation>
     </message>
     <message id="lc-health-label-family-name">
-        <source>Name (Latin)</source>
-        <oldsource>Surname</oldsource>
-        <translation type="unfinished">Презиме</translation>
+        <source>Surname</source>
+        <translation>Презиме</translation>
     </message>
     <message id="lc-health-label-parent-name">
-        <source>Surname (Latin)</source>
-        <oldsource>Parent name</oldsource>
-        <translation type="unfinished">Име родитеља</translation>
+        <source>Parent name</source>
+        <translation>Име родитеља</translation>
     </message>
     <message id="lc-health-label-dob">
-        <source>Parent name (Latin)</source>
-        <oldsource>Date of birth</oldsource>
-        <translation type="unfinished">Датум рођења</translation>
+        <source>Date of birth</source>
+        <translation>Датум рођења</translation>
     </message>
     <message id="lc-health-label-gender">
         <source>Gender</source>
@@ -1681,9 +1673,8 @@
         <translation>Штампај</translation>
     </message>
     <message id="lc-emrtd-auth-required">
-        <source>Vehicle registration card readerAuthentication Required</source>
-        <oldsource>Authentication Required</oldsource>
-        <translation type="unfinished">Потребна аутентификација</translation>
+        <source>Authentication Required</source>
+        <translation>Потребна аутентификација</translation>
     </message>
     <message id="lc-emrtd-auth-failed">
         <source>Authentication Failed</source>
@@ -1722,9 +1713,8 @@
         <translation>Датум рођења</translation>
     </message>
     <message id="lc-emrtd-document-data">
-        <source>Sex</source>
-        <oldsource>Document Data</oldsource>
-        <translation type="unfinished">Подаци документа</translation>
+        <source>Document Data</source>
+        <translation>Подаци документа</translation>
     </message>
     <message id="lc-emrtd-doc-number">
         <source>Document Number</source>
@@ -1815,9 +1805,8 @@
         <translation>Лични подаци</translation>
     </message>
     <message id="lc-emrtd-auth-can-title">
-        <source>Electronic Passport Authentication</source>
-        <oldsource>CAN</oldsource>
-        <translation type="unfinished">CAN</translation>
+        <source>CAN</source>
+        <translation>CAN</translation>
     </message>
     <message id="lc-emrtd-auth-can-desc">
         <source>6-digit number on card front</source>

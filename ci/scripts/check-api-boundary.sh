@@ -8,27 +8,28 @@
 # public LibreSCRS header (or an LC-internal header). Any internal LM
 # header include listed in FORBIDDEN_PATTERNS fails the check.
 #
-# Forbidden set rationale (post-Phase 7):
+# Forbidden set rationale:
 #   * <libresign/...>  — LibreSign has no public surface; every header
 #     lives under LM's lib/libresign/src/.
 #   * <smartcard/apdu.h>, <smartcard/ber.h>, <smartcard/tlv.h>,
 #     <smartcard/ipcsc_scan_provider.h>, <smartcard/pcsc_scan_provider.h>,
 #     <smartcard/pkcs11_card_provider.h>
-#       — bucket-B headers relocated to lib/smartcard/src/ in Phase 6.
-#         They are unreachable on the public include path today; keeping
-#         them in the forbidden list is pure regression protection against
-#         future re-exposure.
+#       — internal headers that live under lib/smartcard/src/. They are
+#         unreachable on the public include path today; keeping them in
+#         the forbidden list is pure regression protection against future
+#         re-exposure.
 #
-# Bucket-C smartcard headers (pcsc_connection.h, secure_buffer.h,
+# The remaining smartcard headers (pcsc_connection.h, secure_buffer.h,
 # monitor.h, monitor_event.h) are INTENTIONALLY NOT forbidden — they are
-# the LC bridge surface Phase 7 preserved until LC migrates its Qt
-# listener + async reader off them.
+# the LC bridge surface preserved until LC migrates its Qt listener +
+# async reader off them.
 #
-# TODO(phase-8-followup): once LC Qt listener and AsyncCardReader finish
-# their migration off bucket-C, add the four remaining smartcard headers
-# — <smartcard/pcsc_connection.h>, <smartcard/secure_buffer.h>,
-# <smartcard/monitor.h>, <smartcard/monitor_event.h> — to FORBIDDEN_PATTERNS
-# and expect those to disappear from LM's public include tree entirely.
+# TODO(smartcard-bridge-followup): once the LC Qt listener and
+# AsyncCardReader finish their migration off those bridge headers, add
+# the four remaining smartcard headers — <smartcard/pcsc_connection.h>,
+# <smartcard/secure_buffer.h>, <smartcard/monitor.h>,
+# <smartcard/monitor_event.h> — to FORBIDDEN_PATTERNS and expect those to
+# disappear from LM's public include tree entirely.
 #
 # Match semantics: plain substring grep (no comment / #if 0 stripping).
 # A commented-out `// #include <libresign/...>` WILL flag — this is

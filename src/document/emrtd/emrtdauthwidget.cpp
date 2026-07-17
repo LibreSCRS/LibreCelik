@@ -196,7 +196,7 @@ void EMRTDAuthWidget::onAuthenticateClicked()
     // in `signing/signpage.cpp` (`pinSecure`/`canSecure`) where the secure
     // capture happens before the source widgets are hidden.
     //
-    // See `feedback_read_then_hide_secrets.md`: read first, hide second —
+    // Read first, hide second —
     // QLineEdit visibility-state is sometimes a downstream logic gate, but
     // here the widget itself stays alive (the spinner section is a sibling),
     // so the only requirement is that the source storage be evicted from

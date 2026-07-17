@@ -23,8 +23,7 @@
 ///
 /// Threading: the carrier itself has no thread affinity. Producers (the GUI
 /// authentication widget) must `clear()` the source @c QLineEdits immediately
-/// after constructing the carrier — see
-/// `feedback_read_then_hide_secrets.md`: read first, hide second.
+/// after constructing the carrier — read first, hide second.
 struct EmrtdCredentials
 {
     /// @brief Active credential mode ("can" → CAN-only PACE; "mrz" → BAC seeds).

@@ -20,8 +20,7 @@
 /// LanguageChange events do not desync the combo from the rest of the
 /// dialog.
 ///
-/// All tests run with QT_QPA_PLATFORM=offscreen per
-/// feedback_qt_offscreen_for_tests.md.
+/// All tests run with QT_QPA_PLATFORM=offscreen.
 
 #include "i18n_test_support/RetranslatableWidgetFixture.h"
 

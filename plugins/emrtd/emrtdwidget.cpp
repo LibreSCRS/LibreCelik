@@ -114,7 +114,7 @@ EMRTDWidget::EMRTDWidget(QWidget* parent) : plugin_ui::PluginWidgetBase(parent)
 
 void EMRTDWidget::buildShell()
 {
-    // Navy outer CollapsibleSection — shell for Phase 2 travel document display
+    // Navy outer CollapsibleSection — shell for the travel document display
     static const QColor navy(34, 86, 117);
     outerSection = new CollapsibleSection(qtTrId("lc-emrtd-travel-document"), navy, this);
     outerSection->setHeaderHeight(56);
@@ -136,7 +136,7 @@ void EMRTDWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 {
     const auto& key = group.groupKey;
 
-    // Phase 1 groups are handled by createWidget — ignore here
+    // auth/error groups are handled by createWidget — ignore here
     if (key == "auth_required" || key == "error")
         return;
 

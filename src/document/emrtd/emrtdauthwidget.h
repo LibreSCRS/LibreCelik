@@ -28,8 +28,7 @@ signals:
     ///        the carrier travels by-value across the queue hop, with
     ///        Secure::String's copy ctor allocating a fresh cleansed block
     ///        per copy. The original QLineEdits are cleared immediately
-    ///        after the secure copy is built — read-then-hide ordering per
-    ///        @c feedback_read_then_hide_secrets.md.
+    ///        after the secure copy is built — read-then-hide ordering.
     void credentialsEntered(const EmrtdCredentials& credentials);
 
 protected:

@@ -33,7 +33,7 @@ namespace {
 // guarantees a single registration per process; failure is non-fatal — the
 // preview falls back to system sans-serif (per spec §8.5).
 //
-// Singleton-policy note (per feedback_singleton_patterns.md): this is NOT a
+// Singleton-policy note: this is NOT a
 // classical singleton or Meyers idiom. The function-local std::once_flag is a
 // synchronization token (an initialization barrier), not stateful storage.
 // The actual state lives inside QFontDatabase, which is already a Qt-owned

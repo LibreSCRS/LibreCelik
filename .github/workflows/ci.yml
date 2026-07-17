@@ -126,10 +126,10 @@ jobs:
       - name: Test (LibreCelik)
         env:
           QT_QPA_PLATFORM: offscreen
-        run: ctest --output-on-failure --test-dir build/test
+        run: ctest --output-on-failure --no-tests=error --test-dir build/test
 
       - name: Test (LibreMiddleware)
-        run: ctest --output-on-failure --test-dir build/_deps/libremiddleware-build/test
+        run: ctest --output-on-failure --no-tests=error --test-dir build/_deps/libremiddleware-build/test
 
   build-macos:
     runs-on: macos-latest
@@ -173,10 +173,10 @@ jobs:
       - name: Test (LibreCelik)
         env:
           QT_QPA_PLATFORM: offscreen
-        run: ctest --output-on-failure --test-dir build/test
+        run: ctest --output-on-failure --no-tests=error --test-dir build/test
 
       - name: Test (LibreMiddleware)
-        run: ctest --output-on-failure --test-dir build/_deps/libremiddleware-build/test
+        run: ctest --output-on-failure --no-tests=error --test-dir build/_deps/libremiddleware-build/test
 
   changes:
     runs-on: ubuntu-latest

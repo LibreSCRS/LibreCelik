@@ -74,8 +74,8 @@ property:
    [`tools/README-i18n-audit.md`](tools/README-i18n-audit.md).
 
 2. **Runtime tests** —
-   `test/i18n_settings_state_test.cpp` (D7) and
-   `test/i18n_plugin_retranslate_test.cpp` (D9) instantiate live
+   `test/i18n_settings_state_test.cpp` and
+   `test/i18n_plugin_retranslate_test.cpp` instantiate live
    widgets, switch translator at runtime, and verify every
    translatable string actually changed. Both run with
    `QT_QPA_PLATFORM=offscreen`.

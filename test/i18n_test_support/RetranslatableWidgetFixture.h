@@ -26,9 +26,8 @@
 ///   }
 /// @endcode
 ///
-/// All tests run with `QT_QPA_PLATFORM=offscreen` per
-/// `feedback_qt_offscreen_for_tests.md` (gtest properties wired in
-/// CMake). The fixture removes its own translators in `TearDown` so
+/// All tests run with `QT_QPA_PLATFORM=offscreen` (gtest properties
+/// wired in CMake). The fixture removes its own translators in `TearDown` so
 /// state does not leak between tests.
 
 #pragma once

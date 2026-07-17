@@ -14,8 +14,7 @@
 /// CardData, snapshots translatable widget state, switches translator,
 /// snapshots again, and asserts every shared key changed.
 ///
-/// All tests run with QT_QPA_PLATFORM=offscreen per
-/// feedback_qt_offscreen_for_tests.md.
+/// All tests run with QT_QPA_PLATFORM=offscreen.
 
 #include "i18n_test_support/RetranslatableWidgetFixture.h"
 #include "i18n_test_support/mock_plugin_data.h"

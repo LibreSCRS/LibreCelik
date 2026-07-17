@@ -88,7 +88,7 @@ remaining 45 are real user-visible retranslate gaps now fixed:
   `transformPermanentlyValid`'s mutation does not block
   language switching).
 - `plugins/emrtd/emrtdwidget`: dead methods `showAuthRequired` /
-  `showError` removed (per `feedback_aggressive_legacy_removal.md`).
+  `showError` removed.
 
 ### Documented
 

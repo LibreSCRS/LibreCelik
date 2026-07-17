@@ -405,7 +405,7 @@ void SignPage::startSigning()
         }
     }
 
-    // M4: Warn if certificate is expired and level is B-B (no revocation data embedded)
+    // Warn if certificate is expired and level is B-B (no revocation data embedded)
     // Capture the user's accept decision so the per-job SigningRequest builder
     // below can honour it via SigningRequest::Builder::allowExpiredCert(true);
     // without this, the signing service would refuse the sign downstream even

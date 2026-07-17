@@ -2143,6 +2143,10 @@
         <source>FAILED: invalid signing request</source>
         <translation>ГРЕШКА: неисправан захтев за потписивање</translation>
     </message>
+    <message id="lc-sign-fail-document">
+        <source>FAILED: the document is invalid or unreadable</source>
+        <translation>ГРЕШКА: документ је неисправан или нечитљив</translation>
+    </message>
     <message id="lc-sign-fail-generic">
         <source>FAILED: signing failed — see log for details</source>
         <translation>ГРЕШКА: потписивање неуспешно — погледајте лог за детаље</translation>

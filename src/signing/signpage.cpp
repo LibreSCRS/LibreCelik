@@ -599,6 +599,9 @@ void SignPage::startSigning()
                     case S::InvalidRequest:
                         msg = qtTrId("lc-sign-fail-invalid");
                         break;
+                    case S::InvalidDocument:
+                        msg = qtTrId("lc-sign-fail-document");
+                        break;
                     case S::SigningEngineError:
                     default:
                         msg = result.diagnosticDetail.has_value()

@@ -1006,6 +1006,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-sign-fail-trust");
     //% "FAILED: invalid signing request"
     QT_TRID_NOOP("lc-sign-fail-invalid");
+    //% "FAILED: the document is invalid or unreadable"
+    QT_TRID_NOOP("lc-sign-fail-document");
     //% "FAILED: signing failed — see log for details"
     QT_TRID_NOOP("lc-sign-fail-generic");
     //% "OK: %1 → %2"

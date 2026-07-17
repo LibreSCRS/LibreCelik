@@ -2143,6 +2143,10 @@
         <source>FAILED: invalid signing request</source>
         <translation>FAILED: invalid signing request</translation>
     </message>
+    <message id="lc-sign-fail-document">
+        <source>FAILED: the document is invalid or unreadable</source>
+        <translation>FAILED: the document is invalid or unreadable</translation>
+    </message>
     <message id="lc-sign-fail-generic">
         <source>FAILED: signing failed — see log for details</source>
         <translation>FAILED: signing failed — see log for details</translation>

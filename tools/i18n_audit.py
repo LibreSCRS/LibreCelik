@@ -3,8 +3,8 @@
 # SPDX-FileCopyrightText: 2026 hirashix0
 """LibreCelik i18n retranslate audit — static checker.
 
-See knowledge/specs/2026-05-08-i18n-retranslate-audit-design.md (rc2)
-for the authoritative design.
+See tools/README-i18n-audit.md for the audit design and remediation
+patterns.
 
 Detects six classes of i18n retranslate bug from source + .ts files:
 
@@ -62,8 +62,7 @@ FIX_HINTS: Mapping[str, str] = {
     "D1": (
         "override changeEvent(QEvent*); on QEvent::LanguageChange "
         "call retranslateUi() "
-        "(see knowledge/specs/archive/2026-04/2026-04-02-runtime-retranslation-design.md "
-        "or LibreCelik/tools/README-i18n-audit.md)"
+        "(see tools/README-i18n-audit.md)"
     ),
     "D2": (
         "extend retranslateUi() to cover this qtTrId callsite, or "

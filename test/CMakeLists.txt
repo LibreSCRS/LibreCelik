@@ -499,8 +499,8 @@ if(LIBRECELIK_SIGNING_ENABLED)
     # agreement with LibreSCRS::Signing::layoutVisualSignature for the same
     # (text, box) inputs. No friend classes, no test-only accessors — uses
     # a custom QPaintEngine to record every drawText / clip / font state
-    # change during the widget's paint pass. Spec reference:
-    # knowledge/specs/2026-05-08-vis-sig-fillbox-design.md (G3 amendment).
+    # change during the widget's paint pass. Verifies the visible-signature
+    # fill-box layout (G3 amendment).
     add_executable(PdfPreviewWidgetTests
         pdfpreviewwidget_test.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/pdfpreviewwidget.cpp

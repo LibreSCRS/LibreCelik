@@ -7,7 +7,7 @@ Layout: one class per audit dimension (D1, D2, D3, D5, D6, D8) plus
 parser/allowlist/determinism cases. Synthetic fixtures live inline as
 triple-quoted strings; tmp_path materialises them per test.
 
-See knowledge/specs/2026-05-08-i18n-retranslate-audit-design.md §6.9, §9.
+See tools/README-i18n-audit.md for the audit design.
 """
 
 from __future__ import annotations

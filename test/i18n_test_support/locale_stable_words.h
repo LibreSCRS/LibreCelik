@@ -14,7 +14,7 @@
 ///   2. matches the technical-value heuristic (pure digits, ISO date,
 ///      URL, single character, empty string).
 ///
-/// Per spec §7.2 (knowledge/specs/2026-05-08-i18n-retranslate-audit-design.md),
+/// Per the i18n retranslate-audit design (§7.2),
 /// the wordlist is the *first-line* filter to keep tests from being
 /// noisy. Adding a term requires PR review (see
 /// CONTRIBUTING.md "Locale-stable wordlist amendments").

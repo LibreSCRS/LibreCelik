@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 hirashix0
 //
-// Phase C / C4 of knowledge/specs/2026-05-08-vis-sig-fillbox-design.md.
+// Phase C / C4 of the visible-signature fill-box design.
 // Paint-capture-based integration test verifying PdfPreviewWidget renders
 // the visual-signature appearance using LM's authoritative
 // LibreSCRS::Signing::layoutVisualSignature output. No friend classes, no

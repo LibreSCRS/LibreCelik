@@ -101,20 +101,14 @@ const QString title = qtTrId("lc-foo"); // i18n-audit: ignore D2, transient file
 
 The reason text is mandatory. Reviewers will check that the chosen
 reason matches one of the canonical phrasings recorded in
-[`tools/README-i18n-audit.md`](tools/README-i18n-audit.md) and in
-the spec
-[`knowledge/specs/2026-05-08-i18n-retranslate-audit-design.md`][i18n-spec]
-(private repo).
+[`tools/README-i18n-audit.md`](tools/README-i18n-audit.md), the
+canonical in-repo reference for the i18n retranslate-audit.
 
-[i18n-spec]: https://github.com/LibreSCRS/knowledge/blob/main/specs/2026-05-08-i18n-retranslate-audit-design.md
-
-The April 2026 retranslate spec
-[`knowledge/specs/archive/2026-04/2026-04-02-runtime-retranslation-design.md`][april-spec]
-classifies widgets as **simple** (re-apply `setText`), **rebuild**
-(clear+repopulate trees/lists), or **plugin** (rebuild across `.so`)
-and is the canonical reference for choosing a remediation pattern.
-
-[april-spec]: https://github.com/LibreSCRS/knowledge/blob/main/specs/archive/2026-04/2026-04-02-runtime-retranslation-design.md
+The retranslate design classifies widgets as **simple** (re-apply
+`setText`), **rebuild** (clear+repopulate trees/lists), or **plugin**
+(rebuild across `.so`) and is the reference for choosing a remediation
+pattern; see [`tools/README-i18n-audit.md`](tools/README-i18n-audit.md)
+for the canonical summary.
 
 ### Locale-stable wordlist amendments
 

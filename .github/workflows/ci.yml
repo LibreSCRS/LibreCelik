@@ -30,7 +30,7 @@ jobs:
     # tools/i18n_audit.py over src+plugins, then runs its own pytest
     # self-test. Exit non-zero on any non-allowlisted finding (--strict).
     # JSON dump is uploaded as an artefact for PR review and historical
-    # comparison. See knowledge/specs/2026-05-08-i18n-retranslate-audit-design.md.
+    # comparison. See tools/README-i18n-audit.md for the audit design.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

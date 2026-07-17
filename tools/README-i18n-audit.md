@@ -5,11 +5,9 @@ language-switch (retranslate) gaps in LibreCelik's `qtTrId`-based
 catalog. It is the rc2 enforcement layer on top of the April 2026
 runtime retranslation design.
 
-Authoritative documents:
-
-- Spec: `knowledge/specs/2026-05-08-i18n-retranslate-audit-design.md`
-- Plan: `knowledge/plans/2026-05-08-i18n-retranslate-audit-plan.md`
-- Pattern reference: `knowledge/specs/archive/2026-04/2026-04-02-runtime-retranslation-design.md`
+The audit design, plan, and remediation-pattern catalogue are maintained
+in the project's internal design docs; this README is the canonical
+in-repo summary.
 
 ## Usage
 

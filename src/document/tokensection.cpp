@@ -341,10 +341,24 @@ void TokenSection::setPINList(const std::vector<LibreSCRS::Plugin::PinStatusEntr
         } else if (pin.blocked) {
             item->setText(1, qtTrId("lc-eid-pin-blocked"));
             item->setForeground(1, QBrush(Qt::red));
-        } else if (pin.retriesLeft.has_value())
-            item->setText(1, qtTrId("lc-eid-pin-tries-remaining").arg(*pin.retriesLeft));
-        else
-            item->setText(1, qtTrId("lc-eid-pin-unknown"));
+        } else {
+            QStringList parts;
+            if (pin.retriesLeft.has_value())
+                parts << (pin.retriesMax.has_value()
+                              ? qtTrId("lc-eid-pin-tries-remaining-of").arg(*pin.retriesLeft).arg(*pin.retriesMax)
+                              : qtTrId("lc-eid-pin-tries-remaining").arg(*pin.retriesLeft));
+            if (pin.usesLeft.has_value())
+                parts << (pin.usesMax.has_value()
+                              ? qtTrId("lc-eid-pin-uses-remaining-of").arg(*pin.usesLeft).arg(*pin.usesMax)
+                              : qtTrId("lc-eid-pin-uses-remaining").arg(*pin.usesLeft));
+            // A CAN is a printed access number with no retry/usage state — show a
+            // blank status rather than the "?" unknown marker (which reads as an
+            // error). Every other counter-less credential keeps the "?".
+            item->setText(1,
+                          parts.isEmpty()
+                              ? (pin.kind == LibreSCRS::Plugin::PinKind::Can ? QString() : qtTrId("lc-eid-pin-unknown"))
+                              : parts.join(QStringLiteral(" · ")));
+        }
 
         item->setData(0, PinReferenceRole, pin.reference);
         item->setData(0, PinTransportRole, !pin.initialized);

@@ -216,8 +216,20 @@
         <translation>BLOCKED</translation>
     </message>
     <message id="lc-eid-pin-tries-remaining">
-        <source>%1 tries remaining</source>
-        <translation>%1 tries remaining</translation>
+        <source>Attempts: %1</source>
+        <translation>Attempts: %1</translation>
+    </message>
+    <message id="lc-eid-pin-tries-remaining-of">
+        <source>Attempts: %1 of %2</source>
+        <translation>Attempts: %1 of %2</translation>
+    </message>
+    <message id="lc-eid-pin-uses-remaining">
+        <source>Uses: %1</source>
+        <translation>Uses: %1</translation>
+    </message>
+    <message id="lc-eid-pin-uses-remaining-of">
+        <source>Uses: %1 of %2</source>
+        <translation>Uses: %1 of %2</translation>
     </message>
     <message id="lc-eid-pin-unknown">
         <source>?</source>

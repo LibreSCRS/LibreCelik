@@ -216,8 +216,20 @@
         <translation>БЛОКИРАН</translation>
     </message>
     <message id="lc-eid-pin-tries-remaining">
-        <source>%1 tries remaining</source>
-        <translation>Преостало покушаја: %1</translation>
+        <source>Attempts: %1</source>
+        <translation>Покушаји: %1</translation>
+    </message>
+    <message id="lc-eid-pin-tries-remaining-of">
+        <source>Attempts: %1 of %2</source>
+        <translation>Покушаји: %1 од %2</translation>
+    </message>
+    <message id="lc-eid-pin-uses-remaining">
+        <source>Uses: %1</source>
+        <translation>Употребе: %1</translation>
+    </message>
+    <message id="lc-eid-pin-uses-remaining-of">
+        <source>Uses: %1 of %2</source>
+        <translation>Употребе: %1 од %2</translation>
     </message>
     <message id="lc-eid-pin-unknown">
         <source>?</source>

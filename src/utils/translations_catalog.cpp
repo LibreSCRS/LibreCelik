@@ -205,8 +205,14 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-eid-label-variable-verification");
     //% "BLOCKED"
     QT_TRID_NOOP("lc-eid-pin-blocked");
-    //% "%1 tries remaining"
+    //% "Attempts: %1"
     QT_TRID_NOOP("lc-eid-pin-tries-remaining");
+    //% "Attempts: %1 of %2"
+    QT_TRID_NOOP("lc-eid-pin-tries-remaining-of");
+    //% "Uses: %1"
+    QT_TRID_NOOP("lc-eid-pin-uses-remaining");
+    //% "Uses: %1 of %2"
+    QT_TRID_NOOP("lc-eid-pin-uses-remaining-of");
     //% "?"
     QT_TRID_NOOP("lc-eid-pin-unknown");
     //% "View Certificate"

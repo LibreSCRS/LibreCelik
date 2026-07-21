@@ -317,7 +317,7 @@ void AsyncCardReader::requestPINTriesLeft(uint8_t pinReference)
             }
             if (tries == -1 && pins.empty()) {
                 // Fallback to single-PIN API (optional<int>; nullopt → "unknown", rendered as -1).
-                tries = pki->getPINTriesLeft(*session).value_or(-1);
+                tries = pki->readCounters(*session).retriesLeft.value_or(-1);
             }
             QMetaObject::invokeMethod(
                 self,

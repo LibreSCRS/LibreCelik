@@ -173,7 +173,7 @@
     </message>
     <message id="lc-eid-label-document-type">
         <source>Document Type</source>
-        <translation>Тип документа</translation>
+        <translation>Врста документа</translation>
     </message>
     <message id="lc-eid-label-document-serial-number">
         <source>Document Serial Number</source>
@@ -349,7 +349,7 @@
     </message>
     <message id="lc-cert-field-subject">
         <source>Subject</source>
-        <translation>Субјект</translation>
+        <translation>Субјекат</translation>
     </message>
     <message id="lc-cert-field-public-key-info">
         <source>Public Key Info</source>
@@ -1025,7 +1025,7 @@
     </message>
     <message id="lc-emrtd-auth-method">
         <source>Authentication Method</source>
-        <translation>Метода аутентификације</translation>
+        <translation>Метод аутентификације</translation>
     </message>
     <message id="lc-emrtd-sex">
         <source>Sex</source>
@@ -1554,7 +1554,7 @@
     </message>
     <message id="lc-health-label-insurer">
         <source>Insurer</source>
-        <translation>Назив осигуравача</translation>
+        <translation>Осигуравач</translation>
     </message>
     <message id="lc-health-label-insurer-id">
         <source>Insurer ID</source>
@@ -1714,7 +1714,7 @@
     </message>
     <message id="lc-emrtd-given-names">
         <source>Given Names</source>
-        <translation>Имена</translation>
+        <translation>Име</translation>
     </message>
     <message id="lc-emrtd-nationality">
         <source>Nationality</source>
@@ -1734,7 +1734,7 @@
     </message>
     <message id="lc-emrtd-doc-code">
         <source>Document Code</source>
-        <translation>Врста документа</translation>
+        <translation>Шифра документа</translation>
     </message>
     <message id="lc-emrtd-issuing-state">
         <source>Issuing State</source>
@@ -1774,7 +1774,7 @@
     </message>
     <message id="lc-token-key-subject">
         <source>Subject</source>
-        <translation>Власник</translation>
+        <translation>Субјекат</translation>
     </message>
     <message id="lc-token-key-algorithm">
         <source>Algorithm</source>
@@ -1810,7 +1810,7 @@
     </message>
     <message id="lc-token-ku-key-agreement">
         <source>Key Agreement</source>
-        <translation>Размена кључева</translation>
+        <translation>Договарање кључа</translation>
     </message>
     <message id="lc-personal-data-title">
         <source>Personal Data</source>
@@ -1878,7 +1878,7 @@
     </message>
     <message id="lc-emrtd-endorsements">
         <source>Endorsements</source>
-        <translation>Овлашћења</translation>
+        <translation>Напомене</translation>
     </message>
     <message id="lc-emrtd-tax-exit">
         <source>Tax/Exit Requirements</source>
@@ -1886,7 +1886,7 @@
     </message>
     <message id="lc-emrtd-full-name">
         <source>Full Name</source>
-        <translation>Пуно име</translation>
+        <translation>Име и презиме</translation>
     </message>
     <message id="lc-emrtd-other-names">
         <source>Other Names</source>
@@ -1914,7 +1914,7 @@
     </message>
     <message id="lc-emrtd-custody-info">
         <source>Custody Information</source>
-        <translation>Информације о старатељству</translation>
+        <translation>Подаци о старатељству</translation>
     </message>
     <message id="lc-emrtd-insert-mrz-hint">
         <source>Insert the MRZ data from the bottom of the document</source>

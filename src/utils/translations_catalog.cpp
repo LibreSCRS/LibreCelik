@@ -1201,7 +1201,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     // --- signing wizard PKCS#11 slot labels (multi-PIN cards) ---
     // Used by librecelik::signing::formatSlotLabel to render one
     // dropdown entry per PKCS#11 slot for cards exposing multiple
-    // PINs (e.g. Serbian GEO eID Auth + Signing (QSCD) slots).
+    // PINs (e.g. some eID cards' Auth + Signing (QSCD) slots).
     //% "Authentication"
     QT_TRID_NOOP("lc-pin-label-auth");
     //% "Signing (QSCD)"

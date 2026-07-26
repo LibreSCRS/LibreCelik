@@ -14,14 +14,14 @@ namespace librecelik::signing {
 /// passed through verbatim so the formatter is robust against
 /// cards whose AODF emits non-canonical strings.
 ///
-/// Multi-PIN cards (e.g. Serbian GEO eID) expose one PKCS#11 slot
+/// Multi-PIN cards (e.g. some eID cards) expose one PKCS#11 slot
 /// per PIN object. The wizard dropdown shows one entry per slot
 /// using this formatter.
 ///
 /// Examples:
 /// @code
-/// formatSlotLabel("GEO eID", "Authentication")     // "GEO eID — Authentication"
-/// formatSlotLabel("GEO eID", "Signing (QSCD)")     // "GEO eID — Signing (QSCD)"
+/// formatSlotLabel("Sample eID", "Authentication")  // "Sample eID — Authentication"
+/// formatSlotLabel("Sample eID", "Signing (QSCD)")  // "Sample eID — Signing (QSCD)"
 /// formatSlotLabel("",        "Authentication")     // "Authentication"
 /// formatSlotLabel("Card",    "Custom-PIN")         // "Card — Custom-PIN"
 /// @endcode

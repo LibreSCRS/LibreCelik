@@ -44,14 +44,14 @@ protected:
 
 TEST_F(SlotLabelFormatterTest, KnownAuth)
 {
-    auto out = formatSlotLabel(QStringLiteral("GEO eID"), QStringLiteral("Authentication"));
-    EXPECT_EQ(out, QStringLiteral("GEO eID — Authentication"));
+    auto out = formatSlotLabel(QStringLiteral("Sample eID"), QStringLiteral("Authentication"));
+    EXPECT_EQ(out, QStringLiteral("Sample eID — Authentication"));
 }
 
 TEST_F(SlotLabelFormatterTest, KnownQscd)
 {
-    auto out = formatSlotLabel(QStringLiteral("GEO eID"), QStringLiteral("Signing (QSCD)"));
-    EXPECT_EQ(out, QStringLiteral("GEO eID — Signing (QSCD)"));
+    auto out = formatSlotLabel(QStringLiteral("Sample eID"), QStringLiteral("Signing (QSCD)"));
+    EXPECT_EQ(out, QStringLiteral("Sample eID — Signing (QSCD)"));
 }
 
 TEST_F(SlotLabelFormatterTest, KnownSign)

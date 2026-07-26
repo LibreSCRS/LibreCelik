@@ -23,7 +23,7 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - Signing wizard slot dropdown now lists each PKCS#11 slot
-  separately. Multi-PIN cards (e.g. Serbian GEO eID) show two
+  separately. Multi-PIN cards (e.g. some eID cards) show two
   entries: `<token> — Authentication` and
   `<token> — Signing (QSCD)`. Default selection prioritises the
   QSCD slot, then the Signing slot, then the first slot in the

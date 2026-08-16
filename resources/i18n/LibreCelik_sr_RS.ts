@@ -507,6 +507,50 @@
         <source>PIN change failed.</source>
         <translation>Промена PIN-а неуспешна.</translation>
     </message>
+    <message id="lc-pin-prompter-hint">
+        <source>The system dialog will ask for your current and new codes.</source>
+        <translation>Системски прозор ће затражити ваш тренутни и нови код.</translation>
+    </message>
+    <message id="lc-pin-kind-user">
+        <source>User PIN</source>
+        <translation>Кориснички PIN</translation>
+    </message>
+    <message id="lc-pin-kind-sign">
+        <source>Signing PIN</source>
+        <translation>PIN за потписивање</translation>
+    </message>
+    <message id="lc-pin-kind-puk">
+        <source>PUK</source>
+        <translation>PUK</translation>
+    </message>
+    <message id="lc-pin-kind-can">
+        <source>Card access number</source>
+        <translation>Број за приступ картици</translation>
+    </message>
+    <message id="lc-pin-verb-change">
+        <source>Change</source>
+        <translation>Промени</translation>
+    </message>
+    <message id="lc-pin-verb-unblock">
+        <source>Unblock</source>
+        <translation>Деблокирај</translation>
+    </message>
+    <message id="lc-pin-verb-activate">
+        <source>Activate</source>
+        <translation>Активирај</translation>
+    </message>
+    <message id="lc-pin-activate-key-check">
+        <source>Also activate the signing key</source>
+        <translation>Активирај и кључ за потписивање</translation>
+    </message>
+    <message id="lc-pin-guidance-blocked-issuer">
+        <source>Unblocking is done by the issuer.</source>
+        <translation>Деблокаду обавља издавалац картице.</translation>
+    </message>
+    <message id="lc-pin-guidance-key-activation-issuer">
+        <source>The signing key is activated by the issuer.</source>
+        <translation>Активацију кључа за потписивање обавља издавалац.</translation>
+    </message>
     <message id="lc-error-no-connection">
         <source>No card connection available</source>
         <translation>Нема везе са картицом</translation>
@@ -1535,10 +1579,6 @@
     <message id="lc-agent-state-retry">
         <source>Try again</source>
         <translation>Покушај поново</translation>
-    </message>
-    <message id="lc-agent-action-pending-rewire">
-        <source>Temporarily unavailable while this build is rewired to the card agent.</source>
-        <translation>Привремено недоступно док се ово издање превезује на агента за картице.</translation>
     </message>
     <message id="lc-health-title">
         <source>Health Insurance Card</source>

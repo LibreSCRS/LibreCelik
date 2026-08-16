@@ -1,56 +1,76 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 hirashix0
 
+/// @file
+/// @brief The credential dialog: a launcher for the agent's PIN verbs.
+///
+/// It collects NOTHING. The code in force, the new one, a PUK — every secret
+/// this flow needs is asked for by the agent's own prompter, in the agent's
+/// own process, and none of it is ever seen, stored or carried here. What this
+/// dialog owns is the DECISION (which verb, with which option), the rendering
+/// of what the card reports about the credential and about each attempt, and
+/// its own modal hygiene.
+
 #pragma once
 
-#include <LibreSCRS/Secure/String.h>
+#include <LibreSCRS/AgentClient/CredentialTypes.h>
+#include <LibreSCRS/AgentClient/OperationPhase.h>
+#include <LibreSCRS/AgentClient/SignOptions.h> // PinVerb, ManagePinOptions
 
 #include <QDialog>
+#include <QString>
 
-class QAction;
+class QCheckBox;
 class QLabel;
-class QLineEdit;
-class QDialogButtonBox;
 class QPushButton;
+
+namespace librecelik::agent {
+class AgentGateway;
+}
 
 class ChangePinDlg : public QDialog
 {
     Q_OBJECT
 public:
-    explicit ChangePinDlg(const QString& pinLabel, bool isTransport, int minLen = 4, int maxLen = 8,
-                          QWidget* parent = nullptr);
-    ~ChangePinDlg();
+    /// @p gateway may be nullptr in tests that only probe rendering; when set,
+    /// the dialog OWNS its modal hygiene: it connects `gateway->cardRemoved(id)`
+    /// and rejects itself when @p cardId matches — card pull AND agent loss
+    /// (the gateway fans `cardRemoved` out on a presence drop) close it without
+    /// any window glue.
+    explicit ChangePinDlg(const LibreSCRS::AgentClient::CredentialRecord& record,
+                          librecelik::agent::AgentGateway* gateway, const QString& cardId, QWidget* parent = nullptr);
+    ~ChangePinDlg() override;
 
 signals:
-    /// @brief Emitted when the user has entered both PINs and confirmed.
-    ///
-    /// The PIN material is carried as @ref LibreSCRS::Secure::String so that
-    /// the cleansing-on-destruction guarantee survives the Qt signal/slot
-    /// boundary. QString-based PIN flow leaks plaintext bytes into Qt's
-    /// implicitly-shared storage and the event queue; the Secure::String
-    /// flow keeps every copy under @c secure_allocator. Receivers MUST
-    /// register the metatype once at startup via
-    /// @c qRegisterMetaType<LibreSCRS::Secure::String>().
-    void pinChangeRequested(const LibreSCRS::Secure::String& oldPin, const LibreSCRS::Secure::String& newPin);
+    /// The user chose a verb; secrets are collected by the agent prompter.
+    void verbRequested(const QString& pinId, LibreSCRS::AgentClient::PinVerb verb,
+                       const LibreSCRS::AgentClient::ManagePinOptions& options);
 
 public slots:
-    void onPinRetriesLeftRead(int retriesLeft, bool blocked);
-    void onPinChangeSuccess();
-    void onPinChangeFailed(int retriesLeft, bool blocked, const QString& errorMessage);
-
-private slots:
-    void onOkClicked();
-    void validateForm();
+    void onPhase(LibreSCRS::AgentClient::OperationPhase phase, double progress);
+    void onPinResult(const LibreSCRS::AgentClient::PinResult& result);
 
 private:
-    bool isValidPinLength(const QString& pin) const;
-    QLabel* retriesLabel;
-    QLineEdit* currentPinEdit;
-    QLineEdit* newPinEdit;
-    QLineEdit* confirmPinEdit;
-    QLabel* statusLabel;
-    QDialogButtonBox* buttonBox;
-    QPushButton* okButton;
-    int pinMinLength;
-    int pinMaxLength;
+    /// Emit @p verb for this credential and put the dialog in the in-flight
+    /// state: no second attempt may be launched while one is outstanding.
+    void requestVerb(LibreSCRS::AgentClient::PinVerb verb);
+    /// Which verb buttons the record currently permits. Re-applied after every
+    /// attempt because an attempt can take a verb away (a blocked credential
+    /// can no longer be changed) without a fresh listing having arrived yet.
+    void applyVerbAvailability();
+
+    LibreSCRS::AgentClient::CredentialRecord credential;
+    QLabel* credentialLabel = nullptr;
+    QLabel* stateLabel = nullptr;
+    QLabel* guidanceLabel = nullptr;
+    QLabel* hintLabel = nullptr;
+    QLabel* phaseLabel = nullptr;
+    QLabel* statusLabel = nullptr;
+    QCheckBox* activateKeyCheck = nullptr;
+    QPushButton* changeButton = nullptr;
+    QPushButton* unblockButton = nullptr;
+    QPushButton* activateButton = nullptr;
+    /// True between a verb emission and its result: the buttons are down and a
+    /// second emission is refused.
+    bool attemptInFlight = false;
 };

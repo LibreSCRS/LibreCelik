@@ -487,17 +487,11 @@ void TokenSection::onContextMenu(const QPoint& pos)
         QString actionText = isTransport ? qtTrId("lc-eid-menu-initialize-pin") : qtTrId("lc-eid-menu-change-pin");
         QAction* pinAction = menu.addAction(actionText);
 
-        // TEMP(C1-rewire): pin side re-enabled in Task 27 (the agent-side
-        // change-PIN dialog installs the changePinRequested connect and
-        // retires this tooltip). A blocked credential was already disabled
-        // here; every credential is, for as long as there is no dialog to
-        // launch — and the tooltip says so rather than leaving a dead entry.
-        pinAction->setEnabled(false);
-        if (cred.state != CredentialState::Blocked) {
-            pinAction->setToolTip( // i18n-audit: ignore D8, transient action rebuilt per right-click
-                qtTrId("lc-agent-action-pending-rewire"));
-            menu.setToolTipsVisible(true);
-        }
+        // A blocked credential is not changeable, and the dialog would have no
+        // verb to offer it from this entry; the row's own status line already
+        // carries the issuer guidance for that case.
+        pinAction->setEnabled(cred.state != CredentialState::Blocked);
+        connect(pinAction, &QAction::triggered, this, [this, cred]() { emit changePinRequested(cred); });
     }
 
     if (!menu.isEmpty())

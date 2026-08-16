@@ -48,8 +48,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-agent-state-unavailable");
     //% "Try again"
     QT_TRID_NOOP("lc-agent-state-retry");
-    //% "Temporarily unavailable while this build is rewired to the card agent."
-    QT_TRID_NOOP("lc-agent-action-pending-rewire");
     //% "<b>LibreMiddleware</b> :: Version %1 :: <a
     // href=\"https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html\">LGPL-2.1-or-later</a> :: <a
     // href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a>"
@@ -275,6 +273,33 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-changepin-show-hide");
     //% "PIN change failed."
     QT_TRID_NOOP("lc-changepin-failed");
+
+    // --- credential dialog (agent prompter collects every secret) ---
+    //% "The system dialog will ask for your current and new codes."
+    QT_TRID_NOOP("lc-pin-prompter-hint");
+    //% "User PIN"
+    QT_TRID_NOOP("lc-pin-kind-user");
+    //% "Signing PIN"
+    QT_TRID_NOOP("lc-pin-kind-sign");
+    //% "PUK"
+    QT_TRID_NOOP("lc-pin-kind-puk");
+    //% "Card access number"
+    QT_TRID_NOOP("lc-pin-kind-can");
+    //% "Change"
+    QT_TRID_NOOP("lc-pin-verb-change");
+    //% "Unblock"
+    QT_TRID_NOOP("lc-pin-verb-unblock");
+    //% "Activate"
+    QT_TRID_NOOP("lc-pin-verb-activate");
+    //% "Also activate the signing key"
+    QT_TRID_NOOP("lc-pin-activate-key-check");
+    // Holder guidance the agent addresses by KEY. LC translates the keys this
+    // build knows and passes the agent's own authored fallback through for the
+    // ones it does not — the vocabulary is the agent's and grows on its own.
+    //% "Unblocking is done by the issuer."
+    QT_TRID_NOOP("lc-pin-guidance-blocked-issuer");
+    //% "The signing key is activated by the issuer."
+    QT_TRID_NOOP("lc-pin-guidance-key-activation-issuer");
 
     // --- Certificate viewer ---
     //% "Field"

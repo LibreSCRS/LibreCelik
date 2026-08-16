@@ -4,6 +4,7 @@
 #pragma once
 #include <LibreSCRS/AgentClient/AgentCapabilities.h> // PreReadAuth, Cap::, UiState
 #include <LibreSCRS/AgentClient/CredentialTypes.h>
+#include <LibreSCRS/AgentClient/OperationPhase.h>
 #include <LibreSCRS/AgentClient/SignOptions.h> // PinVerb, ManagePinOptions
 #include <LibreSCRS/AgentClient/Types.h>
 #include <QObject>
@@ -43,6 +44,13 @@ signals:
     void tokenInfoReady(const LibreSCRS::AgentClient::FieldGroup& tokenGroup);
     void credentialsReady(const LibreSCRS::AgentClient::CredentialList& credentials);
     void pinResultReady(const LibreSCRS::AgentClient::PinResult& result);
+    /// Progress of a MUTATION only — `managePin` and `activateSigningKey`.
+    /// The credential dialog is the sole consumer and it renders one phase
+    /// row, so the read/certificate/token verbs deliberately stay silent here:
+    /// a card read repainting that row would say the dialog is doing something
+    /// it is not. The operation's own phase stream still feeds the watchdog on
+    /// every verb; this signal is the slice of it a human is shown.
+    void pinPhaseChanged(LibreSCRS::AgentClient::OperationPhase phase, double progress);
     void cardTypeResolved(const QString& cardType);
     void errorOccurred(const QString& localizedMessage); // via errortext
     void readingFinished();

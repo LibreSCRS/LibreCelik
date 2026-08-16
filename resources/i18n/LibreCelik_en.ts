@@ -507,6 +507,50 @@
         <source>PIN change failed.</source>
         <translation>PIN change failed.</translation>
     </message>
+    <message id="lc-pin-prompter-hint">
+        <source>The system dialog will ask for your current and new codes.</source>
+        <translation>The system dialog will ask for your current and new codes.</translation>
+    </message>
+    <message id="lc-pin-kind-user">
+        <source>User PIN</source>
+        <translation>User PIN</translation>
+    </message>
+    <message id="lc-pin-kind-sign">
+        <source>Signing PIN</source>
+        <translation>Signing PIN</translation>
+    </message>
+    <message id="lc-pin-kind-puk">
+        <source>PUK</source>
+        <translation>PUK</translation>
+    </message>
+    <message id="lc-pin-kind-can">
+        <source>Card access number</source>
+        <translation>Card access number</translation>
+    </message>
+    <message id="lc-pin-verb-change">
+        <source>Change</source>
+        <translation>Change</translation>
+    </message>
+    <message id="lc-pin-verb-unblock">
+        <source>Unblock</source>
+        <translation>Unblock</translation>
+    </message>
+    <message id="lc-pin-verb-activate">
+        <source>Activate</source>
+        <translation>Activate</translation>
+    </message>
+    <message id="lc-pin-activate-key-check">
+        <source>Also activate the signing key</source>
+        <translation>Also activate the signing key</translation>
+    </message>
+    <message id="lc-pin-guidance-blocked-issuer">
+        <source>Unblocking is done by the issuer.</source>
+        <translation>Unblocking is done by the issuer.</translation>
+    </message>
+    <message id="lc-pin-guidance-key-activation-issuer">
+        <source>The signing key is activated by the issuer.</source>
+        <translation>The signing key is activated by the issuer.</translation>
+    </message>
     <message id="lc-error-no-connection">
         <source>No card connection available</source>
         <translation>No card connection available</translation>
@@ -1535,10 +1579,6 @@
     <message id="lc-agent-state-retry">
         <source>Try again</source>
         <translation>Try again</translation>
-    </message>
-    <message id="lc-agent-action-pending-rewire">
-        <source>Temporarily unavailable while this build is rewired to the card agent.</source>
-        <translation>Temporarily unavailable while this build is rewired to the card agent.</translation>
     </message>
     <message id="lc-health-title">
         <source>Health Insurance Card</source>

@@ -45,6 +45,11 @@ public:
     LibreSCRS::AgentClient::FieldGroup scriptedTokenInfo;
     LibreSCRS::AgentClient::CredentialList scriptedCredentials;
     LibreSCRS::AgentClient::PinResult scriptedPinResult;
+    /// Replayed as `pinPhaseChanged` emissions from `managePin()` and
+    /// `activateSigningKey()`, in order, BEFORE the result — the same slice of
+    /// the operation phase stream the live controller forwards from those two
+    /// verbs and from no others.
+    QList<LibreSCRS::AgentClient::OperationPhase> scriptedPinPhases;
     /// The localized line a failed read surfaces. Scripted by the caller from
     /// `librecelik::agent::errorText`, so a GUI suite asserts the SAME text the
     /// window renders rather than a literal of its own.
@@ -74,6 +79,10 @@ public:
                    const LibreSCRS::AgentClient::ManagePinOptions& options = {}) override;
     void activateSigningKey() override;
     void cancel() override;
+
+private:
+    /// Replay @ref scriptedPinPhases; shared by both mutation verbs.
+    void replayPinPhases();
 };
 
 } // namespace librecelik::test::agent

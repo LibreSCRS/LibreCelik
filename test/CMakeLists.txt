@@ -825,10 +825,16 @@ gtest_discover_tests(AgentLayerTests
 # state through lcGeneral.
 #
 # The TEST_PREFIX is load-bearing: gtest_discover_tests registers the gtest
-# SUITE names (AgentStateWidgetTest, MainFlowTest), none of which contain
-# "AgentMainFlow", so `ctest -R AgentMainFlow` only matches through the prefix.
+# SUITE names (AgentStateWidgetTest, MainFlowTest, ChangePinDlgTest), none of
+# which contain "AgentMainFlow", so `ctest -R AgentMainFlow` only matches
+# through the prefix.
+#
+# The credential dialog rides in this binary too: it is another piece the
+# window composes, it is driven by the same scripted gateway, and it renders
+# through errortext.cpp, which is already here.
 add_executable(AgentMainFlowTests
     agent_mainflow_test.cpp
+    changepindlg_test.cpp
     fake_gateway/fakeagentgateway.cpp
     fake_gateway/fakecardcontroller.cpp
     fake_gateway/fakesigncontroller.cpp
@@ -838,6 +844,8 @@ add_executable(AgentMainFlowTests
     ${CMAKE_SOURCE_DIR}/src/agent/signcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/agentstatewidget.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/errortext.cpp
+    ${CMAKE_SOURCE_DIR}/src/document/rs-eid/changepindlg.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/buttonbox.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
 )
 target_include_directories(AgentMainFlowTests PRIVATE
@@ -853,6 +861,14 @@ target_link_libraries(AgentMainFlowTests PRIVATE
     LibreAgent::ClientQt
 )
 set_target_properties(AgentMainFlowTests PROPERTIES AUTOMOC ON)
+target_compile_definitions(AgentMainFlowTests PRIVATE
+    # Build-tree .qm directory baked in at compile time so the credential
+    # dialog fixture can install LibreCelik_en.qm (mirrors TokenSectionTests
+    # and SigningWizardFakeTests). Its retries line substitutes a count into a
+    # TRANSLATED template, so an untranslated run would render the bare catalog
+    # id and drop the number the case is about.
+    LIBRECELIK_TRANSLATIONS_DIR_DEFAULT="${CMAKE_BINARY_DIR}/src")
+add_dependencies(AgentMainFlowTests LibreCelik_lrelease)
 gtest_discover_tests(AgentMainFlowTests
     TEST_PREFIX "AgentMainFlow."
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

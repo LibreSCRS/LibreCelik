@@ -9,6 +9,7 @@
 #include "agent/optionalsections.h"
 #include "certificate/certificateviewerdlg.h"
 #include "config.h"
+#include "document/rs-eid/changepindlg.h"
 #include "document/tokensection.h"
 #include "settings/settingsdialog.h"
 #include "settings/settingskeys.h"
@@ -720,10 +721,29 @@ void LibreCelik::attachPkiSection(const QString& cardId, QWidget* container, boo
             },
             Qt::QueuedConnection);
 #endif
-        // The change-PIN flow has no connect in this window yet: it moves into
-        // the agent-side dialog (Task 27), and until it lands the section
-        // renders that affordance disabled with an honest tooltip rather than
-        // wiring it to nothing.
+        // The credential dialog is a verb launcher over the agent's prompter:
+        // it collects no secret, so this window carries none either. The
+        // controller's mutation results and phase stream go straight to it,
+        // and the re-listing after every mutation comes from the controller
+        // itself. Closing on card removal is the dialog's own gateway
+        // subscription.
+        //
+        // Queued for the same reason as the viewer and the wizard above: the
+        // request is emitted from inside a stack-allocated QMenu's exec() loop,
+        // and a direct connection would open a nested modal loop on top of it.
+        connect(
+            section, &TokenSection::changePinRequested, this,
+            [this, cardId](const LibreSCRS::AgentClient::CredentialRecord& credential) {
+                auto* ctrl = gateway->cardController(cardId);
+                if (!ctrl)
+                    return;
+                ChangePinDlg dlg(credential, gateway.get(), cardId, this);
+                connect(&dlg, &ChangePinDlg::verbRequested, ctrl, &librecelik::agent::CardController::managePin);
+                connect(ctrl, &librecelik::agent::CardController::pinResultReady, &dlg, &ChangePinDlg::onPinResult);
+                connect(ctrl, &librecelik::agent::CardController::pinPhaseChanged, &dlg, &ChangePinDlg::onPhase);
+                dlg.exec();
+            },
+            Qt::QueuedConnection);
         pkiWidget = section;
     }
     containerLayout->addWidget(pkiWidget);

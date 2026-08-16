@@ -346,6 +346,10 @@ void LiveCardController::managePin(const QString& pinId, LibreSCRS::AgentClient:
     AgentOperation* operation = card->managePin(pinId, verb, options);
     track(operation);
     const OpWatch watch = armWatchdog(operation);
+    // The mutation's phase stream is forwarded to the human as well as to the
+    // watchdog: this is the one verb where the wait is long, interactive, and
+    // owned by a dialog that has a row to put it in.
+    connect(operation, &AgentOperation::phaseChanged, this, &CardController::pinPhaseChanged);
 
     connect(operation, &AgentOperation::finished, this, [this, operation, watch] {
         watch.dog->stop();
@@ -372,6 +376,7 @@ void LiveCardController::activateSigningKey()
     AgentOperation* operation = card->activateSigningKey();
     track(operation);
     const OpWatch watch = armWatchdog(operation);
+    connect(operation, &AgentOperation::phaseChanged, this, &CardController::pinPhaseChanged); // as managePin
 
     connect(operation, &AgentOperation::finished, this, [this, operation, watch] {
         watch.dog->stop();

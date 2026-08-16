@@ -99,18 +99,29 @@ void FakeCardController::managePin(const QString& pinId, LibreSCRS::AgentClient:
     Q_UNUSED(verb)
     Q_UNUSED(options)
     callLog << QStringLiteral("managePin:%1").arg(pinId);
+    replayPinPhases();
     Q_EMIT pinResultReady(scriptedPinResult);
 }
 
 void FakeCardController::activateSigningKey()
 {
     callLog << QStringLiteral("activateSigningKey");
+    replayPinPhases();
     Q_EMIT pinResultReady(scriptedPinResult);
 }
 
 void FakeCardController::cancel()
 {
     callLog << QStringLiteral("cancel");
+}
+
+void FakeCardController::replayPinPhases()
+{
+    // Before the result, as the live controller's stream arrives: what the
+    // mutation is doing is said while it is still doing it.
+    for (const LibreSCRS::AgentClient::OperationPhase phase : std::as_const(scriptedPinPhases)) {
+        Q_EMIT pinPhaseChanged(phase, 0.0);
+    }
 }
 
 } // namespace librecelik::test::agent

@@ -54,16 +54,10 @@ set(PROJECT_SOURCES
         agent/live/livecardcontroller.cpp
         agent/live/livesigncontroller.h
         agent/live/livesigncontroller.cpp
-        smartcard/qsmartcardmonitor.h
-        smartcard/qsmartcardmonitor.cpp
-        smartcard/smartcardreaderlistener.h
-        smartcard/smartcardreaderlistener.cpp
         document/tokensection.h
         document/tokensection.cpp
         document/rs-eid/changepindlg.h
         document/rs-eid/changepindlg.cpp
-        document/emrtd/emrtdauthwidget.h
-        document/emrtd/emrtdauthwidget.cpp
         certificate/certfields.h
         certificate/certformat.h
         certificate/certformat.cpp
@@ -101,8 +95,6 @@ set(PROJECT_SOURCES
         plugin/cardwidgetpluginregistry.h
         plugin/cardwidgetpluginregistry.cpp
         plugin/fieldvalue.h
-        asynccardreader.h
-        asynccardreader.cpp
         aboutdialog.h
         aboutdialog.cpp
         settings/settingsdialog.h
@@ -144,8 +136,6 @@ if(LIBRECELIK_SIGNING_ENABLED)
         signing/resultdelegate.h
         signing/resultdelegate.cpp
         signing/signingcolors.h
-        signing/signingconfiguration.h
-        signing/signingconfiguration.cpp
     )
 endif()
 
@@ -170,10 +160,6 @@ set(_tpn_deps "${THIRD_PARTY_NOTICE_GEN}" "${THIRD_PARTY_MANIFEST}")
 # manifest) regenerates the notice. New files still need a reconfigure.
 file(GLOB _tpn_texts CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/resources/licenses/*.txt")
 list(APPEND _tpn_deps ${_tpn_texts})
-if(libremiddleware_SOURCE_DIR AND EXISTS "${libremiddleware_SOURCE_DIR}/thirdparty/licenses.json")
-    list(APPEND _tpn_args --lm-manifest "${libremiddleware_SOURCE_DIR}/thirdparty/licenses.json")
-    list(APPEND _tpn_deps "${libremiddleware_SOURCE_DIR}/thirdparty/licenses.json")
-endif()
 add_custom_command(
     OUTPUT "${THIRD_PARTY_NOTICE_FILE}"
     COMMAND ${Python3_EXECUTABLE} "${THIRD_PARTY_NOTICE_GEN}" ${_tpn_args}
@@ -230,10 +216,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Widgets
     Qt6::PrintSupport
     LibreCelikPrinting
-    LibreSCRS::Plugin
-    LibreSCRS::SmartCard
-    LibreSCRS::Trust
-    LibreSCRS::Certificate
     LibreAgent::ClientQt)
 
 if(APPLE)
@@ -241,7 +223,7 @@ if(APPLE)
 endif()
 
 if(LIBRECELIK_SIGNING_ENABLED)
-    target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::PdfWidgets LibreSCRS::Signing)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::PdfWidgets)
 endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

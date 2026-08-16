@@ -18,9 +18,9 @@ set(APP_ICON "${PROJECT_SOURCE_DIR}/resources/smartcard-id-512.png" CACHE INTERN
 # ---------------------------------------------------------------------------
 # Build-time third-party license notice.
 #
-# gen-third-party-notices.py merges the LibreCelik license manifest with the
-# (optional) LibreMiddleware thirdparty manifest and renders a single verbatim
-# THIRD-PARTY-LICENSES.txt into the build tree. A generated .qrc embeds it at
+# gen-third-party-notices.py renders the LibreCelik license manifest as a
+# single verbatim THIRD-PARTY-LICENSES.txt into the build tree. A
+# generated .qrc embeds it at
 # :/licenses/THIRD-PARTY-LICENSES.txt so the running app can display every
 # bundled component's license without shipping a loose file.
 # ---------------------------------------------------------------------------

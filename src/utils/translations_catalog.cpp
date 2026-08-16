@@ -48,10 +48,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-agent-state-unavailable");
     //% "Try again"
     QT_TRID_NOOP("lc-agent-state-retry");
-    //% "<b>LibreMiddleware</b> :: Version %1 :: <a
-    // href=\"https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html\">LGPL-2.1-or-later</a> :: <a
-    // href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a>"
-    QT_TRID_NOOP("lc-main-about-libremiddleware");
+    //% "Agent: %1"
+    QT_TRID_NOOP("lc-main-about-agent");
     //% "♥ Support this project — <a href=\"https://librescrs.github.io/donate\">librescrs.github.io/donate</a>"
     QT_TRID_NOOP("lc-main-about-donate");
 
@@ -100,7 +98,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-about-full-notices");
     // lupdate //% markers must stay single-line; clang-format would wrap them.
     // clang-format off
-    //% "The complete corresponding source code for LibreCelik, LibreMiddleware and the bundled LGPL/GPL third-party libraries (Qt, GnuTLS, GLib, libidn2 and others) is publicly available at <a href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a> and <a href=\"https://github.com/LibreSCRS/LibreCelik\">github.com/LibreSCRS/LibreCelik</a>, or on request. This offer is valid for as long as we distribute this software."
+    //% "The complete corresponding source code for LibreCelik, the bundled LibreAgent client library and the bundled LGPL/GPL third-party libraries (Qt, GnuTLS, GLib, libidn2 and others) is publicly available at <a href=\"https://github.com/LibreSCRS/LibreAgent\">github.com/LibreSCRS/LibreAgent</a> and <a href=\"https://github.com/LibreSCRS/LibreCelik\">github.com/LibreSCRS/LibreCelik</a>, or on request. This offer is valid for as long as we distribute this software."
     // clang-format on
     QT_TRID_NOOP("lc-about-source-offer");
     //% "About"

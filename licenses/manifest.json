@@ -1195,6 +1195,13 @@
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
       "platforms": ["macos"]
+    },
+    {
+      "match": "liblibrescrs-agentclient-qt.so*",
+      "name": "LibreAgent ClientQt (incl. statically linked Wire)",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
     }
   ]
 }

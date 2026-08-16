@@ -8,9 +8,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Core Widgets Test PrintSupport)
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Test PrintSupport)
-# UUID is used directly by uuid_test.cpp; LC production code has no UUID
-# dependency. PCSC is brought in transitively by LM's public SmartCard alias.
-find_package(UUID)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -36,7 +33,6 @@ add_executable(
     ${SOURCE_FILES}
     hello_test.cpp
     configuration_test.cpp
-    uuid_test.cpp
     collapsiblesection_test.cpp
     ../src/utils/collapsiblesection.h
     ../src/utils/collapsiblesection.cpp
@@ -50,8 +46,6 @@ add_executable(
 target_link_libraries(
     ${PROJECT_NAME}
     GTest::gtest_main
-    LibreSCRS::Plugin
-    UUID::UUID
     Qt6::Core
     Qt6::Widgets
     # fieldsectionbuilder.cpp renders the client's own flattened identity rows,
@@ -74,7 +68,6 @@ target_include_directories(CardWidgetPluginRegistryTests PRIVATE
 target_link_libraries(CardWidgetPluginRegistryTests
     GTest::gtest_main
     Qt6::Widgets
-    LibreSCRS::Plugin
     # cardwidgetplugin.h now speaks the client's field-group types.
     LibreAgent::ClientQt
 )
@@ -88,64 +81,6 @@ target_compile_definitions(CardWidgetPluginRegistryTests PRIVATE
 set_target_properties(CardWidgetPluginRegistryTests PROPERTIES AUTOMOC ON)
 add_dependencies(CardWidgetPluginRegistryTests mock-widget-plugin)
 gtest_discover_tests(CardWidgetPluginRegistryTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-
-add_executable(AsyncCardReaderTests
-    asynccardreader_test.cpp
-    ${CMAKE_SOURCE_DIR}/src/asynccardreader.cpp
-    ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
-)
-target_include_directories(AsyncCardReaderTests PRIVATE
-    ${CMAKE_SOURCE_DIR}/src
-)
-target_link_libraries(AsyncCardReaderTests
-    GTest::gtest_main
-    LibreSCRS::Plugin
-    LibreSCRS::SmartCard
-    Qt6::Core
-    Qt6::Widgets
-    Qt6::Test
-)
-set_target_properties(AsyncCardReaderTests PROPERTIES AUTOMOC ON)
-gtest_discover_tests(AsyncCardReaderTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-
-add_executable(QSmartCardMonitorTests
-    qsmartcardmonitor_test.cpp
-    ../src/smartcard/qsmartcardmonitor.h
-    ../src/smartcard/qsmartcardmonitor.cpp
-)
-set_target_properties(QSmartCardMonitorTests PROPERTIES AUTOMOC ON)
-target_link_libraries(QSmartCardMonitorTests PRIVATE
-    GTest::gtest_main
-    Qt6::Core
-    Qt6::Test
-    # SmartCard_Impl: required because the test #includes
-    # <LibreSCRS/SmartCard/detail/MonitorInjection.h>, an internal-only
-    # header #error-guarded behind LIBRESCRS_INTERNAL_BUILD. Mirrors LM's
-    # LibreSCRS_MonitorTests setup. Only valid in FetchContent mode.
-    SmartCard_Impl
-    LibreSCRS::SmartCard
-    # The test-only injection helpers (detail::makeMonitorWithProvider,
-    # detail::makeSubscriptionIdForTest) deliberately do not ship in the
-    # production libLibreSCRS_SmartCard's dynamic export set; their bodies
-    # live in this build-tree-only OBJECT archive. Mirrors LM's
-    # LibreSCRS_MonitorTests wiring. Only valid in FetchContent mode.
-    LibreSCRS_SmartCard_TestHelpers
-    Threads::Threads
-)
-# LIBRESCRS_INTERNAL_BUILD unlocks the detail/MonitorInjection.h
-# #error guard. Only valid in FetchContent mode (LM internal headers
-# are not installed in CONFIG-package consumption).
-target_compile_definitions(QSmartCardMonitorTests PRIVATE LIBRESCRS_INTERNAL_BUILD)
-if(DEFINED libremiddleware_SOURCE_DIR)
-    target_include_directories(QSmartCardMonitorTests PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
-        ${libremiddleware_SOURCE_DIR}/test
-        ${libremiddleware_SOURCE_DIR}/lib/smartcard/src
-    )
-    gtest_discover_tests(QSmartCardMonitorTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-else()
-    message(STATUS "QSmartCardMonitorTests: skipped (requires FetchContent mode for LM internal headers)")
-endif()
 
 # The field-group successor of the middleware card-data helpers, which left
 # with the middleware read path: same shape, same case list, the client's types.
@@ -182,7 +117,6 @@ target_include_directories(EuVrcTextDocumentTests PRIVATE
 target_link_libraries(EuVrcTextDocumentTests
     GTest::gtest
     LibreAgent::ClientQt
-    LibreSCRS::Plugin
     LibreCelikPrinting
     Qt6::Widgets
     Qt6::PrintSupport
@@ -262,7 +196,6 @@ target_include_directories(HealthTextDocumentTests PRIVATE
 target_link_libraries(HealthTextDocumentTests
     GTest::gtest
     LibreAgent::ClientQt
-    LibreSCRS::Plugin
     LibreCelikPrinting
     Qt6::Widgets
     Qt6::PrintSupport
@@ -289,7 +222,6 @@ target_include_directories(EIdTextDocumentTests PRIVATE
 target_link_libraries(EIdTextDocumentTests
     GTest::gtest
     LibreAgent::ClientQt
-    LibreSCRS::Plugin
     LibreCelikPrinting
     Qt6::Widgets
     Qt6::PrintSupport
@@ -316,67 +248,12 @@ target_include_directories(PIVTextDocumentTests PRIVATE
 target_link_libraries(PIVTextDocumentTests
     GTest::gtest
     LibreAgent::ClientQt
-    LibreSCRS::Plugin
     LibreCelikPrinting
     Qt6::Widgets
     Qt6::PrintSupport
 )
 set_target_properties(PIVTextDocumentTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(PIVTextDocumentTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-
-add_executable(EMRTDAuthWidgetTests
-    emrtdauthwidget_test.cpp
-    ../src/document/emrtd/emrtdauthwidget.h
-    ../src/document/emrtd/emrtdauthwidget.cpp
-)
-target_include_directories(EMRTDAuthWidgetTests PRIVATE
-    ${CMAKE_SOURCE_DIR}/src
-)
-target_link_libraries(EMRTDAuthWidgetTests
-    GTest::gtest
-    Qt6::Core
-    Qt6::Widgets
-    Qt6::Test
-    LibreSCRS::Auth
-)
-set_target_properties(EMRTDAuthWidgetTests PROPERTIES AUTOMOC ON)
-gtest_discover_tests(EMRTDAuthWidgetTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-
-if(LIBRECELIK_SIGNING_ENABLED)
-    add_executable(signingconfiguration_test
-        signingconfiguration_test.cpp
-        ${CMAKE_SOURCE_DIR}/src/signing/signingconfiguration.cpp
-        ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.h
-        ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
-    )
-    target_include_directories(signingconfiguration_test PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
-        ${PROJECT_BINARY_DIR}/../src
-    )
-    target_link_libraries(signingconfiguration_test PRIVATE
-        GTest::gtest_main
-        Qt6::Core
-        LibreSCRS::Signing
-    )
-    gtest_discover_tests(signingconfiguration_test PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-
-    add_executable(signingservice_startup_test
-        signingservice_startup_test.cpp
-        ${CMAKE_SOURCE_DIR}/src/signing/signingconfiguration.cpp
-        ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.h
-        ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
-    )
-    target_include_directories(signingservice_startup_test PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
-        ${PROJECT_BINARY_DIR}/../src
-    )
-    target_link_libraries(signingservice_startup_test PRIVATE
-        GTest::gtest_main
-        Qt6::Core
-        LibreSCRS::Signing
-    )
-    gtest_discover_tests(signingservice_startup_test PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-endif()
 
 if(LIBRECELIK_SIGNING_ENABLED)
     # certformat.cpp joins this target for the KeyUsage-bitmask cases; it is
@@ -579,7 +456,6 @@ target_link_libraries(i18n_plugin_retranslate_test PRIVATE
     Qt6::Widgets
     Qt6::Test
     LibreAgent::ClientQt
-    LibreSCRS::Plugin
 )
 set_target_properties(i18n_plugin_retranslate_test PROPERTIES AUTOMOC ON)
 target_compile_definitions(i18n_plugin_retranslate_test PRIVATE

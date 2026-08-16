@@ -36,17 +36,20 @@ Actions identity; verification instructions are on the
 
 ## Building from source
 
-LibreCelik consumes LibreMiddleware via CMake `FetchContent`. For local
-development, point at a sibling LibreMiddleware checkout:
+LibreCelik consumes LibreAgent (ClientQt) via CMake `FetchContent`, pinned
+by `cmake/libreagent.pin`. For local development, point at a sibling
+LibreAgent checkout:
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release \
-      -DFETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE=/path/to/LibreMiddleware
+      -DFETCHCONTENT_SOURCE_DIR_LIBREAGENT=/path/to/LibreAgent
 cmake --build build -j4
 ```
 
-Requires CMake 3.24+, C++23, Qt 6.10+, PC/SC, OpenSSL 3, libcurl, and
-libxml2. Cap parallel jobs to `-j4` to avoid system saturation.
+Requires CMake 3.24+ (3.28+ for the `FetchContent` path, which builds
+LibreAgent from source), C++23 and Qt 6.10+. Card access happens in the
+LibreSCRS card agent, so this application itself needs no PC/SC stack.
+Cap parallel jobs to `-j4` to avoid system saturation.
 
 ## Contributing
 
@@ -60,14 +63,14 @@ GPL-3.0-or-later — see [LICENSE](LICENSE) for details.
 
 ## Source availability
 
-LibreCelik is licensed under GPL-3.0-or-later. It bundles statically
-linked components covered by other free-software licences, including
-LGPL-2.1-or-later (LibreMiddleware, OpenSC).
+LibreCelik is licensed under GPL-3.0-or-later. It bundles the LibreAgent
+Qt client library, which is LGPL-2.1-or-later, alongside Qt and the other
+free-software libraries listed in the application's third-party notices.
 
 The complete corresponding source code for this software, including
-all modified LGPL components, is publicly available at:
+all LGPL components we build ourselves, is publicly available at:
 
-- https://github.com/LibreSCRS/LibreMiddleware
+- https://github.com/LibreSCRS/LibreAgent
 - https://github.com/LibreSCRS/LibreCelik
 
 This offer is valid for as long as we distribute this software.

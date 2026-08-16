@@ -137,12 +137,13 @@ ln -s ../../scripts/pre-commit-i18n.sh .git/hooks/pre-commit-i18n
 
 ## Build and test
 
-LibreCelik consumes LibreMiddleware via CMake `FetchContent`. For local
-development, point at a sibling LibreMiddleware checkout:
+LibreCelik consumes LibreAgent (ClientQt) via CMake `FetchContent`, pinned
+by `cmake/libreagent.pin`. For local development, point at a sibling
+LibreAgent checkout:
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release \
-      -DFETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE=/path/to/LibreMiddleware
+      -DFETCHCONTENT_SOURCE_DIR_LIBREAGENT=/path/to/LibreAgent
 cmake --build build -j4
 ```
 

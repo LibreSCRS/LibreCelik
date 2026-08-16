@@ -4,6 +4,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QString>
 
 class QComboBox;
 class QLabel;
@@ -15,7 +16,10 @@ class AboutDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit AboutDialog(QWidget* parent = nullptr);
+    /// @param agentVersion  Agent version as the caller knows it, empty when
+    ///                      no agent answers. The dialog is modal and short
+    ///                      lived, so the value is a snapshot, not a feed.
+    explicit AboutDialog(const QString& agentVersion, QWidget* parent = nullptr);
 
 protected:
     void changeEvent(QEvent* event) override;
@@ -23,6 +27,8 @@ protected:
 private:
     void retranslateUi();
     void loadLicense(int index);
+
+    QString agentVersion;
 
     QTabWidget* tabs = nullptr;
 
@@ -45,13 +51,8 @@ private:
 
     // License tab
     QLabel* licenseLibreCelikLabel = nullptr;
-    QLabel* licenseMiddlewareLabel = nullptr;
-    QLabel* licenseOpenScLabel = nullptr;
+    QLabel* licenseAgentLabel = nullptr;
     QLabel* licenseOpenSslLabel = nullptr;
-    QLabel* licenseJsonLabel = nullptr;
-    QLabel* licenseMinizLabel = nullptr;
-    QLabel* licenseZlibLabel = nullptr;
-    QLabel* licenseLiberationSansLabel = nullptr;
     QLabel* licenseQtLabel = nullptr;
     QLabel* licenseCurlLabel = nullptr;
     QLabel* licenseLibXml2Label = nullptr;

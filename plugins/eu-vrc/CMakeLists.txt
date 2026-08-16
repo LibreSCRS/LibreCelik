@@ -26,7 +26,6 @@ target_include_directories(eu-vrc-gui-plugin PRIVATE
 target_link_libraries(eu-vrc-gui-plugin PRIVATE
     Qt6::Widgets
     LibreAgent::ClientQt
-    LibreSCRS::Plugin
     LibreCelikPrinting
 )
 set_target_properties(eu-vrc-gui-plugin PROPERTIES

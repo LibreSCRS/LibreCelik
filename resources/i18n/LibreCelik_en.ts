@@ -9,11 +9,9 @@
         <oldsource>&lt;b&gt;LibreCelik&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GPL-3.0-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreCelik&quot;&gt;github.com/LibreSCRS/LibreCelik&lt;/a&gt;</oldsource>
         <translation>&lt;b&gt;LibreCelik&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/gpl-3.0.html&quot;&gt;GPL-3.0-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreCelik&quot;&gt;github.com/LibreSCRS/LibreCelik&lt;/a&gt;</translation>
     </message>
-    <message id="lc-main-about-libremiddleware">
-        <source>&lt;b&gt;LibreMiddleware&lt;/b&gt; :: Version %1 :: &lt;a
-</source>
-        <oldsource>&lt;b&gt;LibreMiddleware&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html&quot;&gt;LGPL-2.1-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt;</oldsource>
-        <translation>&lt;b&gt;LibreMiddleware&lt;/b&gt; :: Version %1 :: &lt;a href=&quot;https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html&quot;&gt;LGPL-2.1-or-later&lt;/a&gt; :: &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt;</translation>
+    <message id="lc-main-about-agent">
+        <source>Agent: %1</source>
+        <translation>Agent: %1</translation>
     </message>
     <message id="lc-main-about-donate">
         <source>♥ Support this project — &lt;a href=&quot;https://librescrs.github.io/donate&quot;&gt;librescrs.github.io/donate&lt;/a&gt;</source>
@@ -1385,8 +1383,8 @@
         <translation>Full third-party notices</translation>
     </message>
     <message id="lc-about-source-offer">
-        <source>The complete corresponding source code for LibreCelik, LibreMiddleware and the bundled LGPL/GPL third-party libraries (Qt, GnuTLS, GLib, libidn2 and others) is publicly available at &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt; and &lt;a href=&quot;https://github.com/LibreSCRS/LibreCelik&quot;&gt;github.com/LibreSCRS/LibreCelik&lt;/a&gt;, or on request. This offer is valid for as long as we distribute this software.</source>
-        <translation>The complete corresponding source code for LibreCelik, LibreMiddleware and the bundled LGPL/GPL third-party libraries (Qt, GnuTLS, GLib, libidn2 and others) is publicly available at &lt;a href=&quot;https://github.com/LibreSCRS/LibreMiddleware&quot;&gt;github.com/LibreSCRS/LibreMiddleware&lt;/a&gt; and &lt;a href=&quot;https://github.com/LibreSCRS/LibreCelik&quot;&gt;github.com/LibreSCRS/LibreCelik&lt;/a&gt;, or on request. This offer is valid for as long as we distribute this software.</translation>
+        <source>The complete corresponding source code for LibreCelik, the bundled LibreAgent client library and the bundled LGPL/GPL third-party libraries (Qt, GnuTLS, GLib, libidn2 and others) is publicly available at &lt;a href=&quot;https://github.com/LibreSCRS/LibreAgent&quot;&gt;github.com/LibreSCRS/LibreAgent&lt;/a&gt; and &lt;a href=&quot;https://github.com/LibreSCRS/LibreCelik&quot;&gt;github.com/LibreSCRS/LibreCelik&lt;/a&gt;, or on request. This offer is valid for as long as we distribute this software.</source>
+        <translation>The complete corresponding source code for LibreCelik, the bundled LibreAgent client library and the bundled LGPL/GPL third-party libraries (Qt, GnuTLS, GLib, libidn2 and others) is publicly available at &lt;a href=&quot;https://github.com/LibreSCRS/LibreAgent&quot;&gt;github.com/LibreSCRS/LibreAgent&lt;/a&gt; and &lt;a href=&quot;https://github.com/LibreSCRS/LibreCelik&quot;&gt;github.com/LibreSCRS/LibreCelik&lt;/a&gt;, or on request. This offer is valid for as long as we distribute this software.</translation>
     </message>
     <message id="lc-about-tab-about">
         <source>About</source>

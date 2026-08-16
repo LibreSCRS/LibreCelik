@@ -244,25 +244,35 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
             ui->statusbar->hide();
     });
 
-    updateAboutText();
-
     gateway = std::make_unique<librecelik::agent::LiveAgentGateway>();
     connect(gateway.get(), &AgentGateway::presenceChanged, this, &LibreCelik::onPresenceChanged);
+    // The banner names the agent's version, which is only knowable while the
+    // agent answers — so it is re-rendered on every presence move.
+    connect(gateway.get(), &AgentGateway::presenceChanged, this, &LibreCelik::updateAboutText);
     connect(gateway.get(), &AgentGateway::readersChanged, this, &LibreCelik::onReadersChanged);
     connect(gateway.get(), &AgentGateway::cardChanged, this, &LibreCelik::onCardChanged);
     connect(gateway.get(), &AgentGateway::cardRemoved, this, &LibreCelik::onCardRemoved);
     connect(ui->agentStateWidget, &librecelik::agent::AgentStateWidget::retryRequested, this,
             [this]() { gateway->refresh(); });
+    // The client resolves presence in its own constructor and emits nothing
+    // for the state it starts in, so the first render happens here, after the
+    // gateway exists — otherwise a reachable agent's version would stay hidden
+    // behind a dash until the agent went away.
+    updateAboutText();
     onPresenceChanged(gateway->presence());
     onReadersChanged();
 }
 
 void LibreCelik::updateAboutText()
 {
+    // A language change can reach this before the gateway exists, and no agent
+    // answers in the guided states — both are the same honest "not known yet",
+    // rendered as a dash rather than as a blank the reader has to interpret.
+    const QString version = gateway ? gateway->agentVersion() : QString();
+    const QString versionOrDash = version.isEmpty() ? QStringLiteral("—") : version;
     ui->aboutLabel->setText(QString("<br><br>") + qtTrId("lc-main-about-librecelik").arg(LIBRECELIK_VERSION) +
-                            QString("<br>") +
-                            qtTrId("lc-main-about-libremiddleware").arg(LIBRECELIK_MIDDLEWARE_VERSION) +
-                            QString("<br>") + qtTrId("lc-main-about-donate"));
+                            QString("<br>") + qtTrId("lc-main-about-agent").arg(versionOrDash) + QString("<br>") +
+                            qtTrId("lc-main-about-donate"));
 }
 
 bool LibreCelik::loadLanguage(const QString& locale)
@@ -810,7 +820,7 @@ void LibreCelik::openSettings()
 
 void LibreCelik::showAboutDialog()
 {
-    AboutDialog dlg(this);
+    AboutDialog dlg(gateway ? gateway->agentVersion() : QString(), this);
     dlg.exec();
 }
 

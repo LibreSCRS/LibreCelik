@@ -35,59 +35,14 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_link_options(-fexperimental-library)
 endif()
 
-# LibreMiddleware ref this build consumes. During the active development cycle
-# this tracks LM main, which carries the unreleased work LibreCelik builds
-# against; re-pin to a reproducible release tag when cutting a release.
-set(MIDDLEWARE_VERSION main)
-
-# Hybrid LM consumption: FetchContent (default) or find_package(CONFIG).
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOrUseLibreMiddleware.cmake)
-
-if(NOT LIBRECELIK_USE_INSTALLED_LM)
-    # Fetch LibreMiddleware (smartcard, rs-eid, rs-health, eu-vrc, emrtd, pkcs15 libraries)
-    include(FetchContent)
-    FetchContent_Declare(LibreMiddleware
-        GIT_REPOSITORY https://github.com/LibreSCRS/LibreMiddleware.git
-        GIT_TAG ${MIDDLEWARE_VERSION}
-    )
-    FetchContent_MakeAvailable(LibreMiddleware)
-
-    # Read the actual version from LibreMiddleware's own git tags.
-    # When using a local checkout (FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE),
-    # append "-local" so the UI clearly shows it's a development build.
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
-        WORKING_DIRECTORY ${libremiddleware_SOURCE_DIR}
-        OUTPUT_VARIABLE MW_GIT_VERSION
-        RESULT_VARIABLE MW_GIT_RESULT
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(MW_GIT_RESULT EQUAL 0 AND MW_GIT_VERSION)
-        set(MIDDLEWARE_VERSION ${MW_GIT_VERSION})
-    endif()
-    if(FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE)
-        set(MIDDLEWARE_VERSION "${MIDDLEWARE_VERSION}-local")
-    endif()
-
-    # Add LibreMiddleware's cmake modules to our path (for FindPCSC, FindUUID)
-    list(APPEND CMAKE_MODULE_PATH "${libremiddleware_SOURCE_DIR}/cmake")
-else()
-    # CONFIG-package mode: take version from the package, and rely on the
-    # installed LibreMiddlewareConfig.cmake to have re-exposed FindPCSC etc.
-    set(MIDDLEWARE_VERSION ${LibreMiddleware_VERSION})
-endif()
-
 # Hybrid LibreAgent consumption: FetchContent at cmake/libreagent.pin
 # (default) or find_package(CONFIG). Provides LibreAgent::ClientQt.
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOrUseLibreAgent.cmake)
 
-# Digital signing UI — requires LibreMiddleware built with BUILD_SIGNING=ON.
-# Can be independently disabled even if LM has signing support.
-option(ENABLE_SIGNING "Enable digital signing UI (requires LM signing support)" ON)
-if(ENABLE_SIGNING AND NOT LIBREMIDDLEWARE_HAS_SIGNING)
-    message(STATUS "Signing UI disabled: LibreMiddleware was built without BUILD_SIGNING")
-    set(ENABLE_SIGNING OFF)
-endif()
+# Digital signing UI. Nothing in this build produces signatures in-process
+# any more, so the switch is a pure user-interface choice with no dependency
+# to satisfy.
+option(ENABLE_SIGNING "Enable digital signing UI" ON)
 set(LIBRECELIK_SIGNING_ENABLED ${ENABLE_SIGNING})
 
 # The signing wizard's end-to-end suite compiles every wizard translation unit

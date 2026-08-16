@@ -1208,6 +1208,116 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-pin-label-qscd");
     //% "Signing"
     QT_TRID_NOOP("lc-pin-label-sign");
+
+    // --- agent layer ---
+    // Rendered by librecelik::agent::errorText / phaseText / outcomeText
+    // (src/agent/errortext.cpp), which map the agent's wire-frozen error
+    // taxonomy, the client library's transport-level call-failure
+    // classification, the operation progress phases and the credential
+    // mutation outcomes onto these ids. All four vocabularies are
+    // append-only upstream, so each mapping keeps a catch-all arm and the
+    // generic/created/unspecified ids below are what an enumerator newer
+    // than this build renders as.
+
+    // Agent error taxonomy (wire-frozen ErrorCode).
+    //% "The card was removed before the operation finished."
+    QT_TRID_NOOP("lc-agent-error-card-removed");
+    //% "The PIN or access code entered was incorrect."
+    QT_TRID_NOOP("lc-agent-error-credential-wrong");
+    //% "The card credential is blocked. Unblock it before trying again."
+    QT_TRID_NOOP("lc-agent-error-credential-blocked");
+    //% "Communication with the card reader failed."
+    QT_TRID_NOOP("lc-agent-error-communication");
+    //% "The data read from the card could not be interpreted."
+    QT_TRID_NOOP("lc-agent-error-parse");
+    //% "This card is not supported."
+    QT_TRID_NOOP("lc-agent-error-unsupported-card");
+    //% "Authentication with the card failed."
+    QT_TRID_NOOP("lc-agent-error-auth-failed");
+    //% "The secure entry prompt could not be shown."
+    QT_TRID_NOOP("lc-agent-error-prompter");
+    //% "This card does not support the requested operation."
+    QT_TRID_NOOP("lc-agent-error-capability-missing");
+    //% "The operation timed out."
+    QT_TRID_NOOP("lc-agent-error-watchdog");
+    //% "The selected certificate could not be found on the card."
+    QT_TRID_NOOP("lc-agent-error-key-not-found");
+    //% "More than one key matched the selection."
+    QT_TRID_NOOP("lc-agent-error-key-ambiguous");
+    //% "The signing certificate has expired."
+    QT_TRID_NOOP("lc-agent-error-cert-expired-blocked");
+    //% "The certificate chain could not be completed."
+    QT_TRID_NOOP("lc-agent-error-chain-incomplete");
+    //% "The timestamp authority is unreachable."
+    QT_TRID_NOOP("lc-agent-error-tsa-unreachable");
+    //% "The signing engine reported an error."
+    QT_TRID_NOOP("lc-agent-error-signing-engine");
+    //% "Too many signing requests. Try again shortly."
+    QT_TRID_NOOP("lc-agent-error-rate-limited");
+    //% "The signing service is not set up correctly — its security module could not be loaded. "
+    //% "Check the installation."
+    QT_TRID_NOOP("lc-agent-error-engine-unavailable");
+    //% "The document you tried to sign is invalid or could not be read. Check the file."
+    QT_TRID_NOOP("lc-agent-error-invalid-document");
+    //% "The document was signed, but the signed file could not be written to the output folder."
+    QT_TRID_NOOP("lc-agent-error-artifact-write");
+    //% "The operation did not finish, and no reason was reported."
+    QT_TRID_NOOP("lc-agent-error-generic");
+
+    // Transport-level call failures (client-local CallError).
+    //% "Could not reach the smart card service. Check that it is installed and running."
+    QT_TRID_NOOP("lc-agent-call-unavailable");
+    //% "The smart card service did not answer in time. Try again."
+    QT_TRID_NOOP("lc-agent-call-timeout");
+    //% "Permission to use the smart card service was denied."
+    QT_TRID_NOOP("lc-agent-call-access-denied");
+    //% "This request was refused before any work on it started."
+    QT_TRID_NOOP("lc-agent-call-invalid-arguments");
+    //% "The connection to the smart card service was lost. Try again."
+    QT_TRID_NOOP("lc-agent-call-transport");
+    //% "The smart card service replied in a way this application does not understand. "
+    //% "The two may be different versions."
+    QT_TRID_NOOP("lc-agent-call-protocol");
+
+    // Operation progress phases.
+    //% "Preparing..."
+    QT_TRID_NOOP("lc-agent-phase-created");
+    //% "Connecting to the card..."
+    QT_TRID_NOOP("lc-agent-phase-connecting");
+    //% "Waiting for your confirmation..."
+    QT_TRID_NOOP("lc-agent-phase-awaiting-consent");
+    //% "Authenticating..."
+    QT_TRID_NOOP("lc-agent-phase-authenticating");
+    //% "Reading the card..."
+    QT_TRID_NOOP("lc-agent-phase-reading");
+    //% "Signing..."
+    QT_TRID_NOOP("lc-agent-phase-signing");
+    //% "Contacting the timestamp authority..."
+    QT_TRID_NOOP("lc-agent-phase-timestamping");
+    //% "Finished"
+    QT_TRID_NOOP("lc-agent-phase-done");
+
+    // Credential mutation outcomes.
+    //% "No result was reported."
+    QT_TRID_NOOP("lc-agent-outcome-unspecified");
+    //% "Done."
+    QT_TRID_NOOP("lc-agent-outcome-ok");
+    //% "Cancelled."
+    QT_TRID_NOOP("lc-agent-outcome-cancelled");
+    //% "A required field was missing from the request."
+    QT_TRID_NOOP("lc-agent-outcome-missing-fields");
+    //% "The PIN entered was incorrect."
+    QT_TRID_NOOP("lc-agent-outcome-invalid-pin");
+    //% "The credential is blocked."
+    QT_TRID_NOOP("lc-agent-outcome-blocked");
+    //% "The card reported an internal error."
+    QT_TRID_NOOP("lc-agent-outcome-plugin-error");
+    //% "This card does not support that operation."
+    QT_TRID_NOOP("lc-agent-outcome-unsupported");
+    //% "The signing key could not be activated."
+    QT_TRID_NOOP("lc-agent-outcome-key-activation-failed");
+    //% "The card was removed before the change was made."
+    QT_TRID_NOOP("lc-agent-outcome-card-removed");
 }
 
 QT_WARNING_POP

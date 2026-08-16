@@ -620,3 +620,69 @@ set_target_properties(TokenSectionTests PROPERTIES
     AUTORCC ON
 )
 gtest_discover_tests(TokenSectionTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# --- Agent service-layer suites ---
+#
+# Home for every src/agent/ unit suite. Deliberately GTest::gtest, NOT
+# gtest_main: the target's entry point is agentlayer_test_main.cpp, which
+# installs a QCoreApplication before RUN_ALL_TESTS so QTimer-driven and
+# transport-driven suites have a live application object and event
+# dispatcher. Qt6::Test is linked for QSignalSpy, which the controller and
+# watchdog suites use.
+#
+# The TEST_PREFIX is load-bearing: gtest_discover_tests registers the gtest
+# SUITE names (ResolvePresence, ...), so `ctest -R AgentLayer` only matches
+# through the prefix. Without it every filtered run of this target dies on
+# --no-tests=error against perfectly correct code.
+#
+# fake_gateway/ is test-only scaffolding — the scripted backend every offscreen
+# GUI suite in this campaign is driven by, plus the shared emission-contract
+# helpers both the fakes and the live controllers are asserted against. It is
+# compiled into test targets only and is never shipped. The abstract vtable
+# anchors (agentgateway/cardcontroller/signcontroller .cpp) must be compiled in
+# too: the fakes derive from those classes, so without the anchors the target
+# cannot link.
+add_executable(AgentLayerTests
+    agentlayer_test_main.cpp
+    agent_presence_test.cpp
+    agent_errortext_test.cpp
+    agent_fieldmerge_test.cpp
+    agent_opstallwatchdog_test.cpp
+    agent_signrequest_test.cpp
+    agent_liveagentgateway_test.cpp
+    fake_gateway_selftest.cpp
+    fake_gateway/fakeagentgateway.cpp
+    fake_gateway/fakecardcontroller.cpp
+    fake_gateway/fakesigncontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/agentgateway.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/cardcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/signcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/errortext.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/fieldmerge.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/opstallwatchdog.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/signrequest.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/live/liveagentgateway.cpp
+    # The live gateway MINTS these two (Task 9 Step 3b), so the suite that
+    # compiles it links them: a test target that stubbed them out would prove
+    # something the application never runs.
+    ${CMAKE_SOURCE_DIR}/src/agent/live/livecardcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/live/livesigncontroller.cpp
+)
+target_include_directories(AgentLayerTests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${PROJECT_BINARY_DIR}/../src
+)
+target_link_libraries(AgentLayerTests PRIVATE
+    GTest::gtest
+    Qt6::Core
+    Qt6::Test
+    LibreAgent::ClientQt
+)
+set_target_properties(AgentLayerTests PROPERTIES AUTOMOC ON)
+# TIMEOUT 30: the live-gateway suite dials the agent transport, so a wedged
+# or absent bus must FAIL this gate rather than wedge it. The client's own
+# probes are bounded (1 s handshake / 3 s call), so 30 s is pure margin.
+gtest_discover_tests(AgentLayerTests
+    TEST_PREFIX "AgentLayer."
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)

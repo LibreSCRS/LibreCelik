@@ -2184,6 +2184,186 @@
         <source>The configured Timestamp Authority URL is not a valid https:// endpoint.</source>
         <translation>The configured Timestamp Authority URL is not a valid https:// endpoint.</translation>
     </message>
+    <message id="lc-agent-error-card-removed">
+        <source>The card was removed before the operation finished.</source>
+        <translation>The card was removed before the operation finished.</translation>
+    </message>
+    <message id="lc-agent-error-credential-wrong">
+        <source>The PIN or access code entered was incorrect.</source>
+        <translation>The PIN or access code entered was incorrect.</translation>
+    </message>
+    <message id="lc-agent-error-credential-blocked">
+        <source>The card credential is blocked. Unblock it before trying again.</source>
+        <translation>The card credential is blocked. Unblock it before trying again.</translation>
+    </message>
+    <message id="lc-agent-error-communication">
+        <source>Communication with the card reader failed.</source>
+        <translation>Communication with the card reader failed.</translation>
+    </message>
+    <message id="lc-agent-error-parse">
+        <source>The data read from the card could not be interpreted.</source>
+        <translation>The data read from the card could not be interpreted.</translation>
+    </message>
+    <message id="lc-agent-error-unsupported-card">
+        <source>This card is not supported.</source>
+        <translation>This card is not supported.</translation>
+    </message>
+    <message id="lc-agent-error-auth-failed">
+        <source>Authentication with the card failed.</source>
+        <translation>Authentication with the card failed.</translation>
+    </message>
+    <message id="lc-agent-error-prompter">
+        <source>The secure entry prompt could not be shown.</source>
+        <translation>The secure entry prompt could not be shown.</translation>
+    </message>
+    <message id="lc-agent-error-capability-missing">
+        <source>This card does not support the requested operation.</source>
+        <translation>This card does not support the requested operation.</translation>
+    </message>
+    <message id="lc-agent-error-watchdog">
+        <source>The operation timed out.</source>
+        <translation>The operation timed out.</translation>
+    </message>
+    <message id="lc-agent-error-key-not-found">
+        <source>The selected certificate could not be found on the card.</source>
+        <translation>The selected certificate could not be found on the card.</translation>
+    </message>
+    <message id="lc-agent-error-key-ambiguous">
+        <source>More than one key matched the selection.</source>
+        <translation>More than one key matched the selection.</translation>
+    </message>
+    <message id="lc-agent-error-cert-expired-blocked">
+        <source>The signing certificate has expired.</source>
+        <translation>The signing certificate has expired.</translation>
+    </message>
+    <message id="lc-agent-error-chain-incomplete">
+        <source>The certificate chain could not be completed.</source>
+        <translation>The certificate chain could not be completed.</translation>
+    </message>
+    <message id="lc-agent-error-tsa-unreachable">
+        <source>The timestamp authority is unreachable.</source>
+        <translation>The timestamp authority is unreachable.</translation>
+    </message>
+    <message id="lc-agent-error-signing-engine">
+        <source>The signing engine reported an error.</source>
+        <translation>The signing engine reported an error.</translation>
+    </message>
+    <message id="lc-agent-error-rate-limited">
+        <source>Too many signing requests. Try again shortly.</source>
+        <translation>Too many signing requests. Try again shortly.</translation>
+    </message>
+    <message id="lc-agent-error-engine-unavailable">
+        <source>The signing service is not set up correctly — its security module could not be loaded. Check the installation.</source>
+        <translation>The signing service is not set up correctly — its security module could not be loaded. Check the installation.</translation>
+    </message>
+    <message id="lc-agent-error-invalid-document">
+        <source>The document you tried to sign is invalid or could not be read. Check the file.</source>
+        <translation>The document you tried to sign is invalid or could not be read. Check the file.</translation>
+    </message>
+    <message id="lc-agent-error-artifact-write">
+        <source>The document was signed, but the signed file could not be written to the output folder.</source>
+        <translation>The document was signed, but the signed file could not be written to the output folder.</translation>
+    </message>
+    <message id="lc-agent-error-generic">
+        <source>The operation did not finish, and no reason was reported.</source>
+        <translation>The operation did not finish, and no reason was reported.</translation>
+    </message>
+    <message id="lc-agent-call-unavailable">
+        <source>Could not reach the smart card service. Check that it is installed and running.</source>
+        <translation>Could not reach the smart card service. Check that it is installed and running.</translation>
+    </message>
+    <message id="lc-agent-call-timeout">
+        <source>The smart card service did not answer in time. Try again.</source>
+        <translation>The smart card service did not answer in time. Try again.</translation>
+    </message>
+    <message id="lc-agent-call-access-denied">
+        <source>Permission to use the smart card service was denied.</source>
+        <translation>Permission to use the smart card service was denied.</translation>
+    </message>
+    <message id="lc-agent-call-invalid-arguments">
+        <source>This request was refused before any work on it started.</source>
+        <translation>This request was refused before any work on it started.</translation>
+    </message>
+    <message id="lc-agent-call-transport">
+        <source>The connection to the smart card service was lost. Try again.</source>
+        <translation>The connection to the smart card service was lost. Try again.</translation>
+    </message>
+    <message id="lc-agent-call-protocol">
+        <source>The smart card service replied in a way this application does not understand. The two may be different versions.</source>
+        <translation>The smart card service replied in a way this application does not understand. The two may be different versions.</translation>
+    </message>
+    <message id="lc-agent-phase-connecting">
+        <source>Connecting to the card...</source>
+        <translation>Connecting to the card...</translation>
+    </message>
+    <message id="lc-agent-phase-awaiting-consent">
+        <source>Waiting for your confirmation...</source>
+        <translation>Waiting for your confirmation...</translation>
+    </message>
+    <message id="lc-agent-phase-authenticating">
+        <source>Authenticating...</source>
+        <translation>Authenticating...</translation>
+    </message>
+    <message id="lc-agent-phase-reading">
+        <source>Reading the card...</source>
+        <translation>Reading the card...</translation>
+    </message>
+    <message id="lc-agent-phase-signing">
+        <source>Signing...</source>
+        <translation>Signing...</translation>
+    </message>
+    <message id="lc-agent-phase-timestamping">
+        <source>Contacting the timestamp authority...</source>
+        <translation>Contacting the timestamp authority...</translation>
+    </message>
+    <message id="lc-agent-phase-done">
+        <source>Finished</source>
+        <translation>Finished</translation>
+    </message>
+    <message id="lc-agent-phase-created">
+        <source>Preparing...</source>
+        <translation>Preparing...</translation>
+    </message>
+    <message id="lc-agent-outcome-ok">
+        <source>Done.</source>
+        <translation>Done.</translation>
+    </message>
+    <message id="lc-agent-outcome-cancelled">
+        <source>Cancelled.</source>
+        <translation>Cancelled.</translation>
+    </message>
+    <message id="lc-agent-outcome-missing-fields">
+        <source>A required field was missing from the request.</source>
+        <translation>A required field was missing from the request.</translation>
+    </message>
+    <message id="lc-agent-outcome-invalid-pin">
+        <source>The PIN entered was incorrect.</source>
+        <translation>The PIN entered was incorrect.</translation>
+    </message>
+    <message id="lc-agent-outcome-blocked">
+        <source>The credential is blocked.</source>
+        <translation>The credential is blocked.</translation>
+    </message>
+    <message id="lc-agent-outcome-plugin-error">
+        <source>The card reported an internal error.</source>
+        <translation>The card reported an internal error.</translation>
+    </message>
+    <message id="lc-agent-outcome-unsupported">
+        <source>This card does not support that operation.</source>
+        <translation>This card does not support that operation.</translation>
+    </message>
+    <message id="lc-agent-outcome-key-activation-failed">
+        <source>The signing key could not be activated.</source>
+        <translation>The signing key could not be activated.</translation>
+    </message>
+    <message id="lc-agent-outcome-card-removed">
+        <source>The card was removed before the change was made.</source>
+        <translation>The card was removed before the change was made.</translation>
+    </message>
+    <message id="lc-agent-outcome-unspecified">
+        <source>No result was reported.</source>
+        <translation>No result was reported.</translation>
+    </message>
 </context>
 <context>
     <name>CertificateViewerWidget</name>

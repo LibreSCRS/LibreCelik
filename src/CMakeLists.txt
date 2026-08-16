@@ -29,6 +29,27 @@ set(PROJECT_SOURCES
 	utils/utils.h
         utils/iconutils.h
         utils/stringutils.h
+        agent/agentgateway.h
+        agent/agentgateway.cpp
+        agent/cardcontroller.h
+        agent/cardcontroller.cpp
+        agent/signcontroller.h
+        agent/signcontroller.cpp
+        agent/errortext.h
+        agent/errortext.cpp
+        agent/fieldmerge.h
+        agent/fieldmerge.cpp
+        agent/opstallwatchdog.h
+        agent/opstallwatchdog.cpp
+        agent/optionalsections.h
+        agent/signrequest.h
+        agent/signrequest.cpp
+        agent/live/liveagentgateway.h
+        agent/live/liveagentgateway.cpp
+        agent/live/livecardcontroller.h
+        agent/live/livecardcontroller.cpp
+        agent/live/livesigncontroller.h
+        agent/live/livesigncontroller.cpp
         smartcard/qsmartcardmonitor.h
         smartcard/qsmartcardmonitor.cpp
         smartcard/smartcardreaderlistener.h
@@ -208,7 +229,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     LibreSCRS::Plugin
     LibreSCRS::SmartCard
     LibreSCRS::Trust
-    LibreSCRS::Certificate)
+    LibreSCRS::Certificate
+    LibreAgent::ClientQt)
 
 if(APPLE)
     target_link_libraries(${PROJECT_NAME} PRIVATE "-framework AppKit")

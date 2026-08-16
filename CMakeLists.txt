@@ -77,6 +77,10 @@ else()
     set(MIDDLEWARE_VERSION ${LibreMiddleware_VERSION})
 endif()
 
+# Hybrid LibreAgent consumption: FetchContent at cmake/libreagent.pin
+# (default) or find_package(CONFIG). Provides LibreAgent::ClientQt.
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOrUseLibreAgent.cmake)
+
 # Digital signing UI — requires LibreMiddleware built with BUILD_SIGNING=ON.
 # Can be independently disabled even if LM has signing support.
 option(ENABLE_SIGNING "Enable digital signing UI (requires LM signing support)" ON)

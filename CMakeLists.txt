@@ -45,15 +45,6 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOrUseLibreAgent.cmake)
 option(ENABLE_SIGNING "Enable digital signing UI" ON)
 set(LIBRECELIK_SIGNING_ENABLED ${ENABLE_SIGNING})
 
-# The signing wizard's end-to-end suite compiles every wizard translation unit
-# directly, and the whole wizard -- preview, page trio, delegates -- is re-typed
-# onto the agent one page at a time. The suite's own build description is
-# re-pointed once, after the last page has landed, rather than edited alongside
-# each page for no review value. The switch is OFF for exactly that window, and
-# the suite is absent from the test listing while it is.
-option(LIBRECELIK_WIZARD_E2E_READY
-    "Build the signing wizard end-to-end suite against the re-typed wizard" OFF)
-
 set(LIBRECELIK_GUI_PLUGIN_DIR "${CMAKE_BINARY_DIR}/gui-plugins" CACHE PATH
     "Directory where GUI plugin .so files are placed")
 

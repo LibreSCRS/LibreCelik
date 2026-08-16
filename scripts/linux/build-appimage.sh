@@ -8,7 +8,6 @@
 # Prerequisites:
 #   - CMake Release build already compiled in BUILD_DIR
 #   - Qt6 development tools on PATH (qmake6)
-#   - pcscd (libpcsclite) installed on the build machine so the binary links
 #   - wget or curl
 #
 # The script auto-downloads linuxdeploy + linuxdeploy-plugin-qt + appimagetool
@@ -259,35 +258,34 @@ if [[ $DEPLOY_EXIT -ne 0 ]] && [[ -z "$KDE_PLUGINS" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Phase 2b — Copy LibreSCRS plugins (middleware + GUI) into AppDir.
+# Phase 2b — Copy the LibreSCRS GUI plugins into AppDir.
 #
 # The app resolves these at runtime via ../lib/ relative to the binary.
+# Card access is not bundled at all: it lives in the separate agent service,
+# which this AppImage never ships (the app guides the user to install it),
+# so there is no card-side plugin directory, PKCS#11 module or certificate
+# store to stage here.
 # ---------------------------------------------------------------------------
-MW_PLUGIN_DIR="$BUILD_DIR/plugins"
 GUI_PLUGIN_DIR="$BUILD_DIR/gui-plugins"
 
-# --- PKCS#11 module (for digital signing via PKCS#11 tokens) ---
-PKCS11_SO="$BUILD_DIR/lib/pkcs11/librescrs-pkcs11.so"
-if [[ -f "$PKCS11_SO" ]]; then
-    echo "Copying PKCS#11 module..."
-    cp "$PKCS11_SO" "$APPDIR/usr/lib/"
-    echo "  $(basename "$PKCS11_SO")"
-else
-    echo "ERROR: PKCS#11 module not found at $PKCS11_SO — signing would not work."
-    echo "       Ensure LibreMiddleware builds librescrs-pkcs11 with LIBRARY_OUTPUT_DIRECTORY set to \${CMAKE_BINARY_DIR}/lib/pkcs11."
+# --- Agent client library ---
+# The executable links it (DT_NEEDED), so linuxdeploy stages it in Phase 1
+# together with the Qt libraries and rewrites its RPATH. The wire codec is a
+# static archive folded into this library, so there is no second shared object
+# to look for. Assert it landed: without it the AppImage cannot reach the
+# agent at all, and a silent miss would only surface on the user's machine.
+if ! ls "$APPDIR/usr/lib"/liblibrescrs-agentclient-qt.so* &>/dev/null; then
+    echo "ERROR: agent client library not found in $APPDIR/usr/lib —"
+    echo "       linuxdeploy did not stage liblibrescrs-agentclient-qt.so*."
+    echo "       Check that $BINARY links it and that its build-tree RPATH resolves."
     exit 1
 fi
+echo "Agent client library in AppDir:"
+ls "$APPDIR/usr/lib"/liblibrescrs-agentclient-qt.so*
 
 # --- DSS signing bundle (JRE + JAR) ---
 # Skipped: native signing backend is the default and does not require Java.
 # DSS is deprecated. To re-enable, set SIGNING_BACKEND=dss and uncomment.
-
-echo "Copying middleware plugins..."
-mkdir -p "$APPDIR/usr/lib/middleware-plugins"
-for f in "$MW_PLUGIN_DIR"/lib*-plugin.so; do
-    [[ -f "$f" ]] && cp "$f" "$APPDIR/usr/lib/middleware-plugins/"
-done
-ls "$APPDIR/usr/lib/middleware-plugins/"
 
 echo "Copying GUI plugins..."
 mkdir -p "$APPDIR/usr/lib/gui-plugins"
@@ -362,29 +360,6 @@ if [[ -n "$JP2_PLUGIN" ]]; then
 else
     echo "  WARNING: libqjp2.so not found — JPEG2000 images (eMRTD) will not display"
     echo "  Install qt6-image-formats-plugins (system) or qtimageformats (aqtinstall)"
-fi
-
-# ---------------------------------------------------------------------------
-# Phase 2c — Bundle the middleware certificate directory.
-#
-# The runtime walker resolves the certs dir from <exe>/../share/librescrs/
-# certificates at load time. Linux FHS layout: <exe>/../share/librescrs/
-# certificates. LM_SRC env override supports a local LibreMiddleware
-# checkout (FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE); default is the
-# FetchContent path.
-# ---------------------------------------------------------------------------
-LM_SRC="${LM_SRC:-$BUILD_DIR/_deps/libremiddleware-src}"
-CERT_SRC="$LM_SRC/thirdparty/certificates"
-APPDIR_CERT_DIR="$APPDIR/usr/share/librescrs/certificates"
-if [[ -d "$CERT_SRC" ]]; then
-    echo "Bundling middleware certificates..."
-    mkdir -p "$APPDIR_CERT_DIR"
-    cp -r "$CERT_SRC/." "$APPDIR_CERT_DIR/"
-    echo "[appimage] copied bundled certs to $APPDIR_CERT_DIR"
-else
-    echo "ERROR: middleware certs directory not found at $CERT_SRC"
-    echo "       Set LM_SRC=<libremiddleware-source> if using a custom checkout."
-    exit 1
 fi
 
 # ---------------------------------------------------------------------------

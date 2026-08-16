@@ -3,10 +3,9 @@
 # SPDX-FileCopyrightText: 2026 hirashix0
 """Build-time third-party license notice generator for LibreCelik.
 
-Reads one or more license manifests (the LibreCelik manifest and,
-optionally, the LibreMiddleware ``thirdparty`` manifest) and renders a
-single deterministic ``THIRD-PARTY-LICENSES.txt`` that lists the license
-of every bundled third-party component.
+Reads the LibreCelik license manifest and renders a single deterministic
+``THIRD-PARTY-LICENSES.txt`` that lists the license of every bundled
+third-party component.
 
 Components are grouped by the *resolved* license-text file: dozens of
 MIT-licensed libraries that all point at the same ``mit.txt`` collapse
@@ -153,11 +152,6 @@ def main(argv=None):
         "against the LC repo root).",
     )
     parser.add_argument(
-        "--lm-manifest",
-        help="Optional LibreMiddleware thirdparty manifest JSON (text "
-        "paths resolve against the LM thirdparty/ directory).",
-    )
-    parser.add_argument(
         "-o",
         "--output",
         required=True,
@@ -180,13 +174,6 @@ def main(argv=None):
     lc_root = os.path.dirname(os.path.dirname(os.path.abspath(args.manifest)))
     base_dirs = {"lc": lc_root}
     components = _load_components(args.manifest, "lc")
-
-    if args.lm_manifest and os.path.isfile(args.lm_manifest):
-        # LM text paths are relative to LM's thirdparty/ directory, which
-        # is the manifest file's own parent directory.
-        lm_dir = os.path.dirname(os.path.abspath(args.lm_manifest))
-        base_dirs["lm"] = lm_dir
-        components += _load_components(args.lm_manifest, "lm")
 
     # Filter components by platform BEFORE rendering so the embedded notice
     # lists only what actually ships in this artifact. When --platform is

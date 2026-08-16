@@ -17,10 +17,6 @@
         <source>♥ Support this project — &lt;a href=&quot;https://librescrs.github.io/donate&quot;&gt;librescrs.github.io/donate&lt;/a&gt;</source>
         <translation>♥ Подржите овај пројекат — &lt;a href=&quot;https://librescrs.github.io/donate&quot;&gt;librescrs.github.io/donate&lt;/a&gt;</translation>
     </message>
-    <message id="lc-error-auth-failed">
-        <source>Authentication failed</source>
-        <translation>Аутентификација неуспешна</translation>
-    </message>
     <message id="lc-doc-unavailable">
         <source>Unavailable</source>
         <translation>Недоступно</translation>
@@ -277,45 +273,9 @@
         <source>PIN retries remaining: %1</source>
         <translation>Преостало покушаја за PIN: %1</translation>
     </message>
-    <message id="lc-changepin-transport-placeholder">
-        <source>Transport PIN</source>
-        <translation>Транспортни PIN</translation>
-    </message>
-    <message id="lc-changepin-current">
-        <source>Current PIN</source>
-        <translation>Тренутни PIN</translation>
-    </message>
-    <message id="lc-changepin-new">
-        <source>New PIN</source>
-        <translation>Нови PIN</translation>
-    </message>
-    <message id="lc-changepin-confirm">
-        <source>Confirm new PIN</source>
-        <translation>Потврди нови PIN</translation>
-    </message>
-    <message id="lc-changepin-changing">
-        <source>Changing PIN...</source>
-        <translation>Мењање PIN-а...</translation>
-    </message>
     <message id="lc-changepin-blocked">
         <source>PIN is blocked!</source>
         <translation>PIN је блокиран!</translation>
-    </message>
-    <message id="lc-changepin-success">
-        <source>PIN changed successfully.</source>
-        <translation>PIN је успешно промењен.</translation>
-    </message>
-    <message id="lc-changepin-close">
-        <source>Close</source>
-        <translation>Затвори</translation>
-    </message>
-    <message id="lc-changepin-mismatch">
-        <source>New PIN and confirmation do not match.</source>
-        <translation>Нови PIN и потврда се не поклапају.</translation>
-    </message>
-    <message id="lc-changepin-show-hide">
-        <source>Show/Hide PIN</source>
-        <translation>Прикажи/сакриј PIN</translation>
     </message>
     <message id="lc-cert-tree-field">
         <source>Field</source>
@@ -421,10 +381,6 @@
         <source>Unparseable certificate</source>
         <translation>Сертификат није могуће растумачити</translation>
     </message>
-    <message id="lc-cert-field-curve">
-        <source>Curve</source>
-        <translation>Крива</translation>
-    </message>
     <message id="lc-cert-ku-key-cert-sign">
         <source>Certificate Sign</source>
         <translation>Потписивање сертификата</translation>
@@ -501,10 +457,6 @@
         <source>Status of Foreigner</source>
         <translation>Статус странца</translation>
     </message>
-    <message id="lc-changepin-failed">
-        <source>PIN change failed.</source>
-        <translation>Промена PIN-а неуспешна.</translation>
-    </message>
     <message id="lc-pin-prompter-hint">
         <source>The system dialog will ask for your current and new codes.</source>
         <translation>Системски прозор ће затражити ваш тренутни и нови код.</translation>
@@ -548,14 +500,6 @@
     <message id="lc-pin-guidance-key-activation-issuer">
         <source>The signing key is activated by the issuer.</source>
         <translation>Активацију кључа за потписивање обавља издавалац.</translation>
-    </message>
-    <message id="lc-error-no-connection">
-        <source>No card connection available</source>
-        <translation>Нема везе са картицом</translation>
-    </message>
-    <message id="lc-error-no-plugin">
-        <source>No plugin could read this card.</source>
-        <translation>Ниједан додатак не може да прочита ову картицу.</translation>
     </message>
     <message id="lc-euvrc-title">
         <source>Vehicle Registration</source>
@@ -1180,15 +1124,6 @@
         <source>Add visual signature</source>
         <translation>Додај визуелни потпис</translation>
     </message>
-    <message id="lc-sign-pin-label">
-        <source>PIN:</source>
-        <oldsource>Enter PIN for signing key:</oldsource>
-        <translation>ПИН:</translation>
-    </message>
-    <message id="lc-sign-can-label">
-        <source>CAN:</source>
-        <translation>CAN:</translation>
-    </message>
     <message id="lc-sign-btn-sign">
         <source>Sign</source>
         <translation>Потпиши</translation>
@@ -1200,14 +1135,6 @@
     <message id="lc-sign-btn-next">
         <source>Next</source>
         <translation>Даље</translation>
-    </message>
-    <message id="lc-sign-preparing">
-        <source>Preparing to sign...</source>
-        <translation>Припрема за потписивање...</translation>
-    </message>
-    <message id="lc-sign-progress">
-        <source>Signing file %1 of %2: %3</source>
-        <translation>Потписивање фајла %1 од %2: %3</translation>
     </message>
     <message id="lc-sign-summary-cert">
         <source>Certificate</source>
@@ -1337,34 +1264,6 @@
     <message id="lc-about-license-apache">
         <source>Apache License 2.0</source>
         <translation>Apache License 2.0</translation>
-    </message>
-    <message id="lc-about-license-static">
-        <source>statically linked</source>
-        <translation>статички повезан</translation>
-    </message>
-    <message id="lc-about-license-bundled">
-        <source>bundled subset</source>
-        <translation>ugrađeni podskup</translation>
-    </message>
-    <message id="lc-about-license-ofl">
-        <source>SIL Open Font License 1.1</source>
-        <translation>SIL Open Font License 1.1</translation>
-    </message>
-    <message id="lc-about-license-opensc">
-        <source>LGPL-2.1-or-later — statically linked, modified fork</source>
-        <translation>LGPL-2.1-or-later — статички повезан, измењени форк</translation>
-    </message>
-    <message id="lc-about-license-json">
-        <source>MIT — vendored</source>
-        <translation>MIT — уграђена</translation>
-    </message>
-    <message id="lc-about-license-miniz">
-        <source>MIT — vendored</source>
-        <translation>MIT — уграђена</translation>
-    </message>
-    <message id="lc-about-license-zlib">
-        <source>zlib license — transitive dependency</source>
-        <translation>zlib лиценца — транзитивна зависност</translation>
     </message>
     <message id="lc-about-license-qt">
         <source>GNU Lesser General Public License v3.0 — dynamically linked</source>
@@ -1790,14 +1689,6 @@
         <source>Print</source>
         <translation>Штампај</translation>
     </message>
-    <message id="lc-emrtd-auth-required">
-        <source>Authentication Required</source>
-        <translation>Потребна аутентификација</translation>
-    </message>
-    <message id="lc-emrtd-auth-failed">
-        <source>Authentication Failed</source>
-        <translation>Аутентификација неуспешна</translation>
-    </message>
     <message id="lc-emrtd-no-data-message">
         <source>Authentication failed — travel document data could not be read. Check CAN or MRZ and reinsert the card to try again.</source>
         <translation>Аутентификација неуспешна — подаци путне исправе нису могли бити прочитани. Проверите CAN или MRZ и поново убаците картицу.</translation>
@@ -1878,10 +1769,6 @@
         <source>Sign</source>
         <translation>Потпиши</translation>
     </message>
-    <message id="lc-token-key-subject">
-        <source>Subject</source>
-        <translation>Субјекат</translation>
-    </message>
     <message id="lc-token-key-algorithm">
         <source>Algorithm</source>
         <translation>Алгоритам</translation>
@@ -1921,50 +1808,6 @@
     <message id="lc-personal-data-title">
         <source>Personal Data</source>
         <translation>Лични подаци</translation>
-    </message>
-    <message id="lc-emrtd-auth-can-title">
-        <source>CAN</source>
-        <translation>CAN</translation>
-    </message>
-    <message id="lc-emrtd-auth-can-desc">
-        <source>6-digit number on card front</source>
-        <translation>6-цифрени број на предњој страни картице</translation>
-    </message>
-    <message id="lc-emrtd-auth-mrz-title">
-        <source>MRZ</source>
-        <translation>MRZ</translation>
-    </message>
-    <message id="lc-emrtd-auth-mrz-desc">
-        <source>Data from document</source>
-        <translation>Подаци са документа</translation>
-    </message>
-    <message id="lc-emrtd-auth-mrz-docnum">
-        <source>Document number</source>
-        <translation>Број документа</translation>
-    </message>
-    <message id="lc-emrtd-auth-mrz-dob">
-        <source>Date of birth</source>
-        <translation>Датум рођења</translation>
-    </message>
-    <message id="lc-emrtd-auth-mrz-expiry">
-        <source>Date of expiry</source>
-        <translation>Датум истека</translation>
-    </message>
-    <message id="lc-emrtd-authenticate">
-        <source>Authenticate</source>
-        <translation>Аутентификуј</translation>
-    </message>
-    <message id="lc-emrtd-authenticating">
-        <source>Authenticating...</source>
-        <translation>Аутентификација...</translation>
-    </message>
-    <message id="lc-emrtd-auth-can-tab">
-        <source>CAN</source>
-        <translation>CAN</translation>
-    </message>
-    <message id="lc-emrtd-auth-mrz-tab">
-        <source>MRZ</source>
-        <translation>MRZ</translation>
     </message>
     <message id="lc-emrtd-travel-document">
         <source>Travel Document</source>
@@ -2021,10 +1864,6 @@
     <message id="lc-emrtd-custody-info">
         <source>Custody Information</source>
         <translation>Подаци о старатељству</translation>
-    </message>
-    <message id="lc-emrtd-insert-mrz-hint">
-        <source>Insert the MRZ data from the bottom of the document</source>
-        <translation>Унесите MRZ податке са дна документа</translation>
     </message>
     <message id="lc-piv-widget-title">
         <source>PIV (NIST SP 800-73)</source>
@@ -2230,46 +2069,6 @@
         <source>OK: %1 → %2</source>
         <translation>OK: %1 → %2</translation>
     </message>
-    <message id="lc-sign-fail-too-large">
-        <source>FAILED: %1 — file exceeds 256 MB size limit</source>
-        <translation>ГРЕШКА: %1 — фајл прелази ограничење од 256 MB</translation>
-    </message>
-    <message id="lc-sign-fail-sign">
-        <source>FAILED: %1 — %2</source>
-        <translation>ГРЕШКА: %1 — %2</translation>
-    </message>
-    <message id="lc-sign-fail-cancelled">
-        <source>FAILED: signing was cancelled</source>
-        <translation>ГРЕШКА: потписивање је отказано</translation>
-    </message>
-    <message id="lc-sign-fail-pin">
-        <source>FAILED: incorrect PIN</source>
-        <translation>ГРЕШКА: неисправан ПИН</translation>
-    </message>
-    <message id="lc-sign-fail-blocked">
-        <source>FAILED: card is blocked</source>
-        <translation>ГРЕШКА: картица је блокирана</translation>
-    </message>
-    <message id="lc-sign-fail-tsa">
-        <source>FAILED: timestamp authority unreachable</source>
-        <translation>ГРЕШКА: временски сервер је недоступан</translation>
-    </message>
-    <message id="lc-sign-fail-trust">
-        <source>FAILED: trust store unavailable</source>
-        <translation>ГРЕШКА: складиште поверења је недоступно</translation>
-    </message>
-    <message id="lc-sign-fail-invalid">
-        <source>FAILED: invalid signing request</source>
-        <translation>ГРЕШКА: неисправан захтев за потписивање</translation>
-    </message>
-    <message id="lc-sign-fail-document">
-        <source>FAILED: the document is invalid or unreadable</source>
-        <translation>ГРЕШКА: документ је неисправан или нечитљив</translation>
-    </message>
-    <message id="lc-sign-fail-generic">
-        <source>FAILED: signing failed — see log for details</source>
-        <translation>ГРЕШКА: потписивање неуспешно — погледајте лог за детаље</translation>
-    </message>
     <message id="lc-sign-complete">
         <source>Signing complete: %1 succeeded, %2 failed</source>
         <translation>Потписивање завршено: %1 успешно, %2 неуспешно</translation>
@@ -2297,10 +2096,6 @@
     <message id="lc-sign-output-folder-error-message">
         <source>Could not create the output folder.</source>
         <translation>Није могуће креирати излазни фолдер.</translation>
-    </message>
-    <message id="lc-sign-unknown-error">
-        <source>Unknown signing error</source>
-        <translation>Непозната грешка приликом потписивања</translation>
     </message>
     <message id="lc-sign-tsa-invalid-title">
         <source>Invalid TSA URL</source>

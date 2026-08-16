@@ -17,10 +17,6 @@
         <source>♥ Support this project — &lt;a href=&quot;https://librescrs.github.io/donate&quot;&gt;librescrs.github.io/donate&lt;/a&gt;</source>
         <translation>♥ Support this project — &lt;a href=&quot;https://librescrs.github.io/donate&quot;&gt;librescrs.github.io/donate&lt;/a&gt;</translation>
     </message>
-    <message id="lc-error-auth-failed">
-        <source>Authentication failed</source>
-        <translation>Authentication failed</translation>
-    </message>
     <message id="lc-doc-unavailable">
         <source>Unavailable</source>
         <translation>Unavailable</translation>
@@ -277,45 +273,9 @@
         <source>PIN retries remaining: %1</source>
         <translation>PIN retries remaining: %1</translation>
     </message>
-    <message id="lc-changepin-transport-placeholder">
-        <source>Transport PIN</source>
-        <translation>Transport PIN</translation>
-    </message>
-    <message id="lc-changepin-current">
-        <source>Current PIN</source>
-        <translation>Current PIN</translation>
-    </message>
-    <message id="lc-changepin-new">
-        <source>New PIN</source>
-        <translation>New PIN</translation>
-    </message>
-    <message id="lc-changepin-confirm">
-        <source>Confirm new PIN</source>
-        <translation>Confirm new PIN</translation>
-    </message>
-    <message id="lc-changepin-changing">
-        <source>Changing PIN...</source>
-        <translation>Changing PIN...</translation>
-    </message>
     <message id="lc-changepin-blocked">
         <source>PIN is blocked!</source>
         <translation>PIN is blocked!</translation>
-    </message>
-    <message id="lc-changepin-success">
-        <source>PIN changed successfully.</source>
-        <translation>PIN changed successfully.</translation>
-    </message>
-    <message id="lc-changepin-close">
-        <source>Close</source>
-        <translation>Close</translation>
-    </message>
-    <message id="lc-changepin-mismatch">
-        <source>New PIN and confirmation do not match.</source>
-        <translation>New PIN and confirmation do not match.</translation>
-    </message>
-    <message id="lc-changepin-show-hide">
-        <source>Show/Hide PIN</source>
-        <translation>Show/Hide PIN</translation>
     </message>
     <message id="lc-cert-tree-field">
         <source>Field</source>
@@ -421,10 +381,6 @@
         <source>Unparseable certificate</source>
         <translation>Unparseable certificate</translation>
     </message>
-    <message id="lc-cert-field-curve">
-        <source>Curve</source>
-        <translation>Curve</translation>
-    </message>
     <message id="lc-cert-ku-key-cert-sign">
         <source>Certificate Sign</source>
         <translation>Certificate Sign</translation>
@@ -501,10 +457,6 @@
         <source>Status of Foreigner</source>
         <translation>Status of Foreigner</translation>
     </message>
-    <message id="lc-changepin-failed">
-        <source>PIN change failed.</source>
-        <translation>PIN change failed.</translation>
-    </message>
     <message id="lc-pin-prompter-hint">
         <source>The system dialog will ask for your current and new codes.</source>
         <translation>The system dialog will ask for your current and new codes.</translation>
@@ -548,14 +500,6 @@
     <message id="lc-pin-guidance-key-activation-issuer">
         <source>The signing key is activated by the issuer.</source>
         <translation>The signing key is activated by the issuer.</translation>
-    </message>
-    <message id="lc-error-no-connection">
-        <source>No card connection available</source>
-        <translation>No card connection available</translation>
-    </message>
-    <message id="lc-error-no-plugin">
-        <source>No plugin could read this card.</source>
-        <translation>No plugin could read this card.</translation>
     </message>
     <message id="lc-euvrc-title">
         <source>Vehicle Registration</source>
@@ -1180,15 +1124,6 @@
         <source>Add visual signature</source>
         <translation>Add visual signature</translation>
     </message>
-    <message id="lc-sign-pin-label">
-        <source>PIN:</source>
-        <oldsource>Enter PIN for signing key:</oldsource>
-        <translation>PIN:</translation>
-    </message>
-    <message id="lc-sign-can-label">
-        <source>CAN:</source>
-        <translation>CAN:</translation>
-    </message>
     <message id="lc-sign-btn-sign">
         <source>Sign</source>
         <translation>Sign</translation>
@@ -1200,14 +1135,6 @@
     <message id="lc-sign-btn-next">
         <source>Next</source>
         <translation>Next</translation>
-    </message>
-    <message id="lc-sign-preparing">
-        <source>Preparing to sign...</source>
-        <translation>Preparing to sign...</translation>
-    </message>
-    <message id="lc-sign-progress">
-        <source>Signing file %1 of %2: %3</source>
-        <translation>Signing file %1 of %2: %3</translation>
     </message>
     <message id="lc-sign-summary-cert">
         <source>Certificate</source>
@@ -1337,34 +1264,6 @@
     <message id="lc-about-license-apache">
         <source>Apache License 2.0</source>
         <translation>Apache License 2.0</translation>
-    </message>
-    <message id="lc-about-license-static">
-        <source>statically linked</source>
-        <translation>statically linked</translation>
-    </message>
-    <message id="lc-about-license-bundled">
-        <source>bundled subset</source>
-        <translation>bundled subset</translation>
-    </message>
-    <message id="lc-about-license-ofl">
-        <source>SIL Open Font License 1.1</source>
-        <translation>SIL Open Font License 1.1</translation>
-    </message>
-    <message id="lc-about-license-opensc">
-        <source>LGPL-2.1-or-later — statically linked, modified fork</source>
-        <translation>LGPL-2.1-or-later — statically linked, modified fork</translation>
-    </message>
-    <message id="lc-about-license-json">
-        <source>MIT — vendored</source>
-        <translation>MIT — vendored</translation>
-    </message>
-    <message id="lc-about-license-miniz">
-        <source>MIT — vendored</source>
-        <translation>MIT — vendored</translation>
-    </message>
-    <message id="lc-about-license-zlib">
-        <source>zlib license — transitive dependency</source>
-        <translation>zlib license — transitive dependency</translation>
     </message>
     <message id="lc-about-license-qt">
         <source>GNU Lesser General Public License v3.0 — dynamically linked</source>
@@ -1790,14 +1689,6 @@
         <source>Print</source>
         <translation>Print</translation>
     </message>
-    <message id="lc-emrtd-auth-required">
-        <source>Authentication Required</source>
-        <translation>Authentication Required</translation>
-    </message>
-    <message id="lc-emrtd-auth-failed">
-        <source>Authentication Failed</source>
-        <translation>Authentication Failed</translation>
-    </message>
     <message id="lc-emrtd-no-data-message">
         <source>Authentication failed — travel document data could not be read. Check CAN or MRZ and reinsert the card to try again.</source>
         <translation>Authentication failed — travel document data could not be read. Check CAN or MRZ and reinsert the card to try again.</translation>
@@ -1878,10 +1769,6 @@
         <source>Sign</source>
         <translation>Sign</translation>
     </message>
-    <message id="lc-token-key-subject">
-        <source>Subject</source>
-        <translation>Subject</translation>
-    </message>
     <message id="lc-token-key-algorithm">
         <source>Algorithm</source>
         <translation>Algorithm</translation>
@@ -1921,50 +1808,6 @@
     <message id="lc-personal-data-title">
         <source>Personal Data</source>
         <translation>Personal Data</translation>
-    </message>
-    <message id="lc-emrtd-auth-can-title">
-        <source>CAN</source>
-        <translation>CAN</translation>
-    </message>
-    <message id="lc-emrtd-auth-can-desc">
-        <source>6-digit number on card front</source>
-        <translation>6-digit number on card front</translation>
-    </message>
-    <message id="lc-emrtd-auth-mrz-title">
-        <source>MRZ</source>
-        <translation>MRZ</translation>
-    </message>
-    <message id="lc-emrtd-auth-mrz-desc">
-        <source>Data from document</source>
-        <translation>Data from document</translation>
-    </message>
-    <message id="lc-emrtd-auth-mrz-docnum">
-        <source>Document number</source>
-        <translation>Document number</translation>
-    </message>
-    <message id="lc-emrtd-auth-mrz-dob">
-        <source>Date of birth</source>
-        <translation>Date of birth</translation>
-    </message>
-    <message id="lc-emrtd-auth-mrz-expiry">
-        <source>Date of expiry</source>
-        <translation>Date of expiry</translation>
-    </message>
-    <message id="lc-emrtd-authenticate">
-        <source>Authenticate</source>
-        <translation>Authenticate</translation>
-    </message>
-    <message id="lc-emrtd-authenticating">
-        <source>Authenticating...</source>
-        <translation>Authenticating...</translation>
-    </message>
-    <message id="lc-emrtd-auth-can-tab">
-        <source>CAN</source>
-        <translation>CAN</translation>
-    </message>
-    <message id="lc-emrtd-auth-mrz-tab">
-        <source>MRZ</source>
-        <translation>MRZ</translation>
     </message>
     <message id="lc-emrtd-travel-document">
         <source>Travel Document</source>
@@ -2021,10 +1864,6 @@
     <message id="lc-emrtd-custody-info">
         <source>Custody Information</source>
         <translation>Custody Information</translation>
-    </message>
-    <message id="lc-emrtd-insert-mrz-hint">
-        <source>Insert the MRZ data from the bottom of the document</source>
-        <translation>Insert the MRZ data from the bottom of the document</translation>
     </message>
     <message id="lc-piv-widget-title">
         <source>PIV (NIST SP 800-73)</source>
@@ -2229,46 +2068,6 @@
         <source>OK: %1 → %2</source>
         <translation>OK: %1 → %2</translation>
     </message>
-    <message id="lc-sign-fail-too-large">
-        <source>FAILED: %1 — file exceeds 256 MB size limit</source>
-        <translation>FAILED: %1 — file exceeds 256 MB size limit</translation>
-    </message>
-    <message id="lc-sign-fail-sign">
-        <source>FAILED: %1 — %2</source>
-        <translation>FAILED: %1 — %2</translation>
-    </message>
-    <message id="lc-sign-fail-cancelled">
-        <source>FAILED: signing was cancelled</source>
-        <translation>FAILED: signing was cancelled</translation>
-    </message>
-    <message id="lc-sign-fail-pin">
-        <source>FAILED: incorrect PIN</source>
-        <translation>FAILED: incorrect PIN</translation>
-    </message>
-    <message id="lc-sign-fail-blocked">
-        <source>FAILED: card is blocked</source>
-        <translation>FAILED: card is blocked</translation>
-    </message>
-    <message id="lc-sign-fail-tsa">
-        <source>FAILED: timestamp authority unreachable</source>
-        <translation>FAILED: timestamp authority unreachable</translation>
-    </message>
-    <message id="lc-sign-fail-trust">
-        <source>FAILED: trust store unavailable</source>
-        <translation>FAILED: trust store unavailable</translation>
-    </message>
-    <message id="lc-sign-fail-invalid">
-        <source>FAILED: invalid signing request</source>
-        <translation>FAILED: invalid signing request</translation>
-    </message>
-    <message id="lc-sign-fail-document">
-        <source>FAILED: the document is invalid or unreadable</source>
-        <translation>FAILED: the document is invalid or unreadable</translation>
-    </message>
-    <message id="lc-sign-fail-generic">
-        <source>FAILED: signing failed — see log for details</source>
-        <translation>FAILED: signing failed — see log for details</translation>
-    </message>
     <message id="lc-sign-complete">
         <source>Signing complete: %1 succeeded, %2 failed</source>
         <translation>Signing complete: %1 succeeded, %2 failed</translation>
@@ -2295,10 +2094,6 @@
     <message id="lc-sign-output-folder-error-message">
         <source>Could not create the output folder.</source>
         <translation>Could not create the output folder.</translation>
-    </message>
-    <message id="lc-sign-unknown-error">
-        <source>Unknown signing error</source>
-        <translation>Unknown signing error</translation>
     </message>
     <message id="lc-sign-tsa-invalid-title">
         <source>Invalid TSA URL</source>

@@ -113,9 +113,12 @@ jobs:
         # Release matches what users receive — same `-O2 -DNDEBUG` code
         # path runs in production. Debug coverage lives in the developer
         # workflow; the CI gate exists to catch regressions in the
-        # shipped configuration. LM is built transitively via FetchContent
-        # in Release too, giving consumer-side Release cross-check of the
-        # LM 4.0 surface.
+        # shipped configuration. The agent client library is built
+        # transitively via FetchContent at the revision recorded in
+        # cmake/libreagent.pin — a fixed commit SHA, never a branch — so
+        # this job also gives a consumer-side Release cross-check of that
+        # exact client revision. Qt6 is the only external toolchain the
+        # fetch needs.
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
 
       - name: Build
@@ -128,9 +131,6 @@ jobs:
           QT_QPA_PLATFORM: offscreen
         run: ctest --output-on-failure --no-tests=error --test-dir build/test
 
-      - name: Test (LibreMiddleware)
-        run: ctest --output-on-failure --no-tests=error --test-dir build/_deps/libremiddleware-build/test
-
   build-macos:
     runs-on: macos-latest
     steps:
@@ -139,12 +139,11 @@ jobs:
           fetch-depth: 0
 
       - name: Install build tools
-        # autoconf/automake/libtool/pkg-config are required by the vendored
-        # OpenSC autoconf bootstrap that LibreMiddleware (pulled via
-        # FetchContent) builds for the librescrs-opensc-pkcs11 fallback
-        # module. Without them, configure step of opensc_external fails
-        # with `autoreconf: command not found`.
-        run: brew install ninja autoconf automake libtool pkg-config
+        # Ninja only. The autoconf/automake/libtool/pkg-config chain that
+        # used to live here existed solely for a transitively built
+        # vendored autoconf bootstrap that this repo no longer pulls in;
+        # the agent client library is plain CMake.
+        run: brew install ninja
 
       - name: Install Qt 6.10
         uses: jurplel/install-qt-action@v4
@@ -174,9 +173,6 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: ctest --output-on-failure --no-tests=error --test-dir build/test
-
-      - name: Test (LibreMiddleware)
-        run: ctest --output-on-failure --no-tests=error --test-dir build/_deps/libremiddleware-build/test
 
   changes:
     runs-on: ubuntu-latest

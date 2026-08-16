@@ -494,12 +494,34 @@ if(LIBRECELIK_SIGNING_ENABLED)
     set_target_properties(PdfPreviewWidgetTests PROPERTIES AUTOMOC ON)
     gtest_discover_tests(PdfPreviewWidgetTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
-    # Compiles every wizard translation unit directly, so it waits behind the
-    # switch until the last wizard page has been re-typed and comes back with
-    # its build description re-pointed in one edit.
-    if(LIBRECELIK_WIZARD_E2E_READY)
+    # --- Live-agent wizard suite (hardware bench only) ---
+    #
+    # The whole wizard driven against a REAL agent and a REAL card: the live
+    # gateway, the live controllers it mints, and the agent's own prompter
+    # collecting every credential. It builds and is discovered everywhere and
+    # SKIPS everywhere the bench is not set up, so it costs CI nothing but a
+    # link — and it is the Task 39 hardware gate's suite, not a CI suite.
+    #
+    # NO LibreSCRS::* link and no plugin/module dependencies: nothing in this
+    # target talks to a card in-process any more. What it compiles beyond the
+    # wizard is exactly the src/agent/ layer the live path needs — the abstract
+    # seams' vtable anchors, the live gateway plus the two controllers it mints,
+    # and the pure helpers those controllers and the sign page share.
+    #
+    # The suite's verification oracle is named by the environment
+    # (LIBRESCRS_DSS_JAR) alone; no jar path is compiled in.
     add_executable(SigningWizardE2ETests
         signingwizard_e2e_test.cpp
+        ${CMAKE_SOURCE_DIR}/src/agent/agentgateway.cpp
+        ${CMAKE_SOURCE_DIR}/src/agent/cardcontroller.cpp
+        ${CMAKE_SOURCE_DIR}/src/agent/signcontroller.cpp
+        ${CMAKE_SOURCE_DIR}/src/agent/errortext.cpp
+        ${CMAKE_SOURCE_DIR}/src/agent/fieldmerge.cpp
+        ${CMAKE_SOURCE_DIR}/src/agent/opstallwatchdog.cpp
+        ${CMAKE_SOURCE_DIR}/src/agent/signrequest.cpp
+        ${CMAKE_SOURCE_DIR}/src/agent/live/liveagentgateway.cpp
+        ${CMAKE_SOURCE_DIR}/src/agent/live/livecardcontroller.cpp
+        ${CMAKE_SOURCE_DIR}/src/agent/live/livesigncontroller.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/signingwizard.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/fileselectionpage.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/signatureplacementpage.cpp
@@ -512,7 +534,11 @@ if(LIBRECELIK_SIGNING_ENABLED)
         ${CMAKE_SOURCE_DIR}/src/utils/buttonbox.cpp
         ${CMAKE_SOURCE_DIR}/src/utils/dialogs.cpp
     )
+    # CMAKE_CURRENT_SOURCE_DIR: the suite is asserted through the SHARED
+    # emission-contract helpers in fake_gateway/, the same ones the scripted
+    # fakes are asserted through.
     target_include_directories(SigningWizardE2ETests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/src
         ${PROJECT_BINARY_DIR}/../src
     )
@@ -521,23 +547,9 @@ if(LIBRECELIK_SIGNING_ENABLED)
         Qt6::Widgets
         Qt6::Test
         Qt6::PdfWidgets
-        LibreSCRS::Plugin
-        LibreSCRS::SmartCard
-        LibreSCRS::Signing
-        LibreSCRS::Certificate
+        LibreAgent::ClientQt
     )
-    # libremiddleware_SOURCE_DIR is set in FetchContent mode; in installed-LM
-    # (CONFIG) mode the DSS jar discovery falls back to a runtime-configured
-    # path. Tests that require DSS will skip when the jar is unreachable.
-    if(NOT DEFINED libremiddleware_SOURCE_DIR)
-        set(_dss_jar_dir "")
-    else()
-        set(_dss_jar_dir "${libremiddleware_SOURCE_DIR}/tools/dss-service/target")
-    endif()
     target_compile_definitions(SigningWizardE2ETests PRIVATE
-        MIDDLEWARE_PLUGIN_DIR="$<TARGET_FILE_DIR:pkcs15-plugin>"
-        PKCS11_MODULE_PATH="$<TARGET_FILE:librescrs-pkcs11>"
-        DSS_JAR_DIR="${_dss_jar_dir}"
         # qt_add_translations binds the :/i18n/ resource only to the main
         # LibreCelik target, so the test binary loads the .qm from the
         # build dir directly. The path tracks where qt_add_translations
@@ -546,9 +558,8 @@ if(LIBRECELIK_SIGNING_ENABLED)
         LIBRESCRS_TESTING
     )
     set_target_properties(SigningWizardE2ETests PROPERTIES AUTOMOC ON)
-    add_dependencies(SigningWizardE2ETests pkcs15-plugin librescrs-pkcs11 LibreCelik_lrelease)
+    add_dependencies(SigningWizardE2ETests LibreCelik_lrelease)
     gtest_discover_tests(SigningWizardE2ETests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-    endif()
 
     # --- Fake-driven wizard behavior suite (offscreen GUI) ---
     #

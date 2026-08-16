@@ -1,54 +1,110 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright hirashix0@proton.me
+// SPDX-FileCopyrightText: 2026 hirashix0
 
-#include <gtest/gtest.h>
+/// @file
+/// @brief The signing wizard end-to-end against a REAL agent and a REAL card.
+///
+/// This suite has LEFT CI. Every case here dials a live agent, drives the real
+/// wizard, and spends a real signing ceremony on a real token, so it belongs to
+/// the hardware gate and to nothing else. Everywhere else it builds, is
+/// discovered, and skips.
+///
+/// ## How to run it (hardware bench only)
+///
+/// The suite is a client of the acceptance harness in `LibreLinux/e2e/`:
+/// `launch-e2e.sh` starts a PRIVATE session bus, brings the agent and the
+/// headless `auto-prompter` up on it, and prints the bus address. The operator
+/// exports that address and runs this binary against it:
+///
+/// ```
+///   ./launch-e2e.sh                      # prints DBUS_SESSION_BUS_ADDRESS
+///   export DBUS_SESSION_BUS_ADDRESS=...  # the PRIVATE bus, never the desktop one
+///   export LIBRESCRS_HW=1
+///   export LIBRESCRS_READER_SUBSTR='<a substring of the bench reader name>'
+///   export LIBRESCRS_DSS_JAR=/path/to/the/verification/oracle.jar
+///   ctest --test-dir build/test --no-tests=error -R SigningWizardE2E
+/// ```
+///
+/// The PRIVATE bus is not a convenience, it is the safety property. The
+/// auto-prompter answers ANY `Prompter1.RequestSecret` on its bus and has no
+/// reader or card targeting of its own; on the desktop session bus the ordinary
+/// prompter may own `Prompter1` instead and invite a hand-typed secret. On the
+/// harness bus the auto-prompter is the SOLE `Prompter1` owner by construction,
+/// and it answers from `LIBRESCRS_TEST_PIN`, which the harness propagates into
+/// the bus environment. LC never reads that variable, never renders a secret
+/// field, and never carries a secret in-process: the agent's prompter is the
+/// only collector.
+///
+/// Because the prompter cannot target a reader, the BENCH does: the suite
+/// refuses to run unless exactly ONE carded reader is present, and that reader
+/// matches `LIBRESCRS_READER_SUBSTR`. Physically remove every other token
+/// first. On the first failed ceremony the whole remaining suite skips — three
+/// failed verifications block a credential permanently, and this suite never
+/// walks toward that.
 
-#include <signing/signingwizard.h>
-#include <signing/fileselectionpage.h>
-#include <signing/signatureplacementpage.h>
-#include <signing/signpage.h>
-#include <signing/filedropzone.h>
+#include "agent/cardcontroller.h"
+#include "agent/live/liveagentgateway.h"
+#include "agent/signcontroller.h"
+#include "fake_gateway/controllercontract.h"
 
-#include <LibreSCRS/Plugin/CardPlugin.h>
-#include <LibreSCRS/Plugin/CardPluginService.h>
-#include <LibreSCRS/Signing/SigningService.h>
-#include <LibreSCRS/Signing/TsaProvider.h>
-#include <LibreSCRS/Trust/TrustConfig.h>
-#include <LibreSCRS/Trust/TrustStoreService.h>
-#include <LibreSCRS/SmartCard/CardSession.h>
-#include <LibreSCRS/SmartCard/MonitorService.h>
+#include "signing/filedropzone.h"
+#include "signing/fileselectionpage.h"
+#include "signing/signingwizard.h"
+#include "signing/signpage.h"
+
+#include <LibreSCRS/AgentClient/SignOptions.h>
+#include <LibreSCRS/AgentClient/Types.h>
 
 #include <QApplication>
 #include <QComboBox>
+#include <QDateTime>
 #include <QDir>
 #include <QFile>
-#include <QLineEdit>
+#include <QFileInfo>
 #include <QPushButton>
 #include <QSettings>
 #include <QSignalSpy>
 #include <QStackedWidget>
-#include <QStandardPaths>
+#include <QString>
+#include <QStringList>
 #include <QTemporaryDir>
 #include <QTest>
 #include <QTranslator>
 
+#include <gtest/gtest.h>
+
 #include <cstdlib>
 #include <filesystem>
-#include <map>
+#include <iostream>
+#include <memory>
+#include <string>
 
 namespace fs = std::filesystem;
 
+using librecelik::test::agent::ReadContractExpectation;
+using librecelik::test::agent::SignContractExpectation;
+using LibreSCRS::AgentClient::CertificateInfo;
+
 // ---------------------------------------------------------------------------
-// Global flag: set when signing fails (possible wrong PIN). All subsequent
-// tests are skipped to prevent burning PIN retries (3 = permanent block).
+// Global latch: set when a signing ceremony fails (a possible wrong secret).
+// Every remaining case then skips, so the suite can never spend a second and
+// third verification attempt and block the credential permanently.
 // ---------------------------------------------------------------------------
 static bool g_pinFailed = false;
 
 #define SKIP_IF_PIN_FAILED()                                                                                           \
     do {                                                                                                               \
         if (g_pinFailed)                                                                                               \
-            GTEST_SKIP() << "Skipped: previous signing failed (possible PIN issue)";                                   \
+            GTEST_SKIP() << "Skipped: a previous ceremony failed (possible credential issue)";                         \
     } while (0)
+
+/// A live ceremony waits on a human-paced prompter and then on the agent's own
+/// signing pipeline. Generous on purpose: an expiry here would be a false red.
+static constexpr int kLiveSignWaitMs = 180000;
+/// A full identity read, photo included, off a contactless token.
+static constexpr int kLiveReadWaitMs = 120000;
+/// The certificate roster arrives without any consent step.
+static constexpr int kCertificateWaitMs = 60000;
 
 // Minimal valid PDF with correct xref byte offsets
 static QByteArray buildTestPdf()
@@ -87,13 +143,6 @@ static QByteArray buildTestXml()
                       "</Invoice>\n");
 }
 
-struct ReaderInfo
-{
-    std::string readerName;
-    std::string cardType;
-    std::vector<LibreSCRS::Plugin::CertificateData> certificates;
-};
-
 class SigningWizardE2ETest : public ::testing::Test
 {
 protected:
@@ -121,37 +170,33 @@ protected:
                 QApplication::installTranslator(translator);
         }
 
-        // --- PINs (per-card-type, fallback to generic) ---
-        // Keys match the card's plugin id (see cardType = pluginId() below), so
-        // OPENSC covers cards served by the bundled OpenSC driver chain (Serbian
-        // CardEdge / srbeid, PIV-over-opensc, generic), which outranks the plain
-        // pkcs15 emulator. Env: LIBRESCRS_TEST_PIN_PIV, _PKCS15, _CARDEDGE, _OPENSC;
-        // the _CL variants (LIBRESCRS_TEST_PIN_<TYPE>_CL, CAN:PIN format) select the
-        // contactless secret. Fall back to LIBRESCRS_TEST_PIN if none is card-specific.
-        const char* genericPin = std::getenv("LIBRESCRS_TEST_PIN");
-        for (const auto& type : {"PIV", "PKCS15", "CARDEDGE", "PKCS15_CL", "OPENSC", "OPENSC_CL"}) {
-            std::string envName = std::string("LIBRESCRS_TEST_PIN_") + type;
-            const char* pin = std::getenv(envName.c_str());
-            if (pin && std::string(pin).length() > 0)
-                pinMap[QString::fromUtf8(type).toLower()] = QString::fromUtf8(pin);
-            else if (genericPin && std::string(genericPin).length() > 0)
-                pinMap[QString::fromUtf8(type).toLower()] = QString::fromUtf8(genericPin);
-        }
-        if (pinMap.empty()) {
-            suiteSkipReason = "No test PINs set (need LIBRESCRS_TEST_PIN or LIBRESCRS_TEST_PIN_<TYPE>)";
+        // --- Gate 1: the hardware opt-in ---
+        // Nothing below this line is safe to run unattended on a developer
+        // machine: it dials an agent and spends a credential.
+        const char* hw = std::getenv("LIBRESCRS_HW");
+        if (hw == nullptr || std::string(hw) != "1") {
+            suiteSkipReason = "LIBRESCRS_HW=1 is not set: the live-agent legs run on the hardware bench only";
             return;
         }
 
-        // --- DSS JAR ---
-        std::string jarPath;
-        const char* jarEnv = std::getenv("LIBRESCRS_DSS_JAR");
-        if (jarEnv && fs::exists(jarEnv)) {
-            jarPath = jarEnv;
-        } else {
-            jarPath = std::string(DSS_JAR_DIR) + "/dss-service-1.0.0-SNAPSHOT.jar";
+        // --- Gate 2: reader targeting (mandatory) ---
+        // The auto-prompter answers every request on its bus with no reader or
+        // card targeting, so the operator has to name the bench reader and the
+        // suite has to agree that the one card it can see IS that reader's.
+        const char* readerSubstr = std::getenv("LIBRESCRS_READER_SUBSTR");
+        if (readerSubstr == nullptr || *readerSubstr == '\0') {
+            suiteSkipReason = "LIBRESCRS_READER_SUBSTR is not set: the bench reader must be named explicitly";
+            return;
         }
-        if (!fs::exists(jarPath)) {
-            suiteSkipReason = "DSS JAR not found: " + jarPath;
+        const QString readerNeedle = QString::fromUtf8(readerSubstr);
+
+        // --- Gate 3: the signature-verification oracle, env only ---
+        // The jar is named by the environment or it is not available at all:
+        // no build-time path is compiled in, because nothing in this build
+        // tree produces one any more.
+        const char* jarEnv = std::getenv("LIBRESCRS_DSS_JAR");
+        if (jarEnv == nullptr || *jarEnv == '\0' || !fs::exists(jarEnv)) {
+            suiteSkipReason = "Verification oracle not found: set LIBRESCRS_DSS_JAR to an existing jar";
             return;
         }
         if (std::system("java -version > /dev/null 2>&1") != 0) {
@@ -159,113 +204,79 @@ protected:
             return;
         }
 
-        // DSS JAR is retained for the verification oracle only; the signing
-        // backend stays on Native (the default when LIBRESCRS_SIGNING_BACKEND
-        // is unset).
-        setenv("LIBRESCRS_DSS_JAR", jarPath.c_str(), 1);
-
-        // SigningService is constructed once with
-        // trust + TSA and is immutable post-ctor. Build the TL sources here
-        // so runWizardFlow doesn't need to reconfigure.
-        LibreSCRS::Trust::TrustConfig trust;
-        trust.trustedListSources.push_back({"https://www.mit.gov.rs/TrustedList/TSL-RS.xml", false, true});
-        trust.trustedListSources.push_back({"https://ec.europa.eu/tools/lotl/eu-lotl.xml", true, false});
-        auto tslCacheDir = std::filesystem::path(
-            QStandardPaths::writableLocation(QStandardPaths::CacheLocation).toStdString() + "/tsl");
-        // TrustStoreService::create() rejects a non-existent cacheDirectory
-        // with InvalidConfig, so materialise it before passing the path in.
-        // (On a fresh macOS test run the cache root has never been used and
-        // the directory is missing; Linux CI happens to inherit it from
-        // earlier runs.)
-        std::error_code ec;
-        std::filesystem::create_directories(tslCacheDir, ec);
-        trust.cacheDirectory = std::move(tslCacheDir);
-
-        // TSA is required for B-T / B-LT / B-LTA levels; configure a public
-        // one on the shared service. Override via LIBRESCRS_TEST_TSA_URL when
-        // a specific authority is needed. Fallback list matches
-        // signing::defaultTsaUrls() so this test mirrors the wizard's default.
-        std::string tsaUrl;
-        if (const char* envTsa = std::getenv("LIBRESCRS_TEST_TSA_URL"); envTsa && *envTsa)
-            tsaUrl = envTsa;
-        else
-            tsaUrl = "https://timestamp.sectigo.com";
-
-        try {
-            auto trustResult = LibreSCRS::Trust::TrustStoreService::create(std::move(trust));
-            if (!trustResult) {
-                suiteSkipReason = std::string("Failed to create LibreSCRS::Trust::TrustStoreService: ") +
-                                  trustResult.error().userMessage.defaultText;
-                return;
-            }
-            sharedTrustService = *trustResult;
-            sharedSigningService = std::make_shared<LibreSCRS::Signing::SigningService>(
-                sharedTrustService, LibreSCRS::Signing::staticTsa(tsaUrl));
-        } catch (const std::exception& e) {
-            suiteSkipReason = std::string("Failed to create LibreSCRS::Signing::SigningService: ") + e.what();
+        // --- Gate 4: an agent is actually there ---
+        gateway = std::make_unique<librecelik::agent::LiveAgentGateway>();
+        if (gateway->presence() != librecelik::agent::PresenceState::Ready) {
+            suiteSkipReason = "No agent is available on this bus (presence is not Ready)";
             return;
         }
 
-        // --- PKCS#11 module ---
-        std::string p11 = std::string(PKCS11_MODULE_PATH);
-        if (!fs::exists(p11)) {
-            suiteSkipReason = "PKCS#11 module not found: " + p11;
+        // --- Gate 5: single-card discipline ---
+        // Two carded readers mean the prompter could authorise a ceremony on
+        // the token the operator did NOT mean to spend. Say so loudly rather
+        // than picking one.
+        QList<librecelik::agent::ReaderInfo> carded;
+        for (const librecelik::agent::ReaderInfo& reader : gateway->readers()) {
+            if (reader.hasCard && !reader.cardId.isEmpty())
+                carded.append(reader);
+        }
+        if (carded.isEmpty()) {
+            suiteSkipReason = "No carded reader on this bench";
             return;
         }
-        // SigningService::detectPkcs11Module() searches exe-relative paths and
-        // falls back to bare-name `dlopen`. Apple's dlopen does not pick up
-        // the in-tree `build/lib/pkcs11/` location automatically (the test
-        // exe lives in `build/test/`, and the relative-path search list
-        // doesn't normalise `..` reliably across all macOS versions).
-        // Pin the in-tree build artefact via the documented env-var override
-        // so the wizard flow uses the freshly-built module.
-        setenv("LIBRESCRS_PKCS11_MODULE", p11.c_str(), 1);
-
-        // --- Middleware plugins ---
-        sharedPluginRegistry =
-            std::make_unique<LibreSCRS::Plugin::CardPluginService>(std::filesystem::path{MIDDLEWARE_PLUGIN_DIR});
-
-        // --- Discover cards in readers ---
-        LibreSCRS::SmartCard::MonitorService monitor;
-        auto readersOpt = monitor.listReaders();
-        if (!readersOpt.has_value() || readersOpt->empty()) {
-            suiteSkipReason = "No PC/SC readers found";
+        if (carded.size() > 1) {
+            suiteSkipReason = "SINGLE-CARD DISCIPLINE: " + std::to_string(carded.size()) +
+                              " carded readers are present. The auto-prompter answers every request on this bus and "
+                              "cannot target a reader, so physically remove every other token and re-run.";
             return;
         }
-        const auto& readers = *readersOpt;
+        const librecelik::agent::ReaderInfo& target = carded.constFirst();
+        if (!target.id.contains(readerNeedle) && !target.name.contains(readerNeedle)) {
+            suiteSkipReason =
+                "The only carded reader (" + target.name.toStdString() + ") does not match LIBRESCRS_READER_SUBSTR";
+            return;
+        }
+        cardId = target.cardId;
 
-        for (const auto& readerName : readers) {
-            try {
-                auto opened = LibreSCRS::SmartCard::CardSession::open(readerName);
-                if (!opened.has_value())
-                    continue;
-                auto session = std::make_shared<LibreSCRS::SmartCard::CardSession>(std::move(*opened));
-                auto candidates = sharedPluginRegistry->findAllCandidates(session->atr(), *session);
-                if (candidates.empty())
-                    continue;
+        // --- The certificate the whole suite signs with ---
+        auto* controller = gateway->cardController(cardId);
+        if (controller == nullptr) {
+            suiteSkipReason = "The agent has no controller for the card in the bench reader";
+            return;
+        }
+        QList<CertificateInfo> certificates;
+        bool answered = false;
+        QObject::connect(controller, &librecelik::agent::CardController::certificatesReady,
+                         [&](const QList<CertificateInfo>& certs) {
+                             certificates = certs;
+                             answered = true;
+                         });
+        QObject::connect(controller, &librecelik::agent::CardController::errorOccurred,
+                         [&](const QString&) { answered = true; });
+        controller->requestCertificates();
+        librecelik::test::agent::waitFor([&] { return answered; }, kCertificateWaitMs);
 
-                auto plugin = candidates.front();
-                if (!LibreSCRS::Plugin::hasCapability(plugin->capabilities(), LibreSCRS::Plugin::CardCapabilities::PKI))
-                    continue;
-
-                auto certs = plugin->readCertificates(*session);
-                if (certs.empty())
-                    continue;
-
-                sharedCards.push_back({readerName, plugin->pluginId(), std::move(certs)});
-            } catch (...) {
-                // Reader has no card or connection failed — skip it
+        for (const CertificateInfo& cert : certificates) {
+            // A VALID signing certificate, not merely a signing-capable one:
+            // an expired certificate at the baseline level opens a modal
+            // consent dialog, and a modal exec() in an unattended offscreen run
+            // never returns.
+            const QDateTime now = QDateTime::currentDateTimeUtc();
+            if (cert.signingCapable && cert.notAfter > now) {
+                certificate = cert;
+                break;
             }
         }
-
-        // Enable expired cert bypass for testing (debug builds only)
-        qputenv("LIBRESCRS_ALLOW_EXPIRED_CERT", "1");
+        if (certificate.id.isEmpty()) {
+            suiteSkipReason = "The card carries no valid signing certificate";
+            return;
+        }
     }
 
     static void TearDownTestSuite()
     {
-        sharedSigningService.reset();
-        sharedTrustService.reset();
+        // The controllers are parented to the gateway and go with it.
+        gateway.reset();
     }
 
     void SetUp() override
@@ -275,25 +286,56 @@ protected:
             GTEST_SKIP() << suiteSkipReason;
     }
 
-    // Return the first available PKI-capable card that has a PIN configured
-    static const ReaderInfo* firstCard()
+    // ---- fixture helpers ---------------------------------------------------
+
+    static void writeFile(const QString& path, const QByteArray& bytes)
     {
-        for (const auto& card : sharedCards) {
-            QString key = QString::fromStdString(card.cardType);
-            if (pinMap.contains(key))
-                return &card;
+        QFile file(path);
+        ASSERT_TRUE(file.open(QIODevice::WriteOnly)) << "could not write " << path.toStdString();
+        file.write(bytes);
+        file.close();
+    }
+
+    /// The page that is on screen right now. The wizard names its pages, and
+    /// the walk below drives by that name rather than by a fixed step count:
+    /// the placement page appears only for a PDF the agent can both stamp and
+    /// lay out, which is the agent's answer, not this suite's.
+    [[nodiscard]] static QString currentPageObjectName(const SigningWizard& wizard)
+    {
+        auto* stack = wizard.findChild<QStackedWidget*>();
+        if (stack == nullptr || stack->currentWidget() == nullptr)
+            return {};
+        return stack->currentWidget()->objectName();
+    }
+
+    /// The signature-level combo, identified by the level tokens it carries —
+    /// the selection page stacks a second combo for the timestamp authority,
+    /// and a positional lookup would silently start driving that one.
+    [[nodiscard]] static QComboBox* levelCombo(const SigningWizard& wizard)
+    {
+        for (QComboBox* combo : wizard.findChildren<QComboBox*>()) {
+            if (combo->findData(QStringLiteral("B_LTA")) >= 0)
+                return combo;
         }
         return nullptr;
     }
 
-    static bool isCLReader(const std::string& readerName)
+    /// Latch on a ceremony that produced nothing but failures. Reads the run's
+    /// own tally, so a run that partially succeeded (the credential was
+    /// accepted, a document was refused for its own reasons) does not stop the
+    /// suite.
+    static void latchOnFailedCeremony(int succeeded, int failed)
     {
-        return readerName.find("CL") != std::string::npos || readerName.find("Contactless") != std::string::npos;
+        if (failed > 0 && succeeded == 0) {
+            g_pinFailed = true;
+            std::cerr << "\n*** SIGNING FAILED (succeeded=0, failed=" << failed
+                      << "). Aborting subsequent cases to protect the credential's retry counter. ***\n"
+                      << std::endl;
+        }
     }
 
     // Level indices: 0=B-B, 1=B-T, 2=B-LT, 3=B-LTA
-    std::pair<int, int> runWizardFlow(const ReaderInfo& card, const QStringList& filePaths, bool hasPdf,
-                                      int levelIdx = 0)
+    std::pair<int, int> runWizardFlow(const QStringList& filePaths, int levelIdx = 0)
     {
         // Clear persisted output folder so FileSelectionPage derives it from the input
         // file directory (QTemporaryDir) instead of using the user's saved default.
@@ -302,27 +344,10 @@ protected:
             settings.remove(QStringLiteral("signing/defaultOutputFolder"));
         }
 
-        // Trust + TSA are baked into sharedSigningService at SetUpTestSuite
-        // (see  — SigningService is immutable post-ctor).
-        // Nothing to reconfigure per-test.
-
-        auto wizardOpened = LibreSCRS::SmartCard::CardSession::open(card.readerName);
-        if (!wizardOpened.has_value()) {
-            // Match the pre-v4.0 throw-skip shape: propagate via GTEST_SKIP
-            // rather than ADD_FAILURE since the test is hardware-dependent
-            // and a removed card in the middle of the suite is not a code
-            // defect.
-            ADD_FAILURE() << "Cannot open wizard CardSession for " << card.readerName;
-            return {-1, -1};
-        }
-        auto wizardSession = std::make_shared<LibreSCRS::SmartCard::CardSession>(std::move(*wizardOpened));
-        auto candidates = sharedPluginRegistry->findAllCandidates(wizardSession->atr(), *wizardSession);
-        // CardPluginService hands out shared_ptr<CardPlugin> directly — the
-        // SigningWizard shared-ownership contract is satisfied without any
-        // no-op-deleter aliasing hack.
-        auto wizardPlugin = candidates.front();
-        SigningWizard wizard(card.certificates.front(), card.readerName, sharedSigningService, std::move(wizardPlugin),
-                             std::move(wizardSession));
+        // The wizard owns no card, no session and no secret: the gateway hands
+        // it the card's sign controller and the agent's prompter collects
+        // every credential. There is nothing for this suite to type.
+        SigningWizard wizard(certificate, cardId, gateway.get());
 
         wizard.show();
         QApplication::processEvents();
@@ -336,10 +361,12 @@ protected:
         dropZone->addFiles(filePaths);
         QApplication::processEvents();
 
-        // Set signature level (0=B-B, 1=B-T, 2=B-LT, 3=B-LTA)
-        auto* levelCombo = wizard.findChild<QComboBox*>();
-        if (levelCombo)
-            levelCombo->setCurrentIndex(levelIdx);
+        auto* combo = levelCombo(wizard);
+        if (!combo) {
+            ADD_FAILURE() << "signature level combo not found";
+            return {0, 1};
+        }
+        combo->setCurrentIndex(levelIdx);
         QApplication::processEvents();
 
         auto* nextBtn = wizard.findChild<QPushButton*>(QStringLiteral("nextBtn"));
@@ -348,23 +375,16 @@ protected:
             return {0, 1};
         }
         EXPECT_TRUE(nextBtn->isEnabled());
-        QTest::mouseClick(nextBtn, Qt::LeftButton);
-        QApplication::processEvents();
 
-        // --- Page 1: Signature Placement (PDF only) ---
-        auto* stack = wizard.findChild<QStackedWidget*>();
-        if (!stack) {
-            ADD_FAILURE() << "QStackedWidget not found";
-            return {0, 1};
-        }
-        if (hasPdf) {
-            EXPECT_EQ(stack->currentIndex(), 1);
+        // --- Walk to the sign page ---
+        for (int guard = 0; guard < 3 && currentPageObjectName(wizard) != QStringLiteral("signPage"); ++guard) {
             QTest::mouseClick(nextBtn, Qt::LeftButton);
             QApplication::processEvents();
         }
-
-        // --- Page 2: Sign ---
-        EXPECT_EQ(stack->currentIndex(), 2);
+        if (currentPageObjectName(wizard) != QStringLiteral("signPage")) {
+            ADD_FAILURE() << "the wizard never reached the sign page";
+            return {0, 1};
+        }
 
         auto* signPageWidget = wizard.findChild<SignPage*>();
         if (!signPageWidget) {
@@ -372,104 +392,50 @@ protected:
             return {0, 1};
         }
 
-        // Find PIN and CAN fields — PIN has Password echo mode, CAN has Normal
-        QLineEdit* pinEdit = nullptr;
-        QLineEdit* canEdit = nullptr;
-        for (auto* edit : signPageWidget->findChildren<QLineEdit*>()) {
-            if (edit->echoMode() == QLineEdit::Password)
-                pinEdit = edit;
-            else if (!canEdit)
-                canEdit = edit;
-        }
-        if (!pinEdit) {
-            ADD_FAILURE() << "PIN QLineEdit not found";
-            return {0, 1};
-        }
-
-        // Look up credentials — CL readers use "pkcs15_cl" key with CAN:PIN format
-        QString pinKey = QString::fromStdString(card.cardType);
-        if (isCLReader(card.readerName) && pinMap.contains(pinKey + QStringLiteral("_cl")))
-            pinKey += QStringLiteral("_cl");
-        auto pinIt = pinMap.find(pinKey);
-        if (pinIt == pinMap.end()) {
-            ADD_FAILURE() << "No PIN for card: " << pinKey.toStdString();
-            return {0, 1};
-        }
-        QString credentials = pinIt->second;
-
-        if (canEdit && canEdit->isVisible() && credentials.contains(QLatin1Char(':'))) {
-            // CAN:PIN format — split and fill both fields
-            int colonPos = credentials.indexOf(QLatin1Char(':'));
-            canEdit->setText(credentials.left(colonPos));
-            pinEdit->setText(credentials.mid(colonPos + 1));
-        } else {
-            pinEdit->setText(credentials);
-        }
-        QApplication::processEvents();
-
         EXPECT_TRUE(nextBtn->isEnabled());
         QSignalSpy spy(signPageWidget, &SignPage::signingFinished);
 
+        // --- Sign: the prompter answers, not this process ---
         QTest::mouseClick(nextBtn, Qt::LeftButton);
 
-        // Wait for signing to complete (DSS + PKCS#11 can take a while)
-        EXPECT_TRUE(spy.wait(60000)) << "signingFinished not emitted within 60s";
+        EXPECT_TRUE(spy.wait(kLiveSignWaitMs)) << "signingFinished not emitted within " << kLiveSignWaitMs << " ms";
         if (spy.isEmpty())
             return {0, 1};
 
         int succeeded = spy.at(0).at(0).toInt();
         int failed = spy.at(0).at(1).toInt();
-
-        // If first signing attempt fails, assume PIN issue and abort all future tests
-        if (failed > 0 && succeeded == 0) {
-            g_pinFailed = true;
-            std::cerr << "\n*** SIGNING FAILED (succeeded=0, failed=" << failed
-                      << "). Aborting subsequent tests to protect PIN retries. ***\n"
-                      << std::endl;
-        }
-
+        latchOnFailedCeremony(succeeded, failed);
         return {succeeded, failed};
     }
 
     static QApplication* app;
     static QTranslator* translator;
-    static std::map<QString, QString> pinMap; // cardType -> PIN
-    static std::unique_ptr<LibreSCRS::Plugin::CardPluginService> sharedPluginRegistry;
-    static std::shared_ptr<LibreSCRS::Trust::TrustStoreService> sharedTrustService;
-    static std::shared_ptr<LibreSCRS::Signing::SigningService> sharedSigningService;
-    static std::vector<ReaderInfo> sharedCards;
+    static std::unique_ptr<librecelik::agent::LiveAgentGateway> gateway;
+    static QString cardId;
+    static CertificateInfo certificate;
     static std::string suiteSkipReason;
 };
 
 QApplication* SigningWizardE2ETest::app = nullptr;
 QTranslator* SigningWizardE2ETest::translator = nullptr;
-std::map<QString, QString> SigningWizardE2ETest::pinMap;
-std::unique_ptr<LibreSCRS::Plugin::CardPluginService> SigningWizardE2ETest::sharedPluginRegistry;
-std::shared_ptr<LibreSCRS::Trust::TrustStoreService> SigningWizardE2ETest::sharedTrustService;
-std::shared_ptr<LibreSCRS::Signing::SigningService> SigningWizardE2ETest::sharedSigningService;
-std::vector<ReaderInfo> SigningWizardE2ETest::sharedCards;
+std::unique_ptr<librecelik::agent::LiveAgentGateway> SigningWizardE2ETest::gateway;
+QString SigningWizardE2ETest::cardId;
+CertificateInfo SigningWizardE2ETest::certificate;
 std::string SigningWizardE2ETest::suiteSkipReason;
 
 // ============================================================================
-// B-B level tests — card-agnostic, use first available PKI card
+// B-B level tests — whatever card the bench holds
 // ============================================================================
 
 TEST_F(SigningWizardE2ETest, SignPdf_BB)
 {
-    const auto* card = firstCard();
-    if (!card)
-        GTEST_SKIP() << "No PKI-capable card found in any reader";
-
     QTemporaryDir tmpDir;
     ASSERT_TRUE(tmpDir.isValid());
 
     QString pdfPath = tmpDir.filePath("test.pdf");
-    QFile f(pdfPath);
-    ASSERT_TRUE(f.open(QIODevice::WriteOnly));
-    f.write(buildTestPdf());
-    f.close();
+    writeFile(pdfPath, buildTestPdf());
 
-    auto [succeeded, failed] = runWizardFlow(*card, {pdfPath}, true);
+    auto [succeeded, failed] = runWizardFlow({pdfPath});
     EXPECT_EQ(succeeded, 1);
     EXPECT_EQ(failed, 0);
 
@@ -485,24 +451,17 @@ TEST_F(SigningWizardE2ETest, SignPdf_BB)
 
 TEST_F(SigningWizardE2ETest, SignText_BB)
 {
-    const auto* card = firstCard();
-    if (!card)
-        GTEST_SKIP() << "No PKI-capable card found in any reader";
-
     QTemporaryDir tmpDir;
     ASSERT_TRUE(tmpDir.isValid());
 
     QString txtPath = tmpDir.filePath("test.txt");
-    QFile f(txtPath);
-    ASSERT_TRUE(f.open(QIODevice::WriteOnly));
-    f.write("Test document for ASiC-E signing.");
-    f.close();
+    writeFile(txtPath, QByteArray("Test document for ASiC-E signing."));
 
-    auto [succeeded, failed] = runWizardFlow(*card, {txtPath}, false);
+    auto [succeeded, failed] = runWizardFlow({txtPath});
     EXPECT_EQ(succeeded, 1);
     EXPECT_EQ(failed, 0);
 
-    // Text files now route to ASiC-E container (.asice)
+    // Text files route to an ASiC-E container (.asice)
     QDir outDir(QFileInfo(txtPath).absolutePath());
     QString asicePath = outDir.filePath("test.asice");
     ASSERT_TRUE(QFile::exists(asicePath)) << "ASiC-E container not found: " << asicePath.toStdString();
@@ -514,27 +473,16 @@ TEST_F(SigningWizardE2ETest, SignText_BB)
 
 TEST_F(SigningWizardE2ETest, SignBatch_BB)
 {
-    const auto* card = firstCard();
-    if (!card)
-        GTEST_SKIP() << "No PKI-capable card found in any reader";
-
     QTemporaryDir tmpDir;
     ASSERT_TRUE(tmpDir.isValid());
 
     auto pdf = buildTestPdf();
-    for (const auto* name : {"doc1.pdf", "doc2.pdf"}) {
-        QFile f(tmpDir.filePath(name));
-        ASSERT_TRUE(f.open(QIODevice::WriteOnly));
-        f.write(pdf);
-    }
-    {
-        QFile f(tmpDir.filePath("notes.txt"));
-        ASSERT_TRUE(f.open(QIODevice::WriteOnly));
-        f.write("Batch test document.");
-    }
+    for (const auto* name : {"doc1.pdf", "doc2.pdf"})
+        writeFile(tmpDir.filePath(QString::fromLatin1(name)), pdf);
+    writeFile(tmpDir.filePath("notes.txt"), QByteArray("Batch test document."));
 
-    auto [succeeded, failed] = runWizardFlow(
-        *card, {tmpDir.filePath("doc1.pdf"), tmpDir.filePath("doc2.pdf"), tmpDir.filePath("notes.txt")}, true);
+    auto [succeeded, failed] =
+        runWizardFlow({tmpDir.filePath("doc1.pdf"), tmpDir.filePath("doc2.pdf"), tmpDir.filePath("notes.txt")});
     EXPECT_EQ(succeeded, 3);
     EXPECT_EQ(failed, 0);
 
@@ -548,20 +496,13 @@ TEST_F(SigningWizardE2ETest, SignBatch_BB)
 
 TEST_F(SigningWizardE2ETest, SignDocx_ASiCE_BB)
 {
-    const auto* card = firstCard();
-    if (!card)
-        GTEST_SKIP() << "No PKI-capable card found in any reader";
-
     QTemporaryDir tmpDir;
     ASSERT_TRUE(tmpDir.isValid());
 
     QString docxPath = tmpDir.filePath("report.docx");
-    QFile f(docxPath);
-    ASSERT_TRUE(f.open(QIODevice::WriteOnly));
-    f.write("PK\x03\x04 mock OOXML content");
-    f.close();
+    writeFile(docxPath, QByteArray("PK\x03\x04 mock OOXML content"));
 
-    auto [succeeded, failed] = runWizardFlow(*card, {docxPath}, false);
+    auto [succeeded, failed] = runWizardFlow({docxPath});
     EXPECT_EQ(succeeded, 1);
     EXPECT_EQ(failed, 0);
 
@@ -583,20 +524,13 @@ TEST_F(SigningWizardE2ETest, SignDocx_ASiCE_BB)
 
 TEST_F(SigningWizardE2ETest, SignXml_XAdES_BB)
 {
-    const auto* card = firstCard();
-    if (!card)
-        GTEST_SKIP() << "No PKI-capable card found in any reader";
-
     QTemporaryDir tmpDir;
     ASSERT_TRUE(tmpDir.isValid());
 
     QString xmlPath = tmpDir.filePath("invoice.xml");
-    QFile f(xmlPath);
-    ASSERT_TRUE(f.open(QIODevice::WriteOnly));
-    f.write(buildTestXml());
-    f.close();
+    writeFile(xmlPath, buildTestXml());
 
-    auto [succeeded, failed] = runWizardFlow(*card, {xmlPath}, false);
+    auto [succeeded, failed] = runWizardFlow({xmlPath});
     EXPECT_EQ(succeeded, 1);
     EXPECT_EQ(failed, 0);
 
@@ -617,31 +551,15 @@ TEST_F(SigningWizardE2ETest, SignXml_XAdES_BB)
 
 TEST_F(SigningWizardE2ETest, SignMixedBatch_BB)
 {
-    const auto* card = firstCard();
-    if (!card)
-        GTEST_SKIP() << "No PKI-capable card found in any reader";
-
     QTemporaryDir tmpDir;
     ASSERT_TRUE(tmpDir.isValid());
 
-    {
-        QFile f(tmpDir.filePath("contract.pdf"));
-        ASSERT_TRUE(f.open(QIODevice::WriteOnly));
-        f.write(buildTestPdf());
-    }
-    {
-        QFile f(tmpDir.filePath("invoice.xml"));
-        ASSERT_TRUE(f.open(QIODevice::WriteOnly));
-        f.write(buildTestXml());
-    }
-    {
-        QFile f(tmpDir.filePath("report.docx"));
-        ASSERT_TRUE(f.open(QIODevice::WriteOnly));
-        f.write("PK\x03\x04 mock OOXML content");
-    }
+    writeFile(tmpDir.filePath("contract.pdf"), buildTestPdf());
+    writeFile(tmpDir.filePath("invoice.xml"), buildTestXml());
+    writeFile(tmpDir.filePath("report.docx"), QByteArray("PK\x03\x04 mock OOXML content"));
 
     auto [succeeded, failed] = runWizardFlow(
-        *card, {tmpDir.filePath("contract.pdf"), tmpDir.filePath("invoice.xml"), tmpDir.filePath("report.docx")}, true);
+        {tmpDir.filePath("contract.pdf"), tmpDir.filePath("invoice.xml"), tmpDir.filePath("report.docx")});
     EXPECT_EQ(succeeded, 3);
     EXPECT_EQ(failed, 0);
 
@@ -655,20 +573,13 @@ TEST_F(SigningWizardE2ETest, SignMixedBatch_BB)
 
 TEST_F(SigningWizardE2ETest, SignJson_JAdES_BB)
 {
-    const auto* card = firstCard();
-    if (!card)
-        GTEST_SKIP() << "No PKI-capable card found in any reader";
-
     QTemporaryDir tmpDir;
     ASSERT_TRUE(tmpDir.isValid());
 
     QString jsonPath = tmpDir.filePath("data.json");
-    QFile f(jsonPath);
-    ASSERT_TRUE(f.open(QIODevice::WriteOnly));
-    f.write(R"({"name":"test","value":42})");
-    f.close();
+    writeFile(jsonPath, QByteArray(R"({"name":"test","value":42})"));
 
-    auto [succeeded, failed] = runWizardFlow(*card, {jsonPath}, false);
+    auto [succeeded, failed] = runWizardFlow({jsonPath});
     EXPECT_EQ(succeeded, 1);
     EXPECT_EQ(failed, 0);
 
@@ -681,27 +592,20 @@ TEST_F(SigningWizardE2ETest, SignJson_JAdES_BB)
 }
 
 // ============================================================================
-// B-LTA level tests (require trust configuration + TSA)
-// Card type does not matter — DSS handles timestamps, revocation data,
-// and archive timestamps. The card only signs the hash.
+// B-LTA level tests (the agent's own trust configuration + TSA)
+// The card only signs the hash; timestamps, revocation data and archive
+// timestamps are the agent's business.
 // ============================================================================
 
 TEST_F(SigningWizardE2ETest, SignPdf_BLTA)
 {
-    const auto* card = firstCard();
-    if (!card)
-        GTEST_SKIP() << "No PKI-capable card found in any reader";
-
     QTemporaryDir tmpDir;
     ASSERT_TRUE(tmpDir.isValid());
 
     QString pdfPath = tmpDir.filePath("test.pdf");
-    QFile f(pdfPath);
-    ASSERT_TRUE(f.open(QIODevice::WriteOnly));
-    f.write(buildTestPdf());
-    f.close();
+    writeFile(pdfPath, buildTestPdf());
 
-    auto [succeeded, failed] = runWizardFlow(*card, {pdfPath}, true, 3); // B-LTA
+    auto [succeeded, failed] = runWizardFlow({pdfPath}, 3); // B-LTA
     EXPECT_EQ(succeeded, 1);
     EXPECT_EQ(failed, 0);
 
@@ -711,20 +615,13 @@ TEST_F(SigningWizardE2ETest, SignPdf_BLTA)
 
 TEST_F(SigningWizardE2ETest, SignText_BLTA)
 {
-    const auto* card = firstCard();
-    if (!card)
-        GTEST_SKIP() << "No PKI-capable card found in any reader";
-
     QTemporaryDir tmpDir;
     ASSERT_TRUE(tmpDir.isValid());
 
     QString txtPath = tmpDir.filePath("test.txt");
-    QFile f(txtPath);
-    ASSERT_TRUE(f.open(QIODevice::WriteOnly));
-    f.write("Test ASiC-E B-LTA signing.");
-    f.close();
+    writeFile(txtPath, QByteArray("Test ASiC-E B-LTA signing."));
 
-    auto [succeeded, failed] = runWizardFlow(*card, {txtPath}, false, 3); // B-LTA
+    auto [succeeded, failed] = runWizardFlow({txtPath}, 3); // B-LTA
     EXPECT_EQ(succeeded, 1);
     EXPECT_EQ(failed, 0);
 
@@ -734,32 +631,15 @@ TEST_F(SigningWizardE2ETest, SignText_BLTA)
 
 TEST_F(SigningWizardE2ETest, SignMixedBatch_BLTA)
 {
-    const auto* card = firstCard();
-    if (!card)
-        GTEST_SKIP() << "No PKI-capable card found in any reader";
-
     QTemporaryDir tmpDir;
     ASSERT_TRUE(tmpDir.isValid());
 
-    {
-        QFile f(tmpDir.filePath("contract.pdf"));
-        ASSERT_TRUE(f.open(QIODevice::WriteOnly));
-        f.write(buildTestPdf());
-    }
-    {
-        QFile f(tmpDir.filePath("invoice.xml"));
-        ASSERT_TRUE(f.open(QIODevice::WriteOnly));
-        f.write(buildTestXml());
-    }
-    {
-        QFile f(tmpDir.filePath("report.docx"));
-        ASSERT_TRUE(f.open(QIODevice::WriteOnly));
-        f.write("PK\x03\x04 mock OOXML content");
-    }
+    writeFile(tmpDir.filePath("contract.pdf"), buildTestPdf());
+    writeFile(tmpDir.filePath("invoice.xml"), buildTestXml());
+    writeFile(tmpDir.filePath("report.docx"), QByteArray("PK\x03\x04 mock OOXML content"));
 
     auto [succeeded, failed] = runWizardFlow(
-        *card, {tmpDir.filePath("contract.pdf"), tmpDir.filePath("invoice.xml"), tmpDir.filePath("report.docx")}, true,
-        3);
+        {tmpDir.filePath("contract.pdf"), tmpDir.filePath("invoice.xml"), tmpDir.filePath("report.docx")}, 3);
     EXPECT_EQ(succeeded, 3);
     EXPECT_EQ(failed, 0);
 
@@ -767,4 +647,55 @@ TEST_F(SigningWizardE2ETest, SignMixedBatch_BLTA)
     EXPECT_TRUE(QFile::exists(out.filePath("contract-signed.pdf")));
     EXPECT_TRUE(QFile::exists(out.filePath("invoice-signed.xml")));
     EXPECT_TRUE(QFile::exists(out.filePath("report.asice")));
+}
+
+// ============================================================================
+// Live emission contract — the SAME two helpers the scripted fakes are
+// asserted against (`fake_gateway/controllercontract.h`). Fake and live are
+// pinned to ONE emission contract on BOTH seams, so an offscreen GUI suite can
+// never pass on an ordering the real agent does not produce.
+// ============================================================================
+
+TEST_F(SigningWizardE2ETest, LiveReadSatisfiesTheSharedEmissionContract)
+{
+    auto* controller = gateway->cardController(cardId);
+    ASSERT_NE(controller, nullptr);
+
+    // No expected script: what this card streams is the card's business. The
+    // ordering and count invariants are the contract.
+    ReadContractExpectation expectation;
+    expectation.waitMs = kLiveReadWaitMs;
+    librecelik::test::agent::assertReadEmissionContract(*controller, expectation);
+}
+
+TEST_F(SigningWizardE2ETest, LiveSignSatisfiesTheSharedEmissionContract)
+{
+    auto* controller = gateway->signController(cardId);
+    ASSERT_NE(controller, nullptr);
+
+    QTemporaryDir tmpDir;
+    ASSERT_TRUE(tmpDir.isValid());
+    const QString pdfPath = tmpDir.filePath("contract.pdf");
+    writeFile(pdfPath, buildTestPdf());
+
+    // The baseline level explicitly: `Auto` lets the agent resolve to a
+    // timestamped level, which drags a timestamp authority into a case that is
+    // about emission ordering.
+    LibreSCRS::AgentClient::SignOptions options;
+    options.level = LibreSCRS::AgentClient::SignatureLevel::BB;
+
+    // Observed independently of the helper's own connections, so the latch can
+    // still read the tally the run reported.
+    QSignalSpy finishedSpy(controller, &librecelik::agent::SignController::finished);
+
+    SignContractExpectation expectation;
+    expectation.waitMs = kLiveSignWaitMs;
+    librecelik::test::agent::assertSignEmissionContract(
+        *controller, certificate.id,
+        {librecelik::agent::SignRequestItem{pdfPath, LibreSCRS::AgentClient::SignatureFormat::PAdES,
+                                            LibreSCRS::AgentClient::Packaging::Enveloped}},
+        options, tmpDir.path(), expectation);
+
+    if (!finishedSpy.isEmpty())
+        latchOnFailedCeremony(finishedSpy.at(0).at(0).toInt(), finishedSpy.at(0).at(1).toInt());
 }

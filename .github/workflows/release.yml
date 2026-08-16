@@ -116,9 +116,6 @@ jobs:
           QT_QPA_PLATFORM: offscreen
         run: ctest --output-on-failure --no-tests=error --test-dir build/test
 
-      - name: Test (LibreMiddleware)
-        run: ctest --output-on-failure --no-tests=error --test-dir build/_deps/libremiddleware-build/test
-
       # DSS Java backend removed — native signing does not require Java.
 
       - name: Cache linuxdeploy tools
@@ -146,12 +143,11 @@ jobs:
           fetch-depth: 0
 
       - name: Install build tools
-        # autoconf/automake/libtool/pkg-config are required by the vendored
-        # OpenSC autoconf bootstrap that LibreMiddleware (pulled via
-        # FetchContent) builds for the librescrs-opensc-pkcs11 fallback
-        # module. Without them, configure step of opensc_external fails
-        # with `autoreconf: command not found`.
-        run: brew install ninja autoconf automake libtool pkg-config
+        # Ninja only. The autoconf/automake/libtool/pkg-config chain that
+        # used to live here existed solely for a transitively built
+        # vendored autoconf bootstrap that this repo no longer pulls in;
+        # the agent client library is plain CMake.
+        run: brew install ninja
 
       - name: Install Qt 6.10
         uses: jurplel/install-qt-action@v4
@@ -181,9 +177,6 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: ctest --output-on-failure --no-tests=error --test-dir build/test
-
-      - name: Test (LibreMiddleware)
-        run: ctest --output-on-failure --no-tests=error --test-dir build/_deps/libremiddleware-build/test
 
       # DSS Java backend removed — native signing does not require Java.
 

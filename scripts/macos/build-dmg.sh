@@ -78,38 +78,21 @@ mkdir -p "$STAGING_DIR"
 cp -R "$APP_SRC" "$APP_STAGING"
 
 # ---------------------------------------------------------------------------
-# Copy LibreSCRS plugins (middleware + GUI) into the app bundle.
+# Copy the LibreSCRS GUI plugins into the app bundle.
 #
 # The app resolves these at runtime via ../PlugIns/ relative to the binary
 # (i.e. Contents/PlugIns/).
+#
+# Card access is not bundled at all: it lives in the separate agent service,
+# which this bundle never ships (the app guides the user to install it), so
+# there is no card-side plugin directory, PKCS#11 module or certificate store
+# to stage here.
 # ---------------------------------------------------------------------------
-MW_PLUGIN_DIR="$BUILD_DIR/plugins"
 GUI_PLUGIN_DIR="$BUILD_DIR/gui-plugins"
-
-# --- PKCS#11 module (for digital signing via PKCS#11 tokens) ---
-PKCS11_DYLIB="$BUILD_DIR/lib/pkcs11/librescrs-pkcs11.dylib"
-if [[ -f "$PKCS11_DYLIB" ]]; then
-    echo "Copying PKCS#11 module..."
-    # Frameworks/ is created later by macdeployqt; pre-create so we can stage here first.
-    mkdir -p "$APP_STAGING/Contents/Frameworks"
-    cp "$PKCS11_DYLIB" "$APP_STAGING/Contents/Frameworks/"
-    echo "  $(basename "$PKCS11_DYLIB")"
-else
-    echo "ERROR: PKCS#11 module not found at $PKCS11_DYLIB — signing would not work."
-    echo "       Ensure LibreMiddleware builds librescrs-pkcs11 with LIBRARY_OUTPUT_DIRECTORY set to \${CMAKE_BINARY_DIR}/lib/pkcs11."
-    exit 1
-fi
 
 # --- DSS signing bundle (JRE + JAR) ---
 # Skipped: native signing backend is the default and does not require Java.
 # DSS is deprecated. To re-enable, set SIGNING_BACKEND=dss and uncomment.
-
-echo "Copying middleware plugins..."
-mkdir -p "$APP_STAGING/Contents/PlugIns/middleware-plugins"
-for f in "$MW_PLUGIN_DIR"/lib*-plugin.dylib; do
-    [[ -f "$f" ]] && cp "$f" "$APP_STAGING/Contents/PlugIns/middleware-plugins/"
-done
-ls "$APP_STAGING/Contents/PlugIns/middleware-plugins/"
 
 echo "Copying GUI plugins..."
 mkdir -p "$APP_STAGING/Contents/PlugIns/gui-plugins"
@@ -119,39 +102,29 @@ done
 ls "$APP_STAGING/Contents/PlugIns/gui-plugins/"
 
 # ---------------------------------------------------------------------------
-# Bundle the middleware certificate directory.
-#
-# The runtime walker resolves the certs dir from <exe>/../Resources/
-# certificates at load time. macOS bundle layout:
-# <exe>/../Resources/certificates.
-#
-# Source dir resolution cascade (highest priority first):
-#   1. LM_SRC env override (explicit)
-#   2. FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE (the standard CMake env
-#      var consumers already set for an in-tree LM checkout — no need
-#      to duplicate it as LM_SRC)
-#   3. Default FetchContent fetch path inside BUILD_DIR
-# ---------------------------------------------------------------------------
-LM_SRC="${LM_SRC:-${FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE:-$BUILD_DIR/_deps/libremiddleware-src}}"
-CERT_SRC="$LM_SRC/thirdparty/certificates"
-DMG_CERT_DIR="$APP_STAGING/Contents/Resources/certificates"
-if [[ -d "$CERT_SRC" ]]; then
-    echo "Bundling middleware certificates..."
-    mkdir -p "$DMG_CERT_DIR"
-    cp -R "$CERT_SRC/." "$DMG_CERT_DIR/"
-    echo "[dmg] copied bundled certs to $DMG_CERT_DIR"
-else
-    echo "ERROR: middleware certs directory not found at $CERT_SRC"
-    echo "       Set LM_SRC or FETCHCONTENT_SOURCE_DIR_LIBREMIDDLEWARE"
-    echo "       to point at an in-tree LibreMiddleware checkout."
-    exit 1
-fi
-
-# ---------------------------------------------------------------------------
 # Run macdeployqt — bundles Qt frameworks, plugins, and .qm translations
 # ---------------------------------------------------------------------------
 echo "Running macdeployqt..."
 "$MACDEPLOYQT" "$APP_STAGING" -verbose=1
+
+# ---------------------------------------------------------------------------
+# Agent client library.
+#
+# The executable links it, so macdeployqt stages it into Contents/Frameworks
+# alongside the Qt frameworks and rewrites its install name. The wire codec is
+# a static archive folded into this library, so there is no second dynamic
+# library to look for. Assert it landed: without it the app cannot reach the
+# agent at all, and a silent miss would only surface on the user's machine.
+# ---------------------------------------------------------------------------
+if ! ls "$APP_STAGING/Contents/Frameworks"/liblibrescrs-agentclient-qt*.dylib &>/dev/null; then
+    echo "ERROR: agent client library not found in $APP_STAGING/Contents/Frameworks —"
+    echo "       macdeployqt did not stage liblibrescrs-agentclient-qt*.dylib."
+    echo "       Check that the executable links it and that its build-tree"
+    echo "       install name resolves."
+    exit 1
+fi
+echo "Agent client library in bundle:"
+ls "$APP_STAGING/Contents/Frameworks"/liblibrescrs-agentclient-qt*.dylib
 
 # ---------------------------------------------------------------------------
 # Verify every bundled library has a documented license. Runs after the bundle

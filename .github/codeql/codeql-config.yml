@@ -3,17 +3,17 @@
 #
 # CodeQL configuration for the LibreCelik C++ analysis.
 #
-# LibreCelik consumes LibreMiddleware via CMake FetchContent, which checks
-# the LM source tree out under `build/_deps/libremiddleware-src/`. That
-# tree carries LM's own `thirdparty/opensc-source/` submodule — vendored
-# upstream OpenSC that we do not author. Path-injection warnings on
-# OpenSC's CLI tools and inconsistent-null-check style findings in the
-# pkcs15init / card-* drivers are upstream issues; surfacing them in
-# LibreCelik's security tab is noise.
+# LibreCelik consumes the agent client library via CMake FetchContent,
+# which checks that source tree out under `build/_deps/libreagent-src/`.
+# Its own nested FetchContent adds the third-party CBOR codec the wire
+# layer bundles, landing beside it under `build/_deps/qcbor-src/`. Neither
+# tree is LibreCelik-authored, and findings in vendored upstream C are
+# upstream issues; surfacing them in LibreCelik's security tab is noise.
 #
-# Exclude both the local `_deps/` FetchContent output and the LM-vendored
-# `thirdparty/` tree from analysis so security alerts track only
-# LibreCelik-authored code.
+# Exclude the local `_deps/` FetchContent output from analysis so security
+# alerts track only LibreCelik-authored code. The `thirdparty/` exclusion
+# stays as a standing rule for any vendored tree a dependency may carry
+# in-source rather than through `_deps/`.
 
 name: "LibreCelik CodeQL"
 

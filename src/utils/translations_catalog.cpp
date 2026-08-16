@@ -74,20 +74,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-about-license-lgpl");
     //% "Apache License 2.0"
     QT_TRID_NOOP("lc-about-license-apache");
-    //% "statically linked"
-    QT_TRID_NOOP("lc-about-license-static");
-    //% "bundled subset"
-    QT_TRID_NOOP("lc-about-license-bundled");
-    //% "SIL Open Font License 1.1"
-    QT_TRID_NOOP("lc-about-license-ofl");
-    //% "LGPL-2.1-or-later — statically linked, modified fork"
-    QT_TRID_NOOP("lc-about-license-opensc");
-    //% "MIT — vendored"
-    QT_TRID_NOOP("lc-about-license-json");
-    //% "MIT — vendored"
-    QT_TRID_NOOP("lc-about-license-miniz");
-    //% "zlib license — transitive dependency"
-    QT_TRID_NOOP("lc-about-license-zlib");
     //% "GNU Lesser General Public License v3.0 — dynamically linked"
     QT_TRID_NOOP("lc-about-license-qt");
     //% "curl license (MIT/X derivate)"
@@ -247,30 +233,10 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-changepin-initialize-title");
     //% "Change %1"
     QT_TRID_NOOP("lc-changepin-change-title");
-    //% "Transport PIN"
-    QT_TRID_NOOP("lc-changepin-transport-placeholder");
     //% "PIN retries remaining: %1"
     QT_TRID_NOOP("lc-changepin-retries-remaining");
-    //% "Current PIN"
-    QT_TRID_NOOP("lc-changepin-current");
-    //% "New PIN"
-    QT_TRID_NOOP("lc-changepin-new");
-    //% "Confirm new PIN"
-    QT_TRID_NOOP("lc-changepin-confirm");
-    //% "Changing PIN..."
-    QT_TRID_NOOP("lc-changepin-changing");
     //% "PIN is blocked!"
     QT_TRID_NOOP("lc-changepin-blocked");
-    //% "PIN changed successfully."
-    QT_TRID_NOOP("lc-changepin-success");
-    //% "Close"
-    QT_TRID_NOOP("lc-changepin-close");
-    //% "New PIN and confirmation do not match."
-    QT_TRID_NOOP("lc-changepin-mismatch");
-    //% "Show/Hide PIN"
-    QT_TRID_NOOP("lc-changepin-show-hide");
-    //% "PIN change failed."
-    QT_TRID_NOOP("lc-changepin-failed");
 
     // --- credential dialog (agent prompter collects every secret) ---
     //% "The system dialog will ask for your current and new codes."
@@ -372,8 +338,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-cert-verify-trust-unknown");
     //% "Unparseable certificate"
     QT_TRID_NOOP("lc-cert-parse-error");
-    //% "Curve"
-    QT_TRID_NOOP("lc-cert-field-curve");
 
     // --- Certificate KeyUsage / ExtendedKeyUsage / GeneralName labels ---
     //% "Certificate Sign"
@@ -404,16 +368,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-cert-gn-edi");
 
     // --- Error messages ---
-    //% "No card connection available"
-    QT_TRID_NOOP("lc-error-no-connection");
-    //% "No plugin could read this card."
-    QT_TRID_NOOP("lc-error-no-plugin");
-    //% "Authentication failed"
-    QT_TRID_NOOP("lc-error-auth-failed");
 
     // --- eMRTD ---
-    //% "Insert the MRZ data from the bottom of the document"
-    QT_TRID_NOOP("lc-emrtd-insert-mrz-hint");
 
     // --- Health insurance card ---
     //% "Health Insurance Card"
@@ -522,8 +478,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Details"
     QT_TRID_NOOP("lc-token-col-details");
     // Key properties
-    //% "Subject"
-    QT_TRID_NOOP("lc-token-key-subject");
     //% "Algorithm"
     QT_TRID_NOOP("lc-token-key-algorithm");
     //% "Key usage"
@@ -811,10 +765,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-euvrc-doc-fuel-tank");
 
     // eMRTD (Electronic Passport)
-    //% "Authentication Required"
-    QT_TRID_NOOP("lc-emrtd-auth-required");
-    //% "Authentication Failed"
-    QT_TRID_NOOP("lc-emrtd-auth-failed");
     // clang-format off
     //% "Authentication failed — travel document data could not be read. Check CAN or MRZ and reinsert the card to try again."
     // clang-format on
@@ -845,28 +795,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-emrtd-additional");
     //% "Issuing Information"
     QT_TRID_NOOP("lc-emrtd-issuing-info");
-    //% "CAN"
-    QT_TRID_NOOP("lc-emrtd-auth-can-title");
-    //% "6-digit number on card front"
-    QT_TRID_NOOP("lc-emrtd-auth-can-desc");
-    //% "MRZ"
-    QT_TRID_NOOP("lc-emrtd-auth-mrz-title");
-    //% "Data from document"
-    QT_TRID_NOOP("lc-emrtd-auth-mrz-desc");
-    //% "Document number"
-    QT_TRID_NOOP("lc-emrtd-auth-mrz-docnum");
-    //% "Date of birth"
-    QT_TRID_NOOP("lc-emrtd-auth-mrz-dob");
-    //% "Date of expiry"
-    QT_TRID_NOOP("lc-emrtd-auth-mrz-expiry");
-    //% "Authenticate"
-    QT_TRID_NOOP("lc-emrtd-authenticate");
-    //% "Authenticating..."
-    QT_TRID_NOOP("lc-emrtd-authenticating");
-    //% "CAN"
-    QT_TRID_NOOP("lc-emrtd-auth-can-tab");
-    //% "MRZ"
-    QT_TRID_NOOP("lc-emrtd-auth-mrz-tab");
 
     //% "Travel Document"
     QT_TRID_NOOP("lc-emrtd-travel-document");
@@ -1030,20 +958,12 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-sign-page-of-total");
     //% "Add visual signature"
     QT_TRID_NOOP("lc-sign-visual-sig");
-    //% "PIN:"
-    QT_TRID_NOOP("lc-sign-pin-label");
-    //% "CAN:"
-    QT_TRID_NOOP("lc-sign-can-label");
     //% "Sign"
     QT_TRID_NOOP("lc-sign-btn-sign");
     //% "Back"
     QT_TRID_NOOP("lc-sign-btn-back");
     //% "Next"
     QT_TRID_NOOP("lc-sign-btn-next");
-    //% "Preparing to sign..."
-    QT_TRID_NOOP("lc-sign-preparing");
-    //% "Signing file %1 of %2: %3"
-    QT_TRID_NOOP("lc-sign-progress");
     //% "Certificate"
     QT_TRID_NOOP("lc-sign-summary-cert");
     //% "Files"
@@ -1052,26 +972,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-sign-complete");
     //% "You will confirm and enter your PIN in the system dialog %n times."
     QT_TRID_NOOP("lc-sign-consent-hint");
-    //% "FAILED: %1 — %2"
-    QT_TRID_NOOP("lc-sign-fail-sign");
-    //% "FAILED: %1 — file exceeds 256 MB size limit"
-    QT_TRID_NOOP("lc-sign-fail-too-large");
-    //% "FAILED: signing was cancelled"
-    QT_TRID_NOOP("lc-sign-fail-cancelled");
-    //% "FAILED: incorrect PIN"
-    QT_TRID_NOOP("lc-sign-fail-pin");
-    //% "FAILED: card is blocked"
-    QT_TRID_NOOP("lc-sign-fail-blocked");
-    //% "FAILED: timestamp authority unreachable"
-    QT_TRID_NOOP("lc-sign-fail-tsa");
-    //% "FAILED: trust store unavailable"
-    QT_TRID_NOOP("lc-sign-fail-trust");
-    //% "FAILED: invalid signing request"
-    QT_TRID_NOOP("lc-sign-fail-invalid");
-    //% "FAILED: the document is invalid or unreadable"
-    QT_TRID_NOOP("lc-sign-fail-document");
-    //% "FAILED: signing failed — see log for details"
-    QT_TRID_NOOP("lc-sign-fail-generic");
     //% "OK: %1 → %2"
     QT_TRID_NOOP("lc-sign-ok");
     //% "Previous"
@@ -1163,8 +1063,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-sign-tsa-invalid-title");
     //% "The configured Timestamp Authority URL is not a valid https:// endpoint."
     QT_TRID_NOOP("lc-sign-tsa-invalid-message");
-    //% "Unknown signing error"
-    QT_TRID_NOOP("lc-sign-unknown-error");
 
     // --- menu bar ---
     //% "Edit"

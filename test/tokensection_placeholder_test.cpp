@@ -308,4 +308,66 @@ TEST_F(TokenSectionPlaceholderTest, CriticalCellMarksTheGroupRowAndIsNeverARowIt
     EXPECT_FALSE(all.contains(QStringLiteral("true"))) << all.toStdString();
 }
 
+TEST_F(TokenSectionPlaceholderTest, CriticalSuffixOnACellLabelIsChoppedAndBecomesTheMark)
+{
+    using namespace LibreSCRS::AgentClient;
+
+    // The OTHER half of the criticality convention: an extension the agent
+    // serves as a CELL has no group of its own to hang metadata on, so its
+    // marker rides the END of the cell's English label and this build chops it
+    // back off (`src/certificate/certfields.h`, kCriticalSuffix).
+    //
+    // The spelling is a cross-binary constant with a producer-side pin in the
+    // other repo — LibreAgent `tests/LmCertReaderKatTest.cpp`,
+    // `CriticalSuffixReachesCertGroupCellLabelsToo`, which asserts the full
+    // literal "Subject Key Identifier (Critical)". This is the CONSUMER-side
+    // mirror: spelled once, absolutely, so an LC-only respell reddens here
+    // instead of failing soft (marker lost, the agent's English leaking into
+    // the rendered label). The fixture mints SKI critical and AKI not, the same
+    // way the producer's does, so one certificate pins both sides of the arm.
+    const QString wireCriticalSuffix = QStringLiteral(" (Critical)");
+    const QString unknownExtLabel = QStringLiteral("X509v3 Subject Directory Attributes");
+
+    CertificateInfo c;
+    c.id = QStringLiteral("cert-1");
+    c.subject = QStringLiteral("CN=Test");
+    c.extra.insert(
+        QStringLiteral("fields"),
+        QVariantMap{
+            {QStringLiteral("cert"),
+             QVariantMap{{QStringLiteral("subjectKeyIdentifier"),
+                          QVariantList{QStringLiteral("cert.cert.subjectKeyIdentifier"),
+                                       QStringLiteral("Subject Key Identifier") + wireCriticalSuffix,
+                                       QStringLiteral("AB:CD:EF")}},
+                         {QStringLiteral("authorityKeyIdentifier"),
+                          QVariantList{QStringLiteral("cert.cert.authorityKeyIdentifier"),
+                                       QStringLiteral("Authority Key Identifier"), QStringLiteral("01:23:45")}}}},
+            {QStringLiteral("ext"),
+             QVariantMap{{QStringLiteral("x0"), QVariantList{QString(), unknownExtLabel + wireCriticalSuffix,
+                                                             QStringLiteral("30 03 01 01 FF")}}}}});
+
+    CertificatePropertiesModel model(c);
+    const QStringList rows = extensionRowsForTest(model);
+    const QString all = rows.join(QLatin1Char('\n'));
+
+    const QString mark = qtTrId("lc-cert-extension-critical");
+
+    // The ext dump is the arm where the decoded fallback IS the rendered label,
+    // so the chop shows in the text: the marker appears ONCE, and it is this
+    // build's localized one rather than the agent's English tail.
+    EXPECT_TRUE(rows.contains(expectedRowForTest(unknownExtLabel + mark, QStringLiteral("30 03 01 01 FF"), true)))
+        << all.toStdString();
+    EXPECT_FALSE(all.contains(unknownExtLabel + wireCriticalSuffix + wireCriticalSuffix)) << all.toStdString();
+
+    // The two key identifiers render under this build's own names, so for them
+    // the suffix survives only as the flag — marked and bold for the critical
+    // one, plain for the other.
+    EXPECT_TRUE(rows.contains(
+        expectedRowForTest(QStringLiteral("Subject Key Identifier") + mark, QStringLiteral("AB:CD:EF"), true)))
+        << all.toStdString();
+    EXPECT_TRUE(rows.contains(
+        expectedRowForTest(QStringLiteral("Authority Key Identifier"), QStringLiteral("01:23:45"), false)))
+        << all.toStdString();
+}
+
 } // namespace

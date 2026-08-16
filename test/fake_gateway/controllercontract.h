@@ -20,7 +20,16 @@
 ///
 /// The expected script is OPTIONAL: the fake self-test passes the exact
 /// scripted groups/rows and gets an equality assertion on top; the live leg
-/// omits it and gets the ordering/count invariants alone.
+/// omits it and gets the ordering/count invariants plus the OUTCOME floor
+/// below.
+///
+/// The outcome floor is what keeps a scriptless caller honest. Both helpers
+/// used to be satisfiable by an operation that merely ENDED — a read that
+/// errored, a ceremony every row of which failed — which let the live leg
+/// "certify" the contract on the failure path and told the operator nothing.
+/// A caller now says which side it is asserting: a read is a SUCCESS assertion
+/// unless it sets `expectError`, and a scriptless sign run must have signed
+/// something unless it sets `allowNoSucceededRows`.
 ///
 /// Failures are reported with gtest's non-fatal `ADD_FAILURE`/`EXPECT_*` so a
 /// broken ordering surfaces every violated clause in one run, not just the
@@ -76,8 +85,14 @@ struct ReadContractExpectation
     /// then requires the FINAL groupReady to carry the "photo" key and
     /// identityReady to contain it.
     bool expectPhotoGroup = false;
-    /// True when the read is expected to fail; the helper then requires an
-    /// errorOccurred and NO identityReady.
+    /// @brief Which SIDE of the read contract this case asserts. Both are
+    ///        asserted; neither is merely tolerated.
+    ///
+    /// True requires an `errorOccurred` and NO `identityReady`. False REFUSES
+    /// an `errorOccurred` outright, so a caller that leaves this at its default
+    /// — the live leg does — certifies a read that actually SUCCEEDED rather
+    /// than one that only ended. A case that means to assert the failure path
+    /// has to say so here.
     bool expectError = false;
 };
 
@@ -87,8 +102,18 @@ struct SignContractExpectation
     /// Upper bound on how long the run may take before the helper gives up.
     int waitMs = 30000;
     /// Expected `(succeeded, failed)` tally. `nullopt` (the live leg) checks
-    /// only that `finished` agrees with the rows the run itself emitted.
+    /// that `finished` agrees with the rows the run itself emitted, plus the
+    /// succeeded-at-least-once floor below.
     std::optional<QPair<int, int>> expectedTally;
+    /// @brief Opt out of the outcome floor a scriptless run is held to.
+    ///
+    /// With no `expectedTally` the helper additionally requires `succeeded > 0`
+    /// — a ceremony whose every row failed is internally consistent and would
+    /// otherwise be green, which is exactly the reading the live leg must never
+    /// be allowed to give. A case that deliberately drives an all-failed run
+    /// WITHOUT scripting a tally sets this; scripting the tally instead is the
+    /// stronger statement and needs no flag.
+    bool allowNoSucceededRows = false;
 };
 
 /// @brief Assert the READ emission contract on @p controller.
@@ -97,6 +122,10 @@ struct SignContractExpectation
 /// photo) a FINAL `groupReady` whose group key is "photo", which
 /// `identityReady` then contains -> `identityReady` -> `readingFinished`; and
 /// `errorOccurred` implies NO `identityReady`.
+///
+/// `expectation.expectError` picks the side and BINDS BOTH WAYS: false means
+/// the read must not have errored at all, so the success-path clauses below
+/// are reached rather than skipped.
 inline void assertReadEmissionContract(librecelik::agent::CardController& controller,
                                        const ReadContractExpectation& expectation = {})
 {
@@ -165,6 +194,13 @@ inline void assertReadEmissionContract(librecelik::agent::CardController& contro
 
     if (expectation.expectError) {
         EXPECT_GT(errorCount, 0) << "a failing read must surface errorOccurred";
+    } else {
+        // The converse, and the whole reason a scriptless caller can certify
+        // anything: a read this case did not declare as failing must not have
+        // failed. Without this the early return below turned every
+        // success-path clause into "not evaluated" and the case stayed green.
+        EXPECT_EQ(errorCount, 0) << "this case asserts a SUCCESSFUL read, and the read surfaced errorOccurred; "
+                                    "set ReadContractExpectation::expectError to assert the failure path instead";
     }
     if (errorCount > 0) {
         EXPECT_EQ(identityCount, 0) << "errorOccurred must not be paired with identityReady";
@@ -205,6 +241,12 @@ inline void assertReadEmissionContract(librecelik::agent::CardController& contro
 /// precede `finished`, any `phaseChanged` arrives before `finished`, and
 /// `finished` fires exactly once with a `(succeeded, failed)` pair equal to the
 /// per-row `ok` tally.
+///
+/// OUTCOME FLOOR: a caller that scripts no `expectedTally` also asserts
+/// `succeeded > 0` unless it sets `allowNoSucceededRows`. The floor is a
+/// NON-FATAL expectation on purpose — the live case has to come back from this
+/// helper to feed its own tally to the credential-protection latch, and a fatal
+/// assert here would return past that call and leave the latch unset.
 inline void assertSignEmissionContract(librecelik::agent::SignController& controller, const QString& certId,
                                        const QList<librecelik::agent::SignRequestItem>& files,
                                        const LibreSCRS::AgentClient::SignOptions& options, const QString& outputFolder,
@@ -283,6 +325,10 @@ inline void assertSignEmissionContract(librecelik::agent::SignController& contro
 
     if (expectation.expectedTally.has_value()) {
         EXPECT_EQ(qMakePair(succeeded, failed), *expectation.expectedTally) << "tally differs from the script";
+    } else if (!expectation.allowNoSucceededRows) {
+        EXPECT_GT(succeeded, 0) << "a scriptless run must have SIGNED something: every row failed (failed=" << failed
+                                << "), which the clauses above accept as a consistent run; "
+                                   "script an expectedTally, or set allowNoSucceededRows to mean it";
     }
     // phaseCount is unconstrained by the contract (an agent may report none);
     // it is recorded so the before-finished ordering above can be judged.

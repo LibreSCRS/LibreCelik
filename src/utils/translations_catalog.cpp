@@ -1221,8 +1221,16 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-settings-tl-type");
     //% "Loading:"
     QT_TRID_NOOP("lc-settings-tl-loading");
-    //% "Cache directory:"
-    QT_TRID_NOOP("lc-settings-cache-dir");
+    //% "Last used TSA server:"
+    QT_TRID_NOOP("lc-settings-last-tsa");
+    //% "The agent refused this change."
+    QT_TRID_NOOP("lc-settings-config-refused");
+    //% "You are not authorized to change this setting."
+    QT_TRID_NOOP("lc-settings-config-unauthorized");
+    //% "Signing and trust preferences are kept by the agent. Start it to change them."
+    QT_TRID_NOOP("lc-settings-needs-agent");
+    //% "Your previous timestamp/trust-list settings can be applied under Settings."
+    QT_TRID_NOOP("lc-settings-trust-import-notice");
     //% "Invalid URL"
     QT_TRID_NOOP("lc-settings-invalid-url-title");
     //% "Please enter a valid URL."

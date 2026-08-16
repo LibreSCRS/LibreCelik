@@ -1468,9 +1468,25 @@
         <source>Loading:</source>
         <translation>Loading:</translation>
     </message>
-    <message id="lc-settings-cache-dir">
-        <source>Cache directory:</source>
-        <translation>Cache directory:</translation>
+    <message id="lc-settings-last-tsa">
+        <source>Last used TSA server:</source>
+        <translation>Last used TSA server:</translation>
+    </message>
+    <message id="lc-settings-config-refused">
+        <source>The agent refused this change.</source>
+        <translation>The agent refused this change.</translation>
+    </message>
+    <message id="lc-settings-config-unauthorized">
+        <source>You are not authorized to change this setting.</source>
+        <translation>You are not authorized to change this setting.</translation>
+    </message>
+    <message id="lc-settings-needs-agent">
+        <source>Signing and trust preferences are kept by the agent. Start it to change them.</source>
+        <translation>Signing and trust preferences are kept by the agent. Start it to change them.</translation>
+    </message>
+    <message id="lc-settings-trust-import-notice">
+        <source>Your previous timestamp/trust-list settings can be applied under Settings.</source>
+        <translation>Your previous timestamp/trust-list settings can be applied under Settings.</translation>
     </message>
     <message id="lc-settings-invalid-url-title">
         <source>Invalid URL</source>

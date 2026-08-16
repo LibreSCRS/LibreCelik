@@ -108,6 +108,12 @@ private:
     void updateEmptyState();
     [[nodiscard]] QString readerNameForCard(const QString& cardId) const;
 
+    /// Carry the legacy QSettings preferences over to the agent's Config1.
+    /// Settings tier ONLY, per item, idempotent; the trust tier gets a passive
+    /// one-time notice and is never written from here (polkit ceremony belongs
+    /// on a user click, not on startup). Runs on every transition to Ready.
+    void importLegacySettings();
+
     bool loadLanguage(const QString& locale);
     void updateAboutText();
     void retranslateMenuBar();

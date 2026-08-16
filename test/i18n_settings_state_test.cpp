@@ -24,6 +24,7 @@
 
 #include "i18n_test_support/RetranslatableWidgetFixture.h"
 
+#include "fake_gateway/fakeagentgateway.h"
 #include "settings/settingsdialog.h"
 #include "settings/settingskeys.h"
 #include "utils/localeresolver.h"
@@ -57,6 +58,16 @@ void resetQSettings()
 class SettingsStateTest : public RetranslatableWidgetFixture
 {
 protected:
+    /// The dialog takes a gateway now. This suite is about the RETRANSLATE
+    /// path, not about the agent, so the scripted fake stands in — Ready, so
+    /// the operation-backed tabs render live rather than dark.
+    [[nodiscard]] std::unique_ptr<SettingsDialog> makeDialog()
+    {
+        gateway = std::make_unique<librecelik::test::agent::FakeAgentGateway>();
+        gateway->setPresence(librecelik::agent::PresenceState::Ready);
+        return std::make_unique<SettingsDialog>(gateway.get());
+    }
+
     void SetUp() override
     {
         RetranslatableWidgetFixture::SetUp();
@@ -73,8 +84,11 @@ protected:
     void TearDown() override
     {
         resetQSettings();
+        gateway.reset();
         RetranslatableWidgetFixture::TearDown();
     }
+
+    std::unique_ptr<librecelik::test::agent::FakeAgentGateway> gateway;
 };
 
 /// b23a825 regression case: kLanguage="" + system="sr-RS" → the
@@ -100,7 +114,7 @@ TEST_F(SettingsStateTest, languageComboReflectsEffectiveLanguageNotStalePreferen
     // resolver output is reachable from the combo. This test asserts
     // exactly that property without depending on the system locale of
     // the CI runner.
-    auto dlg = std::make_unique<SettingsDialog>();
+    auto dlg = makeDialog();
 
     // Locate the language combo by walking the dialog's child widgets.
     // The widget has no objectName by default; we identify it by its
@@ -128,7 +142,7 @@ TEST_F(SettingsStateTest, languageComboReflectsEffectiveLanguageNotStalePreferen
 /// disappear, not desync the combo.
 TEST_F(SettingsStateTest, settingsModalDialogSurvivesExternalLanguageSwitch)
 {
-    auto dlg = std::make_unique<SettingsDialog>();
+    auto dlg = makeDialog();
     dlg->show();
     QCoreApplication::processEvents();
 
@@ -155,7 +169,7 @@ TEST_F(SettingsStateTest, settingsModalDialogSurvivesExternalLanguageSwitch)
 /// the live retranslateUi() implementation.
 TEST_F(SettingsStateTest, settingsTabTitlesRetranslateOnLanguageChange)
 {
-    auto dlg = std::make_unique<SettingsDialog>();
+    auto dlg = makeDialog();
     dlg->show();
     QCoreApplication::processEvents();
 

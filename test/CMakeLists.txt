@@ -439,15 +439,77 @@ target_link_libraries(LibreCelikI18nFixtureSelfTest PRIVATE
 set_target_properties(LibreCelikI18nFixtureSelfTest PROPERTIES AUTOMOC ON)
 gtest_discover_tests(LibreCelikI18nFixtureSelfTest PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# --- Settings dialog over the agent's Config1 (offscreen GUI) ---
+#
+# The same production translation units i18n_settings_state_test compiles —
+# the dialog now speaks Config1, so the two suites share a source list — plus
+# the scripted fake gateway that answers its reads and records its writes.
+#
+# The abstract vtable anchors (agentgateway/cardcontroller/signcontroller .cpp)
+# ride along for the same reason every other fake-driven target needs them: the
+# fakes derive from those classes and the target cannot link without them.
+#
+# NO LibreSCRS::* link: every translation unit here speaks the client's own
+# vocabulary. A middleware link appearing in this target would mean a settings
+# TU started reading card configuration in-process again.
+add_executable(SettingsConfig1Tests
+    settings_config1_test.cpp
+    fake_gateway/fakeagentgateway.cpp
+    fake_gateway/fakecardcontroller.cpp
+    fake_gateway/fakesigncontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/agentgateway.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/cardcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/signcontroller.cpp
+    # The dialog prefills its trust-tier controls through buildConfig1Import,
+    # so the import TU is part of what this suite exercises.
+    ${CMAKE_SOURCE_DIR}/src/agent/settingsimport.cpp
+    ${CMAKE_SOURCE_DIR}/src/settings/settingsdialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/settings/tlitemdelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/signing/tsaitemdelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/listitemdelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/localeresolver.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/buttonbox.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/dialogs.cpp
+)
+target_include_directories(SettingsConfig1Tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${PROJECT_BINARY_DIR}/../src
+)
+target_link_libraries(SettingsConfig1Tests PRIVATE
+    GTest::gtest_main
+    Qt6::Core
+    Qt6::Widgets
+    Qt6::Test
+    LibreAgent::ClientQt
+)
+set_target_properties(SettingsConfig1Tests PROPERTIES AUTOMOC ON)
+gtest_discover_tests(SettingsConfig1Tests PROPERTIES ENVIRONMENT
+    "QT_QPA_PLATFORM=offscreen")
+
 # --- D7 runtime test: SettingsDialog preference-state coverage ---
 #
 # Compiles the live SettingsDialog implementation directly into the
 # test binary (rather than depending on the LibreCelik executable) so
 # the test exercises the production retranslate path with no Qt
 # plugin loading. Mirrors the SigningWizardE2ETests pattern.
+#
+# The fakes and the abstract vtable anchors are here because the dialog now
+# takes a gateway: the suite constructs it against the scripted one, and the
+# target cannot link a fake whose base classes' anchors are absent.
 add_executable(i18n_settings_state_test
     i18n_settings_state_test.cpp
     i18n_test_support/RetranslatableWidgetFixture.cpp
+    fake_gateway/fakeagentgateway.cpp
+    fake_gateway/fakecardcontroller.cpp
+    fake_gateway/fakesigncontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/agentgateway.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/cardcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/signcontroller.cpp
+    # Same reason as SettingsConfig1Tests: settingsdialog.cpp's trust-tier
+    # prefill calls buildConfig1Import.
+    ${CMAKE_SOURCE_DIR}/src/agent/settingsimport.cpp
     ${CMAKE_SOURCE_DIR}/src/settings/settingsdialog.cpp
     ${CMAKE_SOURCE_DIR}/src/settings/tlitemdelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/signing/tsaitemdelegate.cpp
@@ -467,6 +529,7 @@ target_link_libraries(i18n_settings_state_test PRIVATE
     Qt6::Core
     Qt6::Widgets
     Qt6::Test
+    LibreAgent::ClientQt
 )
 set_target_properties(i18n_settings_state_test PROPERTIES AUTOMOC ON)
 target_compile_definitions(i18n_settings_state_test PRIVATE
@@ -771,6 +834,7 @@ add_executable(AgentLayerTests
     agent_opstallwatchdog_test.cpp
     agent_signrequest_test.cpp
     agent_liveagentgateway_test.cpp
+    settings_import_test.cpp
     fake_gateway_selftest.cpp
     fake_gateway/fakeagentgateway.cpp
     fake_gateway/fakecardcontroller.cpp
@@ -782,6 +846,7 @@ add_executable(AgentLayerTests
     ${CMAKE_SOURCE_DIR}/src/agent/fieldmerge.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/opstallwatchdog.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/signrequest.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/settingsimport.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/live/liveagentgateway.cpp
     # The live gateway MINTS these two (Task 9 Step 3b), so the suite that
     # compiles it links them: a test target that stubbed them out would prove

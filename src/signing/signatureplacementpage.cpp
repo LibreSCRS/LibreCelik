@@ -4,7 +4,6 @@
 #include "signatureplacementpage.h"
 
 #include "agent/signrequest.h"
-#include "settings/settingskeys.h"
 
 #include <QCheckBox>
 #include <QDateTime>
@@ -13,7 +12,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QSettings>
 #include <QSpinBox>
 #include <QVBoxLayout>
 
@@ -92,10 +90,8 @@ SignaturePlacementPage::SignaturePlacementPage(QWidget* parent) : QWidget(parent
     connect(reasonEdit, &QLineEdit::textChanged, this, &SignaturePlacementPage::updatePreviewText);
     connect(locationEdit, &QLineEdit::textChanged, this, &SignaturePlacementPage::updatePreviewText);
 
-    // Restore persisted reason/location
-    QSettings settings(settings::kOrganization, settings::kApplication);
-    reasonEdit->setText(settings.value(settings::kSigningReason).toString());
-    locationEdit->setText(settings.value(settings::kSigningLocation).toString());
+    // The reason and the location start empty; the wizard fills them from the
+    // agent's configuration through applyConfig().
 
     // Apply translations once at end of construction; LanguageChange
     // re-runs retranslateUi() (single source of truth).
@@ -120,6 +116,12 @@ void SignaturePlacementPage::retranslateUi()
     locationEdit->setPlaceholderText(qtTrId("lc-sign-visual-location-placeholder"));
     updatePageLabel();
     updatePreviewText();
+}
+
+void SignaturePlacementPage::applyConfig(const QVariantMap& config)
+{
+    reasonEdit->setText(config.value(QStringLiteral("DefaultReason")).toString());
+    locationEdit->setText(config.value(QStringLiteral("DefaultLocation")).toString());
 }
 
 void SignaturePlacementPage::setLayoutProvider(PdfPreviewWidget::LayoutProvider provider)
@@ -180,13 +182,6 @@ QVariantMap SignaturePlacementPage::visualSignatureMap() const
     // top-left origin and caused a double transform in the signed output.
     return librecelik::agent::makeVisualSignatureMap(preview->currentPage(), preview->signatureRect(),
                                                      buildSignatureText());
-}
-
-void SignaturePlacementPage::saveSettings() const
-{
-    QSettings settings(settings::kOrganization, settings::kApplication);
-    settings.setValue(settings::kSigningReason, reasonEdit->text());
-    settings.setValue(settings::kSigningLocation, locationEdit->text());
 }
 
 void SignaturePlacementPage::goToPreviousPage()

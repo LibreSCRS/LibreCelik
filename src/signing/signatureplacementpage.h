@@ -28,12 +28,17 @@ public:
     void setLayoutProvider(PdfPreviewWidget::LayoutProvider provider);
     void setAppearanceFont(const QByteArray& ttfBytes);
 
+    /// Prefill the reason and the location from the agent's configuration
+    /// snapshot (`DefaultReason` / `DefaultLocation`). The wizard passes it —
+    /// this page dials nothing, and the two fields have no store of their own:
+    /// the persistent default belongs to the agent and is edited in Settings.
+    void applyConfig(const QVariantMap& config);
+
     void loadPdf(const QString& path, const QString& signerName, const QString& issuer);
     bool isVisualSignatureEnabled() const;
     /// The wire's six-key visualSignature map for the current placement.
     /// Caller-guarded by @ref isVisualSignatureEnabled.
     [[nodiscard]] QVariantMap visualSignatureMap() const;
-    void saveSettings() const;
 
 protected:
     void changeEvent(QEvent* event) override;

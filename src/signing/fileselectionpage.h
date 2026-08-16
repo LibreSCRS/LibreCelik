@@ -5,6 +5,7 @@
 
 #include <LibreSCRS/AgentClient/SignOptions.h>
 
+#include <QVariantMap>
 #include <QWidget>
 
 class QEvent;
@@ -51,6 +52,13 @@ public:
     //
     // Until this is called the page behaves as if both are available.
     void setCapabilities(bool tsaOverride, bool batch);
+
+    /// Seed the level and the timestamp-authority choice from the agent's
+    /// configuration snapshot (`DefaultLevel`, `TsaUrls`, `LastTsaUrl`). The
+    /// wizard passes it — this page dials nothing. The offered authorities are
+    /// the configured ones MERGED with the built-in list; `LastTsaUrl` is what
+    /// the agent last used and is preselected when it is among them.
+    void applyConfig(const QVariantMap& config);
 
     // Pure routing table, public so the format-routing suite pins the real
     // one rather than a copy of it.

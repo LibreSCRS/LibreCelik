@@ -1468,9 +1468,25 @@
         <source>Loading:</source>
         <translation>Учитавање:</translation>
     </message>
-    <message id="lc-settings-cache-dir">
-        <source>Cache directory:</source>
-        <translation>Директоријум кеша:</translation>
+    <message id="lc-settings-last-tsa">
+        <source>Last used TSA server:</source>
+        <translation>Последњи коришћени TSA сервер:</translation>
+    </message>
+    <message id="lc-settings-config-refused">
+        <source>The agent refused this change.</source>
+        <translation>Агент је одбио ову измену.</translation>
+    </message>
+    <message id="lc-settings-config-unauthorized">
+        <source>You are not authorized to change this setting.</source>
+        <translation>Немате овлашћење да измените ово подешавање.</translation>
+    </message>
+    <message id="lc-settings-needs-agent">
+        <source>Signing and trust preferences are kept by the agent. Start it to change them.</source>
+        <translation>Подешавања потписивања и поверења чува агент. Покрените га да бисте их мењали.</translation>
+    </message>
+    <message id="lc-settings-trust-import-notice">
+        <source>Your previous timestamp/trust-list settings can be applied under Settings.</source>
+        <translation>Ваша ранија подешавања временског жига и листа поверења могу се применити у Подешавањима.</translation>
     </message>
     <message id="lc-settings-invalid-url-title">
         <source>Invalid URL</source>

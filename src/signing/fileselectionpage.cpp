@@ -14,6 +14,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
+#include <QHash>
 #include <QLabel>
 #include <QLineEdit>
 #include <QLocale>
@@ -140,12 +141,9 @@ FileSelectionPage::FileSelectionPage(QWidget* parent) : QWidget(parent)
     levelCombo->addItem(QString(), QStringLiteral("B_T"));
     levelCombo->addItem(QString(), QStringLiteral("B_LT"));
     levelCombo->addItem(QString(), QStringLiteral("B_LTA"));
-    {
-        QSettings settings(settings::kOrganization, settings::kApplication);
-        QString defaultLevel = settings.value(settings::kSigningDefaultLevel, QStringLiteral("B_B")).toString();
-        int idx = levelCombo->findData(defaultLevel);
-        levelCombo->setCurrentIndex(idx >= 0 ? idx : 0);
-    }
+    // The default level is the agent's; applyConfig() sets it. Until then the
+    // page offers the baseline one.
+    levelCombo->setCurrentIndex(0);
 
     auto* levelRow = new QHBoxLayout;
     levelRow->addWidget(levelLabel);
@@ -164,20 +162,9 @@ FileSelectionPage::FileSelectionPage(QWidget* parent) : QWidget(parent)
     tsaLabel = new QLabel(tsaRow);
     tsaCombo = new QComboBox(tsaRow);
     tsaCombo->setEditable(false);
-    {
-        QSettings settings(settings::kOrganization, settings::kApplication);
-        QStringList saved = settings.value(settings::kSigningTsaUrls).toStringList();
-        QString lastUrl = settings.value(settings::kSigningTsaLastUrl).toString();
-
-        tsaCombo->addItems(signing::defaultTsaUrls());
-        for (const QString& url : saved) {
-            if (!url.trimmed().isEmpty() && tsaCombo->findText(url) < 0)
-                tsaCombo->addItem(url);
-        }
-
-        int idx = lastUrl.isEmpty() ? 0 : tsaCombo->findText(lastUrl);
-        tsaCombo->setCurrentIndex(idx < 0 ? 0 : idx);
-    }
+    // The configured authorities are the agent's; applyConfig() merges them in.
+    tsaCombo->addItems(signing::defaultTsaUrls());
+    tsaCombo->setCurrentIndex(0);
     tsaInputRow->addWidget(tsaLabel);
     tsaInputRow->addWidget(tsaCombo, 1);
     tsaLayout->addLayout(tsaInputRow);
@@ -193,14 +180,11 @@ FileSelectionPage::FileSelectionPage(QWidget* parent) : QWidget(parent)
         emit validityChanged(isValid());
     });
 
-    // Initialize TSA visibility based on loaded default level
+    // Initialize TSA visibility based on the level the page opens at
     updateTsaRowVisibility();
-    connect(tsaCombo, &QComboBox::currentIndexChanged, this, [this]() {
-        emit validityChanged(isValid());
-        // Persist last selected TSA
-        QSettings settings(settings::kOrganization, settings::kApplication);
-        settings.setValue(settings::kSigningTsaLastUrl, tsaCombo->currentText().trimmed());
-    });
+    // Nothing is persisted here: `LastTsaUrl` is a read-only Config1 key the
+    // agent maintains from the runs it actually performs.
+    connect(tsaCombo, &QComboBox::currentIndexChanged, this, [this]() { emit validityChanged(isValid()); });
 
     // Output folder
     outputLabel = new QLabel(this);
@@ -274,6 +258,39 @@ void FileSelectionPage::setCapabilities(bool tsaOverride, bool batch)
     batchCapable = batch;
     updateTsaRowVisibility();
     updateSequentialNotice();
+}
+
+void FileSelectionPage::applyConfig(const QVariantMap& config)
+{
+    // The agent speaks the wire's level tokens; the combo carries the UI ones.
+    // An unknown or absent token leaves the page at the baseline level.
+    static const QHash<QString, QString> kUiLevelToken = {
+        {QStringLiteral("b-b"), QStringLiteral("B_B")},
+        {QStringLiteral("b-t"), QStringLiteral("B_T")},
+        {QStringLiteral("b-lt"), QStringLiteral("B_LT")},
+        {QStringLiteral("b-lta"), QStringLiteral("B_LTA")},
+    };
+    const int levelIdx =
+        levelCombo->findData(kUiLevelToken.value(config.value(QStringLiteral("DefaultLevel")).toString()));
+    levelCombo->setCurrentIndex(levelIdx >= 0 ? levelIdx : 0);
+
+    // The built-in authorities plus whatever the agent has been configured
+    // with; the preselection is the one the agent last used.
+    const QString currentUrl = tsaCombo->currentText();
+    tsaCombo->clear();
+    tsaCombo->addItems(signing::defaultTsaUrls());
+    for (const QString& rawUrl : config.value(QStringLiteral("TsaUrls")).toStringList()) {
+        const QString url = rawUrl.trimmed();
+        if (!url.isEmpty() && tsaCombo->findText(url) < 0)
+            tsaCombo->addItem(url);
+    }
+    const QString lastUrl = config.value(QStringLiteral("LastTsaUrl")).toString().trimmed();
+    const QString preferred = lastUrl.isEmpty() ? currentUrl : lastUrl;
+    const int tsaIdx = preferred.isEmpty() ? 0 : tsaCombo->findText(preferred);
+    tsaCombo->setCurrentIndex(tsaIdx < 0 ? 0 : tsaIdx);
+
+    updateTsaRowVisibility();
+    emit validityChanged(isValid());
 }
 
 bool FileSelectionPage::isValid() const

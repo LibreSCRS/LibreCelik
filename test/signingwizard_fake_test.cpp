@@ -109,6 +109,7 @@ protected:
             librecelik::agent::ReaderInfo{QStringLiteral("reader-1"), QStringLiteral("Reader One"), true, kCardId}};
         gateway_->scriptedFeatures = QStringList{QStringLiteral("batch-sign"), QStringLiteral("visual-sign"),
                                                  QStringLiteral("layout-preview"), QStringLiteral("tsa-url")};
+        scriptAgentConfig();
 
         controller = std::make_unique<FakeSignController>();
         fakeSign = controller.get();
@@ -361,14 +362,11 @@ private:
         QCoreApplication::installTranslator(translator);
     }
 
-    /// Keep the wizard's persisted state — default level, TSA list, output
-    /// folder, placement reason/location — off the developer's real
-    /// configuration AND out of any directory another suite shares.
-    ///
-    /// The default level is deliberately a TIMESTAMPED one: the TSA row is
-    /// gated on the level as well as on the capability, so at the B_B default
-    /// the row would be hidden whatever the agent can do and the
-    /// capability-gating case would prove nothing.
+    /// Keep the wizard's remaining file-backed state — the default output
+    /// folder — off the developer's real configuration AND out of any
+    /// directory another suite shares. Everything the AGENT owns (level, TSA
+    /// list, placement reason/location) comes from the scripted config
+    /// snapshot instead, see @ref scriptAgentConfig.
     static void pinSettingsToATempTree()
     {
         static QTemporaryDir settingsDir;
@@ -378,10 +376,16 @@ private:
         QSettings::setDefaultFormat(QSettings::IniFormat);
         QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, settingsDir.path());
         QSettings::setPath(QSettings::IniFormat, QSettings::SystemScope, settingsDir.path());
-        QSettings settings(settings::kOrganization, settings::kApplication);
-        settings.setValue(settings::kSigningDefaultLevel, QStringLiteral("B_T"));
-        settings.sync();
         settingsPinned = true;
+    }
+
+    /// The default level is deliberately a TIMESTAMPED one: the TSA row is
+    /// gated on the level as well as on the capability, so at the baseline
+    /// level the row would be hidden whatever the agent can do and the
+    /// capability-gating case would prove nothing.
+    void scriptAgentConfig() const
+    {
+        gateway_->config[QStringLiteral("DefaultLevel")] = QStringLiteral("b-t");
     }
 
     QTemporaryDir temp;

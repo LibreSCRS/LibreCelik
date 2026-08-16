@@ -57,6 +57,15 @@ SigningWizard::SigningWizard(const LibreSCRS::AgentClient::CertificateInfo& cert
     filePage->setCapabilities(controller != nullptr && controller->canTsaOverride(),
                               controller != nullptr && controller->canBatch());
 
+    // The operation-affecting preferences are the agent's, and the pages read
+    // them from ONE snapshot taken here: the level and the timestamp authority
+    // the selection page opens at, the reason and the location the placement
+    // page prefills with. A null gateway answers an empty map, and the pages
+    // then open at their own baselines.
+    const QVariantMap config = gateway != nullptr ? gateway->configSnapshot() : QVariantMap();
+    filePage->applyConfig(config);
+    placementPage->applyConfig(config);
+
     // Preview parity: the wrap, the font size and the glyph metrics all come
     // from whoever will stamp the page. A null gateway answers no layout, and
     // the preview then draws the placement box alone rather than inventing a
@@ -202,7 +211,6 @@ void SigningWizard::goNext()
         }
     } else if (current == 1) {
         // Placement → Sign
-        placementPage->saveSettings();
         std::optional<QVariantMap> visual;
         if (placementPage->isVisualSignatureEnabled())
             visual = placementPage->visualSignatureMap();

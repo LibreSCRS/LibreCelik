@@ -4,9 +4,12 @@
 #include <gtest/gtest.h>
 #include "plugin/cardwidgetpluginregistry.h"
 
+#include <LibreSCRS/AgentClient/Types.h>
+
 #include <QApplication>
 #include <QDir>
 #include <QLabel>
+#include <QList>
 
 namespace {
 int argc = 1;
@@ -46,11 +49,11 @@ TEST(CardWidgetPluginRegistryTest, CreateWidgetFromPlugin)
     auto* plugin = registry.findByCardType("mock");
     ASSERT_NE(plugin, nullptr);
 
-    LibreSCRS::Plugin::CardData data;
-    data.cardType = "mock";
+    LibreSCRS::AgentClient::FieldGroup group;
+    group.key = QStringLiteral("mock");
 
     QWidget parent;
-    auto* widget = plugin->createWidget(data, &parent);
+    auto* widget = plugin->createWidget(QList<LibreSCRS::AgentClient::FieldGroup>{group}, &parent);
     ASSERT_NE(widget, nullptr);
     auto* label = qobject_cast<QLabel*>(widget);
     ASSERT_NE(label, nullptr);

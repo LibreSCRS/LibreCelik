@@ -5,7 +5,9 @@
 
 #include "utils/pluginwidgetbase.h"
 
-#include <LibreSCRS/Plugin/CardData.h>
+#include <LibreSCRS/AgentClient/Types.h>
+
+#include <QList>
 
 class CollapsibleSection;
 class QLabel;
@@ -19,24 +21,24 @@ class EMRTDWidget : public plugin_ui::PluginWidgetBase
     Q_OBJECT
 public:
     // Full-data constructor (existing behaviour, unchanged)
-    explicit EMRTDWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent = nullptr);
+    explicit EMRTDWidget(const QList<LibreSCRS::AgentClient::FieldGroup>& groups, QWidget* parent = nullptr);
 
     // Empty-shell constructor for progressive display
     explicit EMRTDWidget(QWidget* parent);
 
     // Progressive display: add one group at a time
-    void addGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
+    void addGroup(const LibreSCRS::AgentClient::FieldGroup& group);
 
     Q_INVOKABLE void enablePrintButton();
     void showNoDataMessage();
 
-    const LibreSCRS::Plugin::CardData& cardData() const
+    const QList<LibreSCRS::AgentClient::FieldGroup>& fieldGroups() const
     {
-        return data;
+        return groups;
     }
 
 signals:
-    void printRequested(const LibreSCRS::Plugin::CardData& data);
+    void printRequested(const QList<LibreSCRS::AgentClient::FieldGroup>& groups);
 
 protected:
     void retranslateUi() override;
@@ -44,7 +46,7 @@ protected:
 private:
     void buildShell();
 
-    LibreSCRS::Plugin::CardData data;
+    QList<LibreSCRS::AgentClient::FieldGroup> groups;
     QToolButton* printBtn = nullptr;
 
     // Progressive-display state

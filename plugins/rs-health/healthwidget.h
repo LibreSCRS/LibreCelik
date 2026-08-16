@@ -5,7 +5,9 @@
 
 #include "utils/pluginwidgetbase.h"
 
-#include <LibreSCRS/Plugin/CardData.h>
+#include <LibreSCRS/AgentClient/Types.h>
+
+#include <QList>
 
 class CollapsibleSection;
 class QToolButton;
@@ -16,38 +18,38 @@ class HealthWidget : public plugin_ui::PluginWidgetBase
     Q_OBJECT
 public:
     // Full constructor — builds entire widget at once (existing behaviour)
-    explicit HealthWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent = nullptr);
+    explicit HealthWidget(const QList<LibreSCRS::AgentClient::FieldGroup>& groups, QWidget* parent = nullptr);
 
     // Empty constructor — creates outer shell for progressive population via addGroup()
     explicit HealthWidget(QWidget* parent);
 
     // Progressive display: append a group's UI section to the widget
-    void addGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
+    void addGroup(const LibreSCRS::AgentClient::FieldGroup& group);
 
-    const LibreSCRS::Plugin::CardData& cardData() const
+    const QList<LibreSCRS::AgentClient::FieldGroup>& fieldGroups() const
     {
-        return data;
+        return groups;
     }
 
     Q_INVOKABLE void enablePrintButton();
 
 signals:
-    void printRequested(const LibreSCRS::Plugin::CardData& data);
+    void printRequested(const QList<LibreSCRS::AgentClient::FieldGroup>& groups);
 
 protected:
     void retranslateUi() override;
 
 private:
     void buildEmptyShell();
-    void transformPermanentlyValid(LibreSCRS::Plugin::CardFieldGroup& group);
+    void transformPermanentlyValid(LibreSCRS::AgentClient::FieldGroup& group);
 
-    void addPersonalGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
-    void addInsuranceGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
-    void addAddressGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
-    void addCarrierGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
-    void addTaxpayerGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
+    void addPersonalGroup(const LibreSCRS::AgentClient::FieldGroup& group);
+    void addInsuranceGroup(const LibreSCRS::AgentClient::FieldGroup& group);
+    void addAddressGroup(const LibreSCRS::AgentClient::FieldGroup& group);
+    void addCarrierGroup(const LibreSCRS::AgentClient::FieldGroup& group);
+    void addTaxpayerGroup(const LibreSCRS::AgentClient::FieldGroup& group);
 
-    LibreSCRS::Plugin::CardData data;
+    QList<LibreSCRS::AgentClient::FieldGroup> groups;
     QVBoxLayout* outerLayout = nullptr;
     CollapsibleSection* outerSection = nullptr;
     QVBoxLayout* contentLayout = nullptr;

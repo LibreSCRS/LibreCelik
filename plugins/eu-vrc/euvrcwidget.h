@@ -5,7 +5,9 @@
 
 #include "utils/pluginwidgetbase.h"
 
-#include <LibreSCRS/Plugin/CardData.h>
+#include <LibreSCRS/AgentClient/Types.h>
+
+#include <QList>
 
 namespace librecelik::utils {
 class CardHeaderCard;
@@ -19,45 +21,45 @@ class EuVrcWidget : public plugin_ui::PluginWidgetBase
 {
     Q_OBJECT
 public:
-    // Full constructor — builds entire widget from complete CardData
-    explicit EuVrcWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent = nullptr);
+    // Full constructor — builds entire widget from a complete field-group read
+    explicit EuVrcWidget(const QList<LibreSCRS::AgentClient::FieldGroup>& groups, QWidget* parent = nullptr);
 
     // Empty shell constructor — for progressive display
     explicit EuVrcWidget(QWidget* parent);
 
     // Progressive display: add a group incrementally
-    void addGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
+    void addGroup(const LibreSCRS::AgentClient::FieldGroup& group);
 
-    const LibreSCRS::Plugin::CardData& cardData() const
+    const QList<LibreSCRS::AgentClient::FieldGroup>& fieldGroups() const
     {
-        return data;
+        return groups;
     }
 
     Q_INVOKABLE void enablePrintButton();
 
 signals:
-    void printRequested(const LibreSCRS::Plugin::CardData& data);
+    void printRequested(const QList<LibreSCRS::AgentClient::FieldGroup>& groups);
 
 protected:
     void retranslateUi() override;
 
 private:
     void buildShell();
-    void addRegistrationGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
-    void addVehicleGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
-    void addHolderGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
-    void addUserGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
-    void addNationalGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
-    void addOwnerGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
-    CollapsibleSection* buildRegistrationSection(const LibreSCRS::Plugin::CardFieldGroup* group);
-    CollapsibleSection* buildVehicleSection(const LibreSCRS::Plugin::CardFieldGroup* group);
-    CollapsibleSection* buildEngineTechnicalSection(const LibreSCRS::Plugin::CardFieldGroup* group);
-    CollapsibleSection* buildHolderSection(const LibreSCRS::Plugin::CardFieldGroup* group);
-    CollapsibleSection* buildUserSection(const LibreSCRS::Plugin::CardFieldGroup* group);
-    CollapsibleSection* buildNationalSection(const LibreSCRS::Plugin::CardFieldGroup* group);
-    CollapsibleSection* buildOwnerSection(const LibreSCRS::Plugin::CardFieldGroup* group);
+    void addRegistrationGroup(const LibreSCRS::AgentClient::FieldGroup& group);
+    void addVehicleGroup(const LibreSCRS::AgentClient::FieldGroup& group);
+    void addHolderGroup(const LibreSCRS::AgentClient::FieldGroup& group);
+    void addUserGroup(const LibreSCRS::AgentClient::FieldGroup& group);
+    void addNationalGroup(const LibreSCRS::AgentClient::FieldGroup& group);
+    void addOwnerGroup(const LibreSCRS::AgentClient::FieldGroup& group);
+    CollapsibleSection* buildRegistrationSection(const LibreSCRS::AgentClient::FieldGroup* group);
+    CollapsibleSection* buildVehicleSection(const LibreSCRS::AgentClient::FieldGroup* group);
+    CollapsibleSection* buildEngineTechnicalSection(const LibreSCRS::AgentClient::FieldGroup* group);
+    CollapsibleSection* buildHolderSection(const LibreSCRS::AgentClient::FieldGroup* group);
+    CollapsibleSection* buildUserSection(const LibreSCRS::AgentClient::FieldGroup* group);
+    CollapsibleSection* buildNationalSection(const LibreSCRS::AgentClient::FieldGroup* group);
+    CollapsibleSection* buildOwnerSection(const LibreSCRS::AgentClient::FieldGroup* group);
 
-    LibreSCRS::Plugin::CardData data;
+    QList<LibreSCRS::AgentClient::FieldGroup> groups;
     QVBoxLayout* outerLayout = nullptr;
     QVBoxLayout* contentLayout = nullptr;
     CollapsibleSection* outerSection = nullptr;

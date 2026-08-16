@@ -2,6 +2,9 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "utils/fieldsectionbuilder.h"
+
+#include <LibreSCRS/AgentClient/IdentityRows.h>
+
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -11,9 +14,9 @@
 
 namespace librecelik::utils {
 
-CollapsibleSection* FieldSectionBuilder::build(const QString& title, const LibreSCRS::Plugin::CardFieldGroup& group,
-                                               const std::map<std::string, QString>& translationMap,
-                                               const std::set<std::string>& hiddenFields, QWidget* parent)
+CollapsibleSection* FieldSectionBuilder::build(const QString& title, const LibreSCRS::AgentClient::FieldGroup& group,
+                                               const std::map<QString, QString>& translationMap,
+                                               const std::set<QString>& hiddenFields, QWidget* parent)
 {
     auto* section = new CollapsibleSection(title, parent);
     section->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
@@ -23,10 +26,14 @@ CollapsibleSection* FieldSectionBuilder::build(const QString& title, const Libre
     int row = 0;
     int col = 0;
 
-    for (const auto& field : group.fields) {
-        if (field.value.empty())
+    // The skip-binary / stringify decision is NOT re-implemented here: it lives
+    // in the client's shared flatten rule, so every consumer renders the same
+    // row set. Empty values are dropped locally — the flatten deliberately
+    // retains them for tabular renderers, this grid is not one.
+    for (const auto& identityRow : LibreSCRS::AgentClient::flattenIdentityFields({group})) {
+        if (identityRow.value.isEmpty())
             continue;
-        if (hiddenFields.count(field.key))
+        if (hiddenFields.count(identityRow.fieldKey))
             continue;
 
         auto* cellLayout = new QVBoxLayout();
@@ -34,19 +41,20 @@ CollapsibleSection* FieldSectionBuilder::build(const QString& title, const Libre
         cellLayout->setSpacing(0);
 
         QString labelText;
-        auto it = translationMap.find(field.key);
+        auto it = translationMap.find(identityRow.fieldKey);
         if (it != translationMap.end())
             labelText = it->second;
+        else if (!identityRow.labelFallback.isEmpty())
+            labelText = identityRow.labelFallback;
         else
-            labelText = QString::fromStdString(field.key);
+            labelText = identityRow.fieldKey;
 
         auto* label = new QLabel(labelText, section);
         auto* paletteSource = parent ? parent : section;
         label->setStyleSheet(QString("color: %1; font-size: 10px;")
                                  .arg(paletteSource->palette().color(QPalette::PlaceholderText).name()));
 
-        auto textOpt = field.textValue();
-        auto* value = new QLineEdit(textOpt ? QString::fromStdString(*textOpt) : QString{}, section);
+        auto* value = new QLineEdit(identityRow.value, section);
         value->setReadOnly(true);
         value->setCursorPosition(0);
 
@@ -67,8 +75,8 @@ CollapsibleSection* FieldSectionBuilder::build(const QString& title, const Libre
 }
 
 void FieldSectionBuilder::highlightExpiredDates(CollapsibleSection* section,
-                                                const LibreSCRS::Plugin::CardFieldGroup& group,
-                                                const std::set<std::string>& dateFieldKeys)
+                                                const LibreSCRS::AgentClient::FieldGroup& group,
+                                                const std::set<QString>& dateFieldKeys)
 {
     if (!section || dateFieldKeys.empty())
         return;
@@ -78,13 +86,11 @@ void FieldSectionBuilder::highlightExpiredDates(CollapsibleSection* section,
     for (const auto& field : group.fields) {
         if (!dateFieldKeys.count(field.key))
             continue;
-        auto textOpt = field.textValue();
-        if (!textOpt.has_value())
+        if (field.value.isEmpty())
             continue;
-        auto val = QString::fromStdString(*textOpt);
-        auto date = QDate::fromString(val, "dd.MM.yyyy");
+        auto date = QDate::fromString(field.value, "dd.MM.yyyy");
         if (date.isValid() && date < QDate::currentDate())
-            expiredValues.insert(val);
+            expiredValues.insert(field.value);
     }
 
     if (expiredValues.empty())

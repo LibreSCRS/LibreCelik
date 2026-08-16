@@ -6,6 +6,7 @@
 #include "certutils.h"
 #include "resultdelegate.h"
 #include "signingcolors.h"
+#include "tsavalidation.h"
 #include "utils/iconutils.h"
 #include "utils/dialogs.h"
 

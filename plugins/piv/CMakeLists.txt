@@ -24,6 +24,7 @@ target_include_directories(piv-gui-plugin PRIVATE
 )
 target_link_libraries(piv-gui-plugin PRIVATE
     Qt6::Widgets
+    LibreAgent::ClientQt
     LibreSCRS::Plugin
     LibreCelikPrinting
 )

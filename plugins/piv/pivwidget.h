@@ -5,7 +5,9 @@
 
 #include "utils/pluginwidgetbase.h"
 
-#include <LibreSCRS/Plugin/CardData.h>
+#include <LibreSCRS/AgentClient/Types.h>
+
+#include <QList>
 
 namespace librecelik::utils {
 class CardHeaderCard;
@@ -19,34 +21,34 @@ class PIVWidget : public plugin_ui::PluginWidgetBase
 {
     Q_OBJECT
 public:
-    explicit PIVWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent = nullptr);
+    explicit PIVWidget(const QList<LibreSCRS::AgentClient::FieldGroup>& groups, QWidget* parent = nullptr);
     explicit PIVWidget(QWidget* parent);
 
-    void addGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
+    void addGroup(const LibreSCRS::AgentClient::FieldGroup& group);
 
-    const LibreSCRS::Plugin::CardData& cardData() const
+    const QList<LibreSCRS::AgentClient::FieldGroup>& fieldGroups() const
     {
-        return data;
+        return groups;
     }
 
     Q_INVOKABLE void enablePrintButton();
 
 signals:
-    void printRequested(const LibreSCRS::Plugin::CardData& data);
+    void printRequested(const QList<LibreSCRS::AgentClient::FieldGroup>& groups);
 
 protected:
     void retranslateUi() override;
 
 private:
     void buildEmptyShell();
-    void addChuidGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
-    void addCccGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
-    void addPrintedGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
-    void addDiscoveryGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
-    void addKeyHistoryGroup(const LibreSCRS::Plugin::CardFieldGroup& group);
+    void addChuidGroup(const LibreSCRS::AgentClient::FieldGroup& group);
+    void addCccGroup(const LibreSCRS::AgentClient::FieldGroup& group);
+    void addPrintedGroup(const LibreSCRS::AgentClient::FieldGroup& group);
+    void addDiscoveryGroup(const LibreSCRS::AgentClient::FieldGroup& group);
+    void addKeyHistoryGroup(const LibreSCRS::AgentClient::FieldGroup& group);
     void rebuildHeader();
 
-    LibreSCRS::Plugin::CardData data;
+    QList<LibreSCRS::AgentClient::FieldGroup> groups;
     QVBoxLayout* outerLayout = nullptr;
     QVBoxLayout* contentLayout = nullptr;
     CollapsibleSection* outerSection = nullptr;

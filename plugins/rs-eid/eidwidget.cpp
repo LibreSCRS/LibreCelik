@@ -8,7 +8,7 @@
 #include "utils/fieldsectionbuilder.h"
 #include "utils/iconutils.h"
 
-#include <plugin/carddatautils.h>
+#include <plugin/fieldvalue.h>
 
 #include <QDate>
 #include <QGridLayout>
@@ -19,12 +19,39 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-using librecelik::plugin::getFieldValue;
+using librecelik::plugin::fieldDetailBytes;
+using librecelik::plugin::fieldValue;
+using librecelik::plugin::findGroup;
+using LibreSCRS::AgentClient::Field;
+using LibreSCRS::AgentClient::FieldGroup;
 
-EidWidget::EidWidget(const LibreSCRS::Plugin::CardData& cardData, QWidget* parent) : EidWidget(parent)
+namespace {
+
+/// The portrait the gateway merged into the read: its own group, keyed with
+/// the field half of the wire's composite key. A group that carries the image
+/// under some other key still renders — the first field with bytes wins.
+QByteArray photoBytes(const QList<FieldGroup>& groups)
 {
-    data.cardType = cardData.cardType;
-    for (const auto& group : cardData.groups)
+    QByteArray bytes = fieldDetailBytes(groups, u"photo", u"photo");
+    if (!bytes.isEmpty()) {
+        return bytes;
+    }
+    if (const FieldGroup* group = findGroup(groups, u"photo")) {
+        for (const Field& field : group->fields) {
+            bytes = field.detail.toByteArray();
+            if (!bytes.isEmpty()) {
+                return bytes;
+            }
+        }
+    }
+    return {};
+}
+
+} // namespace
+
+EidWidget::EidWidget(const QList<FieldGroup>& cardGroups, QWidget* parent) : EidWidget(parent)
+{
+    for (const auto& group : cardGroups)
         addGroup(group);
     applyVerificationFromMeta();
 }
@@ -35,9 +62,9 @@ void EidWidget::applyVerificationFromMeta()
     // than a separate "verification" group. Apply if streaming didn't
     // handle it. Extracted from the full-data ctor so retranslateUi()
     // can re-trigger the badge step after rebuilding sections.
-    if (personalSection && !data.findGroup("verification").has_value()) {
-        if (auto metaIdx = data.findGroup("meta"))
-            addVerificationBadges(personalSection, &data.groupAt(*metaIdx));
+    if (personalSection && !findGroup(groups, u"verification")) {
+        if (const FieldGroup* meta = findGroup(groups, u"meta"))
+            addVerificationBadges(personalSection, meta);
     }
 }
 
@@ -47,11 +74,11 @@ EidWidget::EidWidget(QWidget* parent) : plugin_ui::PluginWidgetBase(parent)
     outerLayout->setContentsMargins(0, 0, 0, 0);
 }
 
-void EidWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
+void EidWidget::addGroup(const FieldGroup& group)
 {
-    data.groups.push_back(group);
+    groups.append(group);
 
-    const auto key = QString::fromStdString(group.groupKey);
+    const QString key = group.key;
 
     if (key == QLatin1String("meta")) {
         bool foreigner = isForeigner();
@@ -68,7 +95,7 @@ void EidWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
 
         // Print button — disabled (dimmed) until all data arrives
         printBtn = iconutils::createPrinterHeaderButton(this);
-        connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
+        connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(groups); });
         outerSection->addHeaderWidget(printBtn);
 
     } else if (key == QLatin1String("personal")) {
@@ -130,78 +157,71 @@ void EidWidget::enablePrintButton()
 
 bool EidWidget::isForeigner() const
 {
-    auto cardTypeField = data.findField("card_type");
-    if (!cardTypeField)
-        return false;
-    auto text = data.fieldAt(*cardTypeField).textValue();
-    return text.has_value() && *text == "ForeignerIF2020";
+    return fieldValue(groups, u"card_type") == QLatin1String("ForeignerIF2020");
 }
 
 QPixmap EidWidget::loadPhoto() const
 {
-    if (auto photoIdx = data.findGroup("photo")) {
-        const auto& photoGroup = data.groupAt(*photoIdx);
-        if (!photoGroup.fields.empty() && !photoGroup.fields[0].value.empty()) {
-            QPixmap pixmap;
-            pixmap.loadFromData(photoGroup.fields[0].value.data(),
-                                static_cast<uint>(photoGroup.fields[0].value.size()));
-            if (!pixmap.isNull())
-                return pixmap;
-        }
+    const QByteArray bytes = photoBytes(groups);
+    if (!bytes.isEmpty()) {
+        QPixmap pixmap;
+        if (pixmap.loadFromData(bytes))
+            return pixmap;
     }
     return QPixmap(QStringLiteral(":/images/user.png"));
 }
 
 CollapsibleSection* EidWidget::buildPersonalSection(QWidget* parent) const
 {
-    auto personalOpt = data.findGroup("personal");
-    if (!personalOpt) {
+    const FieldGroup* personal = findGroup(groups, u"personal");
+    if (!personal) {
         auto* section = new CollapsibleSection(qtTrId("lc-personal-data-title"), parent);
         section->setCollapsible(false);
         return section;
     }
-    const auto& personal = data.groupAt(*personalOpt);
 
     bool foreigner = isForeigner();
 
-    std::map<std::string, QString> translationMap = {
-        {"given_name", qtTrId("lc-eid-label-given-name")},
-        {"surname", qtTrId("lc-eid-label-surname")},
-        {"date_of_birth", qtTrId("lc-eid-label-date-of-birth")},
-        {"personal_number", foreigner ? qtTrId("lc-eid-label-ebs") : qtTrId("lc-eid-label-jmbg")},
-        {"sex", qtTrId("lc-eid-label-sex")},
+    std::map<QString, QString> translationMap = {
+        {QStringLiteral("given_name"), qtTrId("lc-eid-label-given-name")},
+        {QStringLiteral("surname"), qtTrId("lc-eid-label-surname")},
+        {QStringLiteral("date_of_birth"), qtTrId("lc-eid-label-date-of-birth")},
+        {QStringLiteral("personal_number"), foreigner ? qtTrId("lc-eid-label-ebs") : qtTrId("lc-eid-label-jmbg")},
+        {QStringLiteral("sex"), qtTrId("lc-eid-label-sex")},
     };
 
-    std::set<std::string> hiddenFields = {
-        "place_of_birth",
-        "community_of_birth",
-        "state_of_birth",
+    std::set<QString> hiddenFields = {
+        QStringLiteral("place_of_birth"),
+        QStringLiteral("community_of_birth"),
+        QStringLiteral("state_of_birth"),
     };
 
     if (foreigner) {
-        translationMap["nationality"] = qtTrId("lc-eid-label-nationality");
-        translationMap["status_of_foreigner"] = qtTrId("lc-eid-label-status-of-foreigner");
-        hiddenFields.insert("parent_given_name");
+        translationMap[QStringLiteral("nationality")] = qtTrId("lc-eid-label-nationality");
+        translationMap[QStringLiteral("status_of_foreigner")] = qtTrId("lc-eid-label-status-of-foreigner");
+        hiddenFields.insert(QStringLiteral("parent_given_name"));
     } else {
-        translationMap["parent_given_name"] = qtTrId("lc-eid-label-parent-name");
-        hiddenFields.insert("nationality");
-        hiddenFields.insert("status_of_foreigner");
+        translationMap[QStringLiteral("parent_given_name")] = qtTrId("lc-eid-label-parent-name");
+        hiddenFields.insert(QStringLiteral("nationality"));
+        hiddenFields.insert(QStringLiteral("status_of_foreigner"));
     }
 
     // Synthetic composite place-of-birth for foreigners
-    LibreSCRS::Plugin::CardFieldGroup modifiedGroup = personal;
+    FieldGroup modifiedGroup = *personal;
     if (foreigner) {
         QStringList pobParts;
-        pobParts << getFieldValue(&personal, "place_of_birth") << getFieldValue(&personal, "community_of_birth")
-                 << getFieldValue(&personal, "state_of_birth");
+        pobParts << fieldValue(*personal, u"place_of_birth") << fieldValue(*personal, u"community_of_birth")
+                 << fieldValue(*personal, u"state_of_birth");
         pobParts.removeAll(QString());
-        auto pobValue = pobParts.join(", ").toStdString();
-        if (!pobValue.empty()) {
-            modifiedGroup.fields.push_back({"place_of_birth_composite",
-                                            "Place of Birth",
-                                            LibreSCRS::Plugin::FieldType::Text,
-                                            {pobValue.begin(), pobValue.end()}});
-            translationMap["place_of_birth_composite"] = qtTrId("lc-eid-label-place-of-birth");
+        auto pobValue = pobParts.join(", ");
+        if (!pobValue.isEmpty()) {
+            Field composite;
+            composite.key = QStringLiteral("place_of_birth_composite");
+            composite.value = pobValue;
+            composite.extra.insert(QStringLiteral("labelFallback"), QStringLiteral("Place of Birth"));
+            composite.extra.insert(QStringLiteral("type"), QStringLiteral("text"));
+            modifiedGroup.fields.append(composite);
+            translationMap[QStringLiteral("place_of_birth_composite")] = qtTrId("lc-eid-label-place-of-birth");
         }
     }
 
@@ -211,7 +231,7 @@ CollapsibleSection* EidWidget::buildPersonalSection(QWidget* parent) const
     return section;
 }
 
-void EidWidget::addVerificationBadges(CollapsibleSection* section, const LibreSCRS::Plugin::CardFieldGroup* source)
+void EidWidget::addVerificationBadges(CollapsibleSection* section, const FieldGroup* source)
 {
     if (!section)
         return;
@@ -225,11 +245,11 @@ void EidWidget::addVerificationBadges(CollapsibleSection* section, const LibreSC
     };
 
     std::vector<librecelik::utils::VerificationStatus> results = {
-        {qtTrId("lc-eid-label-card-verification"), source ? toResult(getFieldValue(source, "card_verification"))
-                                                          : librecelik::utils::VerificationStatus::Unknown},
-        {qtTrId("lc-eid-label-fixed-verification"), source ? toResult(getFieldValue(source, "fixed_verification"))
+        {qtTrId("lc-eid-label-card-verification"),
+         source ? toResult(fieldValue(*source, u"card_verification")) : librecelik::utils::VerificationStatus::Unknown},
+        {qtTrId("lc-eid-label-fixed-verification"), source ? toResult(fieldValue(*source, u"fixed_verification"))
                                                            : librecelik::utils::VerificationStatus::Unknown},
-        {qtTrId("lc-eid-label-variable-verification"), source ? toResult(getFieldValue(source, "variable_verification"))
+        {qtTrId("lc-eid-label-variable-verification"), source ? toResult(fieldValue(*source, u"variable_verification"))
                                                               : librecelik::utils::VerificationStatus::Unknown},
     };
 
@@ -284,9 +304,6 @@ void EidWidget::addVerificationBadges(CollapsibleSection* section, const LibreSC
 
 CollapsibleSection* EidWidget::buildAddressSection(QWidget* parent) const
 {
-    auto addressGroupOpt = data.findGroup("address");
-    const LibreSCRS::Plugin::CardFieldGroup* addressGroup = addressGroupOpt ? &data.groupAt(*addressGroupOpt) : nullptr;
-
     // Build address fields with composite assembly (same logic as original)
     auto* section = new CollapsibleSection(
         isForeigner() ? qtTrId("lc-eid-label-address-foreigner") : qtTrId("lc-eid-label-address"), parent);
@@ -312,13 +329,13 @@ CollapsibleSection* EidWidget::buildAddressSection(QWidget* parent) const
 
     // Assemble composite address
     QStringList addressParts;
-    addressParts << getFieldValue(addressGroup, "place") << getFieldValue(addressGroup, "community")
-                 << getFieldValue(addressGroup, "street") << getFieldValue(addressGroup, "house_number");
+    addressParts << fieldValue(groups, u"address", u"place") << fieldValue(groups, u"address", u"community")
+                 << fieldValue(groups, u"address", u"street") << fieldValue(groups, u"address", u"house_number");
     addressParts.removeAll(QString());
     auto address = addressParts.join(", ");
 
-    auto floor = getFieldValue(addressGroup, "floor");
-    auto apartmentNumber = getFieldValue(addressGroup, "apartment_number");
+    auto floor = fieldValue(groups, u"address", u"floor");
+    auto apartmentNumber = fieldValue(groups, u"address", u"apartment_number");
     if (!floor.isEmpty())
         address += "/" + floor;
     if (!apartmentNumber.isEmpty())
@@ -327,7 +344,7 @@ CollapsibleSection* EidWidget::buildAddressSection(QWidget* parent) const
     addField(0, 0, qtTrId("lc-eid-label-address"), address, 2);
 
     // Address date (only if meaningful)
-    auto addressDate = getFieldValue(addressGroup, "address_date");
+    auto addressDate = fieldValue(groups, u"address", u"address_date");
     if (!addressDate.isEmpty() && addressDate != "01.01.0001") {
         addField(1, 0, qtTrId("lc-eid-label-address-date"), addressDate, 2);
     }
@@ -338,21 +355,20 @@ CollapsibleSection* EidWidget::buildAddressSection(QWidget* parent) const
 
 CollapsibleSection* EidWidget::buildDocumentSection(QWidget* parent) const
 {
-    auto docGroupOpt = data.findGroup("document");
-    const LibreSCRS::Plugin::CardFieldGroup* docGroup = docGroupOpt ? &data.groupAt(*docGroupOpt) : nullptr;
+    const FieldGroup* docGroup = findGroup(groups, u"document");
 
-    const std::map<std::string, QString> translationMap = {
-        {"document_type", qtTrId("lc-eid-label-document-type")},
-        {"document_serial_number", qtTrId("lc-eid-label-document-serial-number")},
-        {"issuing_authority", qtTrId("lc-eid-label-issuing-authority")},
-        {"doc_reg_no", qtTrId("lc-eid-label-doc-reg-no")},
-        {"issuing_date", qtTrId("lc-eid-label-issuing-date")},
-        {"expiry_date", qtTrId("lc-eid-label-expiry-date")},
+    const std::map<QString, QString> translationMap = {
+        {QStringLiteral("document_type"), qtTrId("lc-eid-label-document-type")},
+        {QStringLiteral("document_serial_number"), qtTrId("lc-eid-label-document-serial-number")},
+        {QStringLiteral("issuing_authority"), qtTrId("lc-eid-label-issuing-authority")},
+        {QStringLiteral("doc_reg_no"), qtTrId("lc-eid-label-doc-reg-no")},
+        {QStringLiteral("issuing_date"), qtTrId("lc-eid-label-issuing-date")},
+        {QStringLiteral("expiry_date"), qtTrId("lc-eid-label-expiry-date")},
     };
 
     // Fields not relevant for display in the document section
-    const std::set<std::string> hiddenFields = {
-        "card_type",
+    const std::set<QString> hiddenFields = {
+        QStringLiteral("card_type"),
     };
 
     if (!docGroup) {
@@ -363,22 +379,22 @@ CollapsibleSection* EidWidget::buildDocumentSection(QWidget* parent) const
 
     auto* section = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-eid-label-document"), *docGroup,
                                                                   translationMap, hiddenFields, parent);
-    librecelik::utils::FieldSectionBuilder::highlightExpiredDates(section, *docGroup, {"expiry_date"});
+    librecelik::utils::FieldSectionBuilder::highlightExpiredDates(section, *docGroup, {QStringLiteral("expiry_date")});
     return section;
 }
 
 void EidWidget::retranslateUi()
 {
     // Plugin widget rebuild-tier (April 2026 retranslate spec): tear
-    // down all dynamic sections and rebuild from cached data.groups so
+    // down all dynamic sections and rebuild from the cached groups so
     // the new translator is applied to every label, header, and badge.
-    if (data.groups.empty()) {
+    if (groups.isEmpty()) {
         // Nothing built yet (empty-shell ctor before any addGroup()).
         return;
     }
 
-    auto cachedGroups = std::move(data.groups);
-    data.groups.clear();
+    auto cachedGroups = std::move(groups);
+    groups.clear();
 
     if (outerSection) {
         outerLayout->removeWidget(outerSection);

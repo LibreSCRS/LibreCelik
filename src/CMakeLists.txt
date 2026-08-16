@@ -42,6 +42,8 @@ set(PROJECT_SOURCES
         agent/opstallwatchdog.h
         agent/opstallwatchdog.cpp
         agent/optionalsections.h
+        agent/agentstatewidget.h
+        agent/agentstatewidget.cpp
         agent/signrequest.h
         agent/signrequest.cpp
         agent/live/liveagentgateway.h
@@ -60,6 +62,7 @@ set(PROJECT_SOURCES
         document/rs-eid/changepindlg.cpp
         document/emrtd/emrtdauthwidget.h
         document/emrtd/emrtdauthwidget.cpp
+        certificate/certfields.h
         certificate/certformat.h
         certificate/certformat.cpp
         certificate/certificateinfoitem.h
@@ -95,7 +98,7 @@ set(PROJECT_SOURCES
         plugin/cardwidgetplugin.h
         plugin/cardwidgetpluginregistry.h
         plugin/cardwidgetpluginregistry.cpp
-        plugin/carddatautils.h
+        plugin/fieldvalue.h
         asynccardreader.h
         asynccardreader.cpp
         aboutdialog.h
@@ -133,6 +136,7 @@ if(LIBRECELIK_SIGNING_ENABLED)
         signing/filedropzone.cpp
         signing/certutils.h
         signing/certutils.cpp
+        signing/tsavalidation.h
         signing/wizardheaderwidget.h
         signing/wizardheaderwidget.cpp
         signing/filelistdelegate.h

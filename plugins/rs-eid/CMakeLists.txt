@@ -24,6 +24,7 @@ target_include_directories(rs-eid-gui-plugin PRIVATE
 )
 target_link_libraries(rs-eid-gui-plugin PRIVATE
     Qt6::Widgets
+    LibreAgent::ClientQt
     LibreSCRS::Plugin
     LibreCelikPrinting
 )

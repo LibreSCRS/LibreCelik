@@ -5,8 +5,6 @@
 
 #include <LibreSCRS/Certificate/ParsedCertificate.h>
 
-#include <QUrl>
-
 #include <chrono>
 
 namespace lcc = LibreSCRS::Certificate;
@@ -43,14 +41,6 @@ bool isCertificateExpired(const std::vector<uint8_t>& derBytes)
     if (!cert)
         return true;
     return cert->notAfter() <= std::chrono::system_clock::now();
-}
-
-bool isValidTsaUrl(const QString& url)
-{
-    if (url.isEmpty())
-        return false;
-    const QUrl parsed(url, QUrl::StrictMode);
-    return parsed.isValid() && parsed.scheme() == QStringLiteral("https") && !parsed.host().isEmpty();
 }
 
 } // namespace signing

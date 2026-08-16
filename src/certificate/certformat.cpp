@@ -3,207 +3,149 @@
 
 #include "certformat.h"
 
-#include <LibreSCRS/Certificate/ObjectIdentifier.h>
-
 #include <QDateTime>
 #include <QStringList>
 #include <QTimeZone>
 
-namespace lcc = LibreSCRS::Certificate;
-
 namespace librecelik::certformat {
-
-QString bytesToHex(std::span<const std::uint8_t> bytes)
-{
-    if (bytes.empty())
-        return {};
-    QString out;
-    // Each byte renders as 2 hex chars + 1 colon, except the last byte has no
-    // trailing colon — reserve exactly that many UTF-16 code units.
-    out.reserve(static_cast<int>(bytes.size() * 3 - 1));
-    for (std::size_t i = 0; i < bytes.size(); ++i) {
-        if (i)
-            out.append(QLatin1Char(':'));
-        out.append(QString::asprintf("%02X", bytes[i]));
-    }
-    return out;
-}
-
-QString bytesToHex(const std::vector<std::uint8_t>& bytes)
-{
-    return bytesToHex(std::span<const std::uint8_t>(bytes.data(), bytes.size()));
-}
-
-QString bytesToHexLines(std::span<const std::uint8_t> bytes, std::size_t bytesPerLine)
-{
-    if (bytes.empty() || bytesPerLine == 0)
-        return {};
-    QString out;
-    // Each byte: 2 hex chars + 1 separator (space or newline). Last byte has
-    // no trailing separator.
-    out.reserve(static_cast<int>(bytes.size() * 3 - 1));
-    for (std::size_t i = 0; i < bytes.size(); ++i) {
-        if (i && i % bytesPerLine == 0)
-            out.append(QLatin1Char('\n'));
-        else if (i)
-            out.append(QLatin1Char(' '));
-        out.append(QString::asprintf("%02X", bytes[i]));
-    }
-    return out;
-}
-
-QString formatTime(std::chrono::system_clock::time_point tp)
-{
-    const auto secs = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
-    return QDateTime::fromSecsSinceEpoch(secs, QTimeZone::UTC).toString(QStringLiteral("yyyy-MM-dd HH:mm:ss 'UTC'"));
-}
-
-QString formatDate(std::chrono::system_clock::time_point tp)
-{
-    const auto secs = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
-    return QDateTime::fromSecsSinceEpoch(secs, QTimeZone::UTC).toString(QStringLiteral("dd.MM.yyyy"));
-}
-
-QString keyUsageBitLabel(lcc::KeyUsageBit bit)
-{
-    switch (bit) {
-    case lcc::KeyUsageBit::DigitalSignature:
-        return qtTrId("lc-token-ku-digital-signature");
-    case lcc::KeyUsageBit::NonRepudiation:
-        return qtTrId("lc-token-ku-non-repudiation");
-    case lcc::KeyUsageBit::KeyEncipherment:
-        return qtTrId("lc-token-ku-key-encipherment");
-    case lcc::KeyUsageBit::DataEncipherment:
-        return qtTrId("lc-token-ku-data-encipherment");
-    case lcc::KeyUsageBit::KeyAgreement:
-        return qtTrId("lc-token-ku-key-agreement");
-    case lcc::KeyUsageBit::KeyCertSign:
-        return qtTrId("lc-cert-ku-key-cert-sign");
-    case lcc::KeyUsageBit::CRLSign:
-        return qtTrId("lc-cert-ku-crl-sign");
-    case lcc::KeyUsageBit::EncipherOnly:
-        return qtTrId("lc-cert-ku-encipher-only");
-    case lcc::KeyUsageBit::DecipherOnly:
-        return qtTrId("lc-cert-ku-decipher-only");
-    }
-    return {};
-}
-
-QString keyUsageToString(std::span<const lcc::KeyUsageBit> bits)
-{
-    QStringList parts;
-    for (auto bit : bits)
-        parts << keyUsageBitLabel(bit);
-    return parts.join(QStringLiteral(", "));
-}
-
-QString keyUsageToStringEndEntity(std::span<const lcc::KeyUsageBit> bits)
-{
-    // Token section's UI focuses on end-entity capability indicators; the
-    // CA / EncipherOnly / DecipherOnly bits are intentionally not surfaced
-    // here. The certificate viewer dialog shows the complete list.
-    QStringList parts;
-    for (auto bit : bits) {
-        switch (bit) {
-        case lcc::KeyUsageBit::DigitalSignature:
-        case lcc::KeyUsageBit::NonRepudiation:
-        case lcc::KeyUsageBit::KeyEncipherment:
-        case lcc::KeyUsageBit::DataEncipherment:
-        case lcc::KeyUsageBit::KeyAgreement:
-            parts << keyUsageBitLabel(bit);
-            break;
-        case lcc::KeyUsageBit::KeyCertSign:
-        case lcc::KeyUsageBit::CRLSign:
-        case lcc::KeyUsageBit::EncipherOnly:
-        case lcc::KeyUsageBit::DecipherOnly:
-            break;
-        }
-    }
-    return parts.join(QStringLiteral(", "));
-}
-
-QString generalNameTypeLabel(lcc::GeneralNameType t)
-{
-    switch (t) {
-    case lcc::GeneralNameType::Rfc822Name:
-        return qtTrId("lc-cert-gn-rfc822");
-    case lcc::GeneralNameType::DnsName:
-        return qtTrId("lc-cert-gn-dns");
-    case lcc::GeneralNameType::UniformResourceIdentifier:
-        return qtTrId("lc-cert-gn-uri");
-    case lcc::GeneralNameType::IpAddress:
-        return qtTrId("lc-cert-gn-ip");
-    case lcc::GeneralNameType::DirectoryName:
-        return qtTrId("lc-cert-gn-directory");
-    case lcc::GeneralNameType::RegisteredId:
-        return qtTrId("lc-cert-gn-registered-id");
-    case lcc::GeneralNameType::OtherName:
-        return qtTrId("lc-cert-gn-other");
-    case lcc::GeneralNameType::X400Address:
-        return qtTrId("lc-cert-gn-x400");
-    case lcc::GeneralNameType::EdiPartyName:
-        return qtTrId("lc-cert-gn-edi");
-    }
-    return qtTrId("lc-cert-gn-other");
-}
 
 namespace {
 
-/// Bare algorithm label (no curve, no bit length) used by both
-/// publicKeyAlgorithmLabel and publicKeyDescription.
-QString algorithmBaseLabel(const lcc::PublicKeyInfo& pk)
-{
-    switch (pk.algorithm) {
-    case lcc::PublicKeyAlgorithm::RSA:
-        return QStringLiteral("RSA");
-    case lcc::PublicKeyAlgorithm::ECDSA:
-        return QStringLiteral("ECDSA");
-    case lcc::PublicKeyAlgorithm::EdDSA:
-        return QStringLiteral("EdDSA");
-    case lcc::PublicKeyAlgorithm::Other:
-        if (!pk.algorithmDescription.empty())
-            return QString::fromStdString(pk.algorithmDescription);
-        if (!pk.algorithmOid.dottedDecimal.empty()) {
-            const std::string friendly = pk.algorithmOid.friendlyName();
-            return friendly.empty() ? QString::fromStdString(pk.algorithmOid.dottedDecimal)
-                                    : QString::fromStdString(friendly);
-        }
-        return qtTrId("lc-cert-algorithm-unknown");
-    }
-    return qtTrId("lc-cert-algorithm-unknown");
-}
+/// RFC 5280 §4.2.1.3 ordinals, in the order the bitmask numbers them. The
+/// index into this table IS the bit index — the mask the agent sends is the
+/// RFC's own numbering, forwarded verbatim.
+constexpr int kKeyUsageBitCount = 9;
 
-/// Render a curve OID — friendly name when known (the OID DB currently
-/// doesn't carry curve entries, but the indirection keeps the door open),
-/// dotted decimal otherwise. Returns empty for an empty input.
-QString renderCurve(const std::string& curveOid)
+/// Highest ordinal the token summary renders. keyCertSign (5) and everything
+/// above it describe CA capability or cipher-direction restrictions, which
+/// that summary deliberately leaves to the full certificate viewer.
+constexpr int kEndEntityBitCount = 5;
+
+QString hex(QByteArrayView bytes, char separator, qsizetype bytesPerLine)
 {
-    if (curveOid.empty())
+    if (bytes.isEmpty())
         return {};
-    lcc::ObjectIdentifier oid(curveOid);
-    const std::string friendly = oid.friendlyName();
-    return friendly.empty() ? QString::fromStdString(curveOid) : QString::fromStdString(friendly);
+    QString out;
+    // Each byte renders as 2 hex chars + 1 separator, except the last byte has
+    // no trailing separator — reserve exactly that many UTF-16 code units.
+    out.reserve(static_cast<qsizetype>(bytes.size() * 3 - 1));
+    for (qsizetype i = 0; i < bytes.size(); ++i) {
+        if (i && bytesPerLine > 0 && i % bytesPerLine == 0)
+            out.append(QLatin1Char('\n'));
+        else if (i)
+            out.append(QLatin1Char(separator));
+        out.append(QString::asprintf("%02X", static_cast<unsigned char>(bytes[i])));
+    }
+    return out;
 }
 
 } // namespace
 
-QString publicKeyAlgorithmLabel(const lcc::PublicKeyInfo& pk)
+QString bytesToHex(QByteArrayView bytes)
 {
-    QString label = algorithmBaseLabel(pk);
-    QString curve = renderCurve(pk.curveOid);
-    if (!curve.isEmpty())
-        label += QStringLiteral(" (%1)").arg(curve);
-    return label;
+    return hex(bytes, ':', /*bytesPerLine=*/0);
 }
 
-QString publicKeyDescription(const lcc::PublicKeyInfo& pk)
+QString bytesToHexLines(QByteArrayView bytes, qsizetype bytesPerLine)
 {
-    QString algo = algorithmBaseLabel(pk);
-    QString desc = QStringLiteral("%1 %2-bit").arg(algo).arg(pk.bitLength);
-    QString curve = renderCurve(pk.curveOid);
-    if (!curve.isEmpty())
-        desc += QStringLiteral(" (%1)").arg(curve);
-    return desc;
+    if (bytesPerLine <= 0)
+        return {};
+    return hex(bytes, ' ', bytesPerLine);
+}
+
+QString formatTime(const QDateTime& tp)
+{
+    if (!tp.isValid())
+        return {};
+    return tp.toTimeZone(QTimeZone::UTC).toString(QStringLiteral("yyyy-MM-dd HH:mm:ss 'UTC'"));
+}
+
+QString formatDate(const QDateTime& tp)
+{
+    if (!tp.isValid())
+        return {};
+    return tp.toTimeZone(QTimeZone::UTC).toString(QStringLiteral("dd.MM.yyyy"));
+}
+
+QString keyUsageBitLabel(int bitIndex)
+{
+    switch (bitIndex) {
+    case 0:
+        return qtTrId("lc-token-ku-digital-signature");
+    case 1:
+        return qtTrId("lc-token-ku-non-repudiation");
+    case 2:
+        return qtTrId("lc-token-ku-key-encipherment");
+    case 3:
+        return qtTrId("lc-token-ku-data-encipherment");
+    case 4:
+        return qtTrId("lc-token-ku-key-agreement");
+    case 5:
+        return qtTrId("lc-cert-ku-key-cert-sign");
+    case 6:
+        return qtTrId("lc-cert-ku-crl-sign");
+    case 7:
+        return qtTrId("lc-cert-ku-encipher-only");
+    case 8:
+        return qtTrId("lc-cert-ku-decipher-only");
+    default:
+        break;
+    }
+    return {};
+}
+
+namespace {
+
+/// Shared body of the two KeyUsage renderings: every set bit below @p bitCount
+/// that this build has a label for, in ascending ordinal order. A set bit with
+/// no label contributes nothing at all — never an empty fragment between two
+/// separators.
+QString renderKeyUsage(quint32 keyUsageBits, int bitCount)
+{
+    QStringList parts;
+    for (int bit = 0; bit < bitCount; ++bit) {
+        if ((keyUsageBits & (1u << static_cast<quint32>(bit))) == 0)
+            continue;
+        const QString label = keyUsageBitLabel(bit);
+        if (!label.isEmpty())
+            parts << label;
+    }
+    return parts.join(QStringLiteral(", "));
+}
+
+} // namespace
+
+QString keyUsageToString(quint32 keyUsageBits)
+{
+    return renderKeyUsage(keyUsageBits, kKeyUsageBitCount);
+}
+
+QString keyUsageToStringEndEntity(quint32 keyUsageBits)
+{
+    // Token section's UI focuses on end-entity capability indicators; the
+    // CA / EncipherOnly / DecipherOnly bits are intentionally not surfaced
+    // here. The certificate viewer dialog shows the complete list.
+    return renderKeyUsage(keyUsageBits, kEndEntityBitCount);
+}
+
+QString extendedKeyUsageLabel(const QString& dottedOid)
+{
+    // RFC 5280 §4.2.1.12's own set, spelled as the agent's OID database
+    // spells them so the two paths read identically. Deliberately short: see
+    // the header — this is the older-agent fallback, not a name database.
+    if (dottedOid == QLatin1StringView("1.3.6.1.5.5.7.3.1"))
+        return QStringLiteral("TLS Web Server Authentication");
+    if (dottedOid == QLatin1StringView("1.3.6.1.5.5.7.3.2"))
+        return QStringLiteral("TLS Web Client Authentication");
+    if (dottedOid == QLatin1StringView("1.3.6.1.5.5.7.3.3"))
+        return QStringLiteral("Code Signing");
+    if (dottedOid == QLatin1StringView("1.3.6.1.5.5.7.3.4"))
+        return QStringLiteral("E-mail Protection");
+    if (dottedOid == QLatin1StringView("1.3.6.1.5.5.7.3.8"))
+        return QStringLiteral("Time Stamping");
+    if (dottedOid == QLatin1StringView("1.3.6.1.5.5.7.3.9"))
+        return QStringLiteral("OCSP Signing");
+    return dottedOid;
 }
 
 } // namespace librecelik::certformat

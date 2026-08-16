@@ -3,25 +3,60 @@
 
 #include "certificatehierarchymodel.h"
 #include "certificateinfoitem.h"
-#include "utils/libreceliklog.h"
-
-#include <LibreSCRS/Certificate/ParsedCertificate.h>
-#include <LibreSCRS/Trust/TrustStore.h>
 
 #include <QIcon>
+#include <QStringList>
 
-#include <algorithm>
-#include <span>
+using LibreSCRS::AgentClient::CertificateInfo;
+using LibreSCRS::AgentClient::TrustStatus;
 
-namespace lcc = LibreSCRS::Certificate;
-namespace lct = LibreSCRS::Trust;
+namespace {
 
-CertificateHierarchyModel::CertificateHierarchyModel(const lcc::ParsedCertificate* leaf,
-                                                     std::shared_ptr<const lct::TrustStore> store, QObject* parent)
-    : CertificateTreeViewModel(parent), trustStore(std::move(store))
+/// LC copy for one security-status token.
+///
+/// Same known-token/verbatim rule the token section applies: a token this
+/// build names renders LC's own string, anything else is displayed exactly as
+/// it arrived. The vocabulary is the agent's and grows independently of this
+/// build.
+[[nodiscard]] QString securityStatusText(const QString& token)
 {
-    if (leaf)
-        buildChain(*leaf);
+    if (token == QLatin1StringView("trusted"))
+        return qtTrId("lc-cert-status-trusted");
+    if (token == QLatin1StringView("untrusted-root"))
+        return qtTrId("lc-cert-status-untrusted-root");
+    if (token == QLatin1StringView("broken-chain"))
+        return qtTrId("lc-cert-status-broken-chain");
+    if (token == QLatin1StringView("invalid"))
+        return qtTrId("lc-cert-status-invalid");
+    if (token == QLatin1StringView("expired"))
+        return qtTrId("lc-cert-status-expired");
+    if (token == QLatin1StringView("revoked"))
+        return qtTrId("lc-cert-status-revoked");
+    if (token == QLatin1StringView("offline-unverified"))
+        return qtTrId("lc-cert-status-offline-unverified");
+    return token;
+}
+
+/// The status the leaf row shows: every token the agent reported, in its own
+/// order. An agent that reported none says nothing about trust, which is what
+/// the row then says.
+[[nodiscard]] QString chainStatusText(const CertificateInfo& cert)
+{
+    if (cert.securityStatus.isEmpty())
+        return qtTrId("lc-cert-verify-trust-unknown");
+    QStringList parts;
+    parts.reserve(cert.securityStatus.size());
+    for (const QString& token : cert.securityStatus)
+        parts << securityStatusText(token);
+    return parts.join(QStringLiteral(" · "));
+}
+
+} // namespace
+
+CertificateHierarchyModel::CertificateHierarchyModel(const CertificateInfo& cert, QObject* parent)
+    : CertificateTreeViewModel(parent), trust(cert.trust)
+{
+    buildChain(cert);
 }
 
 QVariant CertificateHierarchyModel::data(const QModelIndex& index, int role) const
@@ -32,14 +67,17 @@ QVariant CertificateHierarchyModel::data(const QModelIndex& index, int role) con
     if (role == Qt::DecorationRole && index.column() == 0) {
         auto* item = static_cast<CertificateInfoItem*>(index.internalPointer());
         // Only the leaf gets a status icon (it owns the verification result).
+        // Unknown is deliberately unadorned: it means no verdict was
+        // available, not a negative one.
         if (item->childCount() == 0) {
-            switch (trustState) {
-            case TrustState::Trusted:
+            switch (trust) {
+            case TrustStatus::Trusted:
                 return QIcon(QStringLiteral(":/images/green_checked.png"));
-            case TrustState::Untrusted:
+            case TrustStatus::Untrusted:
+            case TrustStatus::Revoked:
+            case TrustStatus::Expired:
                 return QIcon(QStringLiteral(":/images/red_exclamation.png"));
-            case TrustState::Unknown:
-                // No icon — UI shows "trust unknown" text in column 1.
+            case TrustStatus::Unknown:
                 return {};
             }
         }
@@ -48,100 +86,27 @@ QVariant CertificateHierarchyModel::data(const QModelIndex& index, int role) con
     return CertificateTreeViewModel::data(index, role);
 }
 
-void CertificateHierarchyModel::buildChain(const lcc::ParsedCertificate& leaf)
+void CertificateHierarchyModel::buildChain(const CertificateInfo& cert)
 {
-    // Walk issuers up the chain via TrustStore::findIssuerOf. Stop when we
-    // reach a self-signed cert (issuer not found and CN of issuer == subject)
-    // or when findIssuerOf returns nullopt and the cert is not self-issued.
-    //
-    // The walk holds parsed copies (we need the DER for the next lookup).
+    // The agent orders the path leaf..root; the tree nests root-first, so the
+    // walk runs backwards. With no path resolved there is still exactly one
+    // node to show — this certificate.
+    QStringList names = cert.chainSubjectCns;
+    if (names.isEmpty())
+        names << cert.subject;
 
-    std::vector<lcc::ParsedCertificate> chain;
-    chain.reserve(8);
+    const QString statusString = chainStatusText(cert);
 
-    // Add leaf — copy its DER so we own the byte block for the lifetime of
-    // the function (ParsedCertificate is move-only).
-    {
-        const auto leafDer = leaf.derBytes();
-        std::vector<std::uint8_t> derCopy(leafDer.begin(), leafDer.end());
-        if (auto parsed = lcc::ParsedCertificate::fromDer(derCopy))
-            chain.push_back(std::move(*parsed));
-    }
-
-    if (trustStore) {
-        // Walk upward up to a sane bound (chains rarely exceed 10).
-        constexpr std::size_t kMaxChain = 16;
-        while (chain.size() < kMaxChain) {
-            const auto& current = chain.back();
-            const auto curDer = current.derBytes();
-            auto issuer = trustStore->findIssuerOf(curDer);
-            if (!issuer)
-                break;
-            auto parsed = lcc::ParsedCertificate::fromDer(issuer->certificateDer);
-            if (!parsed)
-                break;
-            // Self-signed root reached — TrustStore::findIssuerOf returns the
-            // cert itself for self-signed roots present in the trust store.
-            // Test BEFORE pushing so we don't duplicate the root (or, when the
-            // leaf itself is a self-signed root, end up with [leaf, leaf]).
-            // Use the DER bytes as the identity check (cheap, robust against
-            // re-encoded DNs).
-            const auto parsedDer = parsed->derBytes();
-            const bool sameAsCurrent =
-                parsedDer.size() == curDer.size() && std::equal(parsedDer.begin(), parsedDer.end(), curDer.begin());
-            if (sameAsCurrent)
-                break; // self-signed root already in chain — stop without duplicate
-            chain.push_back(std::move(*parsed));
-        }
-    }
-
-    // Validate the chain once (leaf-first views) and derive both the UI status
-    // text and the icon trust-state from the same outcome.
-    trustState = TrustState::Unknown;
-    QString statusString = qtTrId("lc-cert-verify-trust-unknown"); // i18n-audit: ignore D1, item-view model
-                                                                   // retranslates via Qt::DisplayRole on next paint
-    if (trustStore && !chain.empty()) {
-        std::vector<lct::CertificateView> views;
-        views.reserve(chain.size());
-        for (const auto& c : chain)
-            views.emplace_back(c.derBytes());
-        const auto status = trustStore->validateChain(views);
-        qCDebug(lcCertificates) << "Chain validation status =" << static_cast<int>(status);
-        switch (status) {
-        case lct::TrustStore::ChainStatus::Trusted:
-            trustState = TrustState::Trusted;
-            statusString = qtTrId("lc-cert-verify-valid");
-            break;
-        case lct::TrustStore::ChainStatus::UntrustedRoot:
-            trustState = TrustState::Untrusted;
-            statusString = qtTrId("lc-cert-verify-untrusted-root");
-            break;
-        case lct::TrustStore::ChainStatus::BrokenChain:
-            trustState = TrustState::Untrusted;
-            statusString = qtTrId("lc-cert-verify-no-issuer");
-            break;
-        case lct::TrustStore::ChainStatus::InvalidCertificate:
-            trustState = TrustState::Untrusted;
-            statusString = qtTrId("lc-cert-verify-unspecified-error");
-            break;
-        case lct::TrustStore::ChainStatus::Expired:
-            trustState = TrustState::Untrusted;
-            statusString = qtTrId("lc-cert-verify-expired");
-            break;
-        }
-    }
-
-    // Build the tree from root (last in chain) to leaf (first).
     CertificateInfoItem* current = rootItem.get();
-    for (auto it = chain.rbegin(); it != chain.rend(); ++it) {
-        QString label = QString::fromStdString(it->subject().commonName());
+    for (auto it = names.crbegin(); it != names.crend(); ++it) {
+        QString label = *it;
+        // clang-format off
         if (label.isEmpty())
-            label = qtTrId("lc-cert-unknown");
+            label = qtTrId("lc-cert-unknown"); // i18n-audit: ignore D1, item-view model retranslates via Qt::DisplayRole on next paint
+        // clang-format on
 
-        const bool isLeaf = (it == chain.rend() - 1);
-        QString value = isLeaf ? statusString : QString();
-
-        auto item = std::make_unique<CertificateInfoItem>(label, value, current);
+        const bool isLeaf = (it == names.crend() - 1);
+        auto item = std::make_unique<CertificateInfoItem>(label, isLeaf ? statusString : QString(), current);
         auto* ptr = item.get();
         current->appendChild(std::move(item));
         current = ptr;

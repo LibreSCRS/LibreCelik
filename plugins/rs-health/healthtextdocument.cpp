@@ -4,17 +4,17 @@
 #include <QCoreApplication>
 #include <QDate>
 #include "healthtextdocument.h"
-#include <plugin/carddatautils.h>
+#include <plugin/fieldvalue.h>
 
-using librecelik::plugin::getFieldValue;
+using librecelik::plugin::fieldValue;
+using LibreSCRS::AgentClient::FieldGroup;
 
-HealthTextDocument::HealthTextDocument(const LibreSCRS::Plugin::CardData& cardData, QString documentPath,
-                                       QString cssPath)
+HealthTextDocument::HealthTextDocument(const QList<FieldGroup>& groups, QString documentPath, QString cssPath)
 {
     auto data = loadFile(documentPath);
 
     translateDocumentData(data);
-    prepareDocumentData(data, cardData);
+    prepareDocumentData(data, groups);
 
     setupDocument(data, cssPath);
 }
@@ -66,34 +66,34 @@ void HealthTextDocument::translateDocumentData(QString& data) const
     data.replace("${taxpayer_act}", qtTrId("lc-health-label-taxpayer-act"));
 }
 
-void HealthTextDocument::prepareDocumentData(QString& html, const LibreSCRS::Plugin::CardData& cardData) const
+void HealthTextDocument::prepareDocumentData(QString& html, const QList<FieldGroup>& groups) const
 {
-    html.replace("${given_name_value}", getPreparedValue(getFieldValue(cardData, "given_name")));
-    html.replace("${family_name_value}", getPreparedValue(getFieldValue(cardData, "family_name")));
-    html.replace("${given_name_lat_value}", getPreparedValue(getFieldValue(cardData, "given_name_latin")));
-    html.replace("${family_name_lat_value}", getPreparedValue(getFieldValue(cardData, "family_name_latin")));
-    html.replace("${parent_name_value}", getPreparedValue(getFieldValue(cardData, "parent_name")));
-    html.replace("${dob_value}", getPreparedValue(getFieldValue(cardData, "date_of_birth")));
-    html.replace("${gender_value}", getPreparedValue(getFieldValue(cardData, "gender")));
-    html.replace("${jmbg_value}", getPreparedValue(getFieldValue(cardData, "personal_number")));
-    html.replace("${lbo_value}", getPreparedValue(getFieldValue(cardData, "insurant_number")));
-    html.replace("${insurer_value}", getPreparedValue(getFieldValue(cardData, "insurer_name")));
-    html.replace("${insurer_id_value}", getPreparedValue(getFieldValue(cardData, "insurer_id")));
-    html.replace("${card_id_value}", getPreparedValue(getFieldValue(cardData, "card_id")));
-    html.replace("${issue_date_value}", getPreparedValue(getFieldValue(cardData, "date_of_issue")));
-    html.replace("${expiry_value}", getPreparedValue(getFieldValue(cardData, "date_of_expiry")));
-    html.replace("${valid_until_value}", getPreparedValue(getFieldValue(cardData, "valid_until")));
-    html.replace("${insurance_basis_value}", getPreparedValue(getFieldValue(cardData, "insurance_basis_rzzo")));
-    html.replace("${insurance_desc_value}", getPreparedValue(getFieldValue(cardData, "insurance_description")));
-    html.replace("${insurance_start_value}", getPreparedValue(getFieldValue(cardData, "insurance_start_date")));
-    html.replace("${street_value}", getPreparedValue(getFieldValue(cardData, "street")));
-    html.replace("${address_number_value}", getPreparedValue(getFieldValue(cardData, "address_number")));
-    html.replace("${apartment_value}", getPreparedValue(getFieldValue(cardData, "apartment")));
-    html.replace("${place_value}", getPreparedValue(getFieldValue(cardData, "place")));
-    html.replace("${municipality_value}", getPreparedValue(getFieldValue(cardData, "municipality")));
-    html.replace("${country_value}", getPreparedValue(getFieldValue(cardData, "country")));
-    html.replace("${taxpayer_name_value}", getPreparedValue(getFieldValue(cardData, "taxpayer_name")));
-    html.replace("${taxpayer_id_value}", getPreparedValue(getFieldValue(cardData, "taxpayer_id_number")));
-    html.replace("${taxpayer_res_value}", getPreparedValue(getFieldValue(cardData, "taxpayer_residence")));
-    html.replace("${taxpayer_act_value}", getPreparedValue(getFieldValue(cardData, "taxpayer_activity_code")));
+    html.replace("${given_name_value}", getPreparedValue(fieldValue(groups, u"given_name")));
+    html.replace("${family_name_value}", getPreparedValue(fieldValue(groups, u"family_name")));
+    html.replace("${given_name_lat_value}", getPreparedValue(fieldValue(groups, u"given_name_latin")));
+    html.replace("${family_name_lat_value}", getPreparedValue(fieldValue(groups, u"family_name_latin")));
+    html.replace("${parent_name_value}", getPreparedValue(fieldValue(groups, u"parent_name")));
+    html.replace("${dob_value}", getPreparedValue(fieldValue(groups, u"date_of_birth")));
+    html.replace("${gender_value}", getPreparedValue(fieldValue(groups, u"gender")));
+    html.replace("${jmbg_value}", getPreparedValue(fieldValue(groups, u"personal_number")));
+    html.replace("${lbo_value}", getPreparedValue(fieldValue(groups, u"insurant_number")));
+    html.replace("${insurer_value}", getPreparedValue(fieldValue(groups, u"insurer_name")));
+    html.replace("${insurer_id_value}", getPreparedValue(fieldValue(groups, u"insurer_id")));
+    html.replace("${card_id_value}", getPreparedValue(fieldValue(groups, u"card_id")));
+    html.replace("${issue_date_value}", getPreparedValue(fieldValue(groups, u"date_of_issue")));
+    html.replace("${expiry_value}", getPreparedValue(fieldValue(groups, u"date_of_expiry")));
+    html.replace("${valid_until_value}", getPreparedValue(fieldValue(groups, u"valid_until")));
+    html.replace("${insurance_basis_value}", getPreparedValue(fieldValue(groups, u"insurance_basis_rzzo")));
+    html.replace("${insurance_desc_value}", getPreparedValue(fieldValue(groups, u"insurance_description")));
+    html.replace("${insurance_start_value}", getPreparedValue(fieldValue(groups, u"insurance_start_date")));
+    html.replace("${street_value}", getPreparedValue(fieldValue(groups, u"street")));
+    html.replace("${address_number_value}", getPreparedValue(fieldValue(groups, u"address_number")));
+    html.replace("${apartment_value}", getPreparedValue(fieldValue(groups, u"apartment")));
+    html.replace("${place_value}", getPreparedValue(fieldValue(groups, u"place")));
+    html.replace("${municipality_value}", getPreparedValue(fieldValue(groups, u"municipality")));
+    html.replace("${country_value}", getPreparedValue(fieldValue(groups, u"country")));
+    html.replace("${taxpayer_name_value}", getPreparedValue(fieldValue(groups, u"taxpayer_name")));
+    html.replace("${taxpayer_id_value}", getPreparedValue(fieldValue(groups, u"taxpayer_id_number")));
+    html.replace("${taxpayer_res_value}", getPreparedValue(fieldValue(groups, u"taxpayer_residence")));
+    html.replace("${taxpayer_act_value}", getPreparedValue(fieldValue(groups, u"taxpayer_activity_code")));
 }

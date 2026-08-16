@@ -7,12 +7,12 @@
 ///        switches at runtime.
 ///
 /// Each plugin widget's retranslateUi() is supposed to tear down its
-/// dynamic sections (built progressively from CardFieldGroups via
+/// dynamic sections (built progressively from the agent's field groups via
 /// FieldSectionBuilder + qtTrId-derived translation maps) and rebuild
 /// from cached state in the new language. This test parameterises over
 /// all 5 production plugin widgets, builds each one with a synthetic
-/// CardData, snapshots translatable widget state, switches translator,
-/// snapshots again, and asserts every shared key changed.
+/// field-group read, snapshots translatable widget state, switches
+/// translator, snapshots again, and asserts every shared key changed.
 ///
 /// All tests run with QT_QPA_PLATFORM=offscreen.
 
@@ -38,7 +38,7 @@
 namespace librecelik::test::i18n {
 
 /// @brief Plugin-widget factory: build a fresh QWidget* of the given
-/// plugin type, populated with the corresponding mock CardData. The
+/// plugin type, populated with the corresponding mock field groups. The
 /// test asserts retranslate behaviour on the returned widget.
 struct PluginCase
 {

@@ -5,30 +5,31 @@
 
 #include "certificatetreeviewmodel.h"
 
-#include <cstdint>
-#include <span>
+#include <LibreSCRS/AgentClient/Types.h>
 
-namespace LibreSCRS::Certificate {
-class ParsedCertificate;
-}
+#include <QByteArrayView>
 
 class CertificatePropertiesModel : public CertificateTreeViewModel
 {
     Q_OBJECT
 public:
-    /// @brief Build the properties tree from a parsed certificate.
-    /// @param cert    Parsed certificate; if @c nullptr a single "parse error"
-    ///                row is inserted so the viewer remains visible.
-    /// @param rawDer  Optional raw DER bytes used to render a forensic hex
-    ///                dump under the parse-error row when @p cert is null.
-    ///                Ignored when @p cert is non-null.
-    explicit CertificatePropertiesModel(const LibreSCRS::Certificate::ParsedCertificate* cert,
-                                        QObject* parent = nullptr);
+    /// @brief Build the properties tree from one agent-supplied certificate.
+    /// @param cert Certificate record; when the agent reports it could not
+    ///             parse the certificate, a single "parse error" row is
+    ///             inserted so the viewer remains visible.
+    explicit CertificatePropertiesModel(const LibreSCRS::AgentClient::CertificateInfo& cert, QObject* parent = nullptr);
 
-    explicit CertificatePropertiesModel(const LibreSCRS::Certificate::ParsedCertificate* cert,
-                                        std::span<const std::uint8_t> rawDer, QObject* parent = nullptr);
+    /// @brief As above, plus the raw DER for the forensic hex dump rendered
+    ///        under the parse-error row.
+    /// @param forensicDer Raw certificate bytes as fetched from the agent.
+    ///                    IGNORED unless @p cert is the unparseable kind — a
+    ///                    parseable certificate's detail comes from the
+    ///                    agent's own fields, and the raw bytes stay
+    ///                    available through the viewer's export action.
+    CertificatePropertiesModel(const LibreSCRS::AgentClient::CertificateInfo& cert, QByteArrayView forensicDer,
+                               QObject* parent = nullptr);
 
 private:
-    void buildTree(const LibreSCRS::Certificate::ParsedCertificate& cert);
-    void addParseError(std::span<const std::uint8_t> rawDer);
+    void buildTree(const LibreSCRS::AgentClient::CertificateInfo& cert);
+    void addParseError(const LibreSCRS::AgentClient::CertificateInfo& cert, QByteArrayView forensicDer);
 };

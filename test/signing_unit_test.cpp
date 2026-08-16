@@ -1,13 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 hirashix0
 
+// certutils.h serves the CertUtils DER suites below and nothing else: the TSA
+// validator moved out to its own header when the certificate viewer stopped
+// parsing DER in-process, so the IsValidTsaUrl suite includes that header
+// directly. Both live here until the signing wizard's own re-type retires
+// certutils entirely.
+#include "certificate/certformat.h"
 #include "signing/certutils.h"
+#include "signing/tsavalidation.h"
 
 #include <gtest/gtest.h>
 
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
+#include <QStringList>
 #include <LibreSCRS/Signing/Enums.h>
 
 // ---------------------------------------------------------------------------
@@ -86,6 +94,69 @@ TEST(IsValidTsaUrl, HttpsAccepted)
     EXPECT_TRUE(signing::isValidTsaUrl(QStringLiteral("https://tsa.example.com/timestamp")));
     EXPECT_TRUE(signing::isValidTsaUrl(QStringLiteral("https://tsa.example.com")));
     EXPECT_TRUE(signing::isValidTsaUrl(QStringLiteral("https://tsa.example.com:8443/ts")));
+}
+
+// ---------------------------------------------------------------------------
+// certformat KeyUsage rendering — the agent hands the certificate's KeyUsage
+// as the RFC 5280 §4.2.1.3 bitmask (bit i == ordinal i), so the formatter now
+// takes that mask where it used to take a parsed-certificate enum span. The
+// rendered text must be exactly what it has always been: the same localized
+// per-bit labels, in ascending ordinal order, comma-separated.
+// ---------------------------------------------------------------------------
+
+namespace cf = librecelik::certformat;
+
+TEST(CertFormat, KeyUsageToStringRendersEveryBitInOrdinalOrder)
+{
+    // digitalSignature(0) | keyCertSign(5) | decipherOnly(8)
+    const quint32 bits = (1u << 0) | (1u << 5) | (1u << 8);
+    const QString expected = QStringList{qtTrId("lc-token-ku-digital-signature"), qtTrId("lc-cert-ku-key-cert-sign"),
+                                         qtTrId("lc-cert-ku-decipher-only")}
+                                 .join(QStringLiteral(", "));
+    EXPECT_EQ(cf::keyUsageToString(bits), expected);
+}
+
+TEST(CertFormat, KeyUsageToStringRendersAllNineBits)
+{
+    const QString expected =
+        QStringList{qtTrId("lc-token-ku-digital-signature"), qtTrId("lc-token-ku-non-repudiation"),
+                    qtTrId("lc-token-ku-key-encipherment"),  qtTrId("lc-token-ku-data-encipherment"),
+                    qtTrId("lc-token-ku-key-agreement"),     qtTrId("lc-cert-ku-key-cert-sign"),
+                    qtTrId("lc-cert-ku-crl-sign"),           qtTrId("lc-cert-ku-encipher-only"),
+                    qtTrId("lc-cert-ku-decipher-only")}
+            .join(QStringLiteral(", "));
+    EXPECT_EQ(cf::keyUsageToString(0x1FFu), expected);
+}
+
+TEST(CertFormat, KeyUsageToStringIsEmptyForNoBits)
+{
+    EXPECT_TRUE(cf::keyUsageToString(0u).isEmpty());
+}
+
+TEST(CertFormat, KeyUsageToStringIgnoresOrdinalsBeyondRfc5280)
+{
+    // A newer producer setting a bit this build has no label for must not
+    // inject an empty comma-separated fragment into the rendered list.
+    EXPECT_EQ(cf::keyUsageToString((1u << 0) | (1u << 9) | (1u << 31)), qtTrId("lc-token-ku-digital-signature"));
+}
+
+TEST(CertFormat, KeyUsageToStringEndEntitySuppressesCaAndCipherOnlyBits)
+{
+    // The token summary shows end-entity capability only: keyCertSign(5),
+    // cRLSign(6), encipherOnly(7) and decipherOnly(8) are deliberately not
+    // rendered there, exactly as before the re-type.
+    const QString expected = QStringList{qtTrId("lc-token-ku-digital-signature"), qtTrId("lc-token-ku-non-repudiation"),
+                                         qtTrId("lc-token-ku-key-encipherment"),
+                                         qtTrId("lc-token-ku-data-encipherment"), qtTrId("lc-token-ku-key-agreement")}
+                                 .join(QStringLiteral(", "));
+    EXPECT_EQ(cf::keyUsageToStringEndEntity(0x1FFu), expected);
+}
+
+TEST(CertFormat, KeyUsageBitLabelIsEmptyForAnUnknownOrdinal)
+{
+    EXPECT_TRUE(cf::keyUsageBitLabel(9).isEmpty());
+    EXPECT_TRUE(cf::keyUsageBitLabel(-1).isEmpty());
+    EXPECT_EQ(cf::keyUsageBitLabel(0), qtTrId("lc-token-ku-digital-signature"));
 }
 
 // ---------------------------------------------------------------------------

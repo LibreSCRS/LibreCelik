@@ -231,6 +231,14 @@
         <source>Uses: %1 of %2</source>
         <translation>Uses: %1 of %2</translation>
     </message>
+    <message id="lc-eid-pin-unblocks-remaining">
+        <source>Unblocks: %1</source>
+        <translation>Unblocks: %1</translation>
+    </message>
+    <message id="lc-eid-pin-needs-change">
+        <source>Change required</source>
+        <translation>Change required</translation>
+    </message>
     <message id="lc-eid-pin-unknown">
         <source>?</source>
         <translation>?</translation>
@@ -367,6 +375,34 @@
         <source>Unknown</source>
         <translation>Unknown</translation>
     </message>
+    <message id="lc-cert-status-trusted">
+        <source>Trusted</source>
+        <translation>Trusted</translation>
+    </message>
+    <message id="lc-cert-status-untrusted-root">
+        <source>Root certificate is not trusted</source>
+        <translation>Root certificate is not trusted</translation>
+    </message>
+    <message id="lc-cert-status-broken-chain">
+        <source>Certificate chain is broken</source>
+        <translation>Certificate chain is broken</translation>
+    </message>
+    <message id="lc-cert-status-invalid">
+        <source>Certificate is invalid</source>
+        <translation>Certificate is invalid</translation>
+    </message>
+    <message id="lc-cert-status-expired">
+        <source>Certificate has expired</source>
+        <translation>Certificate has expired</translation>
+    </message>
+    <message id="lc-cert-status-revoked">
+        <source>Certificate was revoked</source>
+        <translation>Certificate was revoked</translation>
+    </message>
+    <message id="lc-cert-status-offline-unverified">
+        <source>Not verified (offline)</source>
+        <translation>Not verified (offline)</translation>
+    </message>
     <message id="lc-cert-field-key-size">
         <source>Key Size</source>
         <translation>Key Size</translation>
@@ -378,26 +414,6 @@
     <message id="lc-cert-extension-critical">
         <source> (Critical)</source>
         <translation> (Critical)</translation>
-    </message>
-    <message id="lc-cert-verify-valid">
-        <source>Valid</source>
-        <translation>Valid</translation>
-    </message>
-    <message id="lc-cert-verify-unspecified-error">
-        <source>Unspecified error</source>
-        <translation>Unspecified error</translation>
-    </message>
-    <message id="lc-cert-verify-no-issuer">
-        <source>Unable to get issuer certificate</source>
-        <translation>Unable to get issuer certificate</translation>
-    </message>
-    <message id="lc-cert-verify-expired">
-        <source>Certificate has expired</source>
-        <translation>Certificate has expired</translation>
-    </message>
-    <message id="lc-cert-verify-untrusted-root">
-        <source>Untrusted root certificate</source>
-        <translation>Untrusted root certificate</translation>
     </message>
     <message id="lc-cert-verify-trust-unknown">
         <source>Trust unknown</source>
@@ -467,9 +483,21 @@
         <source>Certificate Viewer</source>
         <translation>Certificate Viewer</translation>
     </message>
-    <message id="lc-cert-no-available">
-        <source>No certificates available.</source>
-        <translation>No certificates available.</translation>
+    <message id="lc-cert-export-button">
+        <source>Export…</source>
+        <translation>Export…</translation>
+    </message>
+    <message id="lc-cert-export-save-title">
+        <source>Save Certificate</source>
+        <translation>Save Certificate</translation>
+    </message>
+    <message id="lc-cert-export-filter">
+        <source>Certificate files (*.cer *.der)</source>
+        <translation>Certificate files (*.cer *.der)</translation>
+    </message>
+    <message id="lc-cert-export-failed">
+        <source>The certificate file could not be saved.</source>
+        <translation>The certificate file could not be saved.</translation>
     </message>
     <message id="lc-eid-label-status-of-foreigner">
         <source>Status of Foreigner</source>
@@ -1487,6 +1515,30 @@
     <message id="lc-reading-card">
         <source>Reading card...</source>
         <translation>Reading card...</translation>
+    </message>
+    <message id="lc-agent-awaiting-preauth">
+        <source>Confirm the card access number in the system dialog to continue reading this card.</source>
+        <translation>Confirm the card access number in the system dialog to continue reading this card.</translation>
+    </message>
+    <message id="lc-agent-state-missing">
+        <source>The LibreSCRS card agent is not installed.</source>
+        <translation>The LibreSCRS card agent is not installed.</translation>
+    </message>
+    <message id="lc-agent-state-missing-hint">
+        <source>LibreCelik reads cards through the card agent. Install it for your system, then try again.</source>
+        <translation>LibreCelik reads cards through the card agent. Install it for your system, then try again.</translation>
+    </message>
+    <message id="lc-agent-state-unavailable">
+        <source>The LibreSCRS card agent is not responding.</source>
+        <translation>The LibreSCRS card agent is not responding.</translation>
+    </message>
+    <message id="lc-agent-state-retry">
+        <source>Try again</source>
+        <translation>Try again</translation>
+    </message>
+    <message id="lc-agent-action-pending-rewire">
+        <source>Temporarily unavailable while this build is rewired to the card agent.</source>
+        <translation>Temporarily unavailable while this build is rewired to the card agent.</translation>
     </message>
     <message id="lc-health-title">
         <source>Health Insurance Card</source>

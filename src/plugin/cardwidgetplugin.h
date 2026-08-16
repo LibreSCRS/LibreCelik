@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <LibreSCRS/Plugin/CardData.h>
+#include <LibreSCRS/AgentClient/Types.h>
 
 #include <QIcon>
 #include <QString>
@@ -15,7 +15,9 @@ class CardWidgetPlugin
 public:
     virtual ~CardWidgetPlugin() = default;
 
-    // Identity — cardType must match middleware CardPlugin::pluginId()
+    // Identity — cardType must match the wire's Card1.CardType token (the same
+    // string the middleware plugin id used; the agent forwards plugin ids as
+    // card types).
     virtual QString cardType() const = 0;
     virtual QString displayName() const = 0;
     virtual QIcon icon() const
@@ -27,9 +29,9 @@ public:
         return {};
     }
 
-    // Main widget — receives CardData, returns populated QWidget.
-    // Caller takes ownership of the returned widget.
-    virtual QWidget* createWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent) const = 0;
+    // Main widget — receives the read's field groups, returns a populated
+    // QWidget. Caller takes ownership of the returned widget.
+    virtual QWidget* createWidget(const QList<LibreSCRS::AgentClient::FieldGroup>& groups, QWidget* parent) const = 0;
 
     // Progressive display: create an empty shell widget for incremental population.
     // Returns nullptr if plugin does not support streaming (fallback to createWidget).
@@ -40,7 +42,7 @@ public:
     }
 
     // Progressive display: add a group to an existing widget created by createEmptyWidget.
-    virtual void addGroup(const LibreSCRS::Plugin::CardFieldGroup& group, QWidget* widget) const
+    virtual void addGroup(const LibreSCRS::AgentClient::FieldGroup& group, QWidget* widget) const
     {
         Q_UNUSED(group);
         Q_UNUSED(widget);
@@ -58,9 +60,9 @@ public:
     {
         return false;
     }
-    virtual void print(const LibreSCRS::Plugin::CardData& data) const
+    virtual void print(const QList<LibreSCRS::AgentClient::FieldGroup>& groups) const
     {
-        Q_UNUSED(data);
+        Q_UNUSED(groups);
     }
 
     // Called when card data streaming completed with no visible field groups.
@@ -78,4 +80,4 @@ public:
     }
 };
 
-Q_DECLARE_INTERFACE(CardWidgetPlugin, "org.librescrs.CardWidgetPlugin/1.0")
+Q_DECLARE_INTERFACE(CardWidgetPlugin, "org.librescrs.CardWidgetPlugin/2.0")

@@ -231,6 +231,14 @@
         <source>Uses: %1 of %2</source>
         <translation>Употребе: %1 од %2</translation>
     </message>
+    <message id="lc-eid-pin-unblocks-remaining">
+        <source>Unblocks: %1</source>
+        <translation>Одблокирања: %1</translation>
+    </message>
+    <message id="lc-eid-pin-needs-change">
+        <source>Change required</source>
+        <translation>Потребна измена</translation>
+    </message>
     <message id="lc-eid-pin-unknown">
         <source>?</source>
         <translation>?</translation>
@@ -367,6 +375,34 @@
         <source>Unknown</source>
         <translation>Непознато</translation>
     </message>
+    <message id="lc-cert-status-trusted">
+        <source>Trusted</source>
+        <translation>Поуздан</translation>
+    </message>
+    <message id="lc-cert-status-untrusted-root">
+        <source>Root certificate is not trusted</source>
+        <translation>Корени сертификат није поуздан</translation>
+    </message>
+    <message id="lc-cert-status-broken-chain">
+        <source>Certificate chain is broken</source>
+        <translation>Ланац сертификата је прекинут</translation>
+    </message>
+    <message id="lc-cert-status-invalid">
+        <source>Certificate is invalid</source>
+        <translation>Сертификат није исправан</translation>
+    </message>
+    <message id="lc-cert-status-expired">
+        <source>Certificate has expired</source>
+        <translation>Сертификат је истекао</translation>
+    </message>
+    <message id="lc-cert-status-revoked">
+        <source>Certificate was revoked</source>
+        <translation>Сертификат је опозван</translation>
+    </message>
+    <message id="lc-cert-status-offline-unverified">
+        <source>Not verified (offline)</source>
+        <translation>Није проверено (ван мреже)</translation>
+    </message>
     <message id="lc-cert-field-key-size">
         <source>Key Size</source>
         <translation>Величина кључа</translation>
@@ -378,26 +414,6 @@
     <message id="lc-cert-extension-critical">
         <source> (Critical)</source>
         <translation> (Критично)</translation>
-    </message>
-    <message id="lc-cert-verify-valid">
-        <source>Valid</source>
-        <translation>Важећи</translation>
-    </message>
-    <message id="lc-cert-verify-unspecified-error">
-        <source>Unspecified error</source>
-        <translation>Неодређена грешка</translation>
-    </message>
-    <message id="lc-cert-verify-no-issuer">
-        <source>Unable to get issuer certificate</source>
-        <translation>Није могуће добити сертификат издаваоца</translation>
-    </message>
-    <message id="lc-cert-verify-expired">
-        <source>Certificate has expired</source>
-        <translation>Сертификат је истекао</translation>
-    </message>
-    <message id="lc-cert-verify-untrusted-root">
-        <source>Untrusted root certificate</source>
-        <translation>Неповерљив коренски сертификат</translation>
     </message>
     <message id="lc-cert-verify-trust-unknown">
         <source>Trust unknown</source>
@@ -467,9 +483,21 @@
         <source>Certificate Viewer</source>
         <translation>Прегледник сертификата</translation>
     </message>
-    <message id="lc-cert-no-available">
-        <source>No certificates available.</source>
-        <translation>Нема доступних сертификата.</translation>
+    <message id="lc-cert-export-button">
+        <source>Export…</source>
+        <translation>Извези…</translation>
+    </message>
+    <message id="lc-cert-export-save-title">
+        <source>Save Certificate</source>
+        <translation>Сачувај сертификат</translation>
+    </message>
+    <message id="lc-cert-export-filter">
+        <source>Certificate files (*.cer *.der)</source>
+        <translation>Датотеке сертификата (*.cer *.der)</translation>
+    </message>
+    <message id="lc-cert-export-failed">
+        <source>The certificate file could not be saved.</source>
+        <translation>Датотека сертификата није могла бити сачувана.</translation>
     </message>
     <message id="lc-eid-label-status-of-foreigner">
         <source>Status of Foreigner</source>
@@ -1487,6 +1515,30 @@
     <message id="lc-reading-card">
         <source>Reading card...</source>
         <translation>Читање картице...</translation>
+    </message>
+    <message id="lc-agent-awaiting-preauth">
+        <source>Confirm the card access number in the system dialog to continue reading this card.</source>
+        <translation>Потврдите број за приступ картици у системском прозору да би читање картице било настављено.</translation>
+    </message>
+    <message id="lc-agent-state-missing">
+        <source>The LibreSCRS card agent is not installed.</source>
+        <translation>LibreSCRS агент за картице није инсталиран.</translation>
+    </message>
+    <message id="lc-agent-state-missing-hint">
+        <source>LibreCelik reads cards through the card agent. Install it for your system, then try again.</source>
+        <translation>LibreCelik чита картице преко агента за картице. Инсталирајте га за свој систем, па покушајте поново.</translation>
+    </message>
+    <message id="lc-agent-state-unavailable">
+        <source>The LibreSCRS card agent is not responding.</source>
+        <translation>LibreSCRS агент за картице не одговара.</translation>
+    </message>
+    <message id="lc-agent-state-retry">
+        <source>Try again</source>
+        <translation>Покушај поново</translation>
+    </message>
+    <message id="lc-agent-action-pending-rewire">
+        <source>Temporarily unavailable while this build is rewired to the card agent.</source>
+        <translation>Привремено недоступно док се ово издање превезује на агента за картице.</translation>
     </message>
     <message id="lc-health-title">
         <source>Health Insurance Card</source>

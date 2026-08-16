@@ -2,81 +2,62 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "certificateviewerwidget.h"
+#include "certfields.h"
 #include "certformat.h"
 #include "certificatehierarchymodel.h"
 #include "certificatepropertiesmodel.h"
 #include "ui_certificateviewerwidget.h"
 
-#include <LibreSCRS/Auth/ErrorKeys.h>
-#include <LibreSCRS/Certificate/ParsedCertificate.h>
-
+#include <QAbstractItemModel>
 #include <QEvent>
 #include <QLineEdit>
+#include <QVariantMap>
 
-namespace lcc = LibreSCRS::Certificate;
 namespace cf = librecelik::certformat;
+namespace fields = librecelik::certfields;
+
+using LibreSCRS::AgentClient::CertificateInfo;
 
 namespace {
 
-QString fromStd(const std::string& s)
+constexpr QLatin1StringView kGroupSubject{"subject"};
+constexpr QLatin1StringView kGroupIssuer{"issuer"};
+constexpr QLatin1StringView kGroupCert{"cert"};
+
+void setFieldText(QLineEdit* edit, const QString& text)
 {
-    return QString::fromStdString(s);
+    edit->setText(text);
+    edit->setCursorPosition(0);
 }
 
-QString keyUsageString(const lcc::ParsedCertificate& cert)
+/// The common name out of a DN group, falling back to the typed member the
+/// client library always fills (which is itself the common name).
+[[nodiscard]] QString commonName(const QVariantMap& groups, QLatin1StringView group, const QString& typedFallback)
 {
-    auto ku = cert.keyUsage();
-    if (!ku)
-        return {};
-    return cf::keyUsageToString(*ku);
+    const QString cn = fields::valueOf(groups, group, QLatin1StringView("cn"));
+    return cn.isEmpty() ? typedFallback : cn;
 }
 
 } // namespace
 
-CertificateViewerWidget::CertificateViewerWidget(std::vector<std::uint8_t> der,
-                                                 std::shared_ptr<const LibreSCRS::Trust::TrustStore> store,
-                                                 QWidget* parent)
-    : QWidget(parent), ui(new Ui::CertificateViewerWidget), leafCertDer(std::move(der)),
-      // Field carries an "uninitialised" ParseError until fromDer() is invoked
-      // below. ParsedCertificate has no public default ctor, so std::expected
-      // cannot itself be default-constructed; we seed an explicit unexpected.
-      parsedCert(std::unexpected{lcc::ParsedCertificate::ParseError{lcc::ParsedCertificate::ParseError::Kind::Invalid,
-                                                                    LibreSCRS::Auth::ErrorKeys::derInvalid(),
-                                                                    std::string{"not yet parsed"}}}),
-      trustStore(std::move(store))
+CertificateViewerWidget::CertificateViewerWidget(const CertificateInfo& cert, QWidget* parent)
+    : QWidget(parent), ui(new Ui::CertificateViewerWidget), certificate(cert), unparseable(fields::isUnparseable(cert))
 {
     ui->setupUi(this);
 
-    if (leafCertDer.empty()) {
-        populateUnparseableTab();
-        return;
-    }
-
-    parsedCert = lcc::ParsedCertificate::fromDer(leafCertDer);
-    if (!parsedCert) {
+    if (unparseable) {
         populateUnparseableTab();
         // Still wire the details model so the user sees the parse-error row
-        // followed by a forensic hex dump of the raw DER bytes.
-        auto* propsModel = new CertificatePropertiesModel(nullptr, std::span<const std::uint8_t>(leafCertDer), this);
-        ui->detailsTreeView->setModel(propsModel);
-        ui->detailsTreeView->expandAll();
-        ui->detailsTreeView->resizeColumnToContents(0);
-        connect(ui->detailsTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this,
-                &CertificateViewerWidget::onDetailsSelectionChanged);
+        // the agent reported (followed by a forensic hex dump once the raw
+        // bytes arrive, see setForensicDer).
+        installDetailsModel();
         return;
     }
 
     populateGeneralTab();
+    installDetailsModel();
 
-    auto* propsModel = new CertificatePropertiesModel(&*parsedCert, this);
-    ui->detailsTreeView->setModel(propsModel);
-    ui->detailsTreeView->expandAll();
-    ui->detailsTreeView->resizeColumnToContents(0);
-
-    connect(ui->detailsTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this,
-            &CertificateViewerWidget::onDetailsSelectionChanged);
-
-    auto* hierarchyModel = new CertificateHierarchyModel(&*parsedCert, trustStore, this);
+    auto* hierarchyModel = new CertificateHierarchyModel(certificate, this);
     ui->certPathTreeView->setModel(hierarchyModel);
     ui->certPathTreeView->expandAll();
     ui->certPathTreeView->resizeColumnToContents(0);
@@ -97,40 +78,53 @@ CertificateViewerWidget::~CertificateViewerWidget()
     delete ui;
 }
 
+void CertificateViewerWidget::setForensicDer(const QByteArray& der)
+{
+    if (forensicDer == der)
+        return;
+    forensicDer = der;
+    // Only the unparseable path renders these bytes; for every other
+    // certificate the detail rows are the agent's and rebuilding them would
+    // change nothing.
+    if (unparseable)
+        installDetailsModel();
+}
+
+void CertificateViewerWidget::installDetailsModel()
+{
+    auto* previous = ui->detailsTreeView->model();
+    auto* propsModel = new CertificatePropertiesModel(certificate, QByteArrayView(forensicDer), this);
+    ui->detailsTreeView->setModel(propsModel);
+    delete previous;
+    ui->detailsTreeView->expandAll();
+    ui->detailsTreeView->resizeColumnToContents(0);
+    ui->detailsValueEdit->clear();
+
+    connect(ui->detailsTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this,
+            &CertificateViewerWidget::onDetailsSelectionChanged);
+}
+
 void CertificateViewerWidget::populateGeneralTab()
 {
-    const auto& cert = *parsedCert;
+    const QVariantMap groups = fields::groupsOf(certificate);
 
-    auto setFieldText = [](QLineEdit* edit, const QString& text) {
-        edit->setText(text);
-        edit->setCursorPosition(0);
-    };
+    setFieldText(ui->issuedToCNEdit, commonName(groups, kGroupSubject, certificate.subject));
+    setFieldText(ui->issuedToOEdit, fields::valueOf(groups, kGroupSubject, QLatin1StringView("o")));
+    setFieldText(ui->issuedToOUEdit, fields::valueOf(groups, kGroupSubject, QLatin1StringView("ou")));
+    setFieldText(ui->issuedToSerialEdit, fields::valueOf(groups, kGroupCert, QLatin1StringView("serial")));
 
-    const auto subject = cert.subject();
-    const auto issuer = cert.issuer();
+    setFieldText(ui->issuedByCNEdit, commonName(groups, kGroupIssuer, certificate.issuer));
+    setFieldText(ui->issuedByOEdit, fields::valueOf(groups, kGroupIssuer, QLatin1StringView("o")));
+    setFieldText(ui->issuedByOUEdit, fields::valueOf(groups, kGroupIssuer, QLatin1StringView("ou")));
 
-    setFieldText(ui->issuedToCNEdit, fromStd(subject.commonName()));
-    setFieldText(ui->issuedToOEdit, fromStd(subject.organization()));
-    setFieldText(ui->issuedToOUEdit, fromStd(subject.organizationalUnit()));
-    setFieldText(ui->issuedToSerialEdit, cf::bytesToHex(std::span<const std::uint8_t>(cert.serialNumber())));
+    setFieldText(ui->notBeforeEdit, cf::formatTime(certificate.notBefore));
+    setFieldText(ui->notAfterEdit, cf::formatTime(certificate.notAfter));
 
-    setFieldText(ui->issuedByCNEdit, fromStd(issuer.commonName()));
-    setFieldText(ui->issuedByOEdit, fromStd(issuer.organization()));
-    setFieldText(ui->issuedByOUEdit, fromStd(issuer.organizationalUnit()));
-
-    setFieldText(ui->notBeforeEdit, cf::formatTime(cert.notBefore()));
-    setFieldText(ui->notAfterEdit, cf::formatTime(cert.notAfter()));
-
-    setFieldText(ui->keyUsageEdit, keyUsageString(cert));
+    setFieldText(ui->keyUsageEdit, cf::keyUsageToString(certificate.keyUsageBits));
 }
 
 void CertificateViewerWidget::populateUnparseableTab()
 {
-    auto setFieldText = [](QLineEdit* edit, const QString& text) {
-        edit->setText(text);
-        edit->setCursorPosition(0);
-    };
-
     const QString placeholder = qtTrId("lc-cert-parse-error");
     setFieldText(ui->issuedToCNEdit, placeholder);
     setFieldText(ui->issuedToOEdit, QString());
@@ -175,8 +169,8 @@ void CertificateViewerWidget::onCertPathSelectionChanged(const QItemSelection& s
     QModelIndex valueIndex = index.sibling(index.row(), 1);
     QString status = valueIndex.data(Qt::DisplayRole).toString();
     // Empty status means a non-leaf row (the model only writes a status string
-    // for the leaf — chain validation is chain-wide, not per-cert). Leave the
-    // field empty rather than fabricating a misleading "Valid" indicator.
+    // for the leaf — the agent's verdict is chain-wide, not per-certificate).
+    // Leave the field empty rather than fabricating a misleading indicator.
     ui->certPathStatusEdit->setText(status);
 }
 
@@ -192,11 +186,14 @@ void CertificateViewerWidget::retranslateUi()
     // The .ui-driven labels / tab titles retranslate automatically via
     // Ui::CertificateViewerWidget::retranslateUi() (called by Qt's
     // changeEvent on the .ui-attached QObjects). We re-apply the
-    // hand-coded "parse error" placeholder for the unparseable case so
-    // the user-visible text in the General tab tracks the new language.
+    // hand-coded field text so the user-visible values in the General tab
+    // track the new language — the KeyUsage line and the parse-error
+    // placeholder are both localized.
     ui->retranslateUi(this);
-    if (leafCertDer.empty() || !parsedCert)
+    if (unparseable)
         populateUnparseableTab();
+    else
+        populateGeneralTab();
     // The two tree models (CertificatePropertiesModel /
     // CertificateHierarchyModel) self-retranslate via Qt::DisplayRole on
     // next paint (see model classes — flagged D1 and inline-allowlisted).

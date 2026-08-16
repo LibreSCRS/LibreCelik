@@ -6,21 +6,23 @@
 #include "emrtdtextdocument.h"
 #include "utils/printmanager.h"
 
-QWidget* EMRTDWidgetPlugin::createWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent) const
+using LibreSCRS::AgentClient::FieldGroup;
+
+QWidget* EMRTDWidgetPlugin::createWidget(const QList<FieldGroup>& groups, QWidget* parent) const
 {
-    auto* w = new EMRTDWidget(data, parent);
-    connect(w, &EMRTDWidget::printRequested, this, [this](const LibreSCRS::Plugin::CardData& d) { print(d); });
+    auto* w = new EMRTDWidget(groups, parent);
+    connect(w, &EMRTDWidget::printRequested, this, [this](const QList<FieldGroup>& g) { print(g); });
     return w;
 }
 
 QWidget* EMRTDWidgetPlugin::createEmptyWidget(QWidget* parent) const
 {
     auto* w = new EMRTDWidget(parent);
-    connect(w, &EMRTDWidget::printRequested, this, [this](const LibreSCRS::Plugin::CardData& d) { print(d); });
+    connect(w, &EMRTDWidget::printRequested, this, [this](const QList<FieldGroup>& g) { print(g); });
     return w;
 }
 
-void EMRTDWidgetPlugin::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group, QWidget* widget) const
+void EMRTDWidgetPlugin::addGroup(const FieldGroup& group, QWidget* widget) const
 {
     if (auto* w = qobject_cast<EMRTDWidget*>(widget))
         w->addGroup(group);
@@ -32,9 +34,9 @@ void EMRTDWidgetPlugin::showNoDataMessage(QWidget* widget) const
         w->showNoDataMessage();
 }
 
-void EMRTDWidgetPlugin::print(const LibreSCRS::Plugin::CardData& data) const
+void EMRTDWidgetPlugin::print(const QList<FieldGroup>& groups) const
 {
-    EMRTDTextDocument doc(data);
+    EMRTDTextDocument doc(groups);
     PrintManager::printDocument(
         doc,
         qtTrId("lc-emrtd-doc-title")); // i18n-audit: ignore D1, PDF print formatter — fresh QTextDocument per print run

@@ -4,16 +4,42 @@
 #include <QCoreApplication>
 #include <QDate>
 #include "eidtextdocument.h"
-#include <plugin/carddatautils.h>
+#include <plugin/fieldvalue.h>
 
-using librecelik::plugin::getFieldValue;
+using librecelik::plugin::fieldDetailBytes;
+using librecelik::plugin::fieldValue;
+using librecelik::plugin::findGroup;
+using LibreSCRS::AgentClient::Field;
+using LibreSCRS::AgentClient::FieldGroup;
 
-EIdTextDocument::EIdTextDocument(const LibreSCRS::Plugin::CardData& cardData, QString documentPath, QString cssPath)
+namespace {
+
+/// The portrait the gateway merged into the read: its own group, keyed with
+/// the field half of the wire's composite key. A group that carries the image
+/// under some other key still prints — the first field with bytes wins.
+QByteArray photoBytes(const QList<FieldGroup>& groups)
+{
+    QByteArray bytes = fieldDetailBytes(groups, u"photo", u"photo");
+    if (!bytes.isEmpty()) {
+        return bytes;
+    }
+    if (const FieldGroup* group = findGroup(groups, u"photo")) {
+        for (const Field& field : group->fields) {
+            bytes = field.detail.toByteArray();
+            if (!bytes.isEmpty()) {
+                return bytes;
+            }
+        }
+    }
+    return {};
+}
+
+} // namespace
+
+EIdTextDocument::EIdTextDocument(const QList<FieldGroup>& groups, QString documentPath, QString cssPath)
 {
     // Foreigner detection — matches EidWidget::isForeigner()
-    auto cardTypeField = cardData.findField("card_type");
-    auto cardTypeText = cardTypeField ? cardData.fieldAt(*cardTypeField).textValue() : std::nullopt;
-    isForeigner = cardTypeText.has_value() && *cardTypeText == "ForeignerIF2020";
+    isForeigner = fieldValue(groups, u"card_type") == QLatin1String("ForeignerIF2020");
 
     if (documentPath.isEmpty())
         documentPath = isForeigner ? QStringLiteral(":/html/idcardIF2020.html") : QStringLiteral(":/html/idcard.html");
@@ -23,7 +49,7 @@ EIdTextDocument::EIdTextDocument(const LibreSCRS::Plugin::CardData& cardData, QS
     auto data = loadFile(documentPath);
 
     translateDocumentData(data);
-    prepareDocumentData(data, cardData);
+    prepareDocumentData(data, groups);
 
     setupDocument(data, cssPath);
 }
@@ -63,36 +89,35 @@ void EIdTextDocument::translateDocumentData(QString& data) const
     data.replace("${validity_date}", qtTrId("lc-eid-doc-valid-to"));
 }
 
-void EIdTextDocument::prepareDocumentData(QString& html, const LibreSCRS::Plugin::CardData& cardData) const
+void EIdTextDocument::prepareDocumentData(QString& html, const QList<FieldGroup>& groups) const
 {
-    html.replace("${last_name_value}", getPreparedValue(getFieldValue(cardData, "surname")));
-    html.replace("${first_name_value}", getPreparedValue(getFieldValue(cardData, "given_name")));
-    html.replace("${parent_name_value}", getPreparedValue(getFieldValue(cardData, "parent_given_name")));
-    html.replace("${nationality_value}", getPreparedValue(getFieldValue(cardData, "nationality")));
-    html.replace("${date_of_birth_value}", getPreparedValue(getFieldValue(cardData, "date_of_birth")));
+    html.replace("${last_name_value}", getPreparedValue(fieldValue(groups, u"surname")));
+    html.replace("${first_name_value}", getPreparedValue(fieldValue(groups, u"given_name")));
+    html.replace("${parent_name_value}", getPreparedValue(fieldValue(groups, u"parent_given_name")));
+    html.replace("${nationality_value}", getPreparedValue(fieldValue(groups, u"nationality")));
+    html.replace("${date_of_birth_value}", getPreparedValue(fieldValue(groups, u"date_of_birth")));
 
     // Composite: place of birth
     QStringList pobParts;
-    pobParts << getFieldValue(cardData, "place_of_birth") << getFieldValue(cardData, "community_of_birth")
-             << getFieldValue(cardData, "state_of_birth");
+    pobParts << fieldValue(groups, u"place_of_birth") << fieldValue(groups, u"community_of_birth")
+             << fieldValue(groups, u"state_of_birth");
     pobParts.removeAll(QString());
     html.replace("${place_of_birth_value}", getPreparedValue(pobParts.join(", ")));
 
-    html.replace("${status_of_foreigner_value}", getPreparedValue(getFieldValue(cardData, "status_of_foreigner")));
+    html.replace("${status_of_foreigner_value}", getPreparedValue(fieldValue(groups, u"status_of_foreigner")));
 
     // Composite: address (same assembly as EidWidget::buildAddressSection)
     QStringList addrParts;
-    addrParts << getFieldValue(cardData, "state") << getFieldValue(cardData, "community")
-              << getFieldValue(cardData, "place") << getFieldValue(cardData, "street")
-              << getFieldValue(cardData, "house_number");
-    auto houseLetter = getFieldValue(cardData, "house_letter");
+    addrParts << fieldValue(groups, u"state") << fieldValue(groups, u"community") << fieldValue(groups, u"place")
+              << fieldValue(groups, u"street") << fieldValue(groups, u"house_number");
+    auto houseLetter = fieldValue(groups, u"house_letter");
     if (!houseLetter.isEmpty())
         addrParts << houseLetter;
     addrParts.removeAll(QString());
     auto address = addrParts.join(", ");
-    auto entrance = getFieldValue(cardData, "entrance");
-    auto floor = getFieldValue(cardData, "floor");
-    auto apartment = getFieldValue(cardData, "apartment_number");
+    auto entrance = fieldValue(groups, u"entrance");
+    auto floor = fieldValue(groups, u"floor");
+    auto apartment = fieldValue(groups, u"apartment_number");
     if (!entrance.isEmpty())
         address += "/" + entrance;
     if (!floor.isEmpty())
@@ -101,22 +126,19 @@ void EIdTextDocument::prepareDocumentData(QString& html, const LibreSCRS::Plugin
         address += "/" + apartment;
     html.replace("${adress_value}", getPreparedValue(address));
 
-    html.replace("${date_of_address_change_value}", getPreparedValue(getFieldValue(cardData, "address_date")));
-    html.replace("${jmbg_value}", getPreparedValue(getFieldValue(cardData, "personal_number")));
-    html.replace("${gender_value}", getPreparedValue(getFieldValue(cardData, "sex")));
+    html.replace("${date_of_address_change_value}", getPreparedValue(fieldValue(groups, u"address_date")));
+    html.replace("${jmbg_value}", getPreparedValue(fieldValue(groups, u"personal_number")));
+    html.replace("${gender_value}", getPreparedValue(fieldValue(groups, u"sex")));
 
-    html.replace("${document_issuer_value}", getPreparedValue(getFieldValue(cardData, "issuing_authority")));
-    html.replace("${document_number_value}", getPreparedValue(getFieldValue(cardData, "doc_reg_no")));
-    html.replace("${issuance_date_value}", getPreparedValue(getFieldValue(cardData, "issuing_date")));
-    html.replace("${validity_date_value}", getPreparedValue(getFieldValue(cardData, "expiry_date")));
+    html.replace("${document_issuer_value}", getPreparedValue(fieldValue(groups, u"issuing_authority")));
+    html.replace("${document_number_value}", getPreparedValue(fieldValue(groups, u"doc_reg_no")));
+    html.replace("${issuance_date_value}", getPreparedValue(fieldValue(groups, u"issuing_date")));
+    html.replace("${validity_date_value}", getPreparedValue(fieldValue(groups, u"expiry_date")));
 
     // Photo — raw bytes to base64 data URI
-    if (auto photoIdx = cardData.findField("photo")) {
-        const auto& value = cardData.fieldAt(*photoIdx).value;
-        if (!value.empty()) {
-            QByteArray raw(reinterpret_cast<const char*>(value.data()), static_cast<qsizetype>(value.size()));
-            QString dataUri = "data:image/png;base64, " + raw.toBase64();
-            html.replace(":/images/user.png", dataUri);
-        }
+    const QByteArray raw = photoBytes(groups);
+    if (!raw.isEmpty()) {
+        QString dataUri = "data:image/png;base64, " + raw.toBase64();
+        html.replace(":/images/user.png", dataUri);
     }
 }

@@ -12,96 +12,129 @@
 #include <QPainter>
 #include <QToolButton>
 
-#include <plugin/carddatautils.h>
-#include <LibreSCRS/Plugin/SecurityCheck.h>
+#include <plugin/fieldvalue.h>
 
 #include <QLabel>
 #include <QLineEdit>
 #include <QPixmap>
 #include <QVBoxLayout>
 
-using librecelik::plugin::getFieldValue;
+using librecelik::plugin::fieldDetailBytes;
+using librecelik::plugin::findGroup;
+using LibreSCRS::AgentClient::Field;
+using LibreSCRS::AgentClient::FieldGroup;
 
 namespace {
 
+/// The portrait the gateway merged into the read: its own group, keyed with
+/// the field half of the wire's composite key. A group that carries the image
+/// under some other key still renders — the first field with bytes wins.
+QByteArray photoBytes(const QList<FieldGroup>& groups)
+{
+    QByteArray bytes = fieldDetailBytes(groups, u"photo", u"photo");
+    if (!bytes.isEmpty()) {
+        return bytes;
+    }
+    if (const FieldGroup* group = findGroup(groups, u"photo")) {
+        for (const Field& field : group->fields) {
+            bytes = field.detail.toByteArray();
+            if (!bytes.isEmpty()) {
+                return bytes;
+            }
+        }
+    }
+    return {};
+}
+
+/// Bytes of a group's first field — the shape the single-image groups (DG5
+/// portrait, DG7 signature) arrive in.
+QByteArray firstFieldBytes(const FieldGroup& group)
+{
+    if (group.fields.isEmpty()) {
+        return {};
+    }
+    return group.fields.first().detail.toByteArray();
+}
+
 // Translation maps as functions — qtTrId() must be called at runtime (not static init)
 // to support runtime language switching.
-std::map<std::string, QString> documentTranslationMap()
+std::map<QString, QString> documentTranslationMap()
 {
     return {
-        {"document_number", qtTrId("lc-emrtd-doc-number")},      {"document_code", qtTrId("lc-emrtd-doc-code")},
-        {"issuing_state", qtTrId("lc-emrtd-issuing-state")},     {"date_of_expiry", qtTrId("lc-emrtd-date-of-expiry")},
-        {"personal_number", qtTrId("lc-emrtd-personal-number")},
+        {QStringLiteral("document_number"), qtTrId("lc-emrtd-doc-number")},
+        {QStringLiteral("document_code"), qtTrId("lc-emrtd-doc-code")},
+        {QStringLiteral("issuing_state"), qtTrId("lc-emrtd-issuing-state")},
+        {QStringLiteral("date_of_expiry"), qtTrId("lc-emrtd-date-of-expiry")},
+        {QStringLiteral("personal_number"), qtTrId("lc-emrtd-personal-number")},
     };
 }
 
-std::map<std::string, QString> documentExtraTranslationMap()
+std::map<QString, QString> documentExtraTranslationMap()
 {
     return {
-        {"issuing_authority", qtTrId("lc-emrtd-issuing-authority")},
-        {"date_of_issue", qtTrId("lc-emrtd-date-of-issue")},
-        {"endorsements", qtTrId("lc-emrtd-endorsements")},
-        {"tax_exit", qtTrId("lc-emrtd-tax-exit")},
+        {QStringLiteral("issuing_authority"), qtTrId("lc-emrtd-issuing-authority")},
+        {QStringLiteral("date_of_issue"), qtTrId("lc-emrtd-date-of-issue")},
+        {QStringLiteral("endorsements"), qtTrId("lc-emrtd-endorsements")},
+        {QStringLiteral("tax_exit"), qtTrId("lc-emrtd-tax-exit")},
     };
 }
 
-std::map<std::string, QString> personalTranslationMap()
+std::map<QString, QString> personalTranslationMap()
 {
     return {
-        {"given_names", qtTrId("lc-emrtd-given-names")},
-        {"surname", qtTrId("lc-emrtd-surname")},
-        {"nationality", qtTrId("lc-emrtd-nationality")},
-        {"date_of_birth", qtTrId("lc-emrtd-date-of-birth")},
-        {"sex", qtTrId("lc-emrtd-sex")},
+        {QStringLiteral("given_names"), qtTrId("lc-emrtd-given-names")},
+        {QStringLiteral("surname"), qtTrId("lc-emrtd-surname")},
+        {QStringLiteral("nationality"), qtTrId("lc-emrtd-nationality")},
+        {QStringLiteral("date_of_birth"), qtTrId("lc-emrtd-date-of-birth")},
+        {QStringLiteral("sex"), qtTrId("lc-emrtd-sex")},
     };
 }
 
-std::map<std::string, QString> additionalTranslationMap()
+std::map<QString, QString> additionalTranslationMap()
 {
     return {
-        {"full_name", qtTrId("lc-emrtd-full-name")},
-        {"other_names", qtTrId("lc-emrtd-other-names")},
-        {"personal_number", qtTrId("lc-emrtd-personal-number")},
-        {"place_of_birth", qtTrId("lc-emrtd-place-of-birth")},
-        {"address", qtTrId("lc-emrtd-address")},
-        {"telephone", qtTrId("lc-emrtd-telephone")},
-        {"profession", qtTrId("lc-emrtd-profession")},
-        {"title", qtTrId("lc-emrtd-title")},
-        {"custody_info", qtTrId("lc-emrtd-custody-info")},
+        {QStringLiteral("full_name"), qtTrId("lc-emrtd-full-name")},
+        {QStringLiteral("other_names"), qtTrId("lc-emrtd-other-names")},
+        {QStringLiteral("personal_number"), qtTrId("lc-emrtd-personal-number")},
+        {QStringLiteral("place_of_birth"), qtTrId("lc-emrtd-place-of-birth")},
+        {QStringLiteral("address"), qtTrId("lc-emrtd-address")},
+        {QStringLiteral("telephone"), qtTrId("lc-emrtd-telephone")},
+        {QStringLiteral("profession"), qtTrId("lc-emrtd-profession")},
+        {QStringLiteral("title"), qtTrId("lc-emrtd-title")},
+        {QStringLiteral("custody_info"), qtTrId("lc-emrtd-custody-info")},
     };
 }
 
-std::map<std::string, QString> contactsTranslationMap()
+std::map<QString, QString> contactsTranslationMap()
 {
     return {
-        {"name", qtTrId("lc-emrtd-contact-name")},
-        {"telephone", qtTrId("lc-emrtd-telephone")},
-        {"address", qtTrId("lc-emrtd-address")},
+        {QStringLiteral("name"), qtTrId("lc-emrtd-contact-name")},
+        {QStringLiteral("telephone"), qtTrId("lc-emrtd-telephone")},
+        {QStringLiteral("address"), qtTrId("lc-emrtd-address")},
     };
 }
 
-std::map<std::string, QString> presenceTranslationMap()
+std::map<QString, QString> presenceTranslationMap()
 {
     return {
-        {"data_groups", qtTrId("lc-emrtd-data-groups")},
-        {"auth_method", qtTrId("lc-emrtd-auth-method")},
+        {QStringLiteral("data_groups"), qtTrId("lc-emrtd-data-groups")},
+        {QStringLiteral("auth_method"), qtTrId("lc-emrtd-auth-method")},
     };
 }
 
-std::map<std::string, QString> nationalTranslationMap()
+std::map<QString, QString> nationalTranslationMap()
 {
     return {
-        {"tag", qtTrId("lc-emrtd-national-tag")},
-        {"value", qtTrId("lc-emrtd-national-value")},
+        {QStringLiteral("tag"), qtTrId("lc-emrtd-national-tag")},
+        {QStringLiteral("value"), qtTrId("lc-emrtd-national-value")},
     };
 }
 
 } // namespace
 
-EMRTDWidget::EMRTDWidget(const LibreSCRS::Plugin::CardData& cardData, QWidget* parent) : EMRTDWidget(parent)
+EMRTDWidget::EMRTDWidget(const QList<FieldGroup>& cardGroups, QWidget* parent) : EMRTDWidget(parent)
 {
-    data.cardType = cardData.cardType;
-    for (const auto& group : cardData.groups)
+    for (const auto& group : cardGroups)
         addGroup(group);
 }
 
@@ -128,22 +161,18 @@ void EMRTDWidget::buildShell()
 
     // Print button — disabled (dimmed) until all streaming completes
     printBtn = iconutils::createPrinterHeaderButton(this);
-    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
+    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(groups); });
     outerSection->addHeaderWidget(printBtn);
 }
 
-void EMRTDWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
+void EMRTDWidget::addGroup(const FieldGroup& group)
 {
-    const auto& key = group.groupKey;
+    const QString& key = group.key;
 
-    // auth/error groups are handled by createWidget — ignore here
-    if (key == "auth_required" || key == "error")
-        return;
+    // Store the group for the fieldGroups() accessor
+    groups.append(group);
 
-    // Store the group for cardData() access
-    data.groups.push_back(group);
-
-    if (key == "personal") {
+    if (key == QLatin1String("personal")) {
         auto* photoRow = new QHBoxLayout();
         photoRow->setSpacing(10);
 
@@ -166,42 +195,45 @@ void EMRTDWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
         photoRow->addWidget(personalSec, 1);
 
         sectionLayout->insertLayout(0, photoRow);
-    } else if (key == "document") {
+    } else if (key == QLatin1String("document")) {
         auto* docSection = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-emrtd-document-data"), group,
                                                                          documentTranslationMap());
-        librecelik::utils::FieldSectionBuilder::highlightExpiredDates(docSection, group, {"date_of_expiry"});
+        librecelik::utils::FieldSectionBuilder::highlightExpiredDates(docSection, group,
+                                                                      {QStringLiteral("date_of_expiry")});
         sectionLayout->addWidget(docSection);
-    } else if (key == "photo") {
-        if (!photoLabel || group.fields.empty() || group.fields[0].value.empty())
+    } else if (key == QLatin1String("photo")) {
+        const QByteArray bytes = photoBytes(groups);
+        if (!photoLabel || bytes.isEmpty())
             return;
         QPixmap photo;
-        photo.loadFromData(group.fields[0].value.data(), static_cast<uint>(group.fields[0].value.size()));
+        photo.loadFromData(bytes);
         if (!photo.isNull()) {
             auto scaledPhoto = photo.scaledToHeight(250, Qt::SmoothTransformation);
             photoLabel->setFixedSize(scaledPhoto.size());
             photoLabel->setPixmap(scaledPhoto);
         }
-    } else if (key == "signature") {
-        if (!group.fields.empty() && !group.fields[0].value.empty()) {
+    } else if (key == QLatin1String("signature")) {
+        const QByteArray bytes = firstFieldBytes(group);
+        if (!bytes.isEmpty()) {
             auto* sigSection = new CollapsibleSection(qtTrId("lc-emrtd-signature"), outerSection);
             auto* sigLayout = new QVBoxLayout();
             auto* sigLabel = new QLabel();
             QPixmap sigPixmap;
-            sigPixmap.loadFromData(group.fields[0].value.data(), static_cast<uint>(group.fields[0].value.size()));
+            sigPixmap.loadFromData(bytes);
             sigLabel->setPixmap(sigPixmap.scaled(200, 80, Qt::KeepAspectRatio, Qt::SmoothTransformation));
             sigLabel->setAlignment(Qt::AlignCenter);
             sigLayout->addWidget(sigLabel);
             sigSection->setLayout(sigLayout);
             sectionLayout->addWidget(sigSection);
         }
-    } else if (key == "additional") {
+    } else if (key == QLatin1String("additional")) {
         auto* additionalSection = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-emrtd-additional"), group,
                                                                                 additionalTranslationMap());
         sectionLayout->addWidget(additionalSection);
-    } else if (key == "document_extra") {
+    } else if (key == QLatin1String("document_extra")) {
         // If "additional" already added, show as separate "Issuing Information" section
         // Otherwise show as "Additional"
-        bool hasAdditional = data.findGroup("additional").has_value();
+        bool hasAdditional = findGroup(groups, u"additional") != nullptr;
         if (hasAdditional) {
             auto* extraSection = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-emrtd-issuing-info"), group,
                                                                                documentExtraTranslationMap());
@@ -211,18 +243,19 @@ void EMRTDWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
                                                                                documentExtraTranslationMap());
             sectionLayout->addWidget(extraSection);
         }
-    } else if (key == "presence") {
+    } else if (key == QLatin1String("presence")) {
         auto* presenceSection =
             librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-emrtd-presence"), group, presenceTranslationMap());
         sectionLayout->addWidget(presenceSection);
-    } else if (key == "portrait") {
+    } else if (key == QLatin1String("portrait")) {
         // DG5 portrait image — similar to signature display
-        if (!group.fields.empty() && !group.fields[0].value.empty()) {
+        const QByteArray bytes = firstFieldBytes(group);
+        if (!bytes.isEmpty()) {
             auto* portraitSection = new CollapsibleSection(qtTrId("lc-emrtd-portrait"), outerSection);
             auto* portraitLayout = new QVBoxLayout();
             auto* portraitLabel = new QLabel();
             QPixmap portraitPixmap;
-            portraitPixmap.loadFromData(group.fields[0].value.data(), static_cast<uint>(group.fields[0].value.size()));
+            portraitPixmap.loadFromData(bytes);
             if (!portraitPixmap.isNull()) {
                 portraitLabel->setPixmap(
                     portraitPixmap.scaled(200, 250, Qt::KeepAspectRatio, Qt::SmoothTransformation));
@@ -232,13 +265,13 @@ void EMRTDWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
             portraitSection->setLayout(portraitLayout);
             sectionLayout->addWidget(portraitSection);
         }
-    } else if (key == "contacts") {
+    } else if (key == QLatin1String("contacts")) {
         auto* contactsSection =
             librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-emrtd-contacts"), group, contactsTranslationMap());
         sectionLayout->addWidget(contactsSection);
-    } else if (key == "biometric_fingerprint" || key == "biometric_iris") {
-        QString title = (key == "biometric_fingerprint") ? qtTrId("lc-emrtd-biometric-fingerprint")
-                                                         : qtTrId("lc-emrtd-biometric-iris");
+    } else if (key == QLatin1String("biometric_fingerprint") || key == QLatin1String("biometric_iris")) {
+        QString title = (key == QLatin1String("biometric_fingerprint")) ? qtTrId("lc-emrtd-biometric-fingerprint")
+                                                                        : qtTrId("lc-emrtd-biometric-iris");
         auto* bioSection = new CollapsibleSection(title, outerSection);
         auto* bioLayout = new QVBoxLayout();
         auto* bioLabel = new QLabel(qtTrId("lc-emrtd-biometric-eac-required"));
@@ -247,50 +280,49 @@ void EMRTDWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
         bioLayout->addWidget(bioLabel);
         bioSection->setLayout(bioLayout);
         sectionLayout->addWidget(bioSection);
-    } else if (key == "security_status") {
-        // Parse fields back into SecurityStatus struct
-        LibreSCRS::Plugin::SecurityStatus secStatus;
+    } else if (key == QLatin1String("security_status")) {
+        // Parse fields back into the security model the pane renders
+        using librecelik::utils::SecurityCategory;
+        using librecelik::utils::SecurityCheck;
+        librecelik::utils::SecurityStatusModel secStatus;
         for (const auto& field : group.fields) {
-            auto textOpt = field.textValue();
-            if (!textOpt.has_value())
-                continue;
-            const auto& text = *textOpt;
-            if (field.key == "overall_integrity") {
-                secStatus.overallIntegrity = LibreSCRS::Plugin::statusFromString(text).value_or(
-                    LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
-            } else if (field.key == "overall_authenticity") {
-                secStatus.overallAuthenticity = LibreSCRS::Plugin::statusFromString(text).value_or(
-                    LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
-            } else if (field.key == "overall_genuineness") {
-                secStatus.overallGenuineness = LibreSCRS::Plugin::statusFromString(text).value_or(
-                    LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
-            } else if (field.key.starts_with("check_")) {
+            const QString& text = field.value;
+            if (field.key == QLatin1String("overall_integrity")) {
+                secStatus.overallIntegrity =
+                    librecelik::utils::statusFromString(text).value_or(SecurityCheck::Status::NotPerformed);
+            } else if (field.key == QLatin1String("overall_authenticity")) {
+                secStatus.overallAuthenticity =
+                    librecelik::utils::statusFromString(text).value_or(SecurityCheck::Status::NotPerformed);
+            } else if (field.key == QLatin1String("overall_genuineness")) {
+                secStatus.overallGenuineness =
+                    librecelik::utils::statusFromString(text).value_or(SecurityCheck::Status::NotPerformed);
+            } else if (field.key.startsWith(QLatin1String("check_"))) {
                 // Individual check fields: check_N_id, check_N_category, etc.
                 // Parse grouped by index
-                auto suffix = field.key.substr(field.key.find('_', 6) + 1);
-                auto idxStr = field.key.substr(6, field.key.find('_', 6) - 6);
-                size_t idx = 0;
-                try {
-                    idx = std::stoul(idxStr);
-                } catch (...) {
+                const qsizetype separator = field.key.indexOf(u'_', 6);
+                if (separator < 0)
                     continue;
-                }
-                while (secStatus.checks.size() <= idx)
-                    secStatus.checks.emplace_back();
-                auto& check = secStatus.checks[idx];
-                if (suffix == "id")
+                const QString suffix = field.key.mid(separator + 1);
+                const QString idxStr = field.key.mid(6, separator - 6);
+                bool parsed = false;
+                const uint idx = idxStr.toUInt(&parsed);
+                if (!parsed)
+                    continue;
+                while (secStatus.checks.size() <= static_cast<qsizetype>(idx))
+                    secStatus.checks.emplaceBack();
+                auto& check = secStatus.checks[static_cast<qsizetype>(idx)];
+                if (suffix == QLatin1String("id"))
                     check.checkId = text;
-                else if (suffix == "category")
-                    check.category = LibreSCRS::Plugin::categoryFromString(text).value_or(
-                        LibreSCRS::Plugin::SecurityCategory::Other);
-                else if (suffix == "status")
-                    check.status = LibreSCRS::Plugin::statusFromString(text).value_or(
-                        LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed);
-                else if (suffix == "label")
+                else if (suffix == QLatin1String("category"))
+                    check.category = librecelik::utils::categoryFromString(text).value_or(SecurityCategory::Other);
+                else if (suffix == QLatin1String("status"))
+                    check.status =
+                        librecelik::utils::statusFromString(text).value_or(SecurityCheck::Status::NotPerformed);
+                else if (suffix == QLatin1String("label"))
                     check.label = text;
-                else if (suffix == "detail")
+                else if (suffix == QLatin1String("detail"))
                     check.detail = text;
-                else if (suffix == "error")
+                else if (suffix == QLatin1String("error"))
                     check.errorDetail = text;
             }
         }
@@ -301,7 +333,7 @@ void EMRTDWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
         securityStatusWidget->setVisible(true);
         // Always insert at top of section
         sectionLayout->insertWidget(0, securityStatusWidget);
-    } else if (key == "national") {
+    } else if (key == QLatin1String("national")) {
         auto* nationalSection = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-emrtd-national-data"), group,
                                                                               nationalTranslationMap());
         sectionLayout->addWidget(nationalSection);
@@ -328,10 +360,10 @@ void EMRTDWidget::enablePrintButton()
 void EMRTDWidget::retranslateUi()
 {
     // Plugin widget rebuild-tier (April 2026 retranslate spec): tear
-    // down the shell and rebuild from cached data.groups so every label
+    // down the shell and rebuild from the cached groups so every label
     // produced via translation maps refreshes with the new translator.
-    auto cachedGroups = std::move(data.groups);
-    data.groups.clear();
+    auto cachedGroups = std::move(groups);
+    groups.clear();
     const bool hadNoData = noDataMessageShown;
     noDataMessageShown = false;
 

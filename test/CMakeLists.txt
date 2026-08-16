@@ -54,6 +54,10 @@ target_link_libraries(
     UUID::UUID
     Qt6::Core
     Qt6::Widgets
+    # fieldsectionbuilder.cpp renders the client's own flattened identity rows,
+    # so this catch-all target both compiles against the client headers and
+    # links the exported flatten symbol. The link carries the include path too.
+    LibreAgent::ClientQt
 )
 
 include(GoogleTest)
@@ -71,6 +75,8 @@ target_link_libraries(CardWidgetPluginRegistryTests
     GTest::gtest_main
     Qt6::Widgets
     LibreSCRS::Plugin
+    # cardwidgetplugin.h now speaks the client's field-group types.
+    LibreAgent::ClientQt
 )
 target_sources(CardWidgetPluginRegistryTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src/plugin/cardwidgetpluginregistry.cpp
@@ -141,20 +147,24 @@ else()
     message(STATUS "QSmartCardMonitorTests: skipped (requires FetchContent mode for LM internal headers)")
 endif()
 
-add_executable(CardDataUtilsTests
-    carddatautils_test.cpp
-    ../src/plugin/carddatautils.h
+# The field-group successor of the middleware card-data helpers, which left
+# with the middleware read path: same shape, same case list, the client's types.
+add_executable(FieldValueTests
+    fieldvalue_test.cpp
 )
-target_link_libraries(CardDataUtilsTests PRIVATE
+target_link_libraries(FieldValueTests PRIVATE
     GTest::gtest_main
     Qt6::Core
-    LibreSCRS::Plugin
+    LibreAgent::ClientQt
 )
-target_include_directories(CardDataUtilsTests PRIVATE
+target_include_directories(FieldValueTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
-gtest_discover_tests(CardDataUtilsTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+gtest_discover_tests(FieldValueTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# Compiles a plugin source directly — but the eu-vrc family already speaks the
+# field-group plugin interface, so this suite is back in the build ahead of the
+# plugins/ tree, which waits for the families still to be re-typed.
 add_executable(EuVrcTextDocumentTests
     euvrctextdocument_test.cpp
     ../plugins/eu-vrc/euvrctextdocument.h
@@ -171,6 +181,7 @@ target_include_directories(EuVrcTextDocumentTests PRIVATE
 )
 target_link_libraries(EuVrcTextDocumentTests
     GTest::gtest
+    LibreAgent::ClientQt
     LibreSCRS::Plugin
     LibreCelikPrinting
     Qt6::Widgets
@@ -232,6 +243,8 @@ target_link_libraries(LocaleResolverTests
 )
 gtest_discover_tests(LocaleResolverTests)
 
+# Compiles a plugin source directly — the rs-health family speaks the
+# field-group plugin interface, so this suite guards that formatter's re-type.
 add_executable(HealthTextDocumentTests
     healthtextdocument_test.cpp
     ../plugins/rs-health/healthtextdocument.h
@@ -248,6 +261,7 @@ target_include_directories(HealthTextDocumentTests PRIVATE
 )
 target_link_libraries(HealthTextDocumentTests
     GTest::gtest
+    LibreAgent::ClientQt
     LibreSCRS::Plugin
     LibreCelikPrinting
     Qt6::Widgets
@@ -256,6 +270,8 @@ target_link_libraries(HealthTextDocumentTests
 set_target_properties(HealthTextDocumentTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(HealthTextDocumentTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# Compiles a plugin source directly — the rs-eid family speaks the field-group
+# plugin interface, so this suite guards that formatter's re-type.
 add_executable(EIdTextDocumentTests
     eidtextdocument_test.cpp
     ../plugins/rs-eid/eidtextdocument.h
@@ -272,6 +288,7 @@ target_include_directories(EIdTextDocumentTests PRIVATE
 )
 target_link_libraries(EIdTextDocumentTests
     GTest::gtest
+    LibreAgent::ClientQt
     LibreSCRS::Plugin
     LibreCelikPrinting
     Qt6::Widgets
@@ -280,6 +297,8 @@ target_link_libraries(EIdTextDocumentTests
 set_target_properties(EIdTextDocumentTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(EIdTextDocumentTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# Compiles a plugin source directly — the piv family speaks the field-group
+# plugin interface, so this suite guards that formatter's re-type.
 add_executable(PIVTextDocumentTests
     pivtextdocument_test.cpp
     ../plugins/piv/pivtextdocument.h
@@ -296,6 +315,7 @@ target_include_directories(PIVTextDocumentTests PRIVATE
 )
 target_link_libraries(PIVTextDocumentTests
     GTest::gtest
+    LibreAgent::ClientQt
     LibreSCRS::Plugin
     LibreCelikPrinting
     Qt6::Widgets
@@ -359,9 +379,15 @@ if(LIBRECELIK_SIGNING_ENABLED)
 endif()
 
 if(LIBRECELIK_SIGNING_ENABLED)
+    # certformat.cpp joins this target for the KeyUsage-bitmask cases; it is
+    # LM-free from the certificate-viewer re-type onward, so it adds no
+    # middleware dependency. certutils.cpp and the LM links below stay until
+    # the signing wizard stops parsing DER in-process — the CertUtils suites
+    # still cover live production code.
     add_executable(SigningUnitTests
         signing_unit_test.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/certutils.cpp
+        ${CMAKE_SOURCE_DIR}/src/certificate/certformat.cpp
     )
     target_include_directories(SigningUnitTests PRIVATE
         ${CMAKE_SOURCE_DIR}/src
@@ -450,7 +476,7 @@ gtest_discover_tests(i18n_settings_state_test PROPERTIES ENVIRONMENT
 #
 # Compiles all 5 production plugin widgets into a single test binary
 # and parameterises over them. Each plugin is built with a synthetic
-# CardData (mock_plugin_data.h), snapshotted, language-switched, and
+# field-group read (mock_plugin_data.h), snapshotted, language-switched, and
 # re-snapshotted; the fixture asserts every shared key changed.
 add_executable(i18n_plugin_retranslate_test
     i18n_plugin_retranslate_test.cpp
@@ -482,6 +508,7 @@ target_link_libraries(i18n_plugin_retranslate_test PRIVATE
     Qt6::Core
     Qt6::Widgets
     Qt6::Test
+    LibreAgent::ClientQt
     LibreSCRS::Plugin
 )
 set_target_properties(i18n_plugin_retranslate_test PROPERTIES AUTOMOC ON)
@@ -572,13 +599,15 @@ if(LIBRECELIK_SIGNING_ENABLED)
     gtest_discover_tests(SigningWizardE2ETests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()
 
-# Header-card placeholder render guard. Exercises TokenSection::setTokenInfo
-# against an empty CardFieldGroup and against a group containing a field
-# with an empty value, asserting the header still renders and the em-dash
-# (U+2014) placeholder appears in the rendered value cell. Compiles the
-# full TokenSection translation unit + its presentation dependencies; the
-# heavyweight pattern mirrors SigningWizardE2ETests because TokenSection
-# transitively references CertificateViewerDlg via onContextMenu.
+# Header-card placeholder render guard, plus the certificate/credential row
+# rendering. Exercises TokenSection::setTokenInfo against an empty FieldGroup
+# and against a group containing a field with an empty value, asserting the
+# header still renders and the em-dash (U+2014) placeholder appears in the
+# rendered value cell; asserts the security-status tokens and the credential
+# counters land in the rendered tree. Compiles the full TokenSection
+# translation unit + its presentation dependencies; the heavyweight pattern
+# mirrors SigningWizardE2ETests because the certificate viewer TUs are still
+# middleware-typed and ride along in this target.
 add_executable(TokenSectionTests
     tokensection_placeholder_test.cpp
     ${CMAKE_SOURCE_DIR}/src/document/tokensection.cpp
@@ -590,35 +619,44 @@ add_executable(TokenSectionTests
     ${CMAKE_SOURCE_DIR}/src/certificate/certificatetreeviewmodel.cpp
     ${CMAKE_SOURCE_DIR}/src/certificate/certificatepropertiesmodel.cpp
     ${CMAKE_SOURCE_DIR}/src/certificate/certificateinfoitem.cpp
+    # The viewer dialog connects to AgentGateway's certificateDerReady, so the
+    # abstract gateway's moc TU has to be in the target; the header alone is
+    # not enough for a pointer-to-member-signal connect to link.
+    ${CMAKE_SOURCE_DIR}/src/agent/agentgateway.h
+    ${CMAKE_SOURCE_DIR}/src/agent/agentgateway.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/cardheadercard.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/buttonbox.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/dialogs.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
 )
 target_include_directories(TokenSectionTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${PROJECT_BINARY_DIR}/../src
 )
+# The FIRST middleware-free test target: every TU it compiles — the token
+# section and the whole certificate viewer — now speaks the agent client's
+# types, so no LibreSCRS::Plugin / SmartCard / Trust / Certificate link
+# remains. Keep it that way; a new link here means a TU started parsing card
+# data in-process again.
 target_link_libraries(TokenSectionTests PRIVATE
     GTest::gtest_main
     Qt6::Widgets
     Qt6::Test
-    LibreSCRS::Plugin
-    LibreSCRS::SmartCard
-    LibreSCRS::Trust
-    LibreSCRS::Certificate
+    LibreAgent::ClientQt
 )
-if(LIBRECELIK_SIGNING_ENABLED)
-    target_sources(TokenSectionTests PRIVATE
-        ${CMAKE_SOURCE_DIR}/src/signing/certutils.cpp
-    )
-    target_link_libraries(TokenSectionTests PRIVATE LibreSCRS::Signing)
-endif()
 set_target_properties(TokenSectionTests PROPERTIES
     AUTOMOC ON
     AUTOUIC ON
     AUTORCC ON
 )
+target_compile_definitions(TokenSectionTests PRIVATE
+    # Build-tree .qm directory baked in at compile time so the fixture can
+    # install LibreCelik_en.qm (mirrors SlotLabelFormatterTests). The counter
+    # row substitutes numbers into a translated template, so an untranslated
+    # run would render the bare catalog ID and drop them.
+    LIBRECELIK_TRANSLATIONS_DIR_DEFAULT="${CMAKE_BINARY_DIR}/src")
+add_dependencies(TokenSectionTests LibreCelik_lrelease)
 gtest_discover_tests(TokenSectionTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # --- Agent service-layer suites ---
@@ -686,3 +724,52 @@ set_target_properties(AgentLayerTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(AgentLayerTests
     TEST_PREFIX "AgentLayer."
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
+
+# --- Main-window flow suites (offscreen GUI) ---
+#
+# The window itself is deliberately NOT in this binary: linking it drags in
+# the whole application. What it COMPOSES is here — the guided presence panel
+# and the streamed-group plugin dispatch — driven by the scripted fakes.
+#
+# Qt6::Widgets (not just Core) because these cases construct real widgets, and
+# the fixture installs a QApplication for them.
+#
+# The abstract vtable anchors (agentgateway/cardcontroller/signcontroller .cpp)
+# are compiled in for the same reason AgentLayerTests needs them: the fakes
+# derive from those classes and the target cannot link without them.
+# errortext.cpp is here because the scripted-error case renders through
+# errorText(); libreceliklog.cpp because agentstatewidget.cpp logs its guided
+# state through lcGeneral.
+#
+# The TEST_PREFIX is load-bearing: gtest_discover_tests registers the gtest
+# SUITE names (AgentStateWidgetTest, MainFlowTest), none of which contain
+# "AgentMainFlow", so `ctest -R AgentMainFlow` only matches through the prefix.
+add_executable(AgentMainFlowTests
+    agent_mainflow_test.cpp
+    fake_gateway/fakeagentgateway.cpp
+    fake_gateway/fakecardcontroller.cpp
+    fake_gateway/fakesigncontroller.cpp
+    mock_widget_plugin/mockwidgetplugin.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/agentgateway.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/cardcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/signcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/agentstatewidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/errortext.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
+)
+target_include_directories(AgentMainFlowTests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/mock_widget_plugin
+    ${CMAKE_SOURCE_DIR}/src
+    ${PROJECT_BINARY_DIR}/../src
+)
+target_link_libraries(AgentMainFlowTests PRIVATE
+    GTest::gtest_main
+    Qt6::Widgets
+    Qt6::Test
+    LibreAgent::ClientQt
+)
+set_target_properties(AgentMainFlowTests PROPERTIES AUTOMOC ON)
+gtest_discover_tests(AgentMainFlowTests
+    TEST_PREFIX "AgentMainFlow."
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

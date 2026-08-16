@@ -3,8 +3,9 @@
 
 #include <gtest/gtest.h>
 #include <QApplication>
+#include <QList>
 #include "healthtextdocument.h"
-#include <LibreSCRS/Plugin/CardData.h>
+#include <LibreSCRS/AgentClient/Types.h>
 
 int main(int argc, char** argv)
 {
@@ -15,59 +16,73 @@ int main(int argc, char** argv)
 
 namespace {
 
-LibreSCRS::Plugin::CardData makeHealthCardData()
-{
-    LibreSCRS::Plugin::CardData data;
-    data.cardType = "rs-health";
+using LibreSCRS::AgentClient::Field;
+using LibreSCRS::AgentClient::FieldGroup;
 
-    auto addText = [](LibreSCRS::Plugin::CardFieldGroup& g, const std::string& key, const std::string& val) {
-        if (!val.empty())
-            g.fields.push_back({key, key, LibreSCRS::Plugin::FieldType::Text, {val.begin(), val.end()}});
+/// A text field in the shape the agent's identity read ships: the value is
+/// already stringified, and the `type` token is the one the shared flatten
+/// rule reads.
+Field textField(const QString& key, const QString& value)
+{
+    Field field;
+    field.key = key;
+    field.value = value;
+    field.extra.insert(QStringLiteral("type"), QStringLiteral("text"));
+    return field;
+}
+
+QList<FieldGroup> makeHealthGroups()
+{
+    QList<FieldGroup> groups;
+
+    auto addText = [](FieldGroup& g, const QString& key, const QString& val) {
+        if (!val.isEmpty())
+            g.fields.append(textField(key, val));
     };
 
     {
-        LibreSCRS::Plugin::CardFieldGroup personal;
-        personal.groupKey = "personal";
-        addText(personal, "given_name", "МАРКО");
-        addText(personal, "family_name", "ПЕТРОВИЋ");
-        addText(personal, "given_name_latin", "MARKO");
-        addText(personal, "family_name_latin", "PETROVIĆ");
-        addText(personal, "parent_name", "ИВАН");
-        addText(personal, "date_of_birth", "01.01.1990");
-        addText(personal, "gender", "M");
-        addText(personal, "personal_number", "0101990710123");
-        addText(personal, "insurant_number", "12345678901");
-        data.groups.push_back(std::move(personal));
+        FieldGroup personal;
+        personal.key = QStringLiteral("personal");
+        addText(personal, QStringLiteral("given_name"), QStringLiteral("МАРКО"));
+        addText(personal, QStringLiteral("family_name"), QStringLiteral("ПЕТРОВИЋ"));
+        addText(personal, QStringLiteral("given_name_latin"), QStringLiteral("MARKO"));
+        addText(personal, QStringLiteral("family_name_latin"), QStringLiteral("PETROVIĆ"));
+        addText(personal, QStringLiteral("parent_name"), QStringLiteral("ИВАН"));
+        addText(personal, QStringLiteral("date_of_birth"), QStringLiteral("01.01.1990"));
+        addText(personal, QStringLiteral("gender"), QStringLiteral("M"));
+        addText(personal, QStringLiteral("personal_number"), QStringLiteral("0101990710123"));
+        addText(personal, QStringLiteral("insurant_number"), QStringLiteral("12345678901"));
+        groups.append(std::move(personal));
     }
     {
-        LibreSCRS::Plugin::CardFieldGroup insurance;
-        insurance.groupKey = "insurance";
-        addText(insurance, "insurer_name", "RFZO");
-        addText(insurance, "insurer_id", "001");
-        addText(insurance, "card_id", "ABC123");
-        addText(insurance, "date_of_issue", "01.01.2023");
-        addText(insurance, "date_of_expiry", "01.01.2028");
-        data.groups.push_back(std::move(insurance));
+        FieldGroup insurance;
+        insurance.key = QStringLiteral("insurance");
+        addText(insurance, QStringLiteral("insurer_name"), QStringLiteral("RFZO"));
+        addText(insurance, QStringLiteral("insurer_id"), QStringLiteral("001"));
+        addText(insurance, QStringLiteral("card_id"), QStringLiteral("ABC123"));
+        addText(insurance, QStringLiteral("date_of_issue"), QStringLiteral("01.01.2023"));
+        addText(insurance, QStringLiteral("date_of_expiry"), QStringLiteral("01.01.2028"));
+        groups.append(std::move(insurance));
     }
     {
-        LibreSCRS::Plugin::CardFieldGroup address;
-        address.groupKey = "address";
-        addText(address, "street", "Knez Mihailova");
-        addText(address, "address_number", "10");
-        addText(address, "place", "Beograd");
-        addText(address, "municipality", "Stari Grad");
-        addText(address, "country", "SRB");
-        data.groups.push_back(std::move(address));
+        FieldGroup address;
+        address.key = QStringLiteral("address");
+        addText(address, QStringLiteral("street"), QStringLiteral("Knez Mihailova"));
+        addText(address, QStringLiteral("address_number"), QStringLiteral("10"));
+        addText(address, QStringLiteral("place"), QStringLiteral("Beograd"));
+        addText(address, QStringLiteral("municipality"), QStringLiteral("Stari Grad"));
+        addText(address, QStringLiteral("country"), QStringLiteral("SRB"));
+        groups.append(std::move(address));
     }
     {
-        LibreSCRS::Plugin::CardFieldGroup taxpayer;
-        taxpayer.groupKey = "taxpayer";
-        addText(taxpayer, "taxpayer_name", "КОМПАНИЈА ДОО");
-        addText(taxpayer, "taxpayer_id_number", "123456789");
-        data.groups.push_back(std::move(taxpayer));
+        FieldGroup taxpayer;
+        taxpayer.key = QStringLiteral("taxpayer");
+        addText(taxpayer, QStringLiteral("taxpayer_name"), QStringLiteral("КОМПАНИЈА ДОО"));
+        addText(taxpayer, QStringLiteral("taxpayer_id_number"), QStringLiteral("123456789"));
+        groups.append(std::move(taxpayer));
     }
 
-    return data;
+    return groups;
 }
 
 } // namespace
@@ -88,6 +103,6 @@ QApplication* HealthTextDocumentTest::app = nullptr;
 
 TEST_F(HealthTextDocumentTest, ConstructionSucceeds)
 {
-    auto data = makeHealthCardData();
+    auto data = makeHealthGroups();
     EXPECT_NO_THROW(HealthTextDocument doc(data));
 }

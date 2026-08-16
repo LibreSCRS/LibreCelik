@@ -6,7 +6,28 @@
 #include <QLabel>
 #include <QLineEdit>
 #include "utils/fieldsectionbuilder.h"
-#include <LibreSCRS/Plugin/CardData.h>
+#include <LibreSCRS/AgentClient/Types.h>
+
+namespace {
+
+using LibreSCRS::AgentClient::Field;
+using LibreSCRS::AgentClient::FieldGroup;
+
+/// A text field carrying the agent's own row metadata. `labelFallback` is the
+/// agent-authored English label the builder falls back to when the host has no
+/// translation for the key; `type` is the token the shared flatten rule reads.
+Field textField(const QString& key, const QString& value, const QString& labelFallback = {})
+{
+    Field field;
+    field.key = key;
+    field.value = value;
+    field.extra.insert(QStringLiteral("type"), QStringLiteral("text"));
+    if (!labelFallback.isEmpty())
+        field.extra.insert(QStringLiteral("labelFallback"), labelFallback);
+    return field;
+}
+
+} // namespace
 
 class FieldSectionBuilderTest : public ::testing::Test
 {
@@ -24,11 +45,10 @@ QApplication* FieldSectionBuilderTest::app = nullptr;
 
 TEST_F(FieldSectionBuilderTest, CreatesReadOnlyFieldsFromGroup)
 {
-    LibreSCRS::Plugin::CardFieldGroup group;
-    group.groupKey = "personal";
-    group.fields.push_back({"given_name", "Given Name", LibreSCRS::Plugin::FieldType::Text, {'P', 'e', 't', 'a', 'r'}});
-    group.fields.push_back(
-        {"surname", "Surname", LibreSCRS::Plugin::FieldType::Text, {'P', 'e', 't', 'r', 'o', 'v', 'i', 'c'}});
+    FieldGroup group;
+    group.key = QStringLiteral("personal");
+    group.fields.append(textField(QStringLiteral("given_name"), QStringLiteral("Petar")));
+    group.fields.append(textField(QStringLiteral("surname"), QStringLiteral("Petrovic")));
 
     auto* section = librecelik::utils::FieldSectionBuilder::build("Personal Data", group, {});
 
@@ -48,10 +68,10 @@ TEST_F(FieldSectionBuilderTest, CreatesReadOnlyFieldsFromGroup)
 
 TEST_F(FieldSectionBuilderTest, SkipsEmptyFields)
 {
-    LibreSCRS::Plugin::CardFieldGroup group;
-    group.groupKey = "test";
-    group.fields.push_back({"filled", "Filled", LibreSCRS::Plugin::FieldType::Text, {'A'}});
-    group.fields.push_back({"empty", "Empty", LibreSCRS::Plugin::FieldType::Text, {}});
+    FieldGroup group;
+    group.key = QStringLiteral("test");
+    group.fields.append(textField(QStringLiteral("filled"), QStringLiteral("A")));
+    group.fields.append(textField(QStringLiteral("empty"), QString{}));
 
     auto* section = librecelik::utils::FieldSectionBuilder::build("Test", group, {});
     auto edits = section->findChildren<QLineEdit*>();
@@ -61,13 +81,36 @@ TEST_F(FieldSectionBuilderTest, SkipsEmptyFields)
     delete section;
 }
 
+// The skip-binary decision is not re-implemented here — it lives in the
+// client's shared flatten rule, so a binary field (a raw portrait) never
+// reaches the grid at all, exactly as it does not reach the KDE rows consumer.
+TEST_F(FieldSectionBuilderTest, SkipsBinaryFields)
+{
+    FieldGroup group;
+    group.key = QStringLiteral("personal");
+    group.fields.append(textField(QStringLiteral("given_name"), QStringLiteral("Petar")));
+
+    Field portrait;
+    portrait.key = QStringLiteral("photo");
+    portrait.value = QStringLiteral("ignored");
+    portrait.extra.insert(QStringLiteral("type"), QStringLiteral("binary"));
+    group.fields.append(portrait);
+
+    auto* section = librecelik::utils::FieldSectionBuilder::build("Personal", group, {});
+    auto edits = section->findChildren<QLineEdit*>();
+    ASSERT_EQ(edits.size(), 1);
+    EXPECT_EQ(edits[0]->text(), "Petar");
+
+    delete section;
+}
+
 TEST_F(FieldSectionBuilderTest, UsesTranslationMap)
 {
-    LibreSCRS::Plugin::CardFieldGroup group;
-    group.groupKey = "personal";
-    group.fields.push_back({"given_name", "Given Name", LibreSCRS::Plugin::FieldType::Text, {'P'}});
+    FieldGroup group;
+    group.key = QStringLiteral("personal");
+    group.fields.append(textField(QStringLiteral("given_name"), QStringLiteral("P"), QStringLiteral("Given name")));
 
-    std::map<std::string, QString> translations = {{"given_name", "Ime"}};
+    std::map<QString, QString> translations = {{QStringLiteral("given_name"), QStringLiteral("Ime")}};
 
     auto* section = librecelik::utils::FieldSectionBuilder::build("Personal", group, translations);
     auto labels = section->findChildren<QLabel*>();
@@ -81,11 +124,31 @@ TEST_F(FieldSectionBuilderTest, UsesTranslationMap)
     delete section;
 }
 
+// Second rung of the label precedence: no host translation, but the agent
+// shipped an English label with the row.
+TEST_F(FieldSectionBuilderTest, FallsBackToAgentLabelWhenNoTranslation)
+{
+    FieldGroup group;
+    group.key = QStringLiteral("test");
+    group.fields.append(textField(QStringLiteral("my_field"), QStringLiteral("X"), QStringLiteral("My Field")));
+
+    auto* section = librecelik::utils::FieldSectionBuilder::build("Test", group, {});
+    auto labels = section->findChildren<QLabel*>();
+    bool found = false;
+    for (auto* label : labels) {
+        if (label->text() == "My Field")
+            found = true;
+    }
+    EXPECT_TRUE(found);
+
+    delete section;
+}
+
 TEST_F(FieldSectionBuilderTest, FallsBackToKeyWhenNoTranslation)
 {
-    LibreSCRS::Plugin::CardFieldGroup group;
-    group.groupKey = "test";
-    group.fields.push_back({"my_field", "My Field", LibreSCRS::Plugin::FieldType::Text, {'X'}});
+    FieldGroup group;
+    group.key = QStringLiteral("test");
+    group.fields.append(textField(QStringLiteral("my_field"), QStringLiteral("X")));
 
     auto* section = librecelik::utils::FieldSectionBuilder::build("Test", group, {});
     auto labels = section->findChildren<QLabel*>();
@@ -101,12 +164,12 @@ TEST_F(FieldSectionBuilderTest, FallsBackToKeyWhenNoTranslation)
 
 TEST_F(FieldSectionBuilderTest, HidesFieldsInHiddenSet)
 {
-    LibreSCRS::Plugin::CardFieldGroup group;
-    group.groupKey = "personal";
-    group.fields.push_back({"visible", "Visible", LibreSCRS::Plugin::FieldType::Text, {'A'}});
-    group.fields.push_back({"hidden", "Hidden", LibreSCRS::Plugin::FieldType::Text, {'B'}});
+    FieldGroup group;
+    group.key = QStringLiteral("personal");
+    group.fields.append(textField(QStringLiteral("visible"), QStringLiteral("A")));
+    group.fields.append(textField(QStringLiteral("hidden"), QStringLiteral("B")));
 
-    std::set<std::string> hidden = {"hidden"};
+    std::set<QString> hidden = {QStringLiteral("hidden")};
     auto* section = librecelik::utils::FieldSectionBuilder::build("Test", group, {}, hidden);
     auto edits = section->findChildren<QLineEdit*>();
     ASSERT_EQ(edits.size(), 1);

@@ -4,7 +4,8 @@
 #pragma once
 
 #include <QCoreApplication>
-#include <LibreSCRS/Plugin/CardData.h>
+#include <QList>
+#include <LibreSCRS/AgentClient/Types.h>
 #include "textdocument.h"
 
 class PIVTextDocument : public TextDocument
@@ -12,16 +13,17 @@ class PIVTextDocument : public TextDocument
     Q_DECLARE_TR_FUNCTIONS(PIVTextDocument)
 
 public:
-    explicit PIVTextDocument(const LibreSCRS::Plugin::CardData& data, QString cssPath = ":/html/pivcard.css");
+    explicit PIVTextDocument(const QList<LibreSCRS::AgentClient::FieldGroup>& groups,
+                             QString cssPath = ":/html/pivcard.css");
 
 private:
-    QString buildHtml(const LibreSCRS::Plugin::CardData& cardData) const;
+    QString buildHtml(const QList<LibreSCRS::AgentClient::FieldGroup>& groups) const;
 
-    QString buildChuidSection(const LibreSCRS::Plugin::CardData& cardData) const;
-    QString buildCccSection(const LibreSCRS::Plugin::CardData& cardData) const;
-    QString buildPrintedSection(const LibreSCRS::Plugin::CardData& cardData) const;
-    QString buildDiscoverySection(const LibreSCRS::Plugin::CardData& cardData) const;
-    QString buildKeyHistorySection(const LibreSCRS::Plugin::CardData& cardData) const;
+    QString buildChuidSection(const QList<LibreSCRS::AgentClient::FieldGroup>& groups) const;
+    QString buildCccSection(const QList<LibreSCRS::AgentClient::FieldGroup>& groups) const;
+    QString buildPrintedSection(const QList<LibreSCRS::AgentClient::FieldGroup>& groups) const;
+    QString buildDiscoverySection(const QList<LibreSCRS::AgentClient::FieldGroup>& groups) const;
+    QString buildKeyHistorySection(const QList<LibreSCRS::AgentClient::FieldGroup>& groups) const;
 
     QString emitRow(const QString& label, const QString& value) const;
 };

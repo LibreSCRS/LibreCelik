@@ -9,7 +9,7 @@
 #include "utils/iconutils.h"
 #include "utils/stringutils.h"
 
-#include <plugin/carddatautils.h>
+#include <plugin/fieldvalue.h>
 
 #include <QDate>
 #include <QIcon>
@@ -18,12 +18,40 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-using librecelik::plugin::getFieldValue;
+using librecelik::plugin::fieldValue;
+using librecelik::plugin::findGroup;
+using LibreSCRS::AgentClient::Field;
+using LibreSCRS::AgentClient::FieldGroup;
 
-EuVrcWidget::EuVrcWidget(const LibreSCRS::Plugin::CardData& cardData, QWidget* parent) : EuVrcWidget(parent)
+namespace {
+
+/// The outgoing helper's nullable-group overload, ported: the section builders
+/// take their group by pointer, and a missing group renders as empty rather
+/// than dereferencing.
+QString groupValue(const FieldGroup* group, QStringView key)
 {
-    data.cardType = cardData.cardType;
-    for (const auto& group : cardData.groups)
+    return group ? fieldValue(*group, key) : QString{};
+}
+
+/// A display-only field for the section builder. The value is already
+/// stringified, the label fallback is the key itself (the outgoing model put
+/// the key in the label slot too), and the type token keeps the shared flatten
+/// rule from mistaking a value-carrying row for a binary payload.
+Field displayField(const QString& key, const QString& value)
+{
+    Field field;
+    field.key = key;
+    field.value = value;
+    field.extra.insert(QStringLiteral("labelFallback"), key);
+    field.extra.insert(QStringLiteral("type"), QStringLiteral("text"));
+    return field;
+}
+
+} // namespace
+
+EuVrcWidget::EuVrcWidget(const QList<FieldGroup>& cardGroups, QWidget* parent) : EuVrcWidget(parent)
+{
+    for (const auto& group : cardGroups)
         addGroup(group);
 }
 
@@ -50,26 +78,26 @@ void EuVrcWidget::buildShell()
 
     // Print button — disabled until all data arrives
     printBtn = iconutils::createPrinterHeaderButton(this);
-    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
+    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(groups); });
     outerSection->addHeaderWidget(printBtn);
 }
 
-void EuVrcWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
+void EuVrcWidget::addGroup(const FieldGroup& group)
 {
-    // Accumulate into data for cardData() accessor
-    data.groups.push_back(group);
+    // Accumulate into groups for the fieldGroups() accessor
+    groups.append(group);
 
-    if (group.groupKey == "registration")
+    if (group.key == QLatin1String("registration"))
         addRegistrationGroup(group);
-    else if (group.groupKey == "vehicle")
+    else if (group.key == QLatin1String("vehicle"))
         addVehicleGroup(group);
-    else if (group.groupKey == "holder")
+    else if (group.key == QLatin1String("holder"))
         addHolderGroup(group);
-    else if (group.groupKey == "owner")
+    else if (group.key == QLatin1String("owner"))
         addOwnerGroup(group);
-    else if (group.groupKey == "user")
+    else if (group.key == QLatin1String("user"))
         addUserGroup(group);
-    else if (group.groupKey == "national")
+    else if (group.key == QLatin1String("national"))
         addNationalGroup(group);
 }
 
@@ -80,12 +108,12 @@ void EuVrcWidget::enablePrintButton()
     }
 }
 
-void EuVrcWidget::addRegistrationGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
+void EuVrcWidget::addRegistrationGroup(const FieldGroup& group)
 {
     // CardHeaderCard: icon + key fields (make is added later when vehicle group arrives)
-    auto regNumber = getFieldValue(&group, "registration_number");
-    auto expiry = getFieldValue(&group, "expiry_date");
-    auto memberState = getFieldValue(&group, "member_state");
+    auto regNumber = fieldValue(group, u"registration_number");
+    auto expiry = fieldValue(group, u"expiry_date");
+    auto memberState = fieldValue(group, u"member_state");
 
     std::vector<librecelik::utils::HeaderField> headerFields = {
         {qtTrId("lc-euvrc-hdr-registration"), regNumber, 2},
@@ -100,16 +128,15 @@ void EuVrcWidget::addRegistrationGroup(const LibreSCRS::Plugin::CardFieldGroup& 
     contentLayout->addWidget(buildRegistrationSection(&group));
 }
 
-void EuVrcWidget::addVehicleGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
+void EuVrcWidget::addVehicleGroup(const FieldGroup& group)
 {
     // Update header card with vehicle make now that the vehicle group has arrived
     if (headerCard) {
-        if (auto regIdx = data.findGroup("registration")) {
-            const auto& regGroup = data.groupAt(*regIdx);
-            auto regNumber = getFieldValue(&regGroup, "registration_number");
-            auto expiry = getFieldValue(&regGroup, "expiry_date");
-            auto memberState = getFieldValue(&regGroup, "member_state");
-            auto make = getFieldValue(&group, "vehicle_make");
+        if (const FieldGroup* regGroup = findGroup(groups, u"registration")) {
+            auto regNumber = fieldValue(*regGroup, u"registration_number");
+            auto expiry = fieldValue(*regGroup, u"expiry_date");
+            auto memberState = fieldValue(*regGroup, u"member_state");
+            auto make = fieldValue(group, u"vehicle_make");
 
             std::vector<librecelik::utils::HeaderField> headerFields = {
                 {qtTrId("lc-euvrc-hdr-registration"), regNumber, 2},
@@ -130,17 +157,16 @@ void EuVrcWidget::addVehicleGroup(const LibreSCRS::Plugin::CardFieldGroup& group
     contentLayout->addWidget(buildEngineTechnicalSection(&group));
 }
 
-void EuVrcWidget::addHolderGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
+void EuVrcWidget::addHolderGroup(const FieldGroup& group)
 {
     contentLayout->addWidget(buildHolderSection(&group));
 }
 
-void EuVrcWidget::addOwnerGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
+void EuVrcWidget::addOwnerGroup(const FieldGroup& group)
 {
     bool hasValues = false;
     for (const auto& field : group.fields) {
-        auto text = field.textValue();
-        if (text.has_value() && !text->empty()) {
+        if (!field.value.isEmpty()) {
             hasValues = true;
             break;
         }
@@ -149,13 +175,12 @@ void EuVrcWidget::addOwnerGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
         contentLayout->addWidget(buildOwnerSection(&group));
 }
 
-void EuVrcWidget::addUserGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
+void EuVrcWidget::addUserGroup(const FieldGroup& group)
 {
     // Only add if there are actual fields with values
     bool hasValues = false;
     for (const auto& field : group.fields) {
-        auto text = field.textValue();
-        if (text.has_value() && !text->empty()) {
+        if (!field.value.isEmpty()) {
             hasValues = true;
             break;
         }
@@ -164,301 +189,274 @@ void EuVrcWidget::addUserGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
         contentLayout->addWidget(buildUserSection(&group));
 }
 
-void EuVrcWidget::addNationalGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
+void EuVrcWidget::addNationalGroup(const FieldGroup& group)
 {
-    if (!group.fields.empty())
+    if (!group.fields.isEmpty())
         contentLayout->addWidget(buildNationalSection(&group));
 }
 
-CollapsibleSection* EuVrcWidget::buildRegistrationSection(const LibreSCRS::Plugin::CardFieldGroup* group)
+CollapsibleSection* EuVrcWidget::buildRegistrationSection(const FieldGroup* group)
 {
-    LibreSCRS::Plugin::CardFieldGroup regGroup;
-    regGroup.groupKey = "registration_display";
+    FieldGroup regGroup;
+    regGroup.key = QStringLiteral("registration_display");
 
-    auto addIfPresent = [&](const char* key) {
-        auto val = getFieldValue(group, key);
+    auto addIfPresent = [&](const QString& key) {
+        auto val = groupValue(group, key);
         if (!val.isEmpty()) {
-            auto bytes = val.toUtf8();
-            regGroup.fields.push_back(
-                {key, key, LibreSCRS::Plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+            regGroup.fields.append(displayField(key, val));
         }
     };
 
-    addIfPresent("registration_number");
-    addIfPresent("date_of_first_registration");
-    addIfPresent("registration_date");
-    addIfPresent("expiry_date");
-    addIfPresent("document_number");
-    addIfPresent("issuing_authority");
-    addIfPresent("competent_authority");
-    addIfPresent("member_state");
-    addIfPresent("type_approval_number");
-    addIfPresent("ownership_status");
-    addIfPresent("previous_document");
+    addIfPresent(QStringLiteral("registration_number"));
+    addIfPresent(QStringLiteral("date_of_first_registration"));
+    addIfPresent(QStringLiteral("registration_date"));
+    addIfPresent(QStringLiteral("expiry_date"));
+    addIfPresent(QStringLiteral("document_number"));
+    addIfPresent(QStringLiteral("issuing_authority"));
+    addIfPresent(QStringLiteral("competent_authority"));
+    addIfPresent(QStringLiteral("member_state"));
+    addIfPresent(QStringLiteral("type_approval_number"));
+    addIfPresent(QStringLiteral("ownership_status"));
+    addIfPresent(QStringLiteral("previous_document"));
 
-    std::map<std::string, QString> labels = {
-        {"registration_number", qtTrId("lc-euvrc-reg-number")},
-        {"date_of_first_registration", qtTrId("lc-euvrc-reg-first-date")},
-        {"registration_date", qtTrId("lc-euvrc-reg-date")},
-        {"expiry_date", qtTrId("lc-euvrc-reg-expiry")},
-        {"document_number", qtTrId("lc-euvrc-reg-doc-number")},
-        {"issuing_authority", qtTrId("lc-euvrc-reg-issuing-auth")},
-        {"competent_authority", qtTrId("lc-euvrc-reg-competent-auth")},
-        {"member_state", qtTrId("lc-euvrc-reg-member-state")},
-        {"type_approval_number", qtTrId("lc-euvrc-reg-type-approval")},
-        {"ownership_status", qtTrId("lc-euvrc-reg-ownership-status")},
-        {"previous_document", qtTrId("lc-euvrc-reg-previous-document")},
+    std::map<QString, QString> labels = {
+        {QStringLiteral("registration_number"), qtTrId("lc-euvrc-reg-number")},
+        {QStringLiteral("date_of_first_registration"), qtTrId("lc-euvrc-reg-first-date")},
+        {QStringLiteral("registration_date"), qtTrId("lc-euvrc-reg-date")},
+        {QStringLiteral("expiry_date"), qtTrId("lc-euvrc-reg-expiry")},
+        {QStringLiteral("document_number"), qtTrId("lc-euvrc-reg-doc-number")},
+        {QStringLiteral("issuing_authority"), qtTrId("lc-euvrc-reg-issuing-auth")},
+        {QStringLiteral("competent_authority"), qtTrId("lc-euvrc-reg-competent-auth")},
+        {QStringLiteral("member_state"), qtTrId("lc-euvrc-reg-member-state")},
+        {QStringLiteral("type_approval_number"), qtTrId("lc-euvrc-reg-type-approval")},
+        {QStringLiteral("ownership_status"), qtTrId("lc-euvrc-reg-ownership-status")},
+        {QStringLiteral("previous_document"), qtTrId("lc-euvrc-reg-previous-document")},
     };
 
     auto* section =
         librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-registration"), regGroup, labels);
 
     // Apply orange highlight to expiry date if expired
-    librecelik::utils::FieldSectionBuilder::highlightExpiredDates(section, regGroup, {"expiry_date"});
+    librecelik::utils::FieldSectionBuilder::highlightExpiredDates(section, regGroup, {QStringLiteral("expiry_date")});
 
     return section;
 }
 
-CollapsibleSection* EuVrcWidget::buildVehicleSection(const LibreSCRS::Plugin::CardFieldGroup* group)
+CollapsibleSection* EuVrcWidget::buildVehicleSection(const FieldGroup* group)
 {
-    LibreSCRS::Plugin::CardFieldGroup vehGroup;
-    vehGroup.groupKey = "vehicle_display";
+    FieldGroup vehGroup;
+    vehGroup.key = QStringLiteral("vehicle_display");
 
-    auto addIfPresent = [&](const char* key) {
-        auto val = getFieldValue(group, key);
+    auto addIfPresent = [&](const QString& key) {
+        auto val = groupValue(group, key);
         if (!val.isEmpty()) {
-            auto bytes = val.toUtf8();
-            vehGroup.fields.push_back(
-                {key, key, LibreSCRS::Plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+            vehGroup.fields.append(displayField(key, val));
         }
     };
 
-    addIfPresent("vehicle_make");
-    addIfPresent("vehicle_type");
-    addIfPresent("commercial_description");
-    addIfPresent("vehicle_id_number");
-    addIfPresent("vehicle_category");
-    addIfPresent("colour");
-    addIfPresent("max_speed");
+    addIfPresent(QStringLiteral("vehicle_make"));
+    addIfPresent(QStringLiteral("vehicle_type"));
+    addIfPresent(QStringLiteral("commercial_description"));
+    addIfPresent(QStringLiteral("vehicle_id_number"));
+    addIfPresent(QStringLiteral("vehicle_category"));
+    addIfPresent(QStringLiteral("colour"));
+    addIfPresent(QStringLiteral("max_speed"));
 
-    std::map<std::string, QString> labels = {
-        {"vehicle_make", qtTrId("lc-euvrc-veh-make")},
-        {"vehicle_type", qtTrId("lc-euvrc-veh-type")},
-        {"commercial_description", qtTrId("lc-euvrc-veh-commercial-desc")},
-        {"vehicle_id_number", qtTrId("lc-euvrc-veh-vin")},
-        {"vehicle_category", qtTrId("lc-euvrc-veh-category")},
-        {"colour", qtTrId("lc-euvrc-veh-colour")},
-        {"max_speed", qtTrId("lc-euvrc-veh-max-speed")},
+    std::map<QString, QString> labels = {
+        {QStringLiteral("vehicle_make"), qtTrId("lc-euvrc-veh-make")},
+        {QStringLiteral("vehicle_type"), qtTrId("lc-euvrc-veh-type")},
+        {QStringLiteral("commercial_description"), qtTrId("lc-euvrc-veh-commercial-desc")},
+        {QStringLiteral("vehicle_id_number"), qtTrId("lc-euvrc-veh-vin")},
+        {QStringLiteral("vehicle_category"), qtTrId("lc-euvrc-veh-category")},
+        {QStringLiteral("colour"), qtTrId("lc-euvrc-veh-colour")},
+        {QStringLiteral("max_speed"), qtTrId("lc-euvrc-veh-max-speed")},
     };
 
     return librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-vehicle"), vehGroup, labels);
 }
 
-CollapsibleSection* EuVrcWidget::buildEngineTechnicalSection(const LibreSCRS::Plugin::CardFieldGroup* group)
+CollapsibleSection* EuVrcWidget::buildEngineTechnicalSection(const FieldGroup* group)
 {
-    LibreSCRS::Plugin::CardFieldGroup techGroup;
-    techGroup.groupKey = "engine_technical";
+    FieldGroup techGroup;
+    techGroup.key = QStringLiteral("engine_technical");
 
-    auto addIfPresent = [&](const char* key) {
-        auto val = getFieldValue(group, key);
+    auto addIfPresent = [&](const QString& key) {
+        auto val = groupValue(group, key);
         if (!val.isEmpty()) {
-            auto bytes = val.toUtf8();
-            techGroup.fields.push_back(
-                {key, key, LibreSCRS::Plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+            techGroup.fields.append(displayField(key, val));
         }
     };
 
-    addIfPresent("engine_capacity");
-    addIfPresent("maximum_net_power");
-    addIfPresent("type_of_fuel");
-    addIfPresent("engine_id_number");
-    addIfPresent("vehicle_mass");
-    addIfPresent("maximum_permissible_laden_mass");
-    addIfPresent("power_weight_ratio");
-    addIfPresent("number_of_seats");
-    addIfPresent("number_of_standing_places");
-    addIfPresent("number_of_axles");
-    addIfPresent("wheelbase");
-    addIfPresent("max_laden_mass_service");
-    addIfPresent("max_laden_mass_whole");
-    addIfPresent("braked_trailer_mass");
-    addIfPresent("unbraked_trailer_mass");
-    addIfPresent("rated_engine_speed");
-    addIfPresent("stationary_sound_level");
-    addIfPresent("engine_speed_ref");
-    addIfPresent("drive_by_sound");
-    addIfPresent("fuel_consumption");
-    addIfPresent("co2_emissions");
-    addIfPresent("environmental_category");
-    addIfPresent("fuel_tank_capacity");
+    addIfPresent(QStringLiteral("engine_capacity"));
+    addIfPresent(QStringLiteral("maximum_net_power"));
+    addIfPresent(QStringLiteral("type_of_fuel"));
+    addIfPresent(QStringLiteral("engine_id_number"));
+    addIfPresent(QStringLiteral("vehicle_mass"));
+    addIfPresent(QStringLiteral("maximum_permissible_laden_mass"));
+    addIfPresent(QStringLiteral("power_weight_ratio"));
+    addIfPresent(QStringLiteral("number_of_seats"));
+    addIfPresent(QStringLiteral("number_of_standing_places"));
+    addIfPresent(QStringLiteral("number_of_axles"));
+    addIfPresent(QStringLiteral("wheelbase"));
+    addIfPresent(QStringLiteral("max_laden_mass_service"));
+    addIfPresent(QStringLiteral("max_laden_mass_whole"));
+    addIfPresent(QStringLiteral("braked_trailer_mass"));
+    addIfPresent(QStringLiteral("unbraked_trailer_mass"));
+    addIfPresent(QStringLiteral("rated_engine_speed"));
+    addIfPresent(QStringLiteral("stationary_sound_level"));
+    addIfPresent(QStringLiteral("engine_speed_ref"));
+    addIfPresent(QStringLiteral("drive_by_sound"));
+    addIfPresent(QStringLiteral("fuel_consumption"));
+    addIfPresent(QStringLiteral("co2_emissions"));
+    addIfPresent(QStringLiteral("environmental_category"));
+    addIfPresent(QStringLiteral("fuel_tank_capacity"));
 
-    std::map<std::string, QString> labels = {
-        {"engine_capacity", qtTrId("lc-euvrc-eng-capacity")},
-        {"maximum_net_power", qtTrId("lc-euvrc-eng-max-power")},
-        {"type_of_fuel", qtTrId("lc-euvrc-eng-fuel-type")},
-        {"engine_id_number", qtTrId("lc-euvrc-eng-id-number")},
-        {"vehicle_mass", qtTrId("lc-euvrc-eng-vehicle-mass")},
-        {"maximum_permissible_laden_mass", qtTrId("lc-euvrc-eng-max-laden-mass")},
-        {"power_weight_ratio", qtTrId("lc-euvrc-eng-power-weight")},
-        {"number_of_seats", qtTrId("lc-euvrc-eng-seats")},
-        {"number_of_standing_places", qtTrId("lc-euvrc-eng-standing")},
-        {"number_of_axles", qtTrId("lc-euvrc-eng-axles")},
-        {"wheelbase", qtTrId("lc-euvrc-eng-wheelbase")},
-        {"max_laden_mass_service", qtTrId("lc-euvrc-eng-max-laden-mass-service")},
-        {"max_laden_mass_whole", qtTrId("lc-euvrc-eng-max-laden-mass-whole")},
-        {"braked_trailer_mass", qtTrId("lc-euvrc-eng-braked-trailer")},
-        {"unbraked_trailer_mass", qtTrId("lc-euvrc-eng-unbraked-trailer")},
-        {"rated_engine_speed", qtTrId("lc-euvrc-eng-rated-engine-speed")},
-        {"stationary_sound_level", qtTrId("lc-euvrc-eng-stationary-sound")},
-        {"engine_speed_ref", qtTrId("lc-euvrc-eng-engine-speed-ref")},
-        {"drive_by_sound", qtTrId("lc-euvrc-eng-drive-by-sound")},
-        {"fuel_consumption", qtTrId("lc-euvrc-eng-fuel-consumption")},
-        {"co2_emissions", qtTrId("lc-euvrc-eng-co2")},
-        {"environmental_category", qtTrId("lc-euvrc-eng-env-category")},
-        {"fuel_tank_capacity", qtTrId("lc-euvrc-eng-fuel-tank")},
+    std::map<QString, QString> labels = {
+        {QStringLiteral("engine_capacity"), qtTrId("lc-euvrc-eng-capacity")},
+        {QStringLiteral("maximum_net_power"), qtTrId("lc-euvrc-eng-max-power")},
+        {QStringLiteral("type_of_fuel"), qtTrId("lc-euvrc-eng-fuel-type")},
+        {QStringLiteral("engine_id_number"), qtTrId("lc-euvrc-eng-id-number")},
+        {QStringLiteral("vehicle_mass"), qtTrId("lc-euvrc-eng-vehicle-mass")},
+        {QStringLiteral("maximum_permissible_laden_mass"), qtTrId("lc-euvrc-eng-max-laden-mass")},
+        {QStringLiteral("power_weight_ratio"), qtTrId("lc-euvrc-eng-power-weight")},
+        {QStringLiteral("number_of_seats"), qtTrId("lc-euvrc-eng-seats")},
+        {QStringLiteral("number_of_standing_places"), qtTrId("lc-euvrc-eng-standing")},
+        {QStringLiteral("number_of_axles"), qtTrId("lc-euvrc-eng-axles")},
+        {QStringLiteral("wheelbase"), qtTrId("lc-euvrc-eng-wheelbase")},
+        {QStringLiteral("max_laden_mass_service"), qtTrId("lc-euvrc-eng-max-laden-mass-service")},
+        {QStringLiteral("max_laden_mass_whole"), qtTrId("lc-euvrc-eng-max-laden-mass-whole")},
+        {QStringLiteral("braked_trailer_mass"), qtTrId("lc-euvrc-eng-braked-trailer")},
+        {QStringLiteral("unbraked_trailer_mass"), qtTrId("lc-euvrc-eng-unbraked-trailer")},
+        {QStringLiteral("rated_engine_speed"), qtTrId("lc-euvrc-eng-rated-engine-speed")},
+        {QStringLiteral("stationary_sound_level"), qtTrId("lc-euvrc-eng-stationary-sound")},
+        {QStringLiteral("engine_speed_ref"), qtTrId("lc-euvrc-eng-engine-speed-ref")},
+        {QStringLiteral("drive_by_sound"), qtTrId("lc-euvrc-eng-drive-by-sound")},
+        {QStringLiteral("fuel_consumption"), qtTrId("lc-euvrc-eng-fuel-consumption")},
+        {QStringLiteral("co2_emissions"), qtTrId("lc-euvrc-eng-co2")},
+        {QStringLiteral("environmental_category"), qtTrId("lc-euvrc-eng-env-category")},
+        {QStringLiteral("fuel_tank_capacity"), qtTrId("lc-euvrc-eng-fuel-tank")},
     };
 
     return librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-engine"), techGroup, labels);
 }
 
-CollapsibleSection* EuVrcWidget::buildHolderSection(const LibreSCRS::Plugin::CardFieldGroup* group)
+CollapsibleSection* EuVrcWidget::buildHolderSection(const FieldGroup* group)
 {
-    LibreSCRS::Plugin::CardFieldGroup holderGroup;
-    holderGroup.groupKey = "holder_display";
+    FieldGroup holderGroup;
+    holderGroup.key = QStringLiteral("holder_display");
 
-    auto addIfPresent = [&](const char* key) {
-        auto val = getFieldValue(group, key);
+    auto addIfPresent = [&](const QString& key) {
+        auto val = groupValue(group, key);
         if (!val.isEmpty()) {
-            auto bytes = val.toUtf8();
-            holderGroup.fields.push_back(
-                {key, key, LibreSCRS::Plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+            holderGroup.fields.append(displayField(key, val));
         }
     };
 
-    addIfPresent("holder_name");
-    addIfPresent("holder_other_names");
+    addIfPresent(QStringLiteral("holder_name"));
+    addIfPresent(QStringLiteral("holder_other_names"));
     {
-        auto val = getFieldValue(group, "holder_address");
+        auto val = groupValue(group, u"holder_address");
         if (!val.isEmpty()) {
             val = cleanAddress(val);
-            auto bytes = val.toUtf8();
-            holderGroup.fields.push_back({"holder_address",
-                                          "holder_address",
-                                          LibreSCRS::Plugin::FieldType::Text,
-                                          {bytes.constData(), bytes.constData() + bytes.size()}});
+            holderGroup.fields.append(displayField(QStringLiteral("holder_address"), val));
         }
     }
 
-    std::map<std::string, QString> labels = {
-        {"holder_name", qtTrId("lc-euvrc-holder-name")},
-        {"holder_other_names", qtTrId("lc-euvrc-holder-other-names")},
-        {"holder_address", qtTrId("lc-euvrc-holder-address")},
+    std::map<QString, QString> labels = {
+        {QStringLiteral("holder_name"), qtTrId("lc-euvrc-holder-name")},
+        {QStringLiteral("holder_other_names"), qtTrId("lc-euvrc-holder-other-names")},
+        {QStringLiteral("holder_address"), qtTrId("lc-euvrc-holder-address")},
     };
 
     return librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-holder"), holderGroup, labels);
 }
 
-CollapsibleSection* EuVrcWidget::buildOwnerSection(const LibreSCRS::Plugin::CardFieldGroup* group)
+CollapsibleSection* EuVrcWidget::buildOwnerSection(const FieldGroup* group)
 {
-    LibreSCRS::Plugin::CardFieldGroup ownerGroup;
-    ownerGroup.groupKey = "owner_display";
+    FieldGroup ownerGroup;
+    ownerGroup.key = QStringLiteral("owner_display");
 
-    auto addIfPresent = [&](const char* key) {
-        auto val = getFieldValue(group, key);
+    auto addIfPresent = [&](const QString& key) {
+        auto val = groupValue(group, key);
         if (!val.isEmpty()) {
-            auto bytes = val.toUtf8();
-            ownerGroup.fields.push_back(
-                {key, key, LibreSCRS::Plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+            ownerGroup.fields.append(displayField(key, val));
         }
     };
 
-    addIfPresent("owner2_name");
+    addIfPresent(QStringLiteral("owner2_name"));
 
-    std::map<std::string, QString> labels = {
-        {"owner2_name", qtTrId("lc-euvrc-owner-name")},
+    std::map<QString, QString> labels = {
+        {QStringLiteral("owner2_name"), qtTrId("lc-euvrc-owner-name")},
     };
 
     return librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-owner"), ownerGroup, labels);
 }
 
-CollapsibleSection* EuVrcWidget::buildUserSection(const LibreSCRS::Plugin::CardFieldGroup* group)
+CollapsibleSection* EuVrcWidget::buildUserSection(const FieldGroup* group)
 {
-    LibreSCRS::Plugin::CardFieldGroup userGroup;
-    userGroup.groupKey = "user_display";
+    FieldGroup userGroup;
+    userGroup.key = QStringLiteral("user_display");
 
-    auto addIfPresent = [&](const char* key) {
-        auto val = getFieldValue(group, key);
+    auto addIfPresent = [&](const QString& key) {
+        auto val = groupValue(group, key);
         if (!val.isEmpty()) {
-            auto bytes = val.toUtf8();
-            userGroup.fields.push_back(
-                {key, key, LibreSCRS::Plugin::FieldType::Text, {bytes.constData(), bytes.constData() + bytes.size()}});
+            userGroup.fields.append(displayField(key, val));
         }
     };
 
-    addIfPresent("user_name");
-    addIfPresent("user_other_names");
+    addIfPresent(QStringLiteral("user_name"));
+    addIfPresent(QStringLiteral("user_other_names"));
     {
-        auto val = getFieldValue(group, "user_address");
+        auto val = groupValue(group, u"user_address");
         if (!val.isEmpty()) {
             val = cleanAddress(val);
-            auto bytes = val.toUtf8();
-            userGroup.fields.push_back({"user_address",
-                                        "user_address",
-                                        LibreSCRS::Plugin::FieldType::Text,
-                                        {bytes.constData(), bytes.constData() + bytes.size()}});
+            userGroup.fields.append(displayField(QStringLiteral("user_address"), val));
         }
     }
 
-    std::map<std::string, QString> labels = {
-        {"user_name", qtTrId("lc-euvrc-user-name")},
-        {"user_other_names", qtTrId("lc-euvrc-user-other-names")},
-        {"user_address", qtTrId("lc-euvrc-user-address")},
+    std::map<QString, QString> labels = {
+        {QStringLiteral("user_name"), qtTrId("lc-euvrc-user-name")},
+        {QStringLiteral("user_other_names"), qtTrId("lc-euvrc-user-other-names")},
+        {QStringLiteral("user_address"), qtTrId("lc-euvrc-user-address")},
     };
 
     auto* section = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-euvrc-section-user"), userGroup, labels);
 
     // Hide when all fields are empty
-    if (userGroup.fields.empty())
+    if (userGroup.fields.isEmpty())
         section->setVisible(false);
 
     return section;
 }
 
-CollapsibleSection* EuVrcWidget::buildNationalSection(const LibreSCRS::Plugin::CardFieldGroup* group)
+CollapsibleSection* EuVrcWidget::buildNationalSection(const FieldGroup* group)
 {
     // Translated labels for known Serbian national extension keys
-    const std::map<std::string, QString> knownLabels = {
-        {"owners_personal_no", qtTrId("lc-euvrc-nat-owners-personal-no")},
-        {"users_personal_no", qtTrId("lc-euvrc-nat-users-personal-no")},
-        {"vehicle_load", qtTrId("lc-euvrc-nat-vehicle-load")},
-        {"year_of_production", qtTrId("lc-euvrc-nat-year-of-production")},
-        {"serial_number", qtTrId("lc-euvrc-nat-serial-number")},
+    const std::map<QString, QString> knownLabels = {
+        {QStringLiteral("owners_personal_no"), qtTrId("lc-euvrc-nat-owners-personal-no")},
+        {QStringLiteral("users_personal_no"), qtTrId("lc-euvrc-nat-users-personal-no")},
+        {QStringLiteral("vehicle_load"), qtTrId("lc-euvrc-nat-vehicle-load")},
+        {QStringLiteral("year_of_production"), qtTrId("lc-euvrc-nat-year-of-production")},
+        {QStringLiteral("serial_number"), qtTrId("lc-euvrc-nat-serial-number")},
     };
 
-    LibreSCRS::Plugin::CardFieldGroup natGroup;
-    natGroup.groupKey = "national_display";
+    FieldGroup natGroup;
+    natGroup.key = QStringLiteral("national_display");
 
-    std::map<std::string, QString> labels;
+    std::map<QString, QString> labels;
 
     for (const auto& field : group->fields) {
-        auto textOpt = field.textValue();
-        if (!textOpt.has_value())
-            continue;
-        auto val = QString::fromStdString(*textOpt);
+        const QString val = field.value;
         if (!val.isEmpty()) {
-            auto bytes = val.toUtf8();
-            natGroup.fields.push_back({field.key,
-                                       field.key,
-                                       LibreSCRS::Plugin::FieldType::Text,
-                                       {bytes.constData(), bytes.constData() + bytes.size()}});
+            natGroup.fields.append(displayField(field.key, val));
 
             auto it = knownLabels.find(field.key);
             if (it != knownLabels.end()) {
                 labels[field.key] = it->second;
             } else {
-                QString displayLabel = QString::fromStdString(field.label);
+                QString displayLabel = field.extra.value(QStringLiteral("labelFallback")).toString();
                 if (displayLabel.isEmpty())
-                    displayLabel = QString::fromStdString(field.key);
+                    displayLabel = field.key;
                 labels[field.key] = displayLabel;
             }
         }
@@ -473,9 +471,9 @@ CollapsibleSection* EuVrcWidget::buildNationalSection(const LibreSCRS::Plugin::C
 void EuVrcWidget::retranslateUi()
 {
     // Plugin widget rebuild-tier (April 2026 retranslate spec): tear
-    // down the shell and rebuild from cached data.groups.
-    auto cachedGroups = std::move(data.groups);
-    data.groups.clear();
+    // down the shell and rebuild from the cached groups.
+    auto cachedGroups = std::move(groups);
+    groups.clear();
 
     if (outerSection) {
         outerLayout->removeWidget(outerSection);

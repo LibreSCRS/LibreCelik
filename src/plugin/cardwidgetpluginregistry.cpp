@@ -26,7 +26,11 @@ void CardWidgetPluginRegistry::loadPluginsFromDirectory(const QString& dir)
 
         auto metaData = loader->metaData();
         auto iid = metaData.value("IID").toString();
-        if (iid != QLatin1String("org.librescrs.CardWidgetPlugin/1.0")) {
+        // Taken from the interface declaration rather than re-spelled here: a
+        // second copy of the IID is a copy that can disagree with the one the
+        // plugins are built against, and the disagreement shows up only as
+        // plugins silently not loading.
+        if (iid != QLatin1StringView(qobject_interface_iid<CardWidgetPlugin*>())) {
             delete loader;
             continue;
         }

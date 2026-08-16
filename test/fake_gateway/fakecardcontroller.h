@@ -45,6 +45,16 @@ public:
     LibreSCRS::AgentClient::FieldGroup scriptedTokenInfo;
     LibreSCRS::AgentClient::CredentialList scriptedCredentials;
     LibreSCRS::AgentClient::PinResult scriptedPinResult;
+    /// The localized line a failed read surfaces. Scripted by the caller from
+    /// `librecelik::agent::errorText`, so a GUI suite asserts the SAME text the
+    /// window renders rather than a literal of its own.
+    QString scriptedError;
+    /// Engaged => the NEXT `startRead()` fails instead of reading (one-shot,
+    /// as the name says — it clears itself). The failure replays the live
+    /// controller's shape exactly: `readingStarted`, then `errorOccurred`, then
+    /// `readingFinished`, and NEVER `identityReady` — a read that failed
+    /// produced no model, and the shared contract's expectError arm pins that.
+    bool failNextRead = false;
     /// Records verb calls for assertions.
     QStringList callLog;
 

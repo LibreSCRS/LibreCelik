@@ -3,7 +3,8 @@
 
 #include <gtest/gtest.h>
 #include <QApplication>
-#include <LibreSCRS/Plugin/CardData.h>
+#include <QList>
+#include <LibreSCRS/AgentClient/Types.h>
 #include "eidtextdocument.h"
 
 // QTextDocument requires QApplication
@@ -16,101 +17,105 @@ int main(int argc, char** argv)
 
 namespace {
 
-LibreSCRS::Plugin::CardData makeCitizenCardData()
-{
-    LibreSCRS::Plugin::CardData data;
-    data.cardType = "rs-eid";
+using LibreSCRS::AgentClient::Field;
+using LibreSCRS::AgentClient::FieldGroup;
 
-    auto addText = [](LibreSCRS::Plugin::CardFieldGroup& g, const std::string& key, const std::string& val) {
-        if (!val.empty())
-            g.fields.push_back({key, key, LibreSCRS::Plugin::FieldType::Text, {val.begin(), val.end()}});
-    };
+/// A text field in the shape the agent's identity read ships: the value is
+/// already stringified, and the `type` token is the one the shared flatten
+/// rule reads.
+Field textField(const QString& key, const QString& value)
+{
+    Field field;
+    field.key = key;
+    field.value = value;
+    field.extra.insert(QStringLiteral("type"), QStringLiteral("text"));
+    return field;
+}
+
+QList<FieldGroup> makeCitizenGroups()
+{
+    QList<FieldGroup> groups;
 
     // meta group (card_type determines citizen vs foreigner)
     {
-        LibreSCRS::Plugin::CardFieldGroup meta;
-        meta.groupKey = "meta";
-        addText(meta, "card_type", "Apollo");
-        data.groups.push_back(std::move(meta));
+        FieldGroup meta;
+        meta.key = QStringLiteral("meta");
+        meta.fields.append(textField(QStringLiteral("card_type"), QStringLiteral("Apollo")));
+        groups.append(std::move(meta));
     }
     // personal group
     {
-        LibreSCRS::Plugin::CardFieldGroup personal;
-        personal.groupKey = "personal";
-        addText(personal, "surname", "PETROVIĆ");
-        addText(personal, "given_name", "MARKO");
-        addText(personal, "parent_given_name", "IVAN");
-        addText(personal, "personal_number", "0101990710123");
-        addText(personal, "sex", "M");
-        addText(personal, "date_of_birth", "01.01.1990");
-        addText(personal, "place_of_birth", "Beograd");
-        addText(personal, "community_of_birth", "Stari Grad");
-        addText(personal, "state_of_birth", "SRB");
-        data.groups.push_back(std::move(personal));
+        FieldGroup personal;
+        personal.key = QStringLiteral("personal");
+        personal.fields.append(textField(QStringLiteral("surname"), QStringLiteral("PETROVIĆ")));
+        personal.fields.append(textField(QStringLiteral("given_name"), QStringLiteral("MARKO")));
+        personal.fields.append(textField(QStringLiteral("parent_given_name"), QStringLiteral("IVAN")));
+        personal.fields.append(textField(QStringLiteral("personal_number"), QStringLiteral("0101990710123")));
+        personal.fields.append(textField(QStringLiteral("sex"), QStringLiteral("M")));
+        personal.fields.append(textField(QStringLiteral("date_of_birth"), QStringLiteral("01.01.1990")));
+        personal.fields.append(textField(QStringLiteral("place_of_birth"), QStringLiteral("Beograd")));
+        personal.fields.append(textField(QStringLiteral("community_of_birth"), QStringLiteral("Stari Grad")));
+        personal.fields.append(textField(QStringLiteral("state_of_birth"), QStringLiteral("SRB")));
+        groups.append(std::move(personal));
     }
     // address group
     {
-        LibreSCRS::Plugin::CardFieldGroup address;
-        address.groupKey = "address";
-        addText(address, "street", "Knez Mihailova");
-        addText(address, "house_number", "10");
-        addText(address, "place", "Beograd");
-        addText(address, "community", "Stari Grad");
-        addText(address, "state", "SRB");
-        addText(address, "address_date", "15.03.2020");
-        data.groups.push_back(std::move(address));
+        FieldGroup address;
+        address.key = QStringLiteral("address");
+        address.fields.append(textField(QStringLiteral("street"), QStringLiteral("Knez Mihailova")));
+        address.fields.append(textField(QStringLiteral("house_number"), QStringLiteral("10")));
+        address.fields.append(textField(QStringLiteral("place"), QStringLiteral("Beograd")));
+        address.fields.append(textField(QStringLiteral("community"), QStringLiteral("Stari Grad")));
+        address.fields.append(textField(QStringLiteral("state"), QStringLiteral("SRB")));
+        address.fields.append(textField(QStringLiteral("address_date"), QStringLiteral("15.03.2020")));
+        groups.append(std::move(address));
     }
     // document group
     {
-        LibreSCRS::Plugin::CardFieldGroup document;
-        document.groupKey = "document";
-        addText(document, "doc_reg_no", "006953897");
-        addText(document, "issuing_date", "01.06.2020");
-        addText(document, "expiry_date", "01.06.2030");
-        addText(document, "issuing_authority", "PU Beograd");
-        data.groups.push_back(std::move(document));
+        FieldGroup document;
+        document.key = QStringLiteral("document");
+        document.fields.append(textField(QStringLiteral("doc_reg_no"), QStringLiteral("006953897")));
+        document.fields.append(textField(QStringLiteral("issuing_date"), QStringLiteral("01.06.2020")));
+        document.fields.append(textField(QStringLiteral("expiry_date"), QStringLiteral("01.06.2030")));
+        document.fields.append(textField(QStringLiteral("issuing_authority"), QStringLiteral("PU Beograd")));
+        groups.append(std::move(document));
     }
 
-    return data;
+    return groups;
 }
 
-LibreSCRS::Plugin::CardData makeForeignerCardData()
+QList<FieldGroup> makeForeignerGroups()
 {
-    auto data = makeCitizenCardData();
+    auto groups = makeCitizenGroups();
     // Change card_type to foreigner
-    for (auto& g : data.groups) {
-        if (g.groupKey == "meta") {
-            for (auto& f : g.fields) {
-                if (f.key == "card_type") {
-                    std::string val = "ForeignerIF2020";
-                    f.value = {val.begin(), val.end()};
-                }
-            }
+    for (FieldGroup& group : groups) {
+        if (group.key != QLatin1String("meta"))
+            continue;
+        for (Field& field : group.fields) {
+            if (field.key == QLatin1String("card_type"))
+                field.value = QStringLiteral("ForeignerIF2020");
         }
     }
     // Add foreigner-specific fields
-    if (auto personalIdx = data.findGroup("personal")) {
-        auto& p = data.groupAt(*personalIdx);
-        std::string nat = "German";
-        p.fields.push_back(
-            {"nationality", "Nationality", LibreSCRS::Plugin::FieldType::Text, {nat.begin(), nat.end()}});
-        std::string status = "Stalno nastanjen";
-        p.fields.push_back(
-            {"status_of_foreigner", "Status", LibreSCRS::Plugin::FieldType::Text, {status.begin(), status.end()}});
+    for (FieldGroup& group : groups) {
+        if (group.key != QLatin1String("personal"))
+            continue;
+        group.fields.append(textField(QStringLiteral("nationality"), QStringLiteral("German")));
+        group.fields.append(textField(QStringLiteral("status_of_foreigner"), QStringLiteral("Stalno nastanjen")));
     }
-    return data;
+    return groups;
 }
 
 } // namespace
 
 TEST(EIdTextDocumentTest, CitizenDocumentProducesNonEmptyHtml)
 {
-    auto data = makeCitizenCardData();
-    EXPECT_NO_THROW(EIdTextDocument doc(data));
+    auto groups = makeCitizenGroups();
+    EXPECT_NO_THROW(EIdTextDocument doc(groups));
 }
 
 TEST(EIdTextDocumentTest, ForeignerDocumentDetected)
 {
-    auto data = makeForeignerCardData();
-    EXPECT_NO_THROW(EIdTextDocument doc(data));
+    auto groups = makeForeignerGroups();
+    EXPECT_NO_THROW(EIdTextDocument doc(groups));
 }

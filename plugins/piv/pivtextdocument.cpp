@@ -4,13 +4,14 @@
 #include <QCoreApplication>
 #include <QDate>
 #include "pivtextdocument.h"
-#include <plugin/carddatautils.h>
+#include <plugin/fieldvalue.h>
 
-using librecelik::plugin::getFieldValue;
+using librecelik::plugin::fieldValue;
+using LibreSCRS::AgentClient::FieldGroup;
 
-PIVTextDocument::PIVTextDocument(const LibreSCRS::Plugin::CardData& cardData, QString cssPath)
+PIVTextDocument::PIVTextDocument(const QList<FieldGroup>& groups, QString cssPath)
 {
-    auto html = buildHtml(cardData);
+    auto html = buildHtml(groups);
     setupDocument(html, cssPath);
 }
 
@@ -27,7 +28,7 @@ QString PIVTextDocument::emitRow(const QString& label, const QString& value) con
         .arg(label.toHtmlEscaped(), value.toHtmlEscaped());
 }
 
-QString PIVTextDocument::buildHtml(const LibreSCRS::Plugin::CardData& cardData) const
+QString PIVTextDocument::buildHtml(const QList<FieldGroup>& groups) const
 {
     QString html;
     html +=
@@ -42,15 +43,15 @@ QString PIVTextDocument::buildHtml(const LibreSCRS::Plugin::CardData& cardData) 
     html += "<h1>" + qtTrId("lc-piv-doc-title") + "</h1>\n";
 
     // Name as subtitle if available
-    auto name = getFieldValue(cardData, "name");
+    auto name = fieldValue(groups, u"name");
     if (!name.isEmpty())
         html += "<h2>" + getPreparedValue(name).toHtmlEscaped() + "</h2>\n";
 
-    html += buildChuidSection(cardData);
-    html += buildCccSection(cardData);
-    html += buildPrintedSection(cardData);
-    html += buildDiscoverySection(cardData);
-    html += buildKeyHistorySection(cardData);
+    html += buildChuidSection(groups);
+    html += buildCccSection(groups);
+    html += buildPrintedSection(groups);
+    html += buildDiscoverySection(groups);
+    html += buildKeyHistorySection(groups);
 
     // Printing date
     html += "<table style=\"margin-top:20px;\"><tr>"
@@ -67,12 +68,12 @@ QString PIVTextDocument::buildHtml(const LibreSCRS::Plugin::CardData& cardData) 
     return html;
 }
 
-QString PIVTextDocument::buildChuidSection(const LibreSCRS::Plugin::CardData& cardData) const
+QString PIVTextDocument::buildChuidSection(const QList<FieldGroup>& groups) const
 {
     QString rows;
-    rows += emitRow(qtTrId("lc-piv-field-guid"), getFieldValue(cardData, "guid"));
-    rows += emitRow(qtTrId("lc-piv-field-fascn"), getFieldValue(cardData, "fascn"));
-    rows += emitRow(qtTrId("lc-piv-field-expiration"), getFieldValue(cardData, "expirationDate"));
+    rows += emitRow(qtTrId("lc-piv-field-guid"), fieldValue(groups, u"guid"));
+    rows += emitRow(qtTrId("lc-piv-field-fascn"), fieldValue(groups, u"fascn"));
+    rows += emitRow(qtTrId("lc-piv-field-expiration"), fieldValue(groups, u"expirationDate"));
 
     if (rows.isEmpty())
         return {};
@@ -80,32 +81,32 @@ QString PIVTextDocument::buildChuidSection(const LibreSCRS::Plugin::CardData& ca
     return "<h2>" + qtTrId("lc-piv-section-chuid") + "</h2>\n<table>\n" + rows + "</table>\n";
 }
 
-QString PIVTextDocument::buildCccSection(const LibreSCRS::Plugin::CardData& cardData) const
+QString PIVTextDocument::buildCccSection(const QList<FieldGroup>& groups) const
 {
-    auto row = emitRow(qtTrId("lc-piv-field-cardid"), getFieldValue(cardData, "cardIdentifier"));
+    auto row = emitRow(qtTrId("lc-piv-field-cardid"), fieldValue(groups, u"cardIdentifier"));
     if (row.isEmpty())
         return {};
 
     return "<h2>" + qtTrId("lc-piv-section-ccc") + "</h2>\n<table>\n" + row + "</table>\n";
 }
 
-QString PIVTextDocument::buildPrintedSection(const LibreSCRS::Plugin::CardData& cardData) const
+QString PIVTextDocument::buildPrintedSection(const QList<FieldGroup>& groups) const
 {
     struct Field
     {
-        const char* key;
+        QStringView key;
         QString label;
     };
     std::vector<Field> fields = {
-        {"name", qtTrId("lc-piv-field-name")},         {"employeeAffiliation", qtTrId("lc-piv-field-affiliation")},
-        {"org1", qtTrId("lc-piv-field-org1")},         {"org2", qtTrId("lc-piv-field-org2")},
-        {"expiry", qtTrId("lc-piv-field-expiration")}, {"serialNumber", qtTrId("lc-piv-field-serial")},
-        {"issuerId", qtTrId("lc-piv-field-issuer")},
+        {u"name", qtTrId("lc-piv-field-name")},         {u"employeeAffiliation", qtTrId("lc-piv-field-affiliation")},
+        {u"org1", qtTrId("lc-piv-field-org1")},         {u"org2", qtTrId("lc-piv-field-org2")},
+        {u"expiry", qtTrId("lc-piv-field-expiration")}, {u"serialNumber", qtTrId("lc-piv-field-serial")},
+        {u"issuerId", qtTrId("lc-piv-field-issuer")},
     };
 
     QString rows;
     for (const auto& f : fields)
-        rows += emitRow(f.label, getFieldValue(cardData, f.key));
+        rows += emitRow(f.label, fieldValue(groups, f.key));
 
     if (rows.isEmpty())
         return {};
@@ -113,21 +114,21 @@ QString PIVTextDocument::buildPrintedSection(const LibreSCRS::Plugin::CardData& 
     return "<h2>" + qtTrId("lc-piv-section-printed") + "</h2>\n<table>\n" + rows + "</table>\n";
 }
 
-QString PIVTextDocument::buildDiscoverySection(const LibreSCRS::Plugin::CardData& cardData) const
+QString PIVTextDocument::buildDiscoverySection(const QList<FieldGroup>& groups) const
 {
-    auto row = emitRow(qtTrId("lc-piv-field-pinpolicy"), getFieldValue(cardData, "pinPolicy"));
+    auto row = emitRow(qtTrId("lc-piv-field-pinpolicy"), fieldValue(groups, u"pinPolicy"));
     if (row.isEmpty())
         return {};
 
     return "<h2>" + qtTrId("lc-piv-section-discovery") + "</h2>\n<table>\n" + row + "</table>\n";
 }
 
-QString PIVTextDocument::buildKeyHistorySection(const LibreSCRS::Plugin::CardData& cardData) const
+QString PIVTextDocument::buildKeyHistorySection(const QList<FieldGroup>& groups) const
 {
     QString rows;
-    rows += emitRow(qtTrId("lc-piv-field-oncardcerts"), getFieldValue(cardData, "onCardCerts"));
-    rows += emitRow(qtTrId("lc-piv-field-offcardcerts"), getFieldValue(cardData, "offCardCerts"));
-    rows += emitRow(qtTrId("lc-piv-field-offcardurl"), getFieldValue(cardData, "offCardURL"));
+    rows += emitRow(qtTrId("lc-piv-field-oncardcerts"), fieldValue(groups, u"onCardCerts"));
+    rows += emitRow(qtTrId("lc-piv-field-offcardcerts"), fieldValue(groups, u"offCardCerts"));
+    rows += emitRow(qtTrId("lc-piv-field-offcardurl"), fieldValue(groups, u"offCardURL"));
 
     if (rows.isEmpty())
         return {};

@@ -5,18 +5,14 @@
 
 #include "config.h"
 
-#include <LibreSCRS/Plugin/CardPlugin.h>
+#include <LibreSCRS/AgentClient/CredentialTypes.h>
+#include <LibreSCRS/AgentClient/Types.h>
 
 #include "utils/cardheadercard.h"
 #include "utils/collapsiblesection.h"
 
-#include <memory>
-#include <string>
-#include <vector>
-
-namespace LibreSCRS::Trust {
-class TrustStore;
-}
+#include <QList>
+#include <QString>
 
 class QEvent;
 class QToolButton;
@@ -29,11 +25,10 @@ namespace librecelik::document {
 /// @brief Returns @p value if non-empty, otherwise the em-dash placeholder
 ///        @c "—" (U+2014).
 ///
-/// Used by @ref TokenSection to render token header fields whose values
-/// the middleware could not populate (partial card data). The header card
-/// is structural UX and must render even when individual values are
-/// missing; the placeholder makes the gap visually explicit instead of
-/// silently producing a blank cell.
+/// Used by @ref TokenSection to render token header fields the card read could
+/// not populate (partial card data). The header card is structural UX and must
+/// render even when individual values are missing; the placeholder makes the
+/// gap visually explicit instead of silently producing a blank cell.
 [[nodiscard]] QString formatFieldOrPlaceholder(const QString& value);
 
 } // namespace librecelik::document
@@ -42,28 +37,26 @@ class TokenSection : public CollapsibleSection
 {
     Q_OBJECT
 public:
-    /// @brief Build the token section.
-    /// @param trustStore Shared trust store for certificate hierarchy / chain
-    ///                   verification in the embedded viewer dialog. May be
-    ///                   null in non-signing builds — the viewer degrades
-    ///                   gracefully (per Spec §10).
-    explicit TokenSection(std::shared_ptr<const LibreSCRS::Trust::TrustStore> trustStore, QWidget* parent = nullptr);
+    explicit TokenSection(QWidget* parent = nullptr);
 
-#ifdef LIBRECELIK_SIGNING_ENABLED
-    void setReaderName(const std::string& name);
-#endif
+    /// @brief Bind the card whose objects this section renders.
+    ///
+    /// The id is opaque and travels back out unchanged on @ref signRequested,
+    /// so whoever launches the signing flow can address the same card without
+    /// this widget knowing what the string denotes.
+    void setCardId(const QString& cardId);
 
 public slots:
-    void setTokenInfo(const LibreSCRS::Plugin::CardFieldGroup& tokenGroup);
-    void setCertificates(const std::vector<LibreSCRS::Plugin::CertificateData>& certList);
-    void setPINList(const std::vector<LibreSCRS::Plugin::PinStatusEntry>& pins);
+    void setTokenInfo(const LibreSCRS::AgentClient::FieldGroup& tokenGroup);
+    void setCertificates(const QList<LibreSCRS::AgentClient::CertificateInfo>& certs);
+    void setCredentials(const LibreSCRS::AgentClient::CredentialList& credentials);
 
 signals:
-    void changePINRequested(uint8_t pinReference, const QString& pinLabel, bool isTransport, int minLength,
-                            int maxLength);
+    void changePinRequested(const LibreSCRS::AgentClient::CredentialRecord& credential);
 #ifdef LIBRECELIK_SIGNING_ENABLED
-    void signRequested(const LibreSCRS::Plugin::CertificateData& cert, const std::string& readerName);
+    void signRequested(const LibreSCRS::AgentClient::CertificateInfo& cert, const QString& cardId);
 #endif
+    void certificateDetailsRequested(const LibreSCRS::AgentClient::CertificateInfo& cert);
 
 private slots:
     void onContextMenu(const QPoint& pos);
@@ -76,18 +69,18 @@ private:
     void applyTreeStyleSheet();
     void updateTreeMinimumHeight();
 #ifdef LIBRECELIK_SIGNING_ENABLED
-    std::vector<LibreSCRS::Plugin::CertificateData> signingCertificates() const;
+    QList<LibreSCRS::AgentClient::CertificateInfo> signingCertificates() const;
     void showCertificateDropdown();
 #endif
 
-    std::shared_ptr<const LibreSCRS::Trust::TrustStore> trustStore;
-    std::vector<LibreSCRS::Plugin::CertificateData> certificateList;
-    std::vector<LibreSCRS::Plugin::PinStatusEntry> pinList;
+    QList<LibreSCRS::AgentClient::CertificateInfo> certificateList;
+    LibreSCRS::AgentClient::CredentialList credentialList;
     // Cached for retranslate-on-language-change: setTokenInfo() rebuilds
-    // the header card from the original CardFieldGroup; the cache lets
+    // the header card from the original FieldGroup; the cache lets
     // retranslateUi re-run that path with the new translator active.
-    LibreSCRS::Plugin::CardFieldGroup tokenGroup;
+    LibreSCRS::AgentClient::FieldGroup tokenGroup;
     bool hasTokenGroup = false;
+    QString cardId;
 
     QVBoxLayout* contentLayout = nullptr;
     librecelik::utils::CardHeaderCard* headerCard = nullptr;
@@ -97,6 +90,5 @@ private:
 
 #ifdef LIBRECELIK_SIGNING_ENABLED
     QToolButton* signBtn = nullptr;
-    std::string readerName;
 #endif
 };

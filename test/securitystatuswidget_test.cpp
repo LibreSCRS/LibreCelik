@@ -19,13 +19,17 @@ protected:
 };
 QApplication* SecurityStatusWidgetTest::app = nullptr;
 
+using librecelik::utils::SecurityCategory;
+using librecelik::utils::SecurityCheck;
+using librecelik::utils::SecurityStatusModel;
+
 TEST_F(SecurityStatusWidgetTest, RendersWithoutCrash)
 {
     SecurityStatusWidget widget;
-    LibreSCRS::Plugin::SecurityStatus status;
-    status.overallIntegrity = LibreSCRS::Plugin::SecurityCheck::Status::Passed;
-    status.overallAuthenticity = LibreSCRS::Plugin::SecurityCheck::Status::Passed;
-    status.overallGenuineness = LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed;
+    SecurityStatusModel status;
+    status.overallIntegrity = SecurityCheck::Status::Passed;
+    status.overallAuthenticity = SecurityCheck::Status::Passed;
+    status.overallGenuineness = SecurityCheck::Status::NotPerformed;
     widget.setSecurityStatus(status);
     // Widget renders without crash
 }
@@ -33,22 +37,22 @@ TEST_F(SecurityStatusWidgetTest, RendersWithoutCrash)
 TEST_F(SecurityStatusWidgetTest, RendersWithDetailChecks)
 {
     SecurityStatusWidget widget;
-    LibreSCRS::Plugin::SecurityStatus status;
-    status.overallIntegrity = LibreSCRS::Plugin::SecurityCheck::Status::Passed;
-    status.overallAuthenticity = LibreSCRS::Plugin::SecurityCheck::Status::Failed;
-    status.overallGenuineness = LibreSCRS::Plugin::SecurityCheck::Status::NotSupported;
+    SecurityStatusModel status;
+    status.overallIntegrity = SecurityCheck::Status::Passed;
+    status.overallAuthenticity = SecurityCheck::Status::Failed;
+    status.overallGenuineness = SecurityCheck::Status::NotSupported;
 
-    LibreSCRS::Plugin::SecurityCheck check;
+    SecurityCheck check;
     check.checkId = "hash_dg1";
-    check.category = LibreSCRS::Plugin::SecurityCategory::DataIntegrity;
-    check.status = LibreSCRS::Plugin::SecurityCheck::Status::Passed;
+    check.category = SecurityCategory::DataIntegrity;
+    check.status = SecurityCheck::Status::Passed;
     check.label = "DG1 Hash";
     check.detail = "Hash matches SOD";
     status.checks.push_back(check);
 
     check.checkId = "ds_cert";
-    check.category = LibreSCRS::Plugin::SecurityCategory::Authenticity;
-    check.status = LibreSCRS::Plugin::SecurityCheck::Status::Failed;
+    check.category = SecurityCategory::Authenticity;
+    check.status = SecurityCheck::Status::Failed;
     check.label = "DS Certificate";
     check.detail = "Certificate expired";
     status.checks.push_back(check);
@@ -61,14 +65,14 @@ TEST_F(SecurityStatusWidgetTest, UpdateStatusTwice)
 {
     SecurityStatusWidget widget;
 
-    LibreSCRS::Plugin::SecurityStatus status1;
-    status1.overallIntegrity = LibreSCRS::Plugin::SecurityCheck::Status::NotPerformed;
+    SecurityStatusModel status1;
+    status1.overallIntegrity = SecurityCheck::Status::NotPerformed;
     widget.setSecurityStatus(status1);
 
-    LibreSCRS::Plugin::SecurityStatus status2;
-    status2.overallIntegrity = LibreSCRS::Plugin::SecurityCheck::Status::Passed;
-    status2.overallAuthenticity = LibreSCRS::Plugin::SecurityCheck::Status::Passed;
-    status2.overallGenuineness = LibreSCRS::Plugin::SecurityCheck::Status::Passed;
+    SecurityStatusModel status2;
+    status2.overallIntegrity = SecurityCheck::Status::Passed;
+    status2.overallAuthenticity = SecurityCheck::Status::Passed;
+    status2.overallGenuineness = SecurityCheck::Status::Passed;
     widget.setSecurityStatus(status2);
     // Widget handles status update without crash
 }

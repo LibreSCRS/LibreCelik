@@ -113,6 +113,21 @@ TEST(FakeGateway, ScriptedPhotoReadPutsThePhotoGroupLastAndInTheModel)
     librecelik::test::agent::assertReadEmissionContract(c, expectation);
 }
 
+TEST(FakeGateway, FailedReadSurfacesTheErrorAndNeverAnIdentityModel)
+{
+    // The failed-read half of the shared contract. A fake that announced an
+    // identity model for a read that failed would let a display suite pass on
+    // a sequence the live controller never produces, so the ordering is pinned
+    // here rather than left to the one GUI case that only reads the message.
+    FakeCardController c;
+    c.scriptedGroups = {groupWithKey(QStringLiteral("personal"))};
+    c.scriptedError = QStringLiteral("the card was removed");
+    c.failNextRead = true;
+    ReadContractExpectation expectation;
+    expectation.expectError = true;
+    librecelik::test::agent::assertReadEmissionContract(c, expectation);
+}
+
 TEST(FakeGateway, ScriptedSignRunSatisfiesTheSharedEmissionContract)
 {
     FakeSignController s;

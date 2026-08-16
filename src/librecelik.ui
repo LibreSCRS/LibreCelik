@@ -218,6 +218,10 @@
             </property>
            </spacer>
           </item>
+          <!-- Guided agent-presence panel (empty when the agent is Ready) -->
+          <item>
+           <widget class="librecelik::agent::AgentStateWidget" name="agentStateWidget"/>
+          </item>
           <!-- About / version text -->
           <item>
            <widget class="QLabel" name="aboutLabel">
@@ -296,6 +300,13 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>librecelik::agent::AgentStateWidget</class>
+   <extends>QWidget</extends>
+   <header>agent/agentstatewidget.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../resources/librecelik.qrc"/>
  </resources>

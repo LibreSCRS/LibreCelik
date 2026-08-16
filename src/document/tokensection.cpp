@@ -2,15 +2,12 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "tokensection.h"
-#include "certificate/certformat.h"
-#include "certificate/certificateviewerdlg.h"
-#ifdef LIBRECELIK_SIGNING_ENABLED
-#include "signing/certutils.h"
-#endif
 
-#include <LibreSCRS/Certificate/ParsedCertificate.h>
+#include "certificate/certfields.h"
+#include "certificate/certformat.h"
 
 #include <QBrush>
+#include <QDateTime>
 #include <QEasingCurve>
 #include <QEvent>
 #include <QGraphicsOpacityEffect>
@@ -28,76 +25,175 @@
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
 
-#include <cstdint>
-
-namespace lcc = LibreSCRS::Certificate;
-namespace cf = librecelik::certformat;
+#include <optional>
 
 namespace {
 
-struct CertInfo
+using LibreSCRS::AgentClient::CertificateInfo;
+using LibreSCRS::AgentClient::CredentialKind;
+using LibreSCRS::AgentClient::CredentialRecord;
+using LibreSCRS::AgentClient::CredentialState;
+using LibreSCRS::AgentClient::TrustStatus;
+
+/// Index of the credential a tree row renders. The row carries nothing else:
+/// every value the context menu acts on lives on the record itself, so one
+/// look-up beats mirroring half a dozen members into item data roles.
+constexpr int CredentialIndexRole = Qt::UserRole;
+
+/// Compact validity date — the format the token summary has always used.
+[[nodiscard]] QString formatValidityDate(const QDateTime& moment)
 {
-    QString subject;
-    QString issuer;
-    QString algorithm;
-    QString keyUsage;
-    QString validFrom;
-    QString validTo;
-};
-
-CertInfo parseCertInfo(const std::vector<uint8_t>& der)
-{
-    CertInfo info;
-    auto cert = lcc::ParsedCertificate::fromDer(der);
-    if (!cert)
-        return info;
-
-    info.subject = QString::fromStdString(cert->subject().commonName());
-    info.issuer = QString::fromStdString(cert->issuer().commonName());
-    if (info.issuer.isEmpty())
-        info.issuer = qtTrId("lc-cert-unknown");
-    info.algorithm = cf::publicKeyDescription(cert->publicKey());
-
-    if (auto ku = cert->keyUsage())
-        info.keyUsage = cf::keyUsageToStringEndEntity(*ku);
-
-    info.validFrom = cf::formatDate(cert->notBefore());
-    info.validTo = cf::formatDate(cert->notAfter());
-    return info;
+    return moment.isValid() ? moment.toUTC().toString(QStringLiteral("dd.MM.yyyy")) : QString();
 }
 
-constexpr int PinReferenceRole = Qt::UserRole;
-constexpr int PinTransportRole = Qt::UserRole + 1;
-constexpr int PinLabelRole = Qt::UserRole + 2;
-constexpr int PinBlockedRole = Qt::UserRole + 3;
-constexpr int PinMinLengthRole = Qt::UserRole + 4;
-constexpr int PinMaxLengthRole = Qt::UserRole + 5;
-constexpr int PinCanChangeRole = Qt::UserRole + 6;
-
-#ifdef LIBRECELIK_SIGNING_ENABLED
-bool isSigningCapable(const LibreSCRS::Plugin::CertificateData& cert)
+/// One-line description of the key a certificate carries:
+/// `"<algorithm> <bits>-bit"`, with the curve appended in parentheses when the
+/// certificate names one — the shape this summary has always shown. Built from
+/// the agent's public-key group; empty when the agent resolved no algorithm,
+/// which drops the row rather than printing a bare bit count.
+[[nodiscard]] QString publicKeyDescription(const CertificateInfo& cert)
 {
-    // 4.0 ABI v6 made keyFID a std::optional<uint16_t>; a disengaged optional
-    // (or an explicit 0, preserved from the internal 0-sentinel fallback in
-    // some plugins) means "no associated private key known" → verify-only.
-    if (!cert.keyFID || *cert.keyFID == 0)
-        return false;
+    namespace fields = librecelik::certfields;
+    const QVariantMap groups = fields::groupsOf(cert);
+    const QString algorithm = fields::valueOf(groups, QLatin1StringView("publicKey"), QLatin1StringView("algorithm"));
+    if (algorithm.isEmpty())
+        return {};
 
-    auto parsed = lcc::ParsedCertificate::fromDer(cert.derBytes);
-    if (!parsed)
-        return false;
+    QString description = algorithm;
+    const QString sizeBits = fields::valueOf(groups, QLatin1StringView("publicKey"), QLatin1StringView("sizeBits"));
+    if (!sizeBits.isEmpty())
+        description += QStringLiteral(" %1-bit").arg(sizeBits);
+    const QString curve = fields::valueOf(groups, QLatin1StringView("publicKey"), QLatin1StringView("curveOid"));
+    if (!curve.isEmpty())
+        description += QStringLiteral(" (%1)").arg(curve);
+    return description;
+}
 
-    auto ku = parsed->keyUsage();
-    if (!ku)
-        return false;
+/// LC copy for one security-status token.
+///
+/// Same known-token/verbatim rule the agent error line uses: a token this
+/// build names renders LC's own string, anything else is displayed exactly as
+/// it arrived. The vocabulary is the agent's and grows independently of this
+/// build, so an unknown token is forward-compatible display data — showing it
+/// raw beats swallowing a verdict a newer agent considers worth reporting.
+[[nodiscard]] QString securityStatusText(const QString& token)
+{
+    if (token == QLatin1StringView("trusted"))
+        return qtTrId("lc-cert-status-trusted");
+    if (token == QLatin1StringView("untrusted-root"))
+        return qtTrId("lc-cert-status-untrusted-root");
+    if (token == QLatin1StringView("broken-chain"))
+        return qtTrId("lc-cert-status-broken-chain");
+    if (token == QLatin1StringView("invalid"))
+        return qtTrId("lc-cert-status-invalid");
+    if (token == QLatin1StringView("expired"))
+        return qtTrId("lc-cert-status-expired");
+    if (token == QLatin1StringView("revoked"))
+        return qtTrId("lc-cert-status-revoked");
+    if (token == QLatin1StringView("offline-unverified"))
+        return qtTrId("lc-cert-status-offline-unverified");
+    return token;
+}
 
-    for (auto bit : *ku) {
-        if (bit == lcc::KeyUsageBit::DigitalSignature || bit == lcc::KeyUsageBit::NonRepudiation)
-            return true;
+/// The status column of a certificate row: every token the agent reported,
+/// in the order it reported them.
+[[nodiscard]] QString certificateStatusText(const CertificateInfo& cert)
+{
+    QStringList parts;
+    parts.reserve(cert.securityStatus.size());
+    for (const QString& token : cert.securityStatus)
+        parts << securityStatusText(token);
+    return parts.join(QStringLiteral(" · "));
+}
+
+/// Badge icon for a trust verdict. Unknown is deliberately unadorned: it means
+/// no verdict was available, not a negative one, and a marker on every row
+/// would read as one.
+[[nodiscard]] QString trustIconPath(TrustStatus trust)
+{
+    switch (trust) {
+    case TrustStatus::Trusted:
+        return QStringLiteral(":/images/green_checked.png");
+    case TrustStatus::Untrusted:
+    case TrustStatus::Revoked:
+    case TrustStatus::Expired:
+        return QStringLiteral(":/images/red_exclamation.png");
+    case TrustStatus::Unknown:
+        break;
     }
-    return false;
+    return {};
 }
-#endif
+
+/// Colour for the same verdict, on the same reasoning as @ref trustIconPath.
+[[nodiscard]] std::optional<Qt::GlobalColor> trustColor(TrustStatus trust)
+{
+    switch (trust) {
+    case TrustStatus::Trusted:
+        return Qt::darkGreen;
+    case TrustStatus::Untrusted:
+    case TrustStatus::Revoked:
+    case TrustStatus::Expired:
+        return Qt::red;
+    case TrustStatus::Unknown:
+        break;
+    }
+    return std::nullopt;
+}
+
+/// Counter fragments of a credential row, in the order they are shown.
+[[nodiscard]] QStringList credentialCounters(const CredentialRecord& cred)
+{
+    QStringList parts;
+    if (cred.retriesLeft.has_value())
+        parts << (cred.retriesMax.has_value()
+                      ? qtTrId("lc-eid-pin-tries-remaining-of").arg(*cred.retriesLeft).arg(*cred.retriesMax)
+                      : qtTrId("lc-eid-pin-tries-remaining").arg(*cred.retriesLeft));
+    if (cred.usesLeft.has_value())
+        parts << (cred.usesMax.has_value()
+                      ? qtTrId("lc-eid-pin-uses-remaining-of").arg(*cred.usesLeft).arg(*cred.usesMax)
+                      : qtTrId("lc-eid-pin-uses-remaining").arg(*cred.usesLeft));
+    if (cred.unblocksLeft.has_value())
+        parts << qtTrId("lc-eid-pin-unblocks-remaining").arg(*cred.unblocksLeft);
+    return parts;
+}
+
+/// Holder guidance for a blocked credential.
+///
+/// The known-key/fallback rule of the agent error line: a guidance key this
+/// build named would render LC's own copy first. LC names none — the key
+/// vocabulary belongs to the agent and grows independently of this build — so
+/// the agent's authored fallback is what a holder reads, and a key that
+/// arrives without one renders nothing rather than a guess made on this side.
+[[nodiscard]] QString blockedGuidanceText(const CredentialRecord& cred)
+{
+    const QString fallback = cred.blockedGuidanceFallback.value_or(QString());
+    return fallback.trimmed().isEmpty() ? QString() : fallback;
+}
+
+/// The status column of a credential row: lifecycle badge first, then whatever
+/// counters the card reported.
+[[nodiscard]] QString credentialStatusText(const CredentialRecord& cred)
+{
+    if (cred.state == CredentialState::Transport)
+        return qtTrId("lc-eid-pin-transport");
+
+    if (cred.state == CredentialState::Blocked) {
+        const QString guidance = blockedGuidanceText(cred);
+        return guidance.isEmpty() ? qtTrId("lc-eid-pin-blocked")
+                                  : qtTrId("lc-eid-pin-blocked") + QStringLiteral(" · ") + guidance;
+    }
+
+    QStringList parts = credentialCounters(cred);
+    if (cred.state == CredentialState::NeedsChange)
+        parts.prepend(qtTrId("lc-eid-pin-needs-change"));
+    if (!parts.isEmpty())
+        return parts.join(QStringLiteral(" · "));
+
+    // A CAN is a printed access number with no retry/usage state — show a
+    // blank status rather than the "?" unknown marker (which reads as an
+    // error). Every other counter-less credential keeps the "?".
+    return cred.kind == CredentialKind::Can ? QString() : qtTrId("lc-eid-pin-unknown");
+}
 
 } // namespace
 
@@ -115,8 +211,7 @@ QString formatFieldOrPlaceholder(const QString& value)
 
 } // namespace librecelik::document
 
-TokenSection::TokenSection(std::shared_ptr<const LibreSCRS::Trust::TrustStore> store, QWidget* parent)
-    : CollapsibleSection(QString(), parent), trustStore(std::move(store))
+TokenSection::TokenSection(QWidget* parent) : CollapsibleSection(QString(), parent)
 {
     contentLayout = new QVBoxLayout(this);
     contentLayout->setSpacing(2);
@@ -164,7 +259,7 @@ TokenSection::TokenSection(std::shared_ptr<const LibreSCRS::Trust::TrustStore> s
         connect(signBtn, &QToolButton::clicked, this, [this]() {
             auto certs = signingCertificates();
             if (certs.size() == 1)
-                emit signRequested(certs.front(), readerName);
+                emit signRequested(certs.front(), cardId);
             else if (certs.size() > 1)
                 showCertificateDropdown();
         });
@@ -197,27 +292,16 @@ TokenSection::TokenSection(std::shared_ptr<const LibreSCRS::Trust::TrustStore> s
     });
 }
 
-static QString formatSerialNumber(const LibreSCRS::Plugin::CardField& field)
+void TokenSection::setCardId(const QString& id)
 {
-    bool printable =
-        std::all_of(field.value.begin(), field.value.end(), [](uint8_t c) { return c >= 0x20 && c < 0x7F; });
-    if (printable) {
-        if (auto text = field.textValue())
-            return QString::fromStdString(*text);
-    }
-
-    QStringList hexParts;
-    for (uint8_t b : field.value)
-        hexParts << QString("%1").arg(b, 2, 16, QChar('0')).toUpper();
-    return hexParts.join(':');
+    cardId = id;
 }
 
-void TokenSection::setTokenInfo(const LibreSCRS::Plugin::CardFieldGroup& group)
+void TokenSection::setTokenInfo(const LibreSCRS::AgentClient::FieldGroup& group)
 {
     // Cache the raw group so retranslateUi() can rebuild the header card
-    // with the current translator (per LM 4.0 retranslate pattern). The
-    // first call populates the header; subsequent calls (e.g. invoked from
-    // retranslateUi) clear and rebuild.
+    // with the current translator. The first call populates the header;
+    // subsequent calls (e.g. invoked from retranslateUi) clear and rebuild.
     tokenGroup = group;
     hasTokenGroup = true;
 
@@ -231,29 +315,22 @@ void TokenSection::setTokenInfo(const LibreSCRS::Plugin::CardFieldGroup& group)
 
     for (const auto& field : tokenGroup.fields) {
         QString labelText;
-        if (field.key == "label")
+        if (field.key == QLatin1StringView("label"))
             labelText = qtTrId("lc-pki-token-label");
-        else if (field.key == "serial_number")
+        else if (field.key == QLatin1StringView("serial_number"))
             labelText = qtTrId("lc-pki-token-serial");
-        else if (field.key == "manufacturer")
+        else if (field.key == QLatin1StringView("manufacturer"))
             labelText = qtTrId("lc-pki-token-manufacturer");
         else
-            labelText = QString::fromStdString(field.key);
+            labelText = field.key;
 
-        QString valueText;
-        if (field.key == "serial_number" && !field.value.empty()) {
-            valueText = formatSerialNumber(field);
-        } else if (auto text = field.textValue()) {
-            valueText = QString::fromStdString(*text);
-        }
-
-        headerFields.push_back({labelText, librecelik::document::formatFieldOrPlaceholder(valueText)});
+        headerFields.push_back({labelText, librecelik::document::formatFieldOrPlaceholder(field.value)});
     }
 
     // Empty-group fallback: render the three canonical token rows with
     // em-dash placeholders so the header is always structurally present.
-    // This is the load-bearing recovery path when the pkcs15 plugin
-    // returned no fields (e.g. acquireChannel failure on session restore).
+    // This is the load-bearing recovery path when the card read returned no
+    // token fields at all.
     if (headerFields.empty()) {
         const QString placeholder = librecelik::document::formatFieldOrPlaceholder(QString());
         headerFields.push_back({qtTrId("lc-pki-token-label"), placeholder});
@@ -268,19 +345,24 @@ void TokenSection::setTokenInfo(const LibreSCRS::Plugin::CardFieldGroup& group)
     updateTreeMinimumHeight();
 }
 
-void TokenSection::setCertificates(const std::vector<LibreSCRS::Plugin::CertificateData>& certList)
+void TokenSection::setCertificates(const QList<LibreSCRS::AgentClient::CertificateInfo>& certs)
 {
-    certificateList = certList;
+    certificateList = certs;
 
     while (tokenCertsItem->childCount() > 0)
         delete tokenCertsItem->takeChild(0);
 
     for (const auto& cert : certificateList) {
         auto* certItem = new QTreeWidgetItem(tokenCertsItem);
-        certItem->setText(0, QString::fromStdString(cert.label));
+        // The subject names the certificate in the tree; the opaque id is the
+        // only thing left to show when the agent reported no subject at all.
+        certItem->setText(0, cert.subject.isEmpty() ? cert.id : cert.subject);
+        certItem->setText(1, certificateStatusText(cert));
+        if (const QString iconPath = trustIconPath(cert.trust); !iconPath.isEmpty())
+            certItem->setIcon(0, QIcon(iconPath));
+        if (const auto color = trustColor(cert.trust))
+            certItem->setForeground(1, QBrush(*color));
         certItem->setExpanded(true);
-
-        CertInfo info = parseCertInfo(cert.derBytes);
 
         auto addRow = [&](const QString& label, const QString& value) {
             if (value.isEmpty())
@@ -290,41 +372,46 @@ void TokenSection::setCertificates(const std::vector<LibreSCRS::Plugin::Certific
             row->setText(1, value);
         };
 
-        addRow(qtTrId("lc-token-key-subject"), info.subject);
-        addRow(qtTrId("lc-cert-field-issuer"), info.issuer);
-        addRow(qtTrId("lc-token-key-algorithm"), info.algorithm);
-        addRow(qtTrId("lc-token-key-usage"), info.keyUsage);
+        addRow(qtTrId("lc-cert-field-issuer"), cert.issuer);
+        addRow(qtTrId("lc-token-key-algorithm"), publicKeyDescription(cert));
+        // End-entity capability only: the CA and cipher-direction bits belong
+        // to the certificate viewer, which shows the complete list.
+        addRow(qtTrId("lc-token-key-usage"), librecelik::certformat::keyUsageToStringEndEntity(cert.keyUsageBits));
 
+        const QString validFrom = formatValidityDate(cert.notBefore);
+        const QString validTo = formatValidityDate(cert.notAfter);
         QString validity;
-        if (!info.validFrom.isEmpty() && !info.validTo.isEmpty())
-            validity = info.validFrom + " – " + info.validTo;
+        if (!validFrom.isEmpty() && !validTo.isEmpty())
+            validity = validFrom + " – " + validTo;
         addRow(qtTrId("lc-token-key-valid"), validity);
 
-        if (cert.keyFID && *cert.keyFID != 0)
+        if (cert.signingCapable)
             addRow(qtTrId("lc-token-key-private-key"), "✓");
     }
 
 #ifdef LIBRECELIK_SIGNING_ENABLED
-    bool canSign = !signingCertificates().empty();
-    if (canSign) {
-        if (signBtn->graphicsEffect())
-            signBtn->setGraphicsEffect(nullptr);
-    } else if (!signBtn->graphicsEffect()) {
+    // TEMP(C1-rewire): sign side re-enabled in Task 24, pin side in Task 27.
+    // The middleware signing launcher went with the middleware read path and
+    // the agent-side wizard has not landed yet, so the button stays visible
+    // and disabled with a tooltip that says why. An enabled button that did
+    // nothing would be a lie; a hidden one would be a silent capability
+    // regression the next release note could not explain.
+    if (!signBtn->graphicsEffect()) {
         auto* dimEffect = new QGraphicsOpacityEffect(signBtn);
         dimEffect->setOpacity(0.3);
         signBtn->setGraphicsEffect(dimEffect);
     }
-    signBtn->setEnabled(canSign);
+    signBtn->setEnabled(false);
 #endif
 
     updateTreeMinimumHeight();
 }
 
-void TokenSection::setPINList(const std::vector<LibreSCRS::Plugin::PinStatusEntry>& pins)
+void TokenSection::setCredentials(const LibreSCRS::AgentClient::CredentialList& credentials)
 {
-    pinList = pins;
+    credentialList = credentials;
 
-    if (pins.empty()) {
+    if (credentialList.isEmpty()) {
         tokenPinItem->setHidden(true);
         return;
     }
@@ -332,41 +419,17 @@ void TokenSection::setPINList(const std::vector<LibreSCRS::Plugin::PinStatusEntr
     while (tokenPinItem->childCount() > 0)
         delete tokenPinItem->takeChild(0);
 
-    for (const auto& pin : pins) {
+    for (qsizetype index = 0; index < credentialList.size(); ++index) {
+        const CredentialRecord& cred = credentialList.at(index);
+
         auto* item = new QTreeWidgetItem(tokenPinItem);
-        item->setText(0, QString::fromStdString(pin.label));
-
-        if (!pin.initialized) {
-            item->setText(1, qtTrId("lc-eid-pin-transport"));
-        } else if (pin.blocked) {
-            item->setText(1, qtTrId("lc-eid-pin-blocked"));
+        // The agent authors the label; the opaque id is the only honest
+        // fallback when it authored none.
+        item->setText(0, cred.label.isEmpty() ? cred.id : cred.label);
+        item->setText(1, credentialStatusText(cred));
+        if (cred.state == CredentialState::Blocked)
             item->setForeground(1, QBrush(Qt::red));
-        } else {
-            QStringList parts;
-            if (pin.retriesLeft.has_value())
-                parts << (pin.retriesMax.has_value()
-                              ? qtTrId("lc-eid-pin-tries-remaining-of").arg(*pin.retriesLeft).arg(*pin.retriesMax)
-                              : qtTrId("lc-eid-pin-tries-remaining").arg(*pin.retriesLeft));
-            if (pin.usesLeft.has_value())
-                parts << (pin.usesMax.has_value()
-                              ? qtTrId("lc-eid-pin-uses-remaining-of").arg(*pin.usesLeft).arg(*pin.usesMax)
-                              : qtTrId("lc-eid-pin-uses-remaining").arg(*pin.usesLeft));
-            // A CAN is a printed access number with no retry/usage state — show a
-            // blank status rather than the "?" unknown marker (which reads as an
-            // error). Every other counter-less credential keeps the "?".
-            item->setText(1,
-                          parts.isEmpty()
-                              ? (pin.kind == LibreSCRS::Plugin::PinKind::Can ? QString() : qtTrId("lc-eid-pin-unknown"))
-                              : parts.join(QStringLiteral(" · ")));
-        }
-
-        item->setData(0, PinReferenceRole, pin.reference);
-        item->setData(0, PinTransportRole, !pin.initialized);
-        item->setData(0, PinLabelRole, QString::fromStdString(pin.label));
-        item->setData(0, PinBlockedRole, pin.blocked);
-        item->setData(0, PinMinLengthRole, pin.minLength.has_value() ? static_cast<int>(*pin.minLength) : 0);
-        item->setData(0, PinMaxLengthRole, pin.maxLength.has_value() ? static_cast<int>(*pin.maxLength) : 0);
-        item->setData(0, PinCanChangeRole, pin.canChange);
+        item->setData(0, CredentialIndexRole, QVariant::fromValue(index));
     }
 
     tokenPinItem->setHidden(false);
@@ -393,48 +456,52 @@ void TokenSection::onContextMenu(const QPoint& pos)
     if (isCertItem || isCertChild) {
         QTreeWidgetItem* certItem = isCertItem ? item : item->parent();
         int certIndex = tokenCertsItem->indexOfChild(certItem);
-        QAction* viewAction =
-            menu.addAction(qtTrId("lc-eid-menu-view-cert")); // i18n-audit: ignore D2, transient context-menu — qtTrId
-                                                             // evaluated per right-click; menu discarded after exec()
-        connect(viewAction, &QAction::triggered, this, [this, certIndex]() {
-            if (certificateList.empty())
-                return;
-            auto dlg = std::make_unique<CertificateViewerDlg>(certificateList, trustStore, this, certIndex);
-            dlg->exec();
-        });
+        if (certIndex >= 0 && certIndex < static_cast<int>(certificateList.size())) {
+            QAction* viewAction =
+                menu.addAction(qtTrId("lc-eid-menu-view-cert")); // i18n-audit: ignore D2, transient context-menu —
+                                                                 // qtTrId evaluated per right-click; menu discarded
+                                                                 // after exec()
+            connect(viewAction, &QAction::triggered, this,
+                    [this, certIndex]() { emit certificateDetailsRequested(certificateList.at(certIndex)); });
 
 #ifdef LIBRECELIK_SIGNING_ENABLED
-        if (certIndex >= 0 && certIndex < static_cast<int>(certificateList.size()) &&
-            isSigningCapable(certificateList[static_cast<size_t>(certIndex)])) {
-            QAction* signAction = menu.addAction(qtTrId("lc-sign-with-cert"));
-            connect(signAction, &QAction::triggered, this, [this, certIndex]() {
-                emit signRequested(certificateList[static_cast<size_t>(certIndex)], readerName);
-            });
-        }
+            if (certificateList.at(certIndex).signingCapable) {
+                QAction* signAction = menu.addAction(qtTrId("lc-sign-with-cert"));
+                // TEMP(C1-rewire): sign side re-enabled in Task 24 (the
+                // wire-typed signRequested connect lands with the agent-side
+                // wizard). Disabled-with-reason, never silently missing.
+                signAction->setEnabled(false);
+                signAction->setToolTip( // i18n-audit: ignore D8, transient action rebuilt per right-click
+                    qtTrId("lc-agent-action-pending-rewire"));
+                menu.setToolTipsVisible(true);
+            }
 #endif
+        }
     }
 
     if (item->parent() == tokenPinItem) {
-        bool canChange = item->data(0, PinCanChangeRole).toBool();
-        if (!canChange)
+        const qsizetype credIndex = item->data(0, CredentialIndexRole).value<qsizetype>();
+        if (credIndex < 0 || credIndex >= credentialList.size())
             return;
 
-        bool isTransport = item->data(0, PinTransportRole).toBool();
-        bool isBlocked = item->data(0, PinBlockedRole).toBool();
-        uint8_t pinRef = static_cast<uint8_t>(item->data(0, PinReferenceRole).toUInt());
-        QString pinLabel = item->data(0, PinLabelRole).toString();
+        const CredentialRecord& cred = credentialList.at(credIndex);
+        if (!cred.canChange)
+            return;
 
+        const bool isTransport = (cred.state == CredentialState::Transport);
         QString actionText = isTransport ? qtTrId("lc-eid-menu-initialize-pin") : qtTrId("lc-eid-menu-change-pin");
         QAction* pinAction = menu.addAction(actionText);
 
-        if (isBlocked) {
-            pinAction->setEnabled(false);
-        } else {
-            connect(pinAction, &QAction::triggered, this, [this, pinRef, pinLabel, isTransport, item]() {
-                int minLen = item->data(0, PinMinLengthRole).toInt();
-                int maxLen = item->data(0, PinMaxLengthRole).toInt();
-                emit changePINRequested(pinRef, pinLabel, isTransport, minLen, maxLen);
-            });
+        // TEMP(C1-rewire): pin side re-enabled in Task 27 (the agent-side
+        // change-PIN dialog installs the changePinRequested connect and
+        // retires this tooltip). A blocked credential was already disabled
+        // here; every credential is, for as long as there is no dialog to
+        // launch — and the tooltip says so rather than leaving a dead entry.
+        pinAction->setEnabled(false);
+        if (cred.state != CredentialState::Blocked) {
+            pinAction->setToolTip( // i18n-audit: ignore D8, transient action rebuilt per right-click
+                qtTrId("lc-agent-action-pending-rewire"));
+            menu.setToolTipsVisible(true);
         }
     }
 
@@ -443,17 +510,12 @@ void TokenSection::onContextMenu(const QPoint& pos)
 }
 
 #ifdef LIBRECELIK_SIGNING_ENABLED
-void TokenSection::setReaderName(const std::string& name)
+QList<LibreSCRS::AgentClient::CertificateInfo> TokenSection::signingCertificates() const
 {
-    readerName = name;
-}
-
-std::vector<LibreSCRS::Plugin::CertificateData> TokenSection::signingCertificates() const
-{
-    std::vector<LibreSCRS::Plugin::CertificateData> result;
+    QList<LibreSCRS::AgentClient::CertificateInfo> result;
     for (const auto& cert : certificateList) {
-        if (isSigningCapable(cert))
-            result.push_back(cert);
+        if (cert.signingCapable)
+            result.append(cert);
     }
     return result;
 }
@@ -466,11 +528,9 @@ void TokenSection::showCertificateDropdown()
 
     QMenu menu(this);
     for (const auto& cert : certs) {
-        QString label = QString::fromStdString(cert.label);
-        QString cn = signing::subjectCN(cert.derBytes);
-        QString text = cn.isEmpty() ? label : label + " (" + cn + ")";
+        QString text = cert.subject.isEmpty() ? cert.id : cert.subject;
         QAction* action = menu.addAction(text);
-        connect(action, &QAction::triggered, this, [this, cert]() { emit signRequested(cert, readerName); });
+        connect(action, &QAction::triggered, this, [this, cert]() { emit signRequested(cert, cardId); });
     }
     QSize menuSize = menu.sizeHint();
     QPoint pos = signBtn->mapToGlobal(QPoint(signBtn->width() - menuSize.width(), signBtn->height()));
@@ -517,12 +577,14 @@ void TokenSection::retranslateUi()
         tokenPinItem->setText(0, qtTrId("lc-eid-tree-pin"));
 
 #ifdef LIBRECELIK_SIGNING_ENABLED
+    // TEMP(C1-rewire): sign side re-enabled in Task 24 — the tooltip goes back
+    // to "lc-sign-button" with the wire-typed launcher.
     if (signBtn)
-        signBtn->setToolTip(qtTrId("lc-sign-button"));
+        signBtn->setToolTip(qtTrId("lc-agent-action-pending-rewire"));
 #endif
 
     if (hasTokenGroup)
         setTokenInfo(tokenGroup);
     setCertificates(certificateList);
-    setPINList(pinList);
+    setCredentials(credentialList);
 }

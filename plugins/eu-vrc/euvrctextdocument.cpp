@@ -5,13 +5,15 @@
 #include <QDate>
 #include "euvrctextdocument.h"
 #include "utils/stringutils.h"
-#include <plugin/carddatautils.h>
+#include <plugin/fieldvalue.h>
 
-using librecelik::plugin::getFieldValue;
+using librecelik::plugin::fieldValue;
+using librecelik::plugin::findGroup;
+using FieldGroupList = QList<LibreSCRS::AgentClient::FieldGroup>;
 
-EuVrcTextDocument::EuVrcTextDocument(const LibreSCRS::Plugin::CardData& cardData, QString cssPath)
+EuVrcTextDocument::EuVrcTextDocument(const FieldGroupList& groups, QString cssPath)
 {
-    auto html = buildHtml(cardData);
+    auto html = buildHtml(groups);
     setupDocument(html, cssPath);
 }
 
@@ -29,7 +31,7 @@ QString EuVrcTextDocument::emitRow(const QString& label, const QString& value, c
         .arg(label.toHtmlEscaped(), value.toHtmlEscaped(), cls);
 }
 
-QString EuVrcTextDocument::buildHtml(const LibreSCRS::Plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildHtml(const FieldGroupList& groups) const
 {
     QString html;
     html +=
@@ -44,17 +46,17 @@ QString EuVrcTextDocument::buildHtml(const LibreSCRS::Plugin::CardData& cardData
     html += "<h1>" + qtTrId("lc-euvrc-doc-title") + "</h1>\n";
 
     // Registration number as h2 header
-    auto regNum = getFieldValue(cardData, "registration_number");
+    auto regNum = fieldValue(groups, u"registration_number");
     if (!regNum.isEmpty())
         html += "<h2>" + qtTrId("lc-euvrc-doc-reg-number") + ": " + getPreparedValue(regNum) + "</h2>\n";
 
-    html += buildRegistrationSection(cardData);
-    html += buildVehicleSection(cardData);
-    html += buildEngineTechnicalSection(cardData);
-    html += buildHolderSection(cardData);
-    html += buildOwnerSection(cardData);
-    html += buildUserSection(cardData);
-    html += buildNationalSection(cardData);
+    html += buildRegistrationSection(groups);
+    html += buildVehicleSection(groups);
+    html += buildEngineTechnicalSection(groups);
+    html += buildHolderSection(groups);
+    html += buildOwnerSection(groups);
+    html += buildUserSection(groups);
+    html += buildNationalSection(groups);
 
     // Printing date
     html += "<table style=\"margin-top:20px;\"><tr>"
@@ -71,31 +73,31 @@ QString EuVrcTextDocument::buildHtml(const LibreSCRS::Plugin::CardData& cardData
     return html;
 }
 
-QString EuVrcTextDocument::buildRegistrationSection(const LibreSCRS::Plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildRegistrationSection(const FieldGroupList& groups) const
 {
     struct Field
     {
-        const char* key;
+        QStringView key;
         QString label;
     };
     std::vector<Field> fields = {
-        {"date_of_first_registration", qtTrId("lc-euvrc-doc-first-reg-date")},
-        {"registration_date", qtTrId("lc-euvrc-doc-reg-date")},
-        {"expiry_date", qtTrId("lc-euvrc-doc-expiry-date")},
-        {"member_state", qtTrId("lc-euvrc-doc-member-state")},
-        {"document_number", qtTrId("lc-euvrc-doc-document-number")},
-        {"competent_authority", qtTrId("lc-euvrc-doc-competent-authority")},
-        {"issuing_authority", qtTrId("lc-euvrc-doc-issuing-authority")},
-        {"type_approval_number", qtTrId("lc-euvrc-doc-type-approval-no")},
-        {"ownership_status", qtTrId("lc-euvrc-doc-ownership-status")},
-        {"previous_document", qtTrId("lc-euvrc-doc-previous-document")},
+        {u"date_of_first_registration", qtTrId("lc-euvrc-doc-first-reg-date")},
+        {u"registration_date", qtTrId("lc-euvrc-doc-reg-date")},
+        {u"expiry_date", qtTrId("lc-euvrc-doc-expiry-date")},
+        {u"member_state", qtTrId("lc-euvrc-doc-member-state")},
+        {u"document_number", qtTrId("lc-euvrc-doc-document-number")},
+        {u"competent_authority", qtTrId("lc-euvrc-doc-competent-authority")},
+        {u"issuing_authority", qtTrId("lc-euvrc-doc-issuing-authority")},
+        {u"type_approval_number", qtTrId("lc-euvrc-doc-type-approval-no")},
+        {u"ownership_status", qtTrId("lc-euvrc-doc-ownership-status")},
+        {u"previous_document", qtTrId("lc-euvrc-doc-previous-document")},
     };
 
     QString rows;
     for (const auto& f : fields) {
-        auto val = getFieldValue(cardData, f.key);
+        auto val = fieldValue(groups, f.key);
         QString cssClass;
-        if (std::string_view(f.key) == "expiry_date" && !val.isEmpty()) {
+        if (f.key == u"expiry_date" && !val.isEmpty()) {
             auto expiry = QDate::fromString(val, "dd.MM.yyyy");
             if (expiry.isValid() && expiry < QDate::currentDate())
                 cssClass = "expired";
@@ -109,26 +111,26 @@ QString EuVrcTextDocument::buildRegistrationSection(const LibreSCRS::Plugin::Car
     return "<table>\n" + rows + "</table>\n";
 }
 
-QString EuVrcTextDocument::buildVehicleSection(const LibreSCRS::Plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildVehicleSection(const FieldGroupList& groups) const
 {
     struct Field
     {
-        const char* key;
+        QStringView key;
         QString label;
     };
     std::vector<Field> fields = {
-        {"vehicle_make", qtTrId("lc-euvrc-doc-make")},
-        {"vehicle_type", qtTrId("lc-euvrc-doc-type")},
-        {"commercial_description", qtTrId("lc-euvrc-doc-commercial-desc")},
-        {"vehicle_id_number", qtTrId("lc-euvrc-doc-vin")},
-        {"vehicle_category", qtTrId("lc-euvrc-doc-category")},
-        {"colour", qtTrId("lc-euvrc-doc-colour")},
-        {"max_speed", qtTrId("lc-euvrc-doc-max-speed")},
+        {u"vehicle_make", qtTrId("lc-euvrc-doc-make")},
+        {u"vehicle_type", qtTrId("lc-euvrc-doc-type")},
+        {u"commercial_description", qtTrId("lc-euvrc-doc-commercial-desc")},
+        {u"vehicle_id_number", qtTrId("lc-euvrc-doc-vin")},
+        {u"vehicle_category", qtTrId("lc-euvrc-doc-category")},
+        {u"colour", qtTrId("lc-euvrc-doc-colour")},
+        {u"max_speed", qtTrId("lc-euvrc-doc-max-speed")},
     };
 
     QString rows;
     for (const auto& f : fields)
-        rows += emitRow(f.label, getFieldValue(cardData, f.key));
+        rows += emitRow(f.label, fieldValue(groups, f.key));
 
     if (rows.isEmpty())
         return {};
@@ -136,42 +138,42 @@ QString EuVrcTextDocument::buildVehicleSection(const LibreSCRS::Plugin::CardData
     return "<h2>" + qtTrId("lc-euvrc-doc-vehicle-data") + "</h2>\n<table>\n" + rows + "</table>\n";
 }
 
-QString EuVrcTextDocument::buildEngineTechnicalSection(const LibreSCRS::Plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildEngineTechnicalSection(const FieldGroupList& groups) const
 {
     struct Field
     {
-        const char* key;
+        QStringView key;
         QString label;
     };
     std::vector<Field> fields = {
-        {"engine_capacity", qtTrId("lc-euvrc-doc-capacity")},
-        {"maximum_net_power", qtTrId("lc-euvrc-doc-power")},
-        {"type_of_fuel", qtTrId("lc-euvrc-doc-fuel-type")},
-        {"engine_id_number", qtTrId("lc-euvrc-doc-engine-number")},
-        {"vehicle_mass", qtTrId("lc-euvrc-doc-mass")},
-        {"maximum_permissible_laden_mass", qtTrId("lc-euvrc-doc-max-laden-mass")},
-        {"max_laden_mass_service", qtTrId("lc-euvrc-doc-max-laden-mass-service")},
-        {"max_laden_mass_whole", qtTrId("lc-euvrc-doc-max-laden-mass-whole")},
-        {"power_weight_ratio", qtTrId("lc-euvrc-doc-power-weight")},
-        {"number_of_seats", qtTrId("lc-euvrc-doc-seats")},
-        {"number_of_standing_places", qtTrId("lc-euvrc-doc-standing-places")},
-        {"number_of_axles", qtTrId("lc-euvrc-doc-axles")},
-        {"wheelbase", qtTrId("lc-euvrc-doc-wheelbase")},
-        {"braked_trailer_mass", qtTrId("lc-euvrc-doc-braked-trailer")},
-        {"unbraked_trailer_mass", qtTrId("lc-euvrc-doc-unbraked-trailer")},
-        {"rated_engine_speed", qtTrId("lc-euvrc-doc-rated-engine-speed")},
-        {"stationary_sound_level", qtTrId("lc-euvrc-doc-stationary-sound")},
-        {"engine_speed_ref", qtTrId("lc-euvrc-doc-engine-speed-ref")},
-        {"drive_by_sound", qtTrId("lc-euvrc-doc-drive-by-sound")},
-        {"fuel_consumption", qtTrId("lc-euvrc-doc-fuel-consumption")},
-        {"co2_emissions", qtTrId("lc-euvrc-doc-co2")},
-        {"environmental_category", qtTrId("lc-euvrc-doc-env-category")},
-        {"fuel_tank_capacity", qtTrId("lc-euvrc-doc-fuel-tank")},
+        {u"engine_capacity", qtTrId("lc-euvrc-doc-capacity")},
+        {u"maximum_net_power", qtTrId("lc-euvrc-doc-power")},
+        {u"type_of_fuel", qtTrId("lc-euvrc-doc-fuel-type")},
+        {u"engine_id_number", qtTrId("lc-euvrc-doc-engine-number")},
+        {u"vehicle_mass", qtTrId("lc-euvrc-doc-mass")},
+        {u"maximum_permissible_laden_mass", qtTrId("lc-euvrc-doc-max-laden-mass")},
+        {u"max_laden_mass_service", qtTrId("lc-euvrc-doc-max-laden-mass-service")},
+        {u"max_laden_mass_whole", qtTrId("lc-euvrc-doc-max-laden-mass-whole")},
+        {u"power_weight_ratio", qtTrId("lc-euvrc-doc-power-weight")},
+        {u"number_of_seats", qtTrId("lc-euvrc-doc-seats")},
+        {u"number_of_standing_places", qtTrId("lc-euvrc-doc-standing-places")},
+        {u"number_of_axles", qtTrId("lc-euvrc-doc-axles")},
+        {u"wheelbase", qtTrId("lc-euvrc-doc-wheelbase")},
+        {u"braked_trailer_mass", qtTrId("lc-euvrc-doc-braked-trailer")},
+        {u"unbraked_trailer_mass", qtTrId("lc-euvrc-doc-unbraked-trailer")},
+        {u"rated_engine_speed", qtTrId("lc-euvrc-doc-rated-engine-speed")},
+        {u"stationary_sound_level", qtTrId("lc-euvrc-doc-stationary-sound")},
+        {u"engine_speed_ref", qtTrId("lc-euvrc-doc-engine-speed-ref")},
+        {u"drive_by_sound", qtTrId("lc-euvrc-doc-drive-by-sound")},
+        {u"fuel_consumption", qtTrId("lc-euvrc-doc-fuel-consumption")},
+        {u"co2_emissions", qtTrId("lc-euvrc-doc-co2")},
+        {u"environmental_category", qtTrId("lc-euvrc-doc-env-category")},
+        {u"fuel_tank_capacity", qtTrId("lc-euvrc-doc-fuel-tank")},
     };
 
     QString rows;
     for (const auto& f : fields)
-        rows += emitRow(f.label, getFieldValue(cardData, f.key));
+        rows += emitRow(f.label, fieldValue(groups, f.key));
 
     if (rows.isEmpty())
         return {};
@@ -179,23 +181,23 @@ QString EuVrcTextDocument::buildEngineTechnicalSection(const LibreSCRS::Plugin::
     return "<h2>" + qtTrId("lc-euvrc-doc-engine-technical") + "</h2>\n<table>\n" + rows + "</table>\n";
 }
 
-QString EuVrcTextDocument::buildHolderSection(const LibreSCRS::Plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildHolderSection(const FieldGroupList& groups) const
 {
     struct Field
     {
-        const char* key;
+        QStringView key;
         QString label;
         bool isAddress;
     };
     std::vector<Field> fields = {
-        {"holder_name", qtTrId("lc-euvrc-doc-holder-name"), false},
-        {"holder_other_names", qtTrId("lc-euvrc-doc-holder-other-names"), false},
-        {"holder_address", qtTrId("lc-euvrc-doc-holder-address"), true},
+        {u"holder_name", qtTrId("lc-euvrc-doc-holder-name"), false},
+        {u"holder_other_names", qtTrId("lc-euvrc-doc-holder-other-names"), false},
+        {u"holder_address", qtTrId("lc-euvrc-doc-holder-address"), true},
     };
 
     QString rows;
     for (const auto& f : fields) {
-        auto val = getFieldValue(cardData, f.key);
+        auto val = fieldValue(groups, f.key);
         if (f.isAddress && !val.isEmpty())
             val = cleanAddress(val);
         rows += emitRow(f.label, val);
@@ -207,9 +209,9 @@ QString EuVrcTextDocument::buildHolderSection(const LibreSCRS::Plugin::CardData&
     return "<h2>" + qtTrId("lc-euvrc-doc-holder-data") + "</h2>\n<table>\n" + rows + "</table>\n";
 }
 
-QString EuVrcTextDocument::buildOwnerSection(const LibreSCRS::Plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildOwnerSection(const FieldGroupList& groups) const
 {
-    auto val = getFieldValue(cardData, "owner2_name");
+    auto val = fieldValue(groups, u"owner2_name");
     auto row = emitRow(qtTrId("lc-euvrc-doc-owner-name"), val);
     if (row.isEmpty())
         return {};
@@ -217,23 +219,23 @@ QString EuVrcTextDocument::buildOwnerSection(const LibreSCRS::Plugin::CardData& 
     return "<h2>" + qtTrId("lc-euvrc-doc-owner-data") + "</h2>\n<table>\n" + row + "</table>\n";
 }
 
-QString EuVrcTextDocument::buildUserSection(const LibreSCRS::Plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildUserSection(const FieldGroupList& groups) const
 {
     struct Field
     {
-        const char* key;
+        QStringView key;
         QString label;
         bool isAddress;
     };
     std::vector<Field> fields = {
-        {"user_name", qtTrId("lc-euvrc-doc-user-name"), false},
-        {"user_other_names", qtTrId("lc-euvrc-doc-user-other-names"), false},
-        {"user_address", qtTrId("lc-euvrc-doc-user-address"), true},
+        {u"user_name", qtTrId("lc-euvrc-doc-user-name"), false},
+        {u"user_other_names", qtTrId("lc-euvrc-doc-user-other-names"), false},
+        {u"user_address", qtTrId("lc-euvrc-doc-user-address"), true},
     };
 
     QString rows;
     for (const auto& f : fields) {
-        auto val = getFieldValue(cardData, f.key);
+        auto val = fieldValue(groups, f.key);
         if (f.isAddress && !val.isEmpty())
             val = cleanAddress(val);
         rows += emitRow(f.label, val);
@@ -245,37 +247,34 @@ QString EuVrcTextDocument::buildUserSection(const LibreSCRS::Plugin::CardData& c
     return "<h2>" + qtTrId("lc-euvrc-doc-user-data") + "</h2>\n<table>\n" + rows + "</table>\n";
 }
 
-QString EuVrcTextDocument::buildNationalSection(const LibreSCRS::Plugin::CardData& cardData) const
+QString EuVrcTextDocument::buildNationalSection(const FieldGroupList& groups) const
 {
-    auto natGroupOpt = cardData.findGroup("national");
-    if (!natGroupOpt)
+    const auto* natGroup = findGroup(groups, u"national");
+    if (!natGroup)
         return {};
-    const auto& natGroup = cardData.groupAt(*natGroupOpt);
-    if (natGroup.fields.empty())
+    if (natGroup->fields.isEmpty())
         return {};
 
     // Known Serbian national extension labels
-    const std::map<std::string, QString> knownLabels = {
-        {"owners_personal_no", qtTrId("lc-euvrc-nat-owners-personal-no")},
-        {"users_personal_no", qtTrId("lc-euvrc-nat-users-personal-no")},
-        {"vehicle_load", qtTrId("lc-euvrc-nat-vehicle-load")},
-        {"year_of_production", qtTrId("lc-euvrc-nat-year-of-production")},
-        {"serial_number", qtTrId("lc-euvrc-nat-serial-number")},
+    const std::map<QString, QString> knownLabels = {
+        {QStringLiteral("owners_personal_no"), qtTrId("lc-euvrc-nat-owners-personal-no")},
+        {QStringLiteral("users_personal_no"), qtTrId("lc-euvrc-nat-users-personal-no")},
+        {QStringLiteral("vehicle_load"), qtTrId("lc-euvrc-nat-vehicle-load")},
+        {QStringLiteral("year_of_production"), qtTrId("lc-euvrc-nat-year-of-production")},
+        {QStringLiteral("serial_number"), qtTrId("lc-euvrc-nat-serial-number")},
     };
 
     QString rows;
-    for (const auto& field : natGroup.fields) {
-        auto textOpt = field.textValue();
-        if (!textOpt.has_value())
-            continue;
-        auto val = QString::fromStdString(*textOpt);
+    for (const auto& field : natGroup->fields) {
+        const QString val = field.value;
         if (val.isEmpty())
             continue;
 
         auto it = knownLabels.find(field.key);
-        QString label = (it != knownLabels.end()) ? it->second : QString::fromStdString(field.label);
+        QString label =
+            (it != knownLabels.end()) ? it->second : field.extra.value(QStringLiteral("labelFallback")).toString();
         if (label.isEmpty())
-            label = QString::fromStdString(field.key);
+            label = field.key;
 
         rows += emitRow(label, val);
     }

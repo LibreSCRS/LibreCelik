@@ -11,7 +11,7 @@
 class TokenWidgetPlugin : public QObject, public CardWidgetPlugin
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.librescrs.CardWidgetPlugin/1.0" FILE "token.json")
+    Q_PLUGIN_METADATA(IID "org.librescrs.CardWidgetPlugin/2.0" FILE "token.json")
     Q_INTERFACES(CardWidgetPlugin)
 
 public:
@@ -27,5 +27,5 @@ public:
     {
         return {QStringLiteral("pkcs15"), QStringLiteral("cardedge"), QStringLiteral("opensc")};
     }
-    QWidget* createWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent) const override;
+    QWidget* createWidget(const QList<LibreSCRS::AgentClient::FieldGroup>& groups, QWidget* parent) const override;
 };

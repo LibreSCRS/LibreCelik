@@ -3,8 +3,9 @@
 
 #include <gtest/gtest.h>
 #include <QApplication>
+#include <QList>
 #include "pivtextdocument.h"
-#include <LibreSCRS/Plugin/CardData.h>
+#include <LibreSCRS/AgentClient/Types.h>
 
 int main(int argc, char** argv)
 {
@@ -15,57 +16,71 @@ int main(int argc, char** argv)
 
 namespace {
 
-LibreSCRS::Plugin::CardData makePIVCardData()
-{
-    LibreSCRS::Plugin::CardData data;
-    data.cardType = "piv";
+using LibreSCRS::AgentClient::Field;
+using LibreSCRS::AgentClient::FieldGroup;
 
-    auto addText = [](LibreSCRS::Plugin::CardFieldGroup& g, const std::string& key, const std::string& val) {
-        if (!val.empty())
-            g.fields.push_back({key, key, LibreSCRS::Plugin::FieldType::Text, {val.begin(), val.end()}});
+/// A text field in the shape the agent's identity read ships: the value is
+/// already stringified, and the `type` token is the one the shared flatten
+/// rule reads.
+Field textField(const QString& key, const QString& value)
+{
+    Field field;
+    field.key = key;
+    field.value = value;
+    field.extra.insert(QStringLiteral("type"), QStringLiteral("text"));
+    return field;
+}
+
+QList<FieldGroup> makePIVGroups()
+{
+    QList<FieldGroup> groups;
+
+    auto addText = [](FieldGroup& g, const QString& key, const QString& val) {
+        if (!val.isEmpty())
+            g.fields.append(textField(key, val));
     };
 
     {
-        LibreSCRS::Plugin::CardFieldGroup chuid;
-        chuid.groupKey = "chuid";
-        addText(chuid, "guid", "3F2504E0-4F89-11D3-9A0C-0305E82C3301");
-        addText(chuid, "fascn", "1234567890ABCDEF");
-        addText(chuid, "expirationDate", "2030-12-31");
-        data.groups.push_back(std::move(chuid));
+        FieldGroup chuid;
+        chuid.key = QStringLiteral("chuid");
+        addText(chuid, QStringLiteral("guid"), QStringLiteral("3F2504E0-4F89-11D3-9A0C-0305E82C3301"));
+        addText(chuid, QStringLiteral("fascn"), QStringLiteral("1234567890ABCDEF"));
+        addText(chuid, QStringLiteral("expirationDate"), QStringLiteral("2030-12-31"));
+        groups.append(std::move(chuid));
     }
     {
-        LibreSCRS::Plugin::CardFieldGroup ccc;
-        ccc.groupKey = "ccc";
-        addText(ccc, "cardIdentifier", "ABCDEF1234567890");
-        data.groups.push_back(std::move(ccc));
+        FieldGroup ccc;
+        ccc.key = QStringLiteral("ccc");
+        addText(ccc, QStringLiteral("cardIdentifier"), QStringLiteral("ABCDEF1234567890"));
+        groups.append(std::move(ccc));
     }
     {
-        LibreSCRS::Plugin::CardFieldGroup printed;
-        printed.groupKey = "printed";
-        addText(printed, "name", "John Doe");
-        addText(printed, "employeeAffiliation", "Government");
-        addText(printed, "org1", "Department of Testing");
-        addText(printed, "org2", "Division of Units");
-        addText(printed, "serialNumber", "SN-12345");
-        addText(printed, "issuerId", "ISS-001");
-        data.groups.push_back(std::move(printed));
+        FieldGroup printed;
+        printed.key = QStringLiteral("printed");
+        addText(printed, QStringLiteral("name"), QStringLiteral("John Doe"));
+        addText(printed, QStringLiteral("employeeAffiliation"), QStringLiteral("Government"));
+        addText(printed, QStringLiteral("org1"), QStringLiteral("Department of Testing"));
+        addText(printed, QStringLiteral("org2"), QStringLiteral("Division of Units"));
+        addText(printed, QStringLiteral("serialNumber"), QStringLiteral("SN-12345"));
+        addText(printed, QStringLiteral("issuerId"), QStringLiteral("ISS-001"));
+        groups.append(std::move(printed));
     }
     {
-        LibreSCRS::Plugin::CardFieldGroup discovery;
-        discovery.groupKey = "discovery";
-        addText(discovery, "pinPolicy", "Application PIN required");
-        data.groups.push_back(std::move(discovery));
+        FieldGroup discovery;
+        discovery.key = QStringLiteral("discovery");
+        addText(discovery, QStringLiteral("pinPolicy"), QStringLiteral("Application PIN required"));
+        groups.append(std::move(discovery));
     }
     {
-        LibreSCRS::Plugin::CardFieldGroup keyHistory;
-        keyHistory.groupKey = "key_history";
-        addText(keyHistory, "onCardCerts", "3");
-        addText(keyHistory, "offCardCerts", "0");
-        addText(keyHistory, "offCardURL", "https://example.com/certs");
-        data.groups.push_back(std::move(keyHistory));
+        FieldGroup keyHistory;
+        keyHistory.key = QStringLiteral("key_history");
+        addText(keyHistory, QStringLiteral("onCardCerts"), QStringLiteral("3"));
+        addText(keyHistory, QStringLiteral("offCardCerts"), QStringLiteral("0"));
+        addText(keyHistory, QStringLiteral("offCardURL"), QStringLiteral("https://example.com/certs"));
+        groups.append(std::move(keyHistory));
     }
 
-    return data;
+    return groups;
 }
 
 } // namespace
@@ -86,13 +101,12 @@ QApplication* PIVTextDocumentTest::app = nullptr;
 
 TEST_F(PIVTextDocumentTest, ConstructionSucceeds)
 {
-    auto data = makePIVCardData();
+    auto data = makePIVGroups();
     EXPECT_NO_THROW(PIVTextDocument doc(data));
 }
 
 TEST_F(PIVTextDocumentTest, EmptyDataProducesValidDocument)
 {
-    LibreSCRS::Plugin::CardData emptyData;
-    emptyData.cardType = "piv";
+    QList<FieldGroup> emptyData;
     EXPECT_NO_THROW(PIVTextDocument doc(emptyData));
 }

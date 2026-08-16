@@ -3,26 +3,19 @@
 
 #include "librecelik.h"
 #include "aboutdialog.h"
+#include "agent/agentstatewidget.h"
+#include "agent/cardcontroller.h"
+#include "agent/live/liveagentgateway.h"
+#include "agent/optionalsections.h"
+#include "certificate/certificateviewerdlg.h"
 #include "config.h"
+#include "document/tokensection.h"
 #include "settings/settingsdialog.h"
 #include "settings/settingskeys.h"
-#include "document/rs-eid/changepindlg.h"
-#include "document/emrtd/emrtdauthwidget.h"
-#include "document/tokensection.h"
-#include "plugin/carddatautils.h"
-#include "smartcard/smartcardreaderlistener.h"
 #include "ui_librecelik.h"
 #include "utils/libreceliklog.h"
 
-#include <LibreSCRS/Plugin/CardPluginService.h>
-#include <LibreSCRS/SmartCard/CardSession.h>
-
-#ifdef LIBRECELIK_SIGNING_ENABLED
-#include "signing/signingconfiguration.h"
-#include "signing/signingwizard.h"
-#include <LibreSCRS/Signing/SigningService.h>
-#include <LibreSCRS/Trust/TrustStoreService.h>
-#endif
+#include <LibreSCRS/AgentClient/AgentCapabilities.h>
 
 #ifdef Q_OS_MACOS
 #include "utils/macos_menu.h"
@@ -31,8 +24,8 @@
 #include "utils/localeresolver.h"
 
 #include <algorithm>
-#include <filesystem>
 #include <memory>
+#include <utility>
 
 #include <QApplication>
 #include <QColor>
@@ -45,47 +38,107 @@
 #include <QProgressBar>
 #include <QScrollArea>
 #include <QSettings>
-#include <QSpacerItem>
-#include <QStandardPaths>
-#include <QTimer>
-#include <QThread>
+#include <QStringList>
 #include <QVBoxLayout>
+
+using librecelik::agent::AgentGateway;
+using librecelik::agent::CardController;
+using librecelik::agent::PresenceState;
+using LibreSCRS::AgentClient::CertificateInfo;
+using LibreSCRS::AgentClient::CredentialList;
+using LibreSCRS::AgentClient::FieldGroup;
+using LibreSCRS::AgentClient::UiState;
+namespace Cap = LibreSCRS::AgentClient::Cap;
 
 namespace {
 
-/// Format ATR (or any byte sequence) as a hex QString.
+/// The feature token that says the agent can name a card's type at all. An
+/// agent without it never sends one, which is a different situation from a
+/// card whose type has not resolved YET.
+constexpr QLatin1StringView kCardTypeFeature{"card-type"};
+
+/// The card type of the generic PKI page — the surface the middleware read
+/// path always used for a card no family plugin claimed.
+constexpr QLatin1StringView kGenericTokenCardType{"token"};
+
+/// Display form of the ATR the agent reports for an unrecognised card: the
+/// leading @p maxBytes bytes, space-separated and upper-case, with a marker
+/// when the ATR is longer.
 ///
-/// `sep == '\0'`        flat, no separator: "3bf99600"
-/// `sep == ' '`         display:            "3B F9 96 00"
-/// `sep == ':'`         canonical:          "3B:F9:96:00"
-/// `upper`              true → uppercase hex digits (A-F)
-/// `maxBytes`           0 → format all; >0 → truncate to first N bytes
-///                      and append " ..." when the source is longer
-///                      (truncation marker is space-prefixed regardless
-///                      of `sep`, so log + display forms both read clean).
-QString atrToHex(const std::vector<std::uint8_t>& bytes, char sep = '\0', bool upper = false, int maxBytes = 0)
+/// The middleware read path built this out of the raw ATR bytes; the agent
+/// hands the ATR over as a flat hex string, so the same display shape is a
+/// regrouping of characters rather than a formatting of bytes. An odd-length
+/// input (which the client contract does not produce) keeps its trailing nibble
+/// rather than silently dropping it.
+[[nodiscard]] QString atrSnippet(const QString& atrHex, qsizetype maxBytes = 6)
 {
-    const char* fmt = upper ? "%02X" : "%02x";
-    const int total = static_cast<int>(bytes.size());
-    const int n = (maxBytes > 0 && maxBytes < total) ? maxBytes : total;
-    const bool truncated = n < total;
-
-    qsizetype cap = static_cast<qsizetype>(n) * 2;
-    if (sep != '\0' && n > 1)
-        cap += n - 1;
-    if (truncated)
-        cap += 4;
-
-    QString out;
-    out.reserve(cap);
-    for (int i = 0; i < n; ++i) {
-        if (i > 0 && sep != '\0')
-            out.append(QLatin1Char(sep));
-        out.append(QString::asprintf(fmt, bytes[i]));
-    }
-    if (truncated)
-        out.append(QStringLiteral(" ..."));
+    QStringList bytes;
+    for (qsizetype offset = 0; offset < atrHex.size() && bytes.size() < maxBytes; offset += 2)
+        bytes << atrHex.mid(offset, 2).toUpper();
+    QString out = bytes.join(QLatin1Char(' '));
+    if (bytes.size() * 2 < atrHex.size())
+        out += QStringLiteral(" ...");
     return out;
+}
+
+/// Whether @p widget is the read-in-progress placeholder rather than a built
+/// card page.
+[[nodiscard]] bool isSpinner(QWidget* widget)
+{
+    return widget != nullptr && widget->property("isSpinner").toBool();
+}
+
+/// Group keys that carry no user-visible card data: the read's own
+/// bookkeeping, and the PKI material the token section renders instead.
+[[nodiscard]] bool isVisibleDataGroup(const FieldGroup& group)
+{
+    if (group.fields.isEmpty())
+        return false;
+    return group.key != QLatin1StringView("error") && group.key != QLatin1StringView("presence") &&
+           group.key != QLatin1StringView("token") && group.key != QLatin1StringView("meta") &&
+           group.key != QLatin1StringView("certificates") && group.key != QLatin1StringView("pins");
+}
+
+[[nodiscard]] bool hasVisibleData(const QList<FieldGroup>& groups)
+{
+    return std::any_of(groups.begin(), groups.end(), isVisibleDataGroup);
+}
+
+/// The read-in-progress page. @p text names what is being waited for — a card
+/// read, or the holder's answer in the agent's own dialog.
+[[nodiscard]] QWidget* makeSpinnerPage(const QString& text, QWidget* parent)
+{
+    auto* spinnerWidget = new QWidget(parent);
+    spinnerWidget->setProperty("isSpinner", true);
+    auto* layout = new QVBoxLayout(spinnerWidget);
+    layout->setAlignment(Qt::AlignCenter);
+    auto* bar = new QProgressBar(spinnerWidget);
+    bar->setRange(0, 0);
+    bar->setFixedWidth(200);
+    bar->setTextVisible(false);
+    auto* label = new QLabel(text, spinnerWidget);
+    label->setAlignment(Qt::AlignCenter);
+    label->setWordWrap(true);
+    layout->addWidget(bar);
+    layout->addWidget(label);
+    return spinnerWidget;
+}
+
+/// The card page shell every built page shares: a scroll area over a top-
+/// aligned column, @p content first.
+[[nodiscard]] QScrollArea* makeCardPage(QWidget* content, QWidget* parent)
+{
+    auto* container = new QWidget(parent);
+    auto* containerLayout = new QVBoxLayout(container);
+    containerLayout->setContentsMargins(0, 0, 0, 0);
+    containerLayout->setAlignment(Qt::AlignTop);
+    containerLayout->addWidget(content);
+
+    auto* scrollArea = new QScrollArea(parent);
+    scrollArea->setWidgetResizable(true);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    scrollArea->setWidget(container);
+    return scrollArea;
 }
 
 } // namespace
@@ -105,54 +158,10 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
     ui->setupUi(this);
     uiReady = true;
 
-#ifdef LIBRECELIK_SIGNING_ENABLED
-    // Construct the shared LibreSCRS::Signing::SigningService once per
-    // application lifetime via pure constructor DI (4.0 contract; no
-    // instance()/configure*() accessors). Trust and TSA policy are loaded
-    // from QSettings via SigningConfiguration and passed at construction
-    // time; config is immutable post-ctor. The signing wizard (constructed
-    // below per request) consumes the shared_ptr via injection.
-    signingConfiguration = std::make_unique<signing::SigningConfiguration>();
-    // TrustStoreService is the lifecycle owner of the
-    // unified TrustStore. create() is non-throwing and never blocks on
-    // network IO; eager TL fetches run on internal worker threads and
-    // merge into the public store as they complete. Cert viewer and other
-    // consumers obtain the store via trustService->trustStore().
-    {
-        auto trustResult = LibreSCRS::Trust::TrustStoreService::create(signingConfiguration->makeTrustConfig());
-        if (!trustResult) {
-            qCWarning(lcGeneral) << "Trust store init failed:"
-                                 << QString::fromStdString(trustResult.error().userMessage.defaultText);
-            // Fall back to a default/empty TrustStoreService so the rest of the
-            // GUI lifecycle doesn't break — best-effort match for the existing
-            // 'never null' assumption downstream. If the fallback also fails
-            // (only realistic under catastrophic OOM), surface critically and
-            // leave trustService null; downstream signing paths will see the
-            // null and fail with clear diagnostics rather than silently no-op.
-            LibreSCRS::Trust::TrustConfig fallback;
-            fallback.includeSystemTrustStore = false;
-            auto fallbackResult = LibreSCRS::Trust::TrustStoreService::create(std::move(fallback));
-            if (fallbackResult) {
-                trustService = *fallbackResult;
-            } else {
-                qCCritical(lcGeneral) << "Trust store fallback init ALSO failed:"
-                                      << QString::fromStdString(fallbackResult.error().userMessage.defaultText)
-                                      << "— signing flows will fail until the host is restarted.";
-                trustService = nullptr;
-            }
-        } else {
-            trustService = *trustResult;
-        }
-    }
-    // SigningConfiguration::makeTsaProvider returns a dynamic provider; the
-    // std::function is always non-empty. sign() surfaces TsaUnreachable
-    // if the resolved URL is empty or the TSA is offline.
-    signingService =
-        std::make_shared<LibreSCRS::Signing::SigningService>(trustService, signingConfiguration->makeTsaProvider());
-#endif
-
-    // Load card plugins. In deployed packages (AppImage, DMG) the plugins live
-    // next to the executable; fall back to the build-tree paths for development.
+    // Load the GUI plugins. In deployed packages (AppImage, DMG) they live next
+    // to the executable; fall back to the build-tree path for development.
+    // There is no middleware plugin directory to resolve any more — the agent
+    // owns the card drivers, and LC only renders what they produce.
     auto resolvePluginDir = [](const QString& subdir, const char* buildFallback) -> QString {
         QDir appDir(QCoreApplication::applicationDirPath());
 #ifdef Q_OS_MACOS
@@ -166,23 +175,26 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
             return bundleDir.absolutePath();
         return QString::fromUtf8(buildFallback);
     };
-
-    // LM 4.0: CardPluginService is ctor-loaded and move-only. Pass the
-    // middleware-plugins path at construction; the registry's LoadReport
-    // captures per-plugin load outcomes if diagnostics are needed.
-    // Trust subsystem: also pass the unified TrustStore obtained from SigningService;
-    // the registry calls CardPlugin::setTrustStore on every loaded plugin
-    // before exposing them, so plugins (rs-eid for card-data verification)
-    // get trust anchors from a single source.
-    middlewarePluginRegistry = std::make_shared<LibreSCRS::Plugin::CardPluginService>(
-        std::filesystem::path{resolvePluginDir("middleware-plugins", LIBREMIDDLEWARE_PLUGIN_DIR).toStdString()},
-        trustService ? trustService->trustStore() : nullptr);
     guiPluginRegistry.loadPluginsFromDirectory(resolvePluginDir("gui-plugins", LIBRECELIK_GUI_PLUGIN_DIR));
 
     ui->stackedWidget->setCurrentIndex(0);
 
-    connect(ui->readerComboBox, &QComboBox::currentIndexChanged, ui->readerStackedWidget,
-            &QStackedWidget::setCurrentIndex);
+    // Reader selection: cancel the read of the card being navigated away from
+    // before the switch. A page the user has left must not keep its card busy —
+    // this is what the middleware path's per-reader stop source used to do.
+    connect(ui->readerComboBox, &QComboBox::currentIndexChanged, this, [this](int index) {
+        const int leaving = ui->readerStackedWidget->currentIndex();
+        if (leaving >= 0 && leaving != index) {
+            for (const auto& [cardId, page] : activeCards) {
+                if (ui->readerStackedWidget->indexOf(page) == leaving) {
+                    if (auto* controller = gateway->cardController(cardId))
+                        controller->cancel();
+                    break;
+                }
+            }
+        }
+        ui->readerStackedWidget->setCurrentIndex(index);
+    });
 
     ui->statusbar->hide();
     // Menu bar. On macOS the Edit menu is omitted entirely — LC has no edit
@@ -227,10 +239,16 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
     });
 
     updateAboutText();
-    connect(smartCardReaderListener(), &SmartCardReaderListener::smartCardReaderEventOccured, this,
-            &LibreCelik::onCardEventReceived);
-    connect(smartCardReaderListener(), &SmartCardReaderListener::smartCardReaderEnumerationChanged, this,
-            &LibreCelik::onSmartCardReaderEnumerationChanged);
+
+    gateway = std::make_unique<librecelik::agent::LiveAgentGateway>();
+    connect(gateway.get(), &AgentGateway::presenceChanged, this, &LibreCelik::onPresenceChanged);
+    connect(gateway.get(), &AgentGateway::readersChanged, this, &LibreCelik::onReadersChanged);
+    connect(gateway.get(), &AgentGateway::cardChanged, this, &LibreCelik::onCardChanged);
+    connect(gateway.get(), &AgentGateway::cardRemoved, this, &LibreCelik::onCardRemoved);
+    connect(ui->agentStateWidget, &librecelik::agent::AgentStateWidget::retryRequested, this,
+            [this]() { gateway->refresh(); });
+    onPresenceChanged(gateway->presence());
+    onReadersChanged();
 }
 
 void LibreCelik::updateAboutText()
@@ -288,622 +306,432 @@ void LibreCelik::changeEvent(QEvent* event)
         ui->retranslateUi(this);
         retranslateMenuBar();
         updateAboutText();
+        // setupUi's retranslate resets the .ui labels to visible; the guided
+        // panel's claim over them is state, not text, so it is re-applied.
+        updateEmptyState();
     }
     QMainWindow::changeEvent(event);
 }
 
-void LibreCelik::onCardEventReceived(const LibreSCRS::SmartCard::MonitorEvent& event)
+// ---- presence and roster -------------------------------------------------
+
+void LibreCelik::onPresenceChanged(PresenceState state)
 {
-    using Kind = LibreSCRS::SmartCard::MonitorEvent::Kind;
-    qCDebug(lcGeneral) << "MonitorEvent:" << (event.kind == Kind::CardInserted ? "CardInserted" : "CardRemoved")
-                       << "received on reader:" << QString::fromStdString(event.readerName);
-    qCDebug(lcProbeQuieting) << "LC-EVENT kind=" << (event.kind == Kind::CardInserted ? "CardInserted" : "CardRemoved")
-                             << "reader=" << QString::fromStdString(event.readerName)
-                             << "activeReaders=" << activeReaders.size();
-    if (event.kind == Kind::CardInserted) {
-        // Invalidate any pending retries from a previous event on this reader
-        // and create a fresh stop_source for this card insertion.
-        readerStopSource[event.readerName].request_stop();
-        readerStopSource[event.readerName] = {};
-        addNewReader(event.readerName);
-    } else if (event.kind == Kind::CardRemoved) {
-        // Announce removal BEFORE tearing down the reader's bookkeeping so
-        // that any in-flight UI flow tied to this reader (the modal
-        // SigningWizard is the canonical one) can act while its session
-        // and plugin handles are still valid. The synchronous
-        // Qt::AutoConnection path means subscribers run on the GUI
-        // thread, in line, ahead of removeReader.
-        emit cardRemoved(QString::fromStdString(event.readerName));
-        // Cancel any pending retry timers for this reader.
-        readerStopSource[event.readerName].request_stop();
-        removeReader(event.readerName);
-    }
-}
-
-void LibreCelik::onSmartCardReaderEnumerationChanged(const QStringList& scrNames)
-{
-    std::vector<std::string> readers;
-    for (const auto& [name, _] : activeReaders)
-        readers.push_back(name);
-
-    std::vector<std::string> scrNamesStd;
-    scrNamesStd.reserve(static_cast<size_t>(scrNames.size()));
-    for (const auto& s : scrNames)
-        scrNamesStd.push_back(s.toStdString());
-    std::sort(scrNamesStd.begin(), scrNamesStd.end());
-
-    // Remove unplugged readers
-    std::vector<std::string> toRemove;
-    std::set_difference(std::begin(readers), std::end(readers), std::begin(scrNamesStd), std::end(scrNamesStd),
-                        std::inserter(toRemove, std::begin(toRemove)));
-    for (const auto& scrName : toRemove) {
-        removeReader(scrName);
-    }
-}
-
-void LibreCelik::addNewReader(std::string reader, int retryCount)
-{
-    qCDebug(lcGeneral) << "addNewReader:" << QString::fromStdString(reader) << "retry=" << retryCount
-                       << "activeReaders.count=" << activeReaders.count(reader);
-    qCDebug(lcProbeQuieting) << "LC-ADD-ENTRY reader=" << QString::fromStdString(reader) << "retry=" << retryCount
-                             << "activeReaders.has=" << (activeReaders.count(reader) > 0)
-                             << "caller=" << (retryCount == 0 ? "event" : "timer");
-
-    if (retryCount == 0) {
-        // Fresh card event: defensively remove any stale widget left over from a
-        // fast swap where CardRemoved wasn't emitted (no-op if nothing registered).
-        removeReader(reader);
-        // Give previous AsyncCardReader's PCSC handle time to release before connecting.
-        // macOS PCSC daemon serializes SCardTransmit per reader, so a lingering
-        // handle from the cleanup thread would block our APDU probing.
-        auto stopToken = readerStopSource[reader].get_token();
-        QTimer::singleShot(200, this, [this, reader, stopToken]() {
-            if (stopToken.stop_requested())
-                return;
-            addNewReader(reader, 1);
-        });
-        return;
-    } else if (activeReaders.count(reader)) {
-        // Retry timer: a widget was created while this timer was pending — stop.
+    if (state != PresenceState::Ready) {
+        // Every page belonged to a roster the agent owned. The gateway has
+        // already announced each card's removal (the client clears its whole
+        // registry with no per-card event, which is exactly the gap the gateway
+        // fills), so the pages are gone by now and only the panel is left.
+        ui->agentStateWidget->setState(state, false);
+        updateEmptyState();
         return;
     }
+    onReadersChanged();
+}
 
-    auto stopToken = readerStopSource[reader].get_token();
-
-    std::shared_ptr<LibreSCRS::SmartCard::CardSession> session;
-    {
-        auto opened = LibreSCRS::SmartCard::CardSession::open(reader);
-        if (!opened.has_value()) {
-            if (retryCount < 6) {
-                int delay = 200 + retryCount * 150; // progressive: 350, 500, 650, 800, 950ms
-                qCDebug(lcProbeQuieting) << "LC-PROBE-RETRY reader=" << QString::fromStdString(reader)
-                                         << "retry=" << retryCount << "delay=" << delay;
-                QTimer::singleShot(delay, this, [this, reader, retryCount, stopToken]() {
-                    if (stopToken.stop_requested())
-                        return;
-                    addNewReader(reader, retryCount + 1);
-                });
-            } else {
-                ui->statusbar->show();
-                ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card"));
-            }
-            return;
-        }
-        session = std::make_shared<LibreSCRS::SmartCard::CardSession>(std::move(*opened));
+void LibreCelik::onReadersChanged()
+{
+    const QList<librecelik::agent::ReaderInfo> readers = gateway->readers();
+    // Arrivals: a card already in the roster when this window opened, or one
+    // whose reader event reached us before its own cardChanged did.
+    for (const librecelik::agent::ReaderInfo& reader : readers) {
+        if (reader.hasCard && !reader.cardId.isEmpty() && !activeCards.contains(reader.cardId))
+            onCardChanged(reader.cardId);
     }
+    ui->agentStateWidget->setState(gateway->presence(), !readers.isEmpty());
+    updateEmptyState();
+}
 
-    qCDebug(lcProbeQuieting) << "LC-SESSION-OPEN reader=" << QString::fromStdString(reader) << "retry=" << retryCount
-                             << "atr=" << atrToHex(session->atr());
-    qCDebug(lcProbeQuieting) << "LC-PROBE-CALL reader=" << QString::fromStdString(reader) << "retry=" << retryCount
-                             << "atr=" << atrToHex(session->atr());
-    auto candidates = middlewarePluginRegistry->findAllCandidates(session->atr(), *session);
-    if (candidates.empty()) {
-        // Session opened successfully but no plugin matched — card is
-        // definitively unsupported. The middleware plugin chain has had full
-        // APDU access to the card; retrying changes nothing.
-        QString atrSnippet = atrToHex(session->atr(), ' ', /*upper=*/true, /*maxBytes=*/6);
+void LibreCelik::onCardChanged(const QString& objectId)
+{
+    if (activeCards.contains(objectId))
+        return; // a property change on a card that already has its page
+    if (failedReads.contains(objectId))
+        return; // its read already failed once; only a re-insertion retries it
+
+    // The client's cardChanged carries either a card id or a reader id; the
+    // gateway answers nullptr for everything that is not a live card, which is
+    // the only test this window needs.
+    CardController* controller = gateway->cardController(objectId);
+    if (controller == nullptr)
+        return;
+
+    addCardPage(objectId, controller);
+}
+
+void LibreCelik::onCardRemoved(const QString& cardId)
+{
+    // A card that leaves clears its failure memory: pulling and re-inserting
+    // it is the one gesture that MUST get a fresh read.
+    failedReads.erase(cardId);
+    if (!activeCards.contains(cardId))
+        return;
+
+    // Announce BEFORE teardown so page-level consumers inside this window's
+    // widget tree can act while their widgets are still valid.
+    emit cardRemoved(cardId);
+    releaseCardPage(cardId);
+}
+
+void LibreCelik::updateEmptyState()
+{
+    if (!gateway)
+        return; // a language change delivered before the gateway exists
+    const bool guided = gateway->presence() != PresenceState::Ready;
+    // Do not claim that no card was detected in any reader while LC cannot
+    // reach the component that enumerates them — the guided panel is the only
+    // honest copy in that state.
+    ui->label_3->setVisible(!guided);
+    ui->label_4->setVisible(!guided);
+    ui->readerComboBox->setVisible(ui->readerComboBox->count() > 1);
+    ui->stackedWidget->setCurrentIndex(!guided && !activeCards.empty() ? 1 : 0);
+}
+
+QString LibreCelik::readerNameForCard(const QString& cardId) const
+{
+    const QList<librecelik::agent::ReaderInfo> readers = gateway->readers();
+    for (const librecelik::agent::ReaderInfo& reader : readers) {
+        if (reader.cardId == cardId)
+            return reader.name.isEmpty() ? reader.id : reader.name;
+    }
+    return cardId;
+}
+
+// ---- per-card pages ------------------------------------------------------
+
+void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
+{
+    const std::uint32_t caps = controller->capabilityBits();
+    const UiState state = LibreSCRS::AgentClient::resolveCardState(caps, controller->preReadAuth(), /*present=*/true,
+                                                                   /*identityRead=*/false);
+
+    if (state == UiState::UnknownCard) {
+        // The agent matched no driver. That is a definitive verdict, not a
+        // transient one — it has already had full APDU access to the card —
+        // so there is nothing to retry and no page to build.
         ui->statusbar->show();
-        ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card-with-atr").arg(atrSnippet));
+        ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card-with-atr").arg(atrSnippet(controller->atrHex())));
         return;
     }
 
-    // A valid card is being added — clear any previous unsupported-card notice.
+    if (state == UiState::Error) {
+        // A driver matched, but its capabilities create no user surface at all
+        // (ancillary-only). There is nothing to render and nothing to retry.
+        ui->statusbar->show();
+        ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card"));
+        return;
+    }
+
+    // A readable card is being added — clear any previous unsupported notice.
     ui->statusbar->clearMessage();
 
-    auto* asyncReader =
-        new AsyncCardReader(std::move(candidates), middlewarePluginRegistry->plugins(), std::move(session), this);
+    // PreAuthRequired: startRead() below makes the AGENT prompt for the CAN or
+    // MRZ (the holder's choice and every retry live agent-side); LC only says
+    // where to look. No secret is ever collected in this process.
+    QWidget* spinner = makeSpinnerPage(
+        state == UiState::PreAuthRequired ? qtTrId("lc-agent-awaiting-preauth") : qtTrId("lc-reading-card"), this);
+    const int pageIndex = ui->readerStackedWidget->addWidget(spinner);
+    ui->readerComboBox->addItem(readerNameForCard(cardId));
+    ui->readerComboBox->setCurrentIndex(pageIndex);
+    activeCards[cardId] = spinner;
+    cardState[cardId] = {};
+    updateEmptyState();
 
-    // Show loading spinner immediately
-    auto* spinnerWidget = new QWidget(this);
-    spinnerWidget->setProperty("isSpinner", true);
-    {
-        auto* layout = new QVBoxLayout(spinnerWidget);
-        layout->setAlignment(Qt::AlignCenter);
-        auto* bar = new QProgressBar(spinnerWidget);
-        bar->setRange(0, 0);
-        bar->setFixedWidth(200);
-        bar->setTextVisible(false);
-        auto* label = new QLabel(qtTrId("lc-reading-card"), spinnerWidget);
-        label->setAlignment(Qt::AlignCenter);
-        layout->addWidget(bar);
-        layout->addWidget(label);
-    }
-
-    int spinnerIdx = ui->readerStackedWidget->addWidget(spinnerWidget);
-    ui->readerComboBox->addItem(QString::fromStdString(reader));
-    ui->readerComboBox->setCurrentIndex(spinnerIdx);
-    ui->readerComboBox->setVisible(ui->readerComboBox->count() > 1);
-    activeReaders[reader] = {asyncReader, spinnerWidget};
-    ui->stackedWidget->setCurrentIndex(1);
-
-    // Helper: detect if current widget is the loading spinner
-    auto isSpinner = [](QWidget* w) { return w && w->property("isSpinner").toBool(); };
-
-    // Helper: replace the current widget for a reader with a new one
-    auto replaceWidget = [this, reader](QWidget* newWidget) {
-        auto it = activeReaders.find(reader);
-        if (it == activeReaders.end())
+    connect(controller, &CardController::groupReady, this,
+            [this, cardId](const FieldGroup& group) { onGroupReady(cardId, group); });
+    connect(controller, &CardController::identityReady, this,
+            [this, cardId](const QList<FieldGroup>& groups) { onIdentityReady(cardId, groups); });
+    connect(controller, &CardController::cardTypeResolved, this,
+            [this, cardId](const QString&) { onCardTypeResolved(cardId); });
+    connect(controller, &CardController::certificatesReady, this, [this, cardId](const QList<CertificateInfo>& certs) {
+        auto entry = cardState.find(cardId);
+        if (entry == cardState.end())
             return;
-        auto* oldWidget = it->second.widget;
-        int widx = ui->readerStackedWidget->indexOf(oldWidget);
-        ui->readerStackedWidget->removeWidget(oldWidget);
-        oldWidget->deleteLater();
-        ui->readerStackedWidget->insertWidget(widx, newWidget);
-        ui->readerStackedWidget->setCurrentIndex(widx);
-        it->second.widget = newWidget;
-    };
-
-    connect(asyncReader, &AsyncCardReader::cardDataReady, this,
-            [this, asyncReader, reader, isSpinner, replaceWidget](const LibreSCRS::Plugin::CardData& data) {
-                auto it = activeReaders.find(reader);
-                if (it == activeReaders.end())
-                    return;
-                QWidget* self = this;
-
-                bool streamedWidget = it->second.widget && !isSpinner(it->second.widget);
-
-                // Authenticated re-reads are handled by the dialog's own lambda.
-                if (streamedWidget && data.findGroup("auth_required").has_value())
-                    return;
-
-                auto* guiPlugin = guiPluginRegistry.findByCardType(QString::fromStdString(data.cardType));
-                if (!guiPlugin) {
-                    ui->statusbar->show();
-                    ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card"));
-                    return;
-                }
-
-                // eMRTD two-phase auth: show inline CAN widget in the reader tab.
-                // The auth widget sets the "isSpinner" property so isSpinner() returns true.
-                // When PACE succeeds, cardGroupReady detects this and replaces the auth
-                // widget with the streaming card data widget — no explicit success handler needed.
-                if (data.findGroup("auth_required").has_value()) {
-                    // Re-entry guard: on wrong CAN retry, requestDataWithCredentials emits
-                    // cardDataReady with auth_required + error groups. Route the error to
-                    // the existing widget instead of creating a duplicate.
-                    if (auto* existing = qobject_cast<EMRTDAuthWidget*>(it->second.widget)) {
-                        if (auto errGroup = data.findGroup("error")) {
-                            auto errMsg = librecelik::plugin::getFieldValue(data, errGroup, "error");
-                            existing->onAuthFailed(errMsg.isEmpty() ? qtTrId("lc-error-auth-failed") : errMsg);
-                        }
-                        return;
-                    }
-
-                    auto* authWidget = new EMRTDAuthWidget(this);
-                    auto paceFlag =
-                        librecelik::plugin::getFieldValue(data, data.findGroup("auth_required"), "pace_supported");
-                    authWidget->setDefaultTab(paceFlag == "true");
-
-                    connect(authWidget, &EMRTDAuthWidget::credentialsEntered, asyncReader,
-                            &AsyncCardReader::requestDataWithCredentials);
-
-                    connect(asyncReader, &AsyncCardReader::errorOccurred, authWidget, &EMRTDAuthWidget::onAuthFailed);
-
-                    replaceWidget(authWidget);
-                    return;
-                }
-
-                auto hasVisibleData = [&data]() {
-                    return std::any_of(data.groups.begin(), data.groups.end(), [](const auto& g) {
-                        return g.groupKey != "auth_required" && g.groupKey != "error" && g.groupKey != "presence" &&
-                               g.groupKey != "token" && g.groupKey != "meta" && g.groupKey != "certificates" &&
-                               g.groupKey != "pins" && !g.fields.empty();
-                    });
-                };
-
-                // Streaming already built the card widget — just append TokenSection
-                if (streamedWidget) {
-                    bool visible = hasVisibleData();
-
-                    // Show auth failure message if card section is empty
-                    if (!visible) {
-                        auto* scrollArea = qobject_cast<QScrollArea*>(it->second.widget);
-                        if (scrollArea && scrollArea->widget()) {
-                            auto children =
-                                scrollArea->widget()->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
-                            if (!children.isEmpty())
-                                guiPlugin->showNoDataMessage(children.first());
-                        }
-                    }
-
-                    // Enable print button now that all data has arrived
-                    if (visible && guiPlugin->supportsPrinting()) {
-                        auto* scrollArea = qobject_cast<QScrollArea*>(it->second.widget);
-                        if (scrollArea && scrollArea->widget()) {
-                            auto* containerLayout = qobject_cast<QVBoxLayout*>(scrollArea->widget()->layout());
-                            if (containerLayout && containerLayout->count() > 0) {
-                                auto* cardWidget = containerLayout->itemAt(0)->widget();
-                                guiPlugin->enablePrintButton(cardWidget);
-                            }
-                        }
-                    }
-                    if (asyncReader->hasPKI()) {
-                        auto* scrollArea = qobject_cast<QScrollArea*>(it->second.widget);
-                        if (scrollArea && scrollArea->widget()) {
-                            auto* containerLayout = qobject_cast<QVBoxLayout*>(scrollArea->widget()->layout());
-                            if (containerLayout) {
-                                auto* pkiWidget = guiPlugin->createPKIWidget(self);
-                                if (!pkiWidget) {
-                                    auto* ts = new TokenSection(
-#ifdef LIBRECELIK_SIGNING_ENABLED
-                                        trustService ? trustService->trustStore() : nullptr,
-#else
-                                        nullptr,
-#endif
-                                        self);
-                                    ts->setHeaderColor(QColor(230, 135, 60));
-                                    ts->setHeaderHeight(56);
-                                    ts->setExpanded(!visible);
-#ifdef LIBRECELIK_SIGNING_ENABLED
-                                    ts->setReaderName(reader);
-#endif
-                                    pkiWidget = ts;
-                                }
-                                connectPKISignals(asyncReader, pkiWidget, reader);
-                                containerLayout->addWidget(pkiWidget);
-                                asyncReader->requestCertificates();
-                            }
-                        }
-                    }
-                    return;
-                }
-
-                QWidget* topWidget = guiPlugin->createWidget(data, self);
-                bool visible2 = hasVisibleData();
-
-                if (!visible2)
-                    guiPlugin->showNoDataMessage(topWidget);
-
-                // Enable print button for the non-streaming (full-data) path
-                if (visible2 && guiPlugin->supportsPrinting())
-                    guiPlugin->enablePrintButton(topWidget);
-
-                if (asyncReader->hasPKI()) {
-                    auto* pkiWidget = guiPlugin->createPKIWidget(self);
-                    if (!pkiWidget) {
-                        auto* ts = new TokenSection(
-#ifdef LIBRECELIK_SIGNING_ENABLED
-                            trustService ? trustService->trustStore() : nullptr,
-#else
-                            nullptr,
-#endif
-                            self);
-                        ts->setHeaderColor(QColor(230, 135, 60));
-                        ts->setHeaderHeight(56);
-                        ts->setExpanded(!visible2);
-#ifdef LIBRECELIK_SIGNING_ENABLED
-                        ts->setReaderName(reader);
-#endif
-                        pkiWidget = ts;
-                    }
-                    connectPKISignals(asyncReader, pkiWidget, reader);
-
-                    auto* container = new QWidget(this);
-                    auto* containerLayout = new QVBoxLayout(container);
-                    containerLayout->setContentsMargins(0, 0, 0, 0);
-                    containerLayout->setAlignment(Qt::AlignTop);
-                    containerLayout->addWidget(topWidget);
-                    containerLayout->addWidget(pkiWidget);
-
-                    auto* scrollArea = new QScrollArea(this);
-                    scrollArea->setWidgetResizable(true);
-                    scrollArea->setFrameShape(QFrame::NoFrame);
-                    scrollArea->setWidget(container);
-                    topWidget = scrollArea;
-
-                    asyncReader->requestCertificates();
-                } else {
-                    auto* container = new QWidget(this);
-                    auto* containerLayout = new QVBoxLayout(container);
-                    containerLayout->setContentsMargins(0, 0, 0, 0);
-                    containerLayout->setAlignment(Qt::AlignTop);
-                    containerLayout->addWidget(topWidget);
-
-                    auto* scrollArea = new QScrollArea(this);
-                    scrollArea->setWidgetResizable(true);
-                    scrollArea->setFrameShape(QFrame::NoFrame);
-                    scrollArea->setWidget(container);
-                    topWidget = scrollArea;
-                }
-
-                replaceWidget(topWidget);
-            });
-
-    connect(asyncReader, &AsyncCardReader::errorOccurred, this, [this, reader, isSpinner](const QString& msg) {
-        auto it = activeReaders.find(reader);
-        if (it == activeReaders.end())
-            return; // reader was removed — stale queued signal
+        entry->second.pendingCertificates = certs;
+        applyPendingPki(cardId);
+    });
+    connect(controller, &CardController::tokenInfoReady, this, [this, cardId](const FieldGroup& tokenGroup) {
+        auto entry = cardState.find(cardId);
+        if (entry == cardState.end())
+            return;
+        entry->second.pendingTokenInfo = tokenGroup;
+        applyPendingPki(cardId);
+    });
+    connect(controller, &CardController::credentialsReady, this, [this, cardId](const CredentialList& credentials) {
+        auto entry = cardState.find(cardId);
+        if (entry == cardState.end())
+            return;
+        entry->second.pendingCredentials = credentials;
+        applyPendingPki(cardId);
+    });
+    connect(controller, &CardController::errorOccurred, this, [this, cardId](const QString& message) {
+        const auto page = activeCards.find(cardId);
+        if (page == activeCards.end())
+            return; // a stale terminal for a card whose page is already gone
         ui->statusbar->show();
-        ui->statusbar->showMessage(msg);
-        // If we're still showing the spinner, all candidates failed during
-        // initial read — remove the stuck reader entry so the UI resets.
-        if (isSpinner(it->second.widget))
-            removeReader(reader);
+        ui->statusbar->showMessage(message);
+        // A failure while the page is still the spinner means the read never
+        // produced anything to show. Leaving the spinner turning would be a
+        // lie; the page goes and the window falls back to its empty state.
+        // The card is remembered as failed so the next roster event does not
+        // re-add it and re-run the read that just failed — a reader property
+        // change must not turn one failure into a retry storm against a card.
+        if (isSpinner(page->second)) {
+            failedReads.insert(cardId);
+            releaseCardPage(cardId);
+        }
     });
 
-    // Progressive display: replace spinner with empty widget on first group, then add groups
-    connect(asyncReader, &AsyncCardReader::cardGroupReady, this,
-            [this, reader, isSpinner, replaceWidget](const QString& cardType,
-                                                     const LibreSCRS::Plugin::CardFieldGroup& group) {
-                if (group.groupKey == "auth_required" || group.groupKey == "error")
-                    return;
+    // A card the agent reports no identity data for is REFUSED the identity
+    // read (`UnsupportedOnThisCard`), so asking would buy an error line for a
+    // model that was never going to exist. Such a card is a PKI surface and
+    // nothing else: it goes straight to where a finished read would have left
+    // it, with an empty model.
+    if (LibreSCRS::AgentClient::has(caps, Cap::IdentityData))
+        controller->startRead();
+    else
+        onIdentityReady(cardId, {});
 
-                auto it = activeReaders.find(reader);
-                if (it == activeReaders.end())
-                    return;
-
-                auto* guiPlugin = guiPluginRegistry.findByCardType(cardType);
-                if (!guiPlugin)
-                    return;
-
-                auto* currentWidget = it->second.widget;
-
-                // First group: replace spinner with empty widget shell
-                if (isSpinner(currentWidget)) {
-                    auto* emptyWidget = guiPlugin->createEmptyWidget(this);
-                    if (!emptyWidget)
-                        return; // plugin doesn't support streaming — wait for cardDataReady
-
-                    auto* container = new QWidget(this);
-                    auto* containerLayout = new QVBoxLayout(container);
-                    containerLayout->setContentsMargins(0, 0, 0, 0);
-                    containerLayout->setAlignment(Qt::AlignTop);
-                    containerLayout->addWidget(emptyWidget);
-
-                    auto* scrollArea = new QScrollArea(this);
-                    scrollArea->setWidgetResizable(true);
-                    scrollArea->setFrameShape(QFrame::NoFrame);
-                    scrollArea->setWidget(container);
-
-                    replaceWidget(scrollArea);
-                }
-
-                // Find the plugin widget inside the scroll area and add the group
-                auto* scrollArea = qobject_cast<QScrollArea*>(it->second.widget);
-                if (!scrollArea || !scrollArea->widget())
-                    return;
-
-                auto children = scrollArea->widget()->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
-                if (!children.isEmpty())
-                    guiPlugin->addGroup(group, children.first());
-            });
-
-    asyncReader->requestData();
+    // Feature-gated verbs, decided by the ONE Task-8 helper so the decision the
+    // CI test drives is the decision production makes.
+    const librecelik::agent::OptionalSections sections =
+        librecelik::agent::requestOptionalSections(*gateway, *controller);
+    if (auto entry = cardState.find(cardId); entry != cardState.end()) {
+        entry->second.tokenInfoAllowed = sections.tokenInfo;
+        entry->second.credentialsAllowed = sections.credentials;
+    }
 }
 
-void LibreCelik::removeReader(std::string reader)
+void LibreCelik::releaseCardPage(const QString& cardId)
 {
-    auto it = activeReaders.find(reader);
-    qCDebug(lcProbeQuieting) << "LC-REMOVE reader=" << QString::fromStdString(reader)
-                             << "hadAsync=" << (it != activeReaders.end());
-    if (it == activeReaders.end())
+    const auto page = activeCards.find(cardId);
+    if (page == activeCards.end())
         return;
 
-    auto* asyncReader = it->second.reader;
-    auto* widget = it->second.widget;
+    // Teardown-cancel: a page that is going away must not leave its card busy.
+    // On the removal path the gateway has already released the controller (and
+    // the client sweeps a vanished card's operations with it), so this reaches
+    // a controller only on the paths where one still exists — a navigated-away
+    // read, or a read that failed before it could build a page.
+    if (auto* controller = gateway->cardController(cardId))
+        controller->cancel();
 
+    QWidget* widget = page->second;
     if (widget) {
-        int idx = ui->readerStackedWidget->indexOf(widget);
-        ui->readerComboBox->removeItem(idx);
+        const int index = ui->readerStackedWidget->indexOf(widget);
+        if (index >= 0)
+            ui->readerComboBox->removeItem(index);
         ui->readerStackedWidget->removeWidget(widget);
         widget->deleteLater();
     }
+    activeCards.erase(page);
+    cardState.erase(cardId);
 
-    // Disconnect all signals immediately to prevent stale callbacks
-    asyncReader->disconnect();
-    activeReaders.erase(it);
-    readerStopSource.erase(reader);
-
-    // Signal workers to stop (non-blocking)
-    asyncReader->initiateCancel();
-
-    // Complete cleanup in a background thread so the GUI never blocks
-    // waiting for a PC/SC timeout. SCardCancel does not cancel an in-flight
-    // SCardTransmit on any PC/SC implementation — see AsyncCardReader::cancel
-    // comment for the rationale — so only cooperative stopRequested +
-    // off-thread wait keeps the UI responsive.
-    //
-    // Threading invariant: clearPluginCredentials reads activePlugin
-    // (std::shared_ptr<CardPlugin>), which is also written by the worker's
-    // queued lambdas posted via QMetaObject::invokeMethod (Qt::QueuedConnection)
-    // from requestData / requestDataWithCredentials. asyncReader->disconnect()
-    // above only severs Qt signal/slot connections — it does NOT cancel
-    // already-posted queued invokeMethod calls. So a worker that finished
-    // just before initiateCancel() may still have a queued lambda Q1 in the
-    // GUI event loop that runs `activePlugin = candidate`. Reading activePlugin
-    // from the cleanup thread concurrent with that queued write is UB
-    // (concurrent shared_ptr read+write).
-    //
-    // Discipline: we wait for pending async workers off-thread (the slow path,
-    // which can take seconds while a PC/SC SCardTransmit times out), then
-    // marshal clearPluginCredentials back to the GUI thread. The GUI thread
-    // owns activePlugin and processes posted events in FIFO order, so any
-    // straggler queued write from the worker has run by the time our cleanup
-    // lambda executes. deleteLater() is posted from the cleanup lambda itself
-    // (after clearPluginCredentials) so it cannot race ahead of the credential
-    // clear: a deleteLater() queued earlier (e.g. on QThread::finished) would
-    // be delivered to the GUI event loop and could destroy asyncReader before
-    // our credential-clear lambda ran.
-    auto* cleanupThread = QThread::create([asyncReader]() {
-        asyncReader->waitForPendingAsync();
-        QMetaObject::invokeMethod(
-            asyncReader,
-            [asyncReader]() {
-                try {
-                    asyncReader->clearPluginCredentials();
-                } catch (...) {
-                    // Card already removed — credentials are moot
-                }
-                asyncReader->deleteLater();
-            },
-            Qt::QueuedConnection);
-    });
-    connect(cleanupThread, &QThread::finished, cleanupThread, &QObject::deleteLater);
-    cleanupThread->start();
-
-    ui->readerComboBox->setVisible(ui->readerComboBox->count() > 1);
-    if (activeReaders.empty()) {
-        ui->stackedWidget->setCurrentIndex(0);
+    if (activeCards.empty())
         ui->statusbar->clearMessage();
+    updateEmptyState();
+}
+
+void LibreCelik::replaceCardWidget(const QString& cardId, QWidget* newWidget)
+{
+    const auto page = activeCards.find(cardId);
+    if (page == activeCards.end()) {
+        newWidget->deleteLater();
+        return;
+    }
+    QWidget* oldWidget = page->second;
+    const int index = ui->readerStackedWidget->indexOf(oldWidget);
+    ui->readerStackedWidget->removeWidget(oldWidget);
+    oldWidget->deleteLater();
+    ui->readerStackedWidget->insertWidget(index, newWidget);
+    ui->readerStackedWidget->setCurrentIndex(index);
+    page->second = newWidget;
+}
+
+CardWidgetPlugin* LibreCelik::pluginFor(const QString& cardId) const
+{
+    CardController* controller = gateway->cardController(cardId);
+    if (controller == nullptr)
+        return nullptr;
+
+    if (const QString cardType = controller->cardType(); !cardType.isEmpty())
+        return guiPluginRegistry.findByCardType(cardType);
+
+    // No card type. Which of the two reasons it is decides what to do, and the
+    // feature token is the only thing that distinguishes them: an agent that
+    // advertises "card-type" simply has not resolved this multi-candidate card
+    // yet, and a caller must WAIT (cardTypeResolved replays what streamed
+    // meanwhile). An agent that does not advertise it will never send one at
+    // all, and waiting would leave a PKI card rendering nothing forever — so
+    // it falls back to the generic PKI page, which is what the middleware read
+    // path rendered for every card no family plugin claimed.
+    if (!gateway->hasFeature(kCardTypeFeature) && LibreSCRS::AgentClient::has(controller->capabilityBits(), Cap::Pki))
+        return guiPluginRegistry.findByCardType(kGenericTokenCardType);
+
+    return nullptr;
+}
+
+QWidget* LibreCelik::pluginWidgetOf(QWidget* page) const
+{
+    auto* scrollArea = qobject_cast<QScrollArea*>(page);
+    if (scrollArea == nullptr || scrollArea->widget() == nullptr)
+        return nullptr;
+    const auto children = scrollArea->widget()->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly);
+    return children.isEmpty() ? nullptr : children.first();
+}
+
+void LibreCelik::onGroupReady(const QString& cardId, const FieldGroup& group)
+{
+    if (group.key == QLatin1StringView("error"))
+        return;
+
+    const auto page = activeCards.find(cardId);
+    const auto state = cardState.find(cardId);
+    if (page == activeCards.end() || state == cardState.end())
+        return;
+
+    CardWidgetPlugin* plugin = pluginFor(cardId);
+    if (plugin == nullptr) {
+        // Multi-candidate card: the agent has not named the driver yet. Hold
+        // the group; cardTypeResolved replays it against the right plugin.
+        state->second.bufferedGroups.append(group);
+        return;
+    }
+
+    if (isSpinner(page->second)) {
+        QWidget* emptyWidget = plugin->createEmptyWidget(this);
+        if (emptyWidget == nullptr)
+            return; // this plugin does not stream — the full model lands at identityReady
+        replaceCardWidget(cardId, makeCardPage(emptyWidget, this));
+    }
+
+    if (QWidget* pluginWidget = pluginWidgetOf(page->second))
+        plugin->addGroup(group, pluginWidget);
+}
+
+void LibreCelik::onCardTypeResolved(const QString& cardId)
+{
+    const auto state = cardState.find(cardId);
+    if (state == cardState.end() || state->second.bufferedGroups.isEmpty())
+        return;
+
+    // Replay in arrival order through the ordinary path, which now resolves a
+    // plugin. Move first: onGroupReady re-buffers on a still-unresolved type,
+    // and re-entering it over the list being drained would not terminate.
+    const QList<FieldGroup> buffered = std::exchange(state->second.bufferedGroups, {});
+    for (const FieldGroup& group : buffered)
+        onGroupReady(cardId, group);
+}
+
+void LibreCelik::onIdentityReady(const QString& cardId, const QList<FieldGroup>& groups)
+{
+    const auto page = activeCards.find(cardId);
+    if (page == activeCards.end())
+        return;
+
+    CardWidgetPlugin* plugin = pluginFor(cardId);
+    if (plugin == nullptr) {
+        // No GUI plugin for the card type the agent resolved: the read
+        // succeeded but this build cannot render it.
+        ui->statusbar->show();
+        ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card"));
+        return;
+    }
+
+    const bool visible = hasVisibleData(groups);
+
+    if (isSpinner(page->second)) {
+        // Non-streaming plugin (or a card whose groups never streamed): the
+        // whole model builds the widget in one go.
+        replaceCardWidget(cardId, makeCardPage(plugin->createWidget(groups, this), this));
+    }
+
+    QWidget* pluginWidget = pluginWidgetOf(page->second);
+    if (pluginWidget == nullptr)
+        return;
+
+    if (!visible)
+        plugin->showNoDataMessage(pluginWidget);
+    else if (plugin->supportsPrinting())
+        plugin->enablePrintButton(pluginWidget);
+
+    auto* scrollArea = qobject_cast<QScrollArea*>(page->second);
+    QWidget* container = scrollArea ? scrollArea->widget() : nullptr;
+    CardController* controller = gateway->cardController(cardId);
+    if (container != nullptr && controller != nullptr &&
+        LibreSCRS::AgentClient::has(controller->capabilityBits(), Cap::Pki)) {
+        attachPkiSection(cardId, container, /*collapsed=*/visible);
+        controller->requestCertificates();
     }
 }
 
-void LibreCelik::connectPKISignals(AsyncCardReader* reader, QWidget* pkiWidget, const std::string& readerName)
+void LibreCelik::attachPkiSection(const QString& cardId, QWidget* container, bool collapsed)
 {
-    auto* tokenSection = qobject_cast<TokenSection*>(pkiWidget);
-    if (!tokenSection)
+    auto* containerLayout = qobject_cast<QVBoxLayout*>(container->layout());
+    if (containerLayout == nullptr || container->findChild<TokenSection*>() != nullptr)
         return;
 
-    // Close any open modal child dialogs (cert viewer, change-PIN, signing
-    // wizard) hanging off this TokenSection when ITS card is pulled. Without
-    // this, removeReader's deleteLater() reaps tokenSection mid-exec() of
-    // its child QDialog -> dialog destroyed while its modal event loop is
-    // unwound on the stack -> crash. We filter on the bound readerName so
-    // pulling another reader's card does not affect dialogs in this token
-    // section. We use done(QDialog::Rejected) (public) rather than reject()
-    // (protected slot).
-    const QString readerNameQ = QString::fromStdString(readerName);
-    connect(this, &LibreCelik::cardRemoved, tokenSection, [tokenSection, readerNameQ](const QString& removed) {
-        if (removed != readerNameQ)
-            return;
-        const auto dialogs = tokenSection->findChildren<QDialog*>();
-        for (QDialog* d : dialogs)
-            d->done(QDialog::Rejected);
-    });
+    CardWidgetPlugin* plugin = pluginFor(cardId);
+    QWidget* pkiWidget = plugin ? plugin->createPKIWidget(container) : nullptr;
+    if (pkiWidget == nullptr) {
+        auto* section = new TokenSection(container);
+        section->setHeaderColor(QColor(230, 135, 60));
+        section->setHeaderHeight(56);
+        section->setExpanded(!collapsed);
+        section->setCardId(cardId);
 
-    connect(reader, &AsyncCardReader::tokenInfoReady, tokenSection, &TokenSection::setTokenInfo);
-    connect(reader, &AsyncCardReader::certificatesReady, tokenSection, &TokenSection::setCertificates);
-    connect(reader, &AsyncCardReader::certificatesReady, reader, &AsyncCardReader::requestPINList);
-    connect(reader, &AsyncCardReader::pinListReady, tokenSection, &TokenSection::setPINList);
-    // Qt::QueuedConnection is load-bearing: the emitter
-    // (TokenSection::onContextMenu) lives inside a stack-allocated QMenu's
-    // exec() loop. A direct connection would open ChangePinDlg::exec()
-    // *while* the QMenu is still on the call stack — if the user then
-    // pulls the card, the deferred-delete cascade for the reader's
-    // QScrollArea reaps TokenSection's child list, including the
-    // stack-allocated QMenu, producing a free()-on-stack-pointer abort
-    // (POINTER_BEING_FREED_WAS_NOT_ALLOCATED on macOS). Queued delivery
-    // posts the slot invocation back to the event loop, so the QMenu's
-    // exec() unwinds and the menu is gone from the child list before the
-    // dialog opens its own nested loop.
-    connect(
-        tokenSection, &TokenSection::changePINRequested, this,
-        [this, reader](uint8_t pinRef, const QString& pinLabel, bool isTransport, int minLength, int maxLength) {
-            QWidget* self = this;
-            auto dlg = std::make_unique<ChangePinDlg>(pinLabel, isTransport, minLength, maxLength, self);
-            connect(dlg.get(), &ChangePinDlg::pinChangeRequested, reader,
-                    [reader, pinRef](const LibreSCRS::Secure::String& oldPin, const LibreSCRS::Secure::String& newPin) {
-                        reader->requestChangePIN(pinRef, oldPin, newPin);
-                    });
-            connect(reader, &AsyncCardReader::pinStatusReady, dlg.get(), &ChangePinDlg::onPinRetriesLeftRead);
-            connect(reader, &AsyncCardReader::pinChangeResult, dlg.get(),
-                    [dlg = dlg.get()](bool success, int retriesLeft, const QString& errorMessage) {
-                        if (success)
-                            dlg->onPinChangeSuccess();
-                        else
-                            dlg->onPinChangeFailed(retriesLeft, retriesLeft == 0, errorMessage);
-                    });
-            reader->requestPINTriesLeft(pinRef);
-            dlg->exec();
-        },
-        Qt::QueuedConnection);
+        // The certificate viewer renders the record it is handed; the gateway
+        // is what serves the raw bytes behind its export action, and the
+        // certificate lives in the reader the card sits in.
+        //
+        // Parented to the section, not to the window: the section is destroyed
+        // with its card's page, and a modal child of the window would outlive
+        // the data it renders.
+        //
+        // Queued because the emitter runs inside a stack-allocated QMenu's
+        // exec() loop: a direct connection would open the dialog's nested loop
+        // while that menu is still on the call stack, and a card pulled at that
+        // moment reaps the menu from the section's child list — a free() on a
+        // stack pointer.
+        connect(
+            section, &TokenSection::certificateDetailsRequested, section,
+            [this, section, cardId](const CertificateInfo& cert) {
+                CardController* controller = gateway->cardController(cardId);
+                CertificateViewerDlg dlg(cert, gateway.get(), section, controller ? controller->readerId() : QString());
+                dlg.exec();
+            },
+            Qt::QueuedConnection);
+        // No signRequested / changePinRequested connect exists in this window
+        // any more: both flows move into the agent-side dialogs (Tasks 24/27),
+        // and until they land the section renders both affordances disabled
+        // with an honest tooltip rather than wiring them to nothing.
+        pkiWidget = section;
+    }
+    containerLayout->addWidget(pkiWidget);
+    applyPendingPki(cardId);
+}
 
-#ifdef LIBRECELIK_SIGNING_ENABLED
-    connect(
-        tokenSection, &TokenSection::signRequested, this,
-        [this](const LibreSCRS::Plugin::CertificateData& cert, const std::string& readerName) {
-            if (!signingService)
-                return;
+void LibreCelik::applyPendingPki(const QString& cardId)
+{
+    const auto page = activeCards.find(cardId);
+    const auto state = cardState.find(cardId);
+    if (page == activeCards.end() || state == cardState.end())
+        return;
 
-            // Resolve the plugin BEFORE opening a fresh CardSession — if
-            // this reader has no PKI-capable plugin bound (or the
-            // AsyncCardReader entry vanished because the card was just
-            // ejected), we want to fail without paying for an SCardConnect.
-            //
-            // Use the PKI plugin AsyncCardReader has already bound to this
-            // reader — it's the plugin that produced @p cert, so the PIN
-            // it will route through `card->verifyPIN` lands in the same
-            // applet/slot the certificate lives in. Re-deriving via
-            // `findAllCandidates(...).front()` was non-deterministic for
-            // cards lacking a declared ATR (PKCS#15 generic, OpenSC
-            // fallback), and even when correct it carried no guarantee
-            // that the chosen plugin matched the one used for read.
-            auto activeIt = activeReaders.find(readerName);
-            if (activeIt == activeReaders.end() || !activeIt->second.reader) {
-                qCWarning(lcSmartCard) << "signRequested: no AsyncCardReader bound to"
-                                       << QString::fromStdString(readerName);
-                return;
-            }
-            auto cardPlugin = activeIt->second.reader->signingPlugin();
-            if (!cardPlugin) {
-                qCWarning(lcSmartCard)
-                    << "signRequested: card in" << QString::fromStdString(readerName)
-                    << "has no PKI+PinManagement-capable plugin bound (cert came from a non-signing plugin?)";
-                return;
-            }
-            qCInfo(lcSmartCard) << "signRequested: using plugin" << QString::fromStdString(cardPlugin->pluginId())
-                                << "(probePriority" << cardPlugin->probePriority() << ") for reader"
-                                << QString::fromStdString(readerName);
+    auto* section = page->second->findChild<TokenSection*>();
+    if (section == nullptr)
+        return; // the section is built when the identity read completes
 
-            // Reuse the AsyncCardReader's CardSession so signing rides the
-            // same PC/SC handle that the display flow established. A
-            // second handle against the same reader invalidates any live
-            // SM tunnel on the card. The wizard takes over the session;
-            // cancel() first so in-flight async APDUs drain before the
-            // wizard issues its own. See AsyncCardReader::sessionHandle()
-            // for the lifetime contract.
-            activeIt->second.reader->cancel();
-            auto session = activeIt->second.reader->sessionHandle();
-            if (!session) {
-                qCWarning(lcSmartCard) << "signRequested: AsyncCardReader for" << QString::fromStdString(readerName)
-                                       << "has no session";
-                return;
-            }
-
-            SigningWizard wizard(cert, readerName, signingService, std::move(cardPlugin), std::move(session), this);
-            // Per-request TSA override now flows via SigningRequest::tsaOverride in
-            // SignPage; the service-level TsaProvider installed at startup from
-            // SigningConfiguration remains the fallback when no override is set.
-            // No more per-wizard service-state mutation or RAII restore.
-            //
-            // Auto-close on removal of the same card mid-sign: the wizard
-            // stays QObject-decoupled from LibreCelik (the wizard unit-test
-            // target does not link our MOC), so the connect lives here at
-            // the call site. We filter by readerName so other readers'
-            // events (one of three inserted cards being ejected) do not
-            // reject this wizard. The signal is emitted from
-            // onCardEventReceived BEFORE the AsyncCardReader for this
-            // reader is torn down so any in-flight signing worker sees a
-            // clean cancel rather than a torn SCardConnect.
-            const QString readerNameQ = QString::fromStdString(readerName);
-            connect(this, &LibreCelik::cardRemoved, &wizard, [&wizard, readerNameQ](const QString& removed) {
-                if (removed == readerNameQ)
-                    wizard.done(QDialog::Rejected);
-            });
-            wizard.exec();
-        },
-        Qt::QueuedConnection); // see changePINRequested above for the same hazard
-#endif
+    // The Task-8 verdicts gate the RENDER, not merely the dispatch: the token
+    // block and the credential rows appear exactly when their verb was issued,
+    // so visibility cannot drift away from what LC actually asked the agent
+    // for. Certificates carry no such gate — reading them is a core verb.
+    if (state->second.tokenInfoAllowed && state->second.pendingTokenInfo)
+        section->setTokenInfo(*std::exchange(state->second.pendingTokenInfo, std::nullopt));
+    if (state->second.pendingCertificates)
+        section->setCertificates(*std::exchange(state->second.pendingCertificates, std::nullopt));
+    if (state->second.credentialsAllowed && state->second.pendingCredentials)
+        section->setCredentials(*std::exchange(state->second.pendingCredentials, std::nullopt));
 }
 
 void LibreCelik::openSettings()

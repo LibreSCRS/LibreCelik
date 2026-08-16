@@ -24,11 +24,8 @@ CertNames certNames(const std::vector<uint8_t>& derBytes);
 // Returns true if the certificate's notAfter date is in the past.
 bool isCertificateExpired(const std::vector<uint8_t>& derBytes);
 
-// Returns true if `url` is an acceptable TSA endpoint: well-formed under
-// QUrl::StrictMode, scheme is https, host is non-empty. Rejects http://
-// (no transport integrity on the token exchange), malformed URLs
-// ("https:/typo.com"), and empty input. Used by FileSelectionPage and
-// SignPage as defensive validation before signing.
-bool isValidTsaUrl(const QString& url);
+// isValidTsaUrl moved to signing/tsavalidation.h — it never touched a
+// certificate, and this header's remaining entry points all parse DER
+// in-process.
 
 } // namespace signing

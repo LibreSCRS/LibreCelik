@@ -10,7 +10,7 @@
 class EuVrcWidgetPlugin : public QObject, public CardWidgetPlugin
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.librescrs.CardWidgetPlugin/1.0" FILE "eu-vrc.json")
+    Q_PLUGIN_METADATA(IID "org.librescrs.CardWidgetPlugin/2.0" FILE "eu-vrc.json")
     Q_INTERFACES(CardWidgetPlugin)
 
 public:
@@ -22,12 +22,12 @@ public:
     {
         return qtTrId("lc-euvrc-title");
     }
-    QWidget* createWidget(const LibreSCRS::Plugin::CardData& data, QWidget* parent) const override;
+    QWidget* createWidget(const QList<LibreSCRS::AgentClient::FieldGroup>& groups, QWidget* parent) const override;
     QWidget* createEmptyWidget(QWidget* parent) const override;
-    void addGroup(const LibreSCRS::Plugin::CardFieldGroup& group, QWidget* widget) const override;
+    void addGroup(const LibreSCRS::AgentClient::FieldGroup& group, QWidget* widget) const override;
     bool supportsPrinting() const override
     {
         return true;
     }
-    void print(const LibreSCRS::Plugin::CardData& data) const override;
+    void print(const QList<LibreSCRS::AgentClient::FieldGroup>& groups) const override;
 };

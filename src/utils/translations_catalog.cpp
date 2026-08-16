@@ -36,6 +36,20 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-reader-unsupported-card-with-atr");
     //% "Reading card..."
     QT_TRID_NOOP("lc-reading-card");
+    //% "Confirm the card access number in the system dialog to continue reading this card."
+    QT_TRID_NOOP("lc-agent-awaiting-preauth");
+
+    // --- guided agent-presence panel ---
+    //% "The LibreSCRS card agent is not installed."
+    QT_TRID_NOOP("lc-agent-state-missing");
+    //% "LibreCelik reads cards through the card agent. Install it for your system, then try again."
+    QT_TRID_NOOP("lc-agent-state-missing-hint");
+    //% "The LibreSCRS card agent is not responding."
+    QT_TRID_NOOP("lc-agent-state-unavailable");
+    //% "Try again"
+    QT_TRID_NOOP("lc-agent-state-retry");
+    //% "Temporarily unavailable while this build is rewired to the card agent."
+    QT_TRID_NOOP("lc-agent-action-pending-rewire");
     //% "<b>LibreMiddleware</b> :: Version %1 :: <a
     // href=\"https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html\">LGPL-2.1-or-later</a> :: <a
     // href=\"https://github.com/LibreSCRS/LibreMiddleware\">github.com/LibreSCRS/LibreMiddleware</a>"
@@ -213,6 +227,10 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-eid-pin-uses-remaining");
     //% "Uses: %1 of %2"
     QT_TRID_NOOP("lc-eid-pin-uses-remaining-of");
+    //% "Unblocks: %1"
+    QT_TRID_NOOP("lc-eid-pin-unblocks-remaining");
+    //% "Change required"
+    QT_TRID_NOOP("lc-eid-pin-needs-change");
     //% "?"
     QT_TRID_NOOP("lc-eid-pin-unknown");
     //% "View Certificate"
@@ -293,22 +311,40 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-cert-unknown");
     //% "Unknown"
     QT_TRID_NOOP("lc-cert-algorithm-unknown");
+
+    // Certificate security-status tokens. The vocabulary is the agent's and
+    // grows independently of this build; a token named here renders LC's copy,
+    // any other one is displayed verbatim.
+    //% "Trusted"
+    QT_TRID_NOOP("lc-cert-status-trusted");
+    //% "Root certificate is not trusted"
+    QT_TRID_NOOP("lc-cert-status-untrusted-root");
+    //% "Certificate chain is broken"
+    QT_TRID_NOOP("lc-cert-status-broken-chain");
+    //% "Certificate is invalid"
+    QT_TRID_NOOP("lc-cert-status-invalid");
+    //% "Certificate has expired"
+    QT_TRID_NOOP("lc-cert-status-expired");
+    //% "Certificate was revoked"
+    QT_TRID_NOOP("lc-cert-status-revoked");
+    //% "Not verified (offline)"
+    QT_TRID_NOOP("lc-cert-status-offline-unverified");
+
     //% "Certificate Viewer"
     QT_TRID_NOOP("lc-cert-dialog-title");
-    //% "No certificates available."
-    QT_TRID_NOOP("lc-cert-no-available");
+    //% "Export…"
+    QT_TRID_NOOP("lc-cert-export-button");
+    //% "Save Certificate"
+    QT_TRID_NOOP("lc-cert-export-save-title");
+    //% "Certificate files (*.cer *.der)"
+    QT_TRID_NOOP("lc-cert-export-filter");
+    //% "The certificate file could not be saved."
+    QT_TRID_NOOP("lc-cert-export-failed");
 
     // --- Certificate verification results ---
-    //% "Valid"
-    QT_TRID_NOOP("lc-cert-verify-valid");
-    //% "Unspecified error"
-    QT_TRID_NOOP("lc-cert-verify-unspecified-error");
-    //% "Unable to get issuer certificate"
-    QT_TRID_NOOP("lc-cert-verify-no-issuer");
-    //% "Certificate has expired"
-    QT_TRID_NOOP("lc-cert-verify-expired");
-    //% "Untrusted root certificate"
-    QT_TRID_NOOP("lc-cert-verify-untrusted-root");
+    // The chain verdict itself is the agent's and renders through the
+    // lc-cert-status-* vocabulary above; what is left here is the one thing
+    // that vocabulary cannot say — that the agent reported no verdict at all.
     //% "Trust unknown"
     QT_TRID_NOOP("lc-cert-verify-trust-unknown");
     //% "Unparseable certificate"

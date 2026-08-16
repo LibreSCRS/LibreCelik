@@ -8,59 +8,62 @@
 #include "utils/fieldsectionbuilder.h"
 #include "utils/iconutils.h"
 
-#include <plugin/carddatautils.h>
+#include <plugin/fieldvalue.h>
 
 #include <QToolButton>
 #include <QVBoxLayout>
 
-using librecelik::plugin::getFieldValue;
+using librecelik::plugin::fieldValue;
+using LibreSCRS::AgentClient::FieldGroup;
 
-static std::map<std::string, QString> chuidTranslationMap()
+static std::map<QString, QString> chuidTranslationMap()
 {
     return {
-        {"guid", qtTrId("lc-piv-field-guid")},
-        {"fascn", qtTrId("lc-piv-field-fascn")},
-        {"expirationDate", qtTrId("lc-piv-field-expiration")},
+        {QStringLiteral("guid"), qtTrId("lc-piv-field-guid")},
+        {QStringLiteral("fascn"), qtTrId("lc-piv-field-fascn")},
+        {QStringLiteral("expirationDate"), qtTrId("lc-piv-field-expiration")},
     };
 }
 
-static std::map<std::string, QString> cccTranslationMap()
+static std::map<QString, QString> cccTranslationMap()
 {
     return {
-        {"cardIdentifier", qtTrId("lc-piv-field-cardid")},
+        {QStringLiteral("cardIdentifier"), qtTrId("lc-piv-field-cardid")},
     };
 }
 
-static std::map<std::string, QString> printedTranslationMap()
+static std::map<QString, QString> printedTranslationMap()
 {
     return {
-        {"name", qtTrId("lc-piv-field-name")},         {"employeeAffiliation", qtTrId("lc-piv-field-affiliation")},
-        {"org1", qtTrId("lc-piv-field-org1")},         {"org2", qtTrId("lc-piv-field-org2")},
-        {"expiry", qtTrId("lc-piv-field-expiration")}, {"serialNumber", qtTrId("lc-piv-field-serial")},
-        {"issuerId", qtTrId("lc-piv-field-issuer")},
+        {QStringLiteral("name"), qtTrId("lc-piv-field-name")},
+        {QStringLiteral("employeeAffiliation"), qtTrId("lc-piv-field-affiliation")},
+        {QStringLiteral("org1"), qtTrId("lc-piv-field-org1")},
+        {QStringLiteral("org2"), qtTrId("lc-piv-field-org2")},
+        {QStringLiteral("expiry"), qtTrId("lc-piv-field-expiration")},
+        {QStringLiteral("serialNumber"), qtTrId("lc-piv-field-serial")},
+        {QStringLiteral("issuerId"), qtTrId("lc-piv-field-issuer")},
     };
 }
 
-static std::map<std::string, QString> discoveryTranslationMap()
+static std::map<QString, QString> discoveryTranslationMap()
 {
     return {
-        {"pinPolicy", qtTrId("lc-piv-field-pinpolicy")},
+        {QStringLiteral("pinPolicy"), qtTrId("lc-piv-field-pinpolicy")},
     };
 }
 
-static std::map<std::string, QString> keyHistoryTranslationMap()
+static std::map<QString, QString> keyHistoryTranslationMap()
 {
     return {
-        {"onCardCerts", qtTrId("lc-piv-field-oncardcerts")},
-        {"offCardCerts", qtTrId("lc-piv-field-offcardcerts")},
-        {"offCardURL", qtTrId("lc-piv-field-offcardurl")},
+        {QStringLiteral("onCardCerts"), qtTrId("lc-piv-field-oncardcerts")},
+        {QStringLiteral("offCardCerts"), qtTrId("lc-piv-field-offcardcerts")},
+        {QStringLiteral("offCardURL"), qtTrId("lc-piv-field-offcardurl")},
     };
 }
 
-PIVWidget::PIVWidget(const LibreSCRS::Plugin::CardData& cardData, QWidget* parent) : PIVWidget(parent)
+PIVWidget::PIVWidget(const QList<FieldGroup>& cardGroups, QWidget* parent) : PIVWidget(parent)
 {
-    data.cardType = cardData.cardType;
-    for (const auto& group : cardData.groups)
+    for (const auto& group : cardGroups)
         addGroup(group);
 }
 
@@ -86,24 +89,24 @@ void PIVWidget::buildEmptyShell()
 
     // Print button — disabled until all data arrives
     printBtn = iconutils::createPrinterHeaderButton(this);
-    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(data); });
+    connect(printBtn, &QToolButton::clicked, this, [this]() { emit printRequested(groups); });
     outerSection->addHeaderWidget(printBtn);
 }
 
-void PIVWidget::addGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
+void PIVWidget::addGroup(const FieldGroup& group)
 {
-    data.groups.push_back(group);
+    groups.append(group);
 
-    const auto& key = group.groupKey;
-    if (key == "chuid") {
+    const QString key = group.key;
+    if (key == QLatin1String("chuid")) {
         addChuidGroup(group);
-    } else if (key == "ccc") {
+    } else if (key == QLatin1String("ccc")) {
         addCccGroup(group);
-    } else if (key == "printed") {
+    } else if (key == QLatin1String("printed")) {
         addPrintedGroup(group);
-    } else if (key == "discovery") {
+    } else if (key == QLatin1String("discovery")) {
         addDiscoveryGroup(group);
-    } else if (key == "keyHistory") {
+    } else if (key == QLatin1String("keyHistory")) {
         addKeyHistoryGroup(group);
     }
     // "pki" group is intentionally skipped — handled by TokenSection automatically
@@ -116,12 +119,12 @@ void PIVWidget::enablePrintButton()
     }
 }
 
-void PIVWidget::addChuidGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
+void PIVWidget::addChuidGroup(const FieldGroup& group)
 {
     // Build CardHeaderCard with PIV icon and CHUID key fields
     std::vector<librecelik::utils::HeaderField> headerFields;
-    headerFields.push_back({qtTrId("lc-piv-field-guid"), getFieldValue(&group, "guid")});
-    headerFields.push_back({qtTrId("lc-piv-field-expiration"), getFieldValue(&group, "expirationDate")});
+    headerFields.push_back({qtTrId("lc-piv-field-guid"), fieldValue(group, u"guid")});
+    headerFields.push_back({qtTrId("lc-piv-field-expiration"), fieldValue(group, u"expirationDate")});
 
     QIcon pivIcon(QStringLiteral(":/images/piv-icon.svg"));
     headerCard = new librecelik::utils::CardHeaderCard(pivIcon, QSize(80, 80), headerFields, outerSection);
@@ -133,33 +136,33 @@ void PIVWidget::addChuidGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
     contentLayout->addWidget(chuidSec);
 }
 
-void PIVWidget::addCccGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
+void PIVWidget::addCccGroup(const FieldGroup& group)
 {
     auto* cccSec = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-piv-section-ccc"), group,
                                                                  cccTranslationMap(), {}, outerSection);
     contentLayout->addWidget(cccSec);
 }
 
-void PIVWidget::addPrintedGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
+void PIVWidget::addPrintedGroup(const FieldGroup& group)
 {
     auto* printedSec = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-piv-section-printed"), group,
                                                                      printedTranslationMap(), {}, outerSection);
     contentLayout->addWidget(printedSec);
 
     // Rebuild header with name if available
-    auto name = getFieldValue(&group, "name");
+    auto name = fieldValue(group, u"name");
     if (!name.isEmpty())
         rebuildHeader();
 }
 
-void PIVWidget::addDiscoveryGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
+void PIVWidget::addDiscoveryGroup(const FieldGroup& group)
 {
     auto* discoverySec = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-piv-section-discovery"), group,
                                                                        discoveryTranslationMap(), {}, outerSection);
     contentLayout->addWidget(discoverySec);
 }
 
-void PIVWidget::addKeyHistoryGroup(const LibreSCRS::Plugin::CardFieldGroup& group)
+void PIVWidget::addKeyHistoryGroup(const FieldGroup& group)
 {
     auto* keyHistorySec = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-piv-section-keyhistory"), group,
                                                                         keyHistoryTranslationMap(), {}, outerSection);
@@ -172,9 +175,9 @@ void PIVWidget::rebuildHeader()
         return;
 
     // Rebuild with name from printed group as primary field
-    auto name = getFieldValue(data, "name");
-    auto guid = getFieldValue(data, "guid");
-    auto expiration = getFieldValue(data, "expirationDate");
+    auto name = fieldValue(groups, u"name");
+    auto guid = fieldValue(groups, u"guid");
+    auto expiration = fieldValue(groups, u"expirationDate");
 
     std::vector<librecelik::utils::HeaderField> headerFields;
     if (!name.isEmpty())
@@ -194,9 +197,9 @@ void PIVWidget::rebuildHeader()
 void PIVWidget::retranslateUi()
 {
     // Plugin widget rebuild-tier (April 2026 retranslate spec): tear
-    // down the shell and rebuild from cached data.groups.
-    auto cachedGroups = std::move(data.groups);
-    data.groups.clear();
+    // down the shell and rebuild from the cached groups.
+    auto cachedGroups = std::move(groups);
+    groups.clear();
 
     if (outerSection) {
         outerLayout->removeWidget(outerSection);

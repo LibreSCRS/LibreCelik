@@ -3,12 +3,17 @@
 
 #pragma once
 
-#include <LibreSCRS/Signing/VisualSignatureLayout.h>
+#include <LibreSCRS/AgentClient/Types.h>
 
+#include <QByteArray>
+#include <QRectF>
+#include <QString>
 #include <QTimer>
 #include <QWidget>
 
+#include <functional>
 #include <memory>
+#include <optional>
 
 class QPdfDocument;
 
@@ -16,8 +21,24 @@ class PdfPreviewWidget : public QWidget
 {
     Q_OBJECT
 public:
+    /// Supplies the visual-signature layout for a (text, box) pair, the box in
+    /// PDF user units — the same question the signer asks before it stamps, so
+    /// that preview and stamp agree on the wrap and the font size. A `nullopt`
+    /// answer means no layout is available (no provider wired yet, or an agent
+    /// without the layout-preview feature); the preview then draws the bare
+    /// placement box rather than inventing a wrap of its own.
+    using LayoutProvider =
+        std::function<std::optional<LibreSCRS::AgentClient::LayoutResult>(const QString& text, QRectF boxPdfUnits)>;
+
     explicit PdfPreviewWidget(QWidget* parent = nullptr);
     ~PdfPreviewWidget() override;
+
+    void setLayoutProvider(LayoutProvider provider);
+    /// Installs the appearance font the signer embeds, so the preview measures
+    /// glyphs the way the stamped signature does. Registration happens once
+    /// per distinct byte string; empty or unreadable bytes leave the preview
+    /// asking for the font family by name.
+    void setAppearanceFont(const QByteArray& ttfBytes);
 
     bool loadFile(const QString& path);
     int pageCount() const;
@@ -45,9 +66,9 @@ private:
     QPointF widgetToPdf(const QPointF& widgetPt) const;
     QRectF pdfRectToWidget(const QRectF& pdfRect) const;
     void renderCurrentPage();
-    // Refresh `cachedLayout` from `LibreSCRS::Signing::layoutVisualSignature`
-    // when (sigText, sigRect.size()) has changed. Call from paintEvent before
-    // reading `cachedLayout`. `mutable` allows use from `const` paint context
+    // Refresh `cachedLayout` from `layoutProvider` when (sigText,
+    // sigRect.size()) has changed. Call from paintEvent before reading
+    // `cachedLayout`. `mutable` allows use from `const` paint context
     // (paint-time caching, no observable side effect).
     void recomputeLayoutIfNeeded() const;
 
@@ -64,11 +85,17 @@ private:
     QRectF sigRect{0, 0, 200, 50};
     QString sigText;
     bool sigVisible = true;
-    // Cached LM layout, keyed by (cachedLayoutText, cachedLayoutBoxSize).
+    LayoutProvider layoutProvider;
+    // Bytes last handed to `setAppearanceFont`, and the family they resolved
+    // to. The bytes are kept so the same font is registered once, not once per
+    // call; an empty family means "ask for the default family by name".
+    QByteArray appearanceFontBytes;
+    QString appearanceFontFamily;
+    // Cached provider answer, keyed by (cachedLayoutText, cachedLayoutBoxSize).
     // Mutated from `paintEvent` via `recomputeLayoutIfNeeded()`; invalidated
-    // by `setSignatureRect` and `setSignatureText` (which clear
-    // `cachedLayoutText`).
-    mutable LibreSCRS::Signing::VisualSignatureLayout cachedLayout;
+    // by `setLayoutProvider`, `setSignatureRect` and `setSignatureText` (which
+    // clear `cachedLayoutText`).
+    mutable std::optional<LibreSCRS::AgentClient::LayoutResult> cachedLayout;
     mutable QString cachedLayoutText;
     mutable QSize cachedLayoutBoxSize;
     HitZone activeZone = HitZone::None;

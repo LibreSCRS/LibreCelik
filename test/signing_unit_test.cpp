@@ -1,57 +1,54 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 hirashix0
 
-// certutils.h serves the CertUtils DER suites below and nothing else: the TSA
-// validator moved out to its own header when the certificate viewer stopped
-// parsing DER in-process, so the IsValidTsaUrl suite includes that header
-// directly. Both live here until the signing wizard's own re-type retires
-// certutils entirely.
+// Nothing here parses DER any more: expiry is a typed field on the record the
+// agent hands over, and the TSA validator has its own header since the
+// certificate viewer stopped parsing in-process.
 #include "certificate/certformat.h"
-#include "signing/certutils.h"
+#include "signing/filedropzone.h"
+#include "signing/fileselectionpage.h"
 #include "signing/tsavalidation.h"
 
 #include <gtest/gtest.h>
 
-#include <QCoreApplication>
+#include <QApplication>
+#include <QDateTime>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
+#include <QLabel>
+#include <QStandardPaths>
 #include <QStringList>
-#include <LibreSCRS/Signing/Enums.h>
+#include <QTemporaryDir>
+#include <LibreSCRS/AgentClient/SignOptions.h>
+#include <LibreSCRS/AgentClient/Types.h>
 
 // ---------------------------------------------------------------------------
-// certutils tests (public namespace functions, no hardware needed)
+// Expired-certificate consent — the predicate the sign page asks before it
+// signs at the baseline level, now a comparison against the record's own
+// validity window instead of a DER parse.
 // ---------------------------------------------------------------------------
 
-TEST(CertUtils, SubjectCN_EmptyInput)
+TEST(ExpiredCertConsent, ValidityWindowDecidesAndAnAbsentEndIsTreatedAsPast)
 {
-    EXPECT_TRUE(signing::subjectCN({}).isEmpty());
-}
+    const QDateTime now = QDateTime::currentDateTimeUtc();
 
-TEST(CertUtils, CertNames_EmptyInput)
-{
-    auto names = signing::certNames({});
-    EXPECT_TRUE(names.subjectCN.isEmpty());
-    EXPECT_TRUE(names.issuerCN.isEmpty());
-}
+    LibreSCRS::AgentClient::CertificateInfo expired;
+    expired.notAfter = now.addDays(-1);
+    EXPECT_TRUE(expired.notAfter < now); // consent is asked
 
-TEST(CertUtils, CertNames_GarbageInput)
-{
-    std::vector<uint8_t> garbage = {0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0x01};
-    auto names = signing::certNames(garbage);
-    EXPECT_TRUE(names.subjectCN.isEmpty());
-    EXPECT_TRUE(names.issuerCN.isEmpty());
-}
+    LibreSCRS::AgentClient::CertificateInfo live;
+    live.notAfter = now.addDays(1);
+    EXPECT_FALSE(live.notAfter < now); // nothing to consent to
 
-TEST(CertUtils, IsCertificateExpired_EmptyInput)
-{
-    // Empty input is treated as expired (defensive)
-    EXPECT_TRUE(signing::isCertificateExpired({}));
-}
-
-TEST(CertUtils, IsCertificateExpired_GarbageInput)
-{
-    std::vector<uint8_t> garbage = {0x01, 0x02, 0x03};
-    EXPECT_TRUE(signing::isCertificateExpired(garbage));
+    // An agent that reported no validity end at all leaves the member default
+    // constructed, and an invalid QDateTime orders before every valid one — so
+    // the unknown case still lands on the consent prompt. That is the same
+    // defensive posture the retired DER parse took for input it could not
+    // read, kept by construction rather than by a special case.
+    const LibreSCRS::AgentClient::CertificateInfo unknown;
+    ASSERT_FALSE(unknown.notAfter.isValid());
+    EXPECT_TRUE(unknown.notAfter < now);
 }
 
 // ---------------------------------------------------------------------------
@@ -160,228 +157,173 @@ TEST(CertFormat, KeyUsageBitLabelIsEmptyForAnUnknownOrdinal)
 }
 
 // ---------------------------------------------------------------------------
-// Format routing tests (exercising the same logic as
-// FileSelectionPage::defaultFormatForExtension without accessing private API)
+// Format routing tests — these call the REAL
+// FileSelectionPage::defaultFormatForExtension (public precisely so this suite
+// can pin it) on the client's own signature-format vocabulary. The suite used
+// to carry a test-local copy of the routing table, which pinned the copy
+// rather than the page.
 // ---------------------------------------------------------------------------
 
-namespace {
-
-LibreSCRS::Signing::SignatureFormat defaultFormatForExtension(const QString& suffix)
-{
-    const QString s = suffix.toLower();
-    if (s == QStringLiteral("pdf"))
-        return LibreSCRS::Signing::SignatureFormat::Pades;
-    if (s == QStringLiteral("xml") || s == QStringLiteral("xsd") || s == QStringLiteral("xsl"))
-        return LibreSCRS::Signing::SignatureFormat::Xades;
-    if (s == QStringLiteral("json"))
-        return LibreSCRS::Signing::SignatureFormat::Jades;
-    return LibreSCRS::Signing::SignatureFormat::AsicE;
-}
-
-} // namespace
+namespace ac = LibreSCRS::AgentClient;
 
 TEST(FormatRouting, PdfGetsPAdES)
 {
-    EXPECT_EQ(defaultFormatForExtension("pdf"), LibreSCRS::Signing::SignatureFormat::Pades);
-    EXPECT_EQ(defaultFormatForExtension("PDF"), LibreSCRS::Signing::SignatureFormat::Pades);
-    EXPECT_EQ(defaultFormatForExtension("Pdf"), LibreSCRS::Signing::SignatureFormat::Pades);
+    EXPECT_EQ(FileSelectionPage::defaultFormatForExtension("pdf"), ac::SignatureFormat::PAdES);
+    EXPECT_EQ(FileSelectionPage::defaultFormatForExtension("PDF"), ac::SignatureFormat::PAdES);
+    EXPECT_EQ(FileSelectionPage::defaultFormatForExtension("Pdf"), ac::SignatureFormat::PAdES);
 }
 
 TEST(FormatRouting, XmlGetsXAdES)
 {
-    EXPECT_EQ(defaultFormatForExtension("xml"), LibreSCRS::Signing::SignatureFormat::Xades);
-    EXPECT_EQ(defaultFormatForExtension("xsd"), LibreSCRS::Signing::SignatureFormat::Xades);
-    EXPECT_EQ(defaultFormatForExtension("xsl"), LibreSCRS::Signing::SignatureFormat::Xades);
+    EXPECT_EQ(FileSelectionPage::defaultFormatForExtension("xml"), ac::SignatureFormat::XAdES);
+    EXPECT_EQ(FileSelectionPage::defaultFormatForExtension("xsd"), ac::SignatureFormat::XAdES);
+    EXPECT_EQ(FileSelectionPage::defaultFormatForExtension("xsl"), ac::SignatureFormat::XAdES);
 }
 
 TEST(FormatRouting, JsonGetsJAdES)
 {
-    EXPECT_EQ(defaultFormatForExtension("json"), LibreSCRS::Signing::SignatureFormat::Jades);
+    EXPECT_EQ(FileSelectionPage::defaultFormatForExtension("json"), ac::SignatureFormat::JAdES);
 }
 
 TEST(FormatRouting, UnknownGetsASiCE)
 {
-    EXPECT_EQ(defaultFormatForExtension("txt"), LibreSCRS::Signing::SignatureFormat::AsicE);
-    EXPECT_EQ(defaultFormatForExtension("docx"), LibreSCRS::Signing::SignatureFormat::AsicE);
-    EXPECT_EQ(defaultFormatForExtension("png"), LibreSCRS::Signing::SignatureFormat::AsicE);
-    EXPECT_EQ(defaultFormatForExtension(""), LibreSCRS::Signing::SignatureFormat::AsicE);
+    EXPECT_EQ(FileSelectionPage::defaultFormatForExtension("txt"), ac::SignatureFormat::ASiCe);
+    EXPECT_EQ(FileSelectionPage::defaultFormatForExtension("docx"), ac::SignatureFormat::ASiCe);
+    EXPECT_EQ(FileSelectionPage::defaultFormatForExtension("png"), ac::SignatureFormat::ASiCe);
+    EXPECT_EQ(FileSelectionPage::defaultFormatForExtension(""), ac::SignatureFormat::ASiCe);
 }
 
 // ---------------------------------------------------------------------------
-// buildOutputPath tests (exercising the same logic as SignPage::buildOutputPath)
+// FileSelectionPage widget cases — the selection cap and the capability
+// gating, driven through the real page.
+//
+// A QWidget built without a QApplication aborts the process, so these ride a
+// fixture that guarantees one is installed; the pure routing cases above need
+// no such thing and stay bare TEST()s.
 // ---------------------------------------------------------------------------
 
-namespace {
-
-// Local mirror of the production FileSignInfo (defined in signing/signpage.h)
-// used by these output-path tests. Renamed to avoid a name clash with the
-// production type now that signing/signpage.h is included at the bottom of
-// this file for the SignPage::needsCanInput predicate tests.
-struct BuildPathInput
+class FileSelectionPageTest : public ::testing::Test
 {
-    QString filePath;
-    LibreSCRS::Signing::SignatureFormat format;
-    LibreSCRS::Signing::PackagingMode packaging;
-};
-
-QString buildOutputPath(const BuildPathInput& info, const QString& outputDir)
-{
-    QFileInfo fi(info.filePath);
-    QString outputPath;
-    switch (info.format) {
-    case LibreSCRS::Signing::SignatureFormat::Pades:
-        outputPath = QDir(outputDir).filePath(fi.completeBaseName() + QStringLiteral("-signed.pdf"));
-        break;
-    case LibreSCRS::Signing::SignatureFormat::Xades:
-        if (info.packaging == LibreSCRS::Signing::PackagingMode::Enveloped)
-            outputPath = QDir(outputDir).filePath(fi.completeBaseName() + QStringLiteral("-signed.xml"));
-        else
-            outputPath = QDir(outputDir).filePath(fi.fileName() + QStringLiteral(".xsig"));
-        break;
-    case LibreSCRS::Signing::SignatureFormat::AsicE:
-        outputPath = QDir(outputDir).filePath(fi.completeBaseName() + QStringLiteral(".asice"));
-        break;
-    case LibreSCRS::Signing::SignatureFormat::Cades:
-        outputPath = QDir(outputDir).filePath(fi.fileName() + QStringLiteral(".p7s"));
-        break;
-    case LibreSCRS::Signing::SignatureFormat::Jades:
-        outputPath = QDir(outputDir).filePath(fi.fileName() + QStringLiteral(".jose"));
-        break;
+protected:
+    static void SetUpTestSuite()
+    {
+        if (!QApplication::instance()) {
+            static int argc = 0;
+            app = new QApplication(argc, nullptr);
+        }
+        // The page reads its defaults (level, TSA list, output folder) from
+        // QSettings; keep that off the developer's real configuration.
+        QStandardPaths::setTestModeEnabled(true);
     }
-    return outputPath;
+
+    // FileDropZone::addFiles() filters everything that is not an existing,
+    // readable regular file, so a scripted selection has to exist on disk.
+    QStringList makeFiles(int count)
+    {
+        QStringList paths;
+        for (int i = 0; i < count; ++i) {
+            const QString path = dir.filePath(QStringLiteral("doc%1.pdf").arg(i));
+            QFile file(path);
+            if (!file.open(QIODevice::WriteOnly))
+                return {};
+            file.write("%PDF-1.4\n");
+            file.close();
+            paths.append(path);
+        }
+        return paths;
+    }
+
+    static FileDropZone* dropZoneOf(FileSelectionPage& page)
+    {
+        return page.findChild<FileDropZone*>();
+    }
+
+    static QString labelText(FileSelectionPage& page, const QString& objectName)
+    {
+        auto* label = page.findChild<QLabel*>(objectName);
+        return label ? label->text() : QString();
+    }
+
+    QTemporaryDir dir;
+    static QApplication* app;
+};
+QApplication* FileSelectionPageTest::app = nullptr;
+
+TEST_F(FileSelectionPageTest, SelectionBeyondTheBatchBoundIsRefusedAndSaysSo)
+{
+    ASSERT_TRUE(dir.isValid());
+    const int overBound = static_cast<int>(ac::kMaxBatchDocuments) + 1;
+    const QStringList paths = makeFiles(overBound);
+    ASSERT_EQ(paths.count(), overBound);
+
+    FileSelectionPage page;
+    auto* zone = dropZoneOf(page);
+    ASSERT_NE(zone, nullptr);
+
+    zone->addFiles(paths);
+
+    EXPECT_EQ(page.selectedFiles(), paths.mid(0, static_cast<int>(ac::kMaxBatchDocuments)));
+    EXPECT_EQ(labelText(page, QStringLiteral("limitsLabel")),
+              qtTrId("lc-sign-too-many-files").arg(ac::kMaxBatchDocuments));
 }
 
-} // namespace
-
-TEST(BuildOutputPath, PAdES)
+TEST_F(FileSelectionPageTest, SelectionAtTheBatchBoundIsAcceptedWholeAndKeepsTheLimitsText)
 {
-    BuildPathInput info{"/tmp/document.pdf", LibreSCRS::Signing::SignatureFormat::Pades,
-                        LibreSCRS::Signing::PackagingMode::Enveloped};
-    QString result = buildOutputPath(info, "/out");
-    EXPECT_EQ(result, QStringLiteral("/out/document-signed.pdf"));
+    ASSERT_TRUE(dir.isValid());
+    const QStringList paths = makeFiles(static_cast<int>(ac::kMaxBatchDocuments));
+    ASSERT_EQ(paths.count(), static_cast<int>(ac::kMaxBatchDocuments));
+
+    FileSelectionPage page;
+    auto* zone = dropZoneOf(page);
+    ASSERT_NE(zone, nullptr);
+
+    zone->addFiles(paths);
+
+    EXPECT_EQ(page.selectedFiles(), paths);
+    EXPECT_EQ(labelText(page, QStringLiteral("limitsLabel")), qtTrId("lc-sign-limits-info"));
 }
 
-TEST(BuildOutputPath, XAdES_Enveloped)
+TEST_F(FileSelectionPageTest, AnAgentWithoutTsaOverrideHidesTheTsaRow)
 {
-    BuildPathInput info{"/tmp/data.xml", LibreSCRS::Signing::SignatureFormat::Xades,
-                        LibreSCRS::Signing::PackagingMode::Enveloped};
-    QString result = buildOutputPath(info, "/out");
-    EXPECT_EQ(result, QStringLiteral("/out/data-signed.xml"));
+    FileSelectionPage page;
+    page.setCapabilities(/*tsaOverride=*/false, /*batch=*/true);
+
+    auto* tsaRow = page.findChild<QWidget*>(QStringLiteral("tsaRow"));
+    ASSERT_NE(tsaRow, nullptr);
+    EXPECT_FALSE(tsaRow->isVisibleTo(&page));
 }
 
-TEST(BuildOutputPath, XAdES_Detached)
+TEST_F(FileSelectionPageTest, ABatchLessAgentAnnouncesOneConfirmationPerFile)
 {
-    BuildPathInput info{"/tmp/data.xml", LibreSCRS::Signing::SignatureFormat::Xades,
-                        LibreSCRS::Signing::PackagingMode::Detached};
-    QString result = buildOutputPath(info, "/out");
-    EXPECT_EQ(result, QStringLiteral("/out/data.xml.xsig"));
-}
+    ASSERT_TRUE(dir.isValid());
+    const QStringList paths = makeFiles(2);
+    ASSERT_EQ(paths.count(), 2);
 
-TEST(BuildOutputPath, ASiCE)
-{
-    BuildPathInput info{"/tmp/report.docx", LibreSCRS::Signing::SignatureFormat::AsicE,
-                        LibreSCRS::Signing::PackagingMode::Enveloped};
-    QString result = buildOutputPath(info, "/out");
-    EXPECT_EQ(result, QStringLiteral("/out/report.asice"));
-}
+    FileSelectionPage page;
+    auto* zone = dropZoneOf(page);
+    ASSERT_NE(zone, nullptr);
+    zone->addFiles(paths);
 
-TEST(BuildOutputPath, CAdES)
-{
-    BuildPathInput info{"/tmp/file.bin", LibreSCRS::Signing::SignatureFormat::Cades,
-                        LibreSCRS::Signing::PackagingMode::Detached};
-    QString result = buildOutputPath(info, "/out");
-    EXPECT_EQ(result, QStringLiteral("/out/file.bin.p7s"));
-}
+    auto* notice = page.findChild<QLabel*>(QStringLiteral("sequentialNotice"));
+    ASSERT_NE(notice, nullptr);
 
-TEST(BuildOutputPath, JAdES)
-{
-    BuildPathInput info{"/tmp/data.json", LibreSCRS::Signing::SignatureFormat::Jades,
-                        LibreSCRS::Signing::PackagingMode::Detached};
-    QString result = buildOutputPath(info, "/out");
-    EXPECT_EQ(result, QStringLiteral("/out/data.json.jose"));
-}
+    // A batch-capable agent signs the run in one ceremony: no notice.
+    page.setCapabilities(/*tsaOverride=*/true, /*batch=*/true);
+    EXPECT_FALSE(notice->isVisibleTo(&page));
 
-TEST(BuildOutputPath, CompoundExtension)
-{
-    // completeBaseName strips only the last extension
-    BuildPathInput info{"/tmp/archive.tar.gz", LibreSCRS::Signing::SignatureFormat::AsicE,
-                        LibreSCRS::Signing::PackagingMode::Enveloped};
-    QString result = buildOutputPath(info, "/out");
-    EXPECT_EQ(result, QStringLiteral("/out/archive.tar.asice"));
-}
-
-// ---------------------------------------------------------------------------
-// parseLevel tests (exercising the same logic as SignPage::parseLevel)
-// ---------------------------------------------------------------------------
-
-namespace {
-
-LibreSCRS::Signing::SignatureLevel parseLevel(const QString& level)
-{
-    if (level == QStringLiteral("B_B"))
-        return LibreSCRS::Signing::SignatureLevel::B_B;
-    if (level == QStringLiteral("B_LT"))
-        return LibreSCRS::Signing::SignatureLevel::B_LT;
-    if (level == QStringLiteral("B_LTA"))
-        return LibreSCRS::Signing::SignatureLevel::B_LTA;
-    return LibreSCRS::Signing::SignatureLevel::B_T;
-}
-
-} // namespace
-
-TEST(ParseLevel, AllLevels)
-{
-    EXPECT_EQ(parseLevel("B_B"), LibreSCRS::Signing::SignatureLevel::B_B);
-    EXPECT_EQ(parseLevel("B_T"), LibreSCRS::Signing::SignatureLevel::B_T);
-    EXPECT_EQ(parseLevel("B_LT"), LibreSCRS::Signing::SignatureLevel::B_LT);
-    EXPECT_EQ(parseLevel("B_LTA"), LibreSCRS::Signing::SignatureLevel::B_LTA);
-}
-
-TEST(ParseLevel, UnknownDefaultsToBT)
-{
-    EXPECT_EQ(parseLevel(""), LibreSCRS::Signing::SignatureLevel::B_T);
-    EXPECT_EQ(parseLevel("INVALID"), LibreSCRS::Signing::SignatureLevel::B_T);
-}
-
-// ---------------------------------------------------------------------------
-// SignPage::needsCanInput — pure predicate gating CAN row visibility.
-// True iff the reader is contactless AND no SM tunnel is yet up on the
-// shared CardSession.
-// ---------------------------------------------------------------------------
-
-#include "signing/signpage.h"
-
-TEST(NeedsCanInput, ContactReaderHidesRow)
-{
-    EXPECT_FALSE(SignPage::needsCanInput(/*isCL=*/false, /*smAlreadyUp=*/false));
-    EXPECT_FALSE(SignPage::needsCanInput(/*isCL=*/false, /*smAlreadyUp=*/true));
-}
-
-TEST(NeedsCanInput, ContactlessWithLiveSmHidesRow)
-{
-    // After LC 8ed0c75: display flow established PACE+CAN on the shared
-    // session; wizard does not need to re-collect CAN.
-    EXPECT_FALSE(SignPage::needsCanInput(/*isCL=*/true, /*smAlreadyUp=*/true));
-}
-
-TEST(NeedsCanInput, ContactlessWithoutLiveSmShowsRow)
-{
-    // Fallback: wizard opened before display flow deposited CAN, or
-    // hasLiveSecureChannel() returned false on lock failure. User must
-    // re-enter CAN; PACE re-runs idempotently.
-    EXPECT_TRUE(SignPage::needsCanInput(/*isCL=*/true, /*smAlreadyUp=*/false));
-}
-
-TEST(NeedsCanInput, NoexceptContract)
-{
-    // The predicate must be noexcept so SignPage::configure can call it
-    // without exception-safety bookkeeping.
-    static_assert(noexcept(SignPage::needsCanInput(true, false)));
+    // A pre-feature agent degrades to one confirmation per file, and says so.
+    page.setCapabilities(/*tsaOverride=*/true, /*batch=*/false);
+    EXPECT_TRUE(notice->isVisibleTo(&page));
+    EXPECT_EQ(notice->text(), qtTrId("lc-sign-sequential-notice", 2));
 }
 
 int main(int argc, char** argv)
 {
-    QCoreApplication app(argc, argv);
+    // QApplication, not QCoreApplication: the target now compiles the real
+    // FileSelectionPage, and a QWidget built with only a core application
+    // instance aborts the process (the fixture's guard cannot install one
+    // afterwards — QCoreApplication::instance() is already non-null).
+    QApplication app(argc, argv);
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

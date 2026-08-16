@@ -3,38 +3,43 @@
 
 #pragma once
 
-#include <LibreSCRS/Plugin/PluginTypes.h>
-#include <LibreSCRS/Signing/Enums.h>
-#include <LibreSCRS/Signing/VisualSignatureParams.h>
-#include <LibreSCRS/SmartCard/CardSession.h>
+#include "agent/signcontroller.h"
 
+#include <LibreSCRS/AgentClient/OperationPhase.h>
+#include <LibreSCRS/AgentClient/SignOptions.h>
+#include <LibreSCRS/AgentClient/Types.h>
+
+#include <QList>
+#include <QPointer>
+#include <QString>
+#include <QVariantMap>
 #include <QWidget>
 
-#include <atomic>
-#include <memory>
 #include <optional>
 
-class QAction;
+class QEvent;
 class QLabel;
-class QLineEdit;
 class QListWidget;
 class QProgressBar;
-class QThread;
 
-namespace LibreSCRS::Signing {
-class SigningService;
-}
-namespace LibreSCRS::Plugin {
-class CardPlugin;
-}
-
+/// One selected document and the container it is signed into. The wizard
+/// builds these on the selection page; the sign page hands them to the
+/// controller unchanged, which is what partitions them into ceremonies.
 struct FileSignInfo
 {
     QString filePath;
-    LibreSCRS::Signing::SignatureFormat format;
-    LibreSCRS::Signing::PackagingMode packaging;
+    LibreSCRS::AgentClient::SignatureFormat format;
+    LibreSCRS::AgentClient::Packaging packaging;
 };
 
+/// The wizard's last page: what is about to be signed, how many times the
+/// holder will meet the agent's prompter for it, and one result row per
+/// document once the run is over.
+///
+/// It collects NO secret. The PIN and every other credential are the agent
+/// prompter's business, which is why this page has no input row at all and
+/// why its progress line is the agent's own phase vocabulary rather than a
+/// count of files this process is working through.
 class SignPage : public QWidget
 {
     Q_OBJECT
@@ -42,59 +47,39 @@ public:
     explicit SignPage(QWidget* parent = nullptr);
     ~SignPage() override;
 
-    // All inputs the sign page needs to configure itself for one signing run.
-    // Bundling these into a struct lets callers (the wizard) build the
-    // configuration in steps without juggling a many-arg call, and lets us
-    // grow the inputs later without breaking call sites.
+    // Everything one signing run needs, bundled so the wizard can build it in
+    // steps without a many-arg call and grow it later without breaking the
+    // call site.
     struct Config
     {
-        // Owned by value: a previous version held `const CertificateData&`,
-        // which made Config a dangling-reference trap if the wizard's
-        // certificate source went out of scope before configure() was called.
-        // Callers now pay the cost of one CertificateData copy per signing run.
-        LibreSCRS::Plugin::CertificateData certificate;
-        std::string readerName;
+        LibreSCRS::AgentClient::CertificateInfo certificate;
+        /// The card the run belongs to. Carried with the run because a run IS
+        /// of one card; the page never addresses that card itself — the
+        /// controller it is handed is already the card's — so nothing here
+        /// stores it.
+        QString cardId;
         QList<FileSignInfo> fileInfos;
+        /// UI level token ("B_B", "B_T", "B_LT", "B_LTA"); mapped for the wire
+        /// by `librecelik::agent::levelFromUiToken`.
         QString level;
         QString outputFolder;
-        // std::optional: absent signals "no visual signature" and the request
-        // omits it entirely (invisible-signature path). VisualSignatureParams
-        // is pimpl-backed value-type; the optional holds it directly.
-        std::optional<LibreSCRS::Signing::VisualSignatureParams> visual;
-        std::string tsaUrl;
-        // Shared ownership: both the CardPlugin and the active CardSession
-        // are held by shared_ptr so the signing worker lambda can extend
-        // their lifetime past a wizard close.
-        std::shared_ptr<LibreSCRS::Plugin::CardPlugin> cardPlugin;
-        std::shared_ptr<LibreSCRS::SmartCard::CardSession> session;
-        // True iff the inherited CardSession already has a live Secure
-        // Messaging tunnel (CardSession::hasLiveSecureChannel() returned
-        // true at configure time). Sampled once by SigningWizard::goNext;
-        // not polled. Default false keeps fallback (mandatory CAN row)
-        // intact for any caller that does not opt in.
-        bool smAlreadyUp = false;
+        /// Absent means an invisible signature and the request omits the map
+        /// entirely; engaged carries the wire's six-key visualSignature map as
+        /// `librecelik::agent::makeVisualSignatureMap` builds it.
+        std::optional<QVariantMap> visual;
+        QString tsaUrl;
     };
 
     void configure(Config cfg);
-    void setSigningService(std::shared_ptr<LibreSCRS::Signing::SigningService> svc);
-    bool hasPinInput() const;
-    void focusPin();
-    bool isSigningComplete() const;
-    bool isSigningInProgress() const;
-    bool hasFailures() const;
-
-    // True iff the wizard must collect CAN from the user before signing:
-    // contactless reader AND no Secure Messaging tunnel already up on the
-    // shared CardSession. False in every other case (contact card; or
-    // contactless where the display flow already established PACE+CAN on
-    // the inherited session). Pure function, no widget state touched.
-    static constexpr bool needsCanInput(bool isCL, bool smAlreadyUp) noexcept
-    {
-        return isCL && !smAlreadyUp;
-    }
+    /// NOT owned: the gateway mints one controller per card and parents it
+    /// there. Held weakly, because a card that leaves takes its controller
+    /// with it while this page may still be on screen.
+    void setSignController(librecelik::agent::SignController* controller);
+    [[nodiscard]] bool isSigningComplete() const;
+    [[nodiscard]] bool isSigningInProgress() const;
+    [[nodiscard]] bool hasFailures() const;
 
 signals:
-    void pinReady(bool ready);
     void signingStarted();
     void signingFinished(int succeeded, int failed);
 
@@ -105,11 +90,16 @@ protected:
     void changeEvent(QEvent* event) override;
 
 private:
-    static LibreSCRS::Signing::SignatureLevel parseLevel(const QString& level);
-    QString buildOutputPath(const FileSignInfo& info) const;
-    void clearPin();
     void applyThemeColors();
     void addResultItem(const QString& icon, const QString& colorHex, const QString& message);
+    /// How many times the holder will confirm at the agent prompter for the
+    /// current selection: one per homogeneous run when the agent signs
+    /// batches, one per file when it does not.
+    [[nodiscard]] int ceremonyCount() const;
+    void updateConsentHint();
+    void onPhaseChanged(LibreSCRS::AgentClient::OperationPhase phase, double progress);
+    void onRowFinished(int index, const librecelik::agent::SignRowResult& result);
+    void onFinished(int succeeded, int failed);
 
     QWidget* summaryCard = nullptr;
     QLabel* certHeaderLabel = nullptr;
@@ -118,14 +108,7 @@ private:
     QLabel* filesValueLabel = nullptr;
     QLabel* levelHeaderLabel = nullptr;
     QLabel* levelValueLabel = nullptr;
-
-    QWidget* pinRow = nullptr;
-    QLabel* pinLabel = nullptr;
-    QLineEdit* pinEdit = nullptr;
-
-    QWidget* canRow = nullptr;
-    QLabel* canLabel = nullptr;
-    QLineEdit* canEdit = nullptr;
+    QLabel* consentHintLabel = nullptr;
 
     QWidget* progressWidget = nullptr;
     QLabel* progressLabel = nullptr;
@@ -133,21 +116,15 @@ private:
 
     QListWidget* resultsList = nullptr;
 
-    std::shared_ptr<LibreSCRS::Signing::SigningService> signingService;
-    LibreSCRS::Plugin::CertificateData certificate;
-    std::string readerName;
+    /// Weak by construction: not owned, and destroyed with its card.
+    QPointer<librecelik::agent::SignController> controller;
+    LibreSCRS::AgentClient::CertificateInfo certificate;
     QList<FileSignInfo> fileInfos;
     QString sigLevel;
     QString outputDir;
-    std::optional<LibreSCRS::Signing::VisualSignatureParams> visualParams;
-    std::string tsaUrl;
-    // Shared ownership: the signing worker lambda copies these shared_ptrs
-    // so the CardPlugin and CardSession outlive this widget if the user
-    // closes the wizard before the worker finishes.
-    std::shared_ptr<LibreSCRS::Plugin::CardPlugin> cardPlugin;
-    std::shared_ptr<LibreSCRS::SmartCard::CardSession> session;
-    QThread* workerThread = nullptr;
-    std::atomic<bool> signingInProgress{false};
-    std::atomic<bool> signingComplete{false};
-    std::atomic<int> failedCount{0};
+    std::optional<QVariantMap> visual;
+    QString tsaUrl;
+    bool signingInProgress = false;
+    bool signingComplete = false;
+    int failedCount = 0;
 };

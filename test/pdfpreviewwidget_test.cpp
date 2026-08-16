@@ -1,23 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // SPDX-FileCopyrightText: 2026 hirashix0
 //
-// Phase C / C4 of the visible-signature fill-box design.
 // Paint-capture-based integration test verifying PdfPreviewWidget renders
-// the visual-signature appearance using LM's authoritative
-// LibreSCRS::Signing::layoutVisualSignature output. No friend classes, no
+// exactly the visual-signature layout it is handed, and nothing of its own.
+// The layout arrives through the widget's layout provider — in production the
+// agent's own layout service, here a scripted stand-in. No friend classes, no
 // test-only accessors — all verification happens via the public widget API
 // plus a custom QPaintEngine that records every drawText / clip / font
 // state change during the widget's paint pass.
 
 #include "signing/pdfpreviewwidget.h"
 
-#include <LibreSCRS/Signing/VisualSignatureLayout.h>
-#include <LibreSCRS/Signing/VisualSignatureParams.h>
+#include <LibreSCRS/AgentClient/Types.h>
 
 #include <QApplication>
 #include <QBuffer>
 #include <QCoreApplication>
-#include <QFontDatabase>
 #include <QImage>
 #include <QPageSize>
 #include <QPaintDevice>
@@ -29,6 +27,7 @@
 #include <QPointF>
 #include <QRectF>
 #include <QString>
+#include <QStringList>
 #include <QTemporaryFile>
 #include <QTextItem>
 #include <QtGlobal>
@@ -36,8 +35,8 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
-#include <cstring>
-#include <string_view>
+#include <optional>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -204,17 +203,38 @@ QString writeMinimalPdf(QTemporaryFile& tmp)
     return tmp.fileName();
 }
 
-void registerEmbeddedFontOnce()
+// The parity oracle of this suite is the scripted layout: whatever the widget
+// is handed, it must render that and invent nothing. Parity between the
+// agent's layout and the bytes the signer stamps is a cross-process question
+// answered on the hardware matrix, not in a widget paint test.
+LibreSCRS::AgentClient::LayoutResult scriptedLayout(QStringList lines, bool clipped)
 {
-    static bool registered = false;
-    if (registered)
-        return;
-    registered = true;
-    const auto bytes = LibreSCRS::Signing::embeddedAppearanceFontData();
-    if (bytes.empty())
-        return;
-    const QByteArray ba(reinterpret_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()));
-    QFontDatabase::addApplicationFontFromData(ba);
+    LibreSCRS::AgentClient::LayoutResult layout;
+    layout.fontSize = 10.0;
+    layout.lineHeight = 13.0;
+    layout.lines = std::move(lines);
+    layout.clipped = clipped;
+    return layout;
+}
+
+// What a provider call saw. Lets a test assert the widget forwards its own
+// signature text and placement box rather than something it made up.
+struct ProviderCall
+{
+    QString text;
+    QRectF box;
+};
+
+// A provider that always answers with `reply`, appending every call it saw to
+// `calls` (which must outlive the widget).
+PdfPreviewWidget::LayoutProvider scriptedProvider(std::optional<LibreSCRS::AgentClient::LayoutResult> reply,
+                                                  std::vector<ProviderCall>* calls = nullptr)
+{
+    return [reply, calls](const QString& text, QRectF box) {
+        if (calls != nullptr)
+            calls->push_back(ProviderCall{text, box});
+        return reply;
+    };
 }
 
 // Render a configured PdfPreviewWidget into the given RecordingPaintDevice.
@@ -228,19 +248,6 @@ void renderWidget(PdfPreviewWidget* widget, RecordingPaintDevice& device)
     }
 }
 
-// Compute the LM-authoritative layout for the same inputs the widget sees,
-// so tests can compare without poking at widget internals.
-LibreSCRS::Signing::VisualSignatureLayout expectedLayout(const QString& text, const QSize& boxSizePoints)
-{
-    LibreSCRS::Signing::Rect box{};
-    box.x = 0;
-    box.y = 0;
-    box.width = boxSizePoints.width();
-    box.height = boxSizePoints.height();
-    const QByteArray utf8 = text.toUtf8();
-    return LibreSCRS::Signing::layoutVisualSignature(std::string_view(utf8.constData(), utf8.size()), box);
-}
-
 } // namespace
 
 // ============================================================================
@@ -249,18 +256,20 @@ LibreSCRS::Signing::VisualSignatureLayout expectedLayout(const QString& text, co
 
 TEST(PdfPreviewWidget, PreviewMatchesLayoutLineCount)
 {
-    registerEmbeddedFontOnce();
-
     QTemporaryFile pdfFile;
     const QString pdfPath = writeMinimalPdf(pdfFile);
     PdfPreviewWidget widget;
     ASSERT_TRUE(widget.loadFile(pdfPath));
     widget.resize(800, 600);
-    // Use the default 200×50 rect; choose long-but-wrappable text that
-    // produces ≥ 2 lines under LM's auto-fit rules at floor font size.
     const QRectF rect(0.0, 0.0, 200.0, 50.0);
     const QString text =
         QStringLiteral("Digitally signed by NEMANJA HIRSL on 2026-05-08, certificate serial 014390613000123456789");
+    const auto layout =
+        scriptedLayout({QStringLiteral("Digitally signed by NEMANJA HIRSL"),
+                        QStringLiteral("on 2026-05-08, certificate serial"), QStringLiteral("014390613000123456789")},
+                       false);
+    std::vector<ProviderCall> calls;
+    widget.setLayoutProvider(scriptedProvider(layout, &calls));
     widget.setSignatureRect(rect);
     widget.setSignatureText(text);
     widget.setSignatureVisible(true);
@@ -268,39 +277,43 @@ TEST(PdfPreviewWidget, PreviewMatchesLayoutLineCount)
     RecordingPaintDevice device(widget.width(), widget.height());
     renderWidget(&widget, device);
     const auto& events = device.engine().textEvents();
-    const auto layout = expectedLayout(text, rect.size().toSize());
+
+    // The widget asks about its own text and its own placement box, in PDF
+    // user units — it neither re-words the text nor re-scales the box.
+    ASSERT_FALSE(calls.empty()) << "the widget never consulted its layout provider";
+    EXPECT_EQ(calls.front().text, text);
+    EXPECT_DOUBLE_EQ(calls.front().box.width(), rect.width());
+    EXPECT_DOUBLE_EQ(calls.front().box.height(), rect.height());
 
     // Each line of layout.lines must produce at least one drawTextItem call
     // whose text matches that line. (Qt may split a single drawText across
     // multiple text-items for shaping, but for plain Liberation Sans Latin
     // the 1:1 mapping holds in practice.)
     ASSERT_FALSE(layout.lines.empty());
-    ASSERT_GE(events.size(), layout.lines.size());
+    ASSERT_GE(events.size(), static_cast<std::size_t>(layout.lines.size()));
 
     // Concatenate the captured text events, in order. Each layout line must
     // appear as a contiguous substring (or whole) of at least one event.
     for (const auto& line : layout.lines) {
-        const QString qline = QString::fromStdString(line);
         bool found = false;
         for (const auto& ev : events) {
-            if (ev.text == qline || ev.text.contains(qline)) {
+            if (ev.text == line || ev.text.contains(line)) {
                 found = true;
                 break;
             }
         }
-        EXPECT_TRUE(found) << "Layout line not found in painted output: " << line;
+        EXPECT_TRUE(found) << "Layout line not found in painted output: " << line.toStdString();
     }
 }
 
 TEST(PdfPreviewWidget, PreviewUsesLiberationSansFontFamily)
 {
-    registerEmbeddedFontOnce();
-
     QTemporaryFile pdfFile;
     const QString pdfPath = writeMinimalPdf(pdfFile);
     PdfPreviewWidget widget;
     ASSERT_TRUE(widget.loadFile(pdfPath));
     widget.resize(800, 600);
+    widget.setLayoutProvider(scriptedProvider(scriptedLayout({QStringLiteral("Hello world")}, false)));
     widget.setSignatureRect(QRectF(0, 0, 200, 50));
     widget.setSignatureText(QStringLiteral("Hello world"));
     widget.setSignatureVisible(true);
@@ -309,10 +322,10 @@ TEST(PdfPreviewWidget, PreviewUsesLiberationSansFontFamily)
     renderWidget(&widget, device);
     const auto& events = device.engine().textEvents();
 
-    // At least one captured paint event uses the Liberation Sans family,
-    // confirming the widget asks Qt for that family by name (the
-    // QFontDatabase::addApplicationFontFromData call in C1 makes it
-    // available; if registration failed Qt falls back to system sans).
+    // At least one captured paint event uses the Liberation Sans family. That
+    // is the family the agent's embedded appearance font carries, and the one
+    // the preview asks for by name until setAppearanceFont hands it the real
+    // bytes; if neither is available Qt falls back to system sans.
     bool anyLibSans = false;
     for (const auto& ev : events) {
         if (ev.font.family().compare(QStringLiteral("Liberation Sans"), Qt::CaseInsensitive) == 0) {
@@ -321,9 +334,9 @@ TEST(PdfPreviewWidget, PreviewUsesLiberationSansFontFamily)
         }
     }
     // It's acceptable if the rendered font resolves to a fallback when
-    // Liberation Sans was already registered earlier in the test process —
-    // assert that the requested family was Liberation Sans rather than the
-    // resolved family. In practice on CI both match.
+    // Liberation Sans is not installed on the host — assert that the
+    // requested family was Liberation Sans rather than the resolved family.
+    // In practice on CI both match.
     EXPECT_TRUE(anyLibSans || !events.empty());
 }
 
@@ -333,23 +346,22 @@ TEST(PdfPreviewWidget, PreviewUsesLiberationSansFontFamily)
 
 TEST(PdfPreviewWidget, ClipRectInstalledWhenLayoutClipped)
 {
-    registerEmbeddedFontOnce();
-
     QTemporaryFile pdfFile;
     const QString pdfPath = writeMinimalPdf(pdfFile);
     PdfPreviewWidget widget;
     ASSERT_TRUE(widget.loadFile(pdfPath));
     widget.resize(800, 600);
-    // Single huge unbreakable token wider than 200pt at floor font size →
-    // layoutVisualSignature returns clipped == true (per spec §8.3 row 4).
+    // A single unbreakable token wider than the box at the floor font size is
+    // what the layout service reports back as clipped.
     const QRectF rect(0.0, 0.0, 200.0, 50.0);
     const QString token = QString(200, QChar('X'));
+    const auto layout = scriptedLayout({token}, true);
+    widget.setLayoutProvider(scriptedProvider(layout));
     widget.setSignatureRect(rect);
     widget.setSignatureText(token);
     widget.setSignatureVisible(true);
 
-    // Pre-condition: LM layout actually marks this clipped.
-    const auto layout = expectedLayout(token, rect.size().toSize());
+    // Pre-condition: the scripted layout actually marks this clipped.
     ASSERT_TRUE(layout.clipped) << "test premise broken — token should clip";
 
     RecordingPaintDevice device(widget.width(), widget.height());
@@ -365,8 +377,6 @@ TEST(PdfPreviewWidget, ClipRectInstalledWhenLayoutClipped)
 
 TEST(PdfPreviewWidget, NoExtraClipWhenLayoutFits)
 {
-    registerEmbeddedFontOnce();
-
     QTemporaryFile pdfFile;
     const QString pdfPath = writeMinimalPdf(pdfFile);
     PdfPreviewWidget widget;
@@ -374,11 +384,12 @@ TEST(PdfPreviewWidget, NoExtraClipWhenLayoutFits)
     widget.resize(800, 600);
     const QRectF rect(0.0, 0.0, 400.0, 100.0); // big enough to fit short text
     const QString text = QStringLiteral("Hi");
+    const auto layout = scriptedLayout({text}, false);
+    widget.setLayoutProvider(scriptedProvider(layout));
     widget.setSignatureRect(rect);
     widget.setSignatureText(text);
     widget.setSignatureVisible(true);
 
-    const auto layout = expectedLayout(text, rect.size().toSize());
     ASSERT_FALSE(layout.clipped) << "test premise broken — short text should not clip";
 
     RecordingPaintDevice device(widget.width(), widget.height());
@@ -390,26 +401,60 @@ TEST(PdfPreviewWidget, NoExtraClipWhenLayoutFits)
 }
 
 // ============================================================================
-// Group 3 — FontRegistrationFallback
+// Group 3 — LayoutUnavailable / FontRegistrationFallback
 // ============================================================================
+
+TEST(PdfPreviewWidget, NoTextPaintedWhenLayoutUnavailable)
+{
+    QTemporaryFile pdfFile;
+    const QString pdfPath = writeMinimalPdf(pdfFile);
+
+    // No provider at all — the state a freshly constructed preview is in
+    // before the wizard wires it to the agent.
+    {
+        PdfPreviewWidget widget;
+        ASSERT_TRUE(widget.loadFile(pdfPath));
+        widget.resize(400, 300);
+        widget.setSignatureRect(QRectF(0, 0, 200, 50));
+        widget.setSignatureText(QStringLiteral("Placement without a layout"));
+        widget.setSignatureVisible(true);
+
+        RecordingPaintDevice device(widget.width(), widget.height());
+        renderWidget(&widget, device);
+        EXPECT_TRUE(device.engine().textEvents().empty()) << "the preview invented a layout with no provider installed";
+    }
+
+    // A provider that answers "no layout" — the agent is there but does not
+    // offer the layout-preview feature. The placement box still renders; the
+    // text does not.
+    {
+        PdfPreviewWidget widget;
+        ASSERT_TRUE(widget.loadFile(pdfPath));
+        widget.resize(400, 300);
+        widget.setLayoutProvider(scriptedProvider(std::nullopt));
+        widget.setSignatureRect(QRectF(0, 0, 200, 50));
+        widget.setSignatureText(QStringLiteral("Placement without a layout"));
+        widget.setSignatureVisible(true);
+
+        RecordingPaintDevice device(widget.width(), widget.height());
+        renderWidget(&widget, device);
+        EXPECT_TRUE(device.engine().textEvents().empty()) << "the preview invented a layout the agent did not supply";
+    }
+}
 
 TEST(PdfPreviewWidget, RendersWithoutCrashWhenFontNotRegistered)
 {
-    // We do NOT register Liberation Sans in this test path. (The previous
-    // tests register via registerEmbeddedFontOnce; in a fresh process the
-    // first-test order would see no registration. Within one test binary
-    // Qt's font database is process-wide, so this test asserts the
-    // *non-crash* contract for the case where setFont(QFont("Liberation
-    // Sans")) resolves to a system fallback. The fallback is exercised by
-    // requesting a deliberately unknown family in addition.) This test
-    // documents the spec §8.5 contract: registration failure ⇒ qWarning,
-    // no crash, fallback to system sans.
-
+    // The appearance font is fetched from the agent alongside the layout, and
+    // an agent that cannot supply it hands back nothing. Empty bytes must
+    // leave the preview on its default family and complete a paint pass, not
+    // register a zero-length font or crash.
     QTemporaryFile pdfFile;
     const QString pdfPath = writeMinimalPdf(pdfFile);
     PdfPreviewWidget widget;
     ASSERT_TRUE(widget.loadFile(pdfPath));
     widget.resize(400, 300);
+    widget.setLayoutProvider(scriptedProvider(scriptedLayout({QStringLiteral("Fallback test text")}, false)));
+    widget.setAppearanceFont(QByteArray());
     widget.setSignatureRect(QRectF(0, 0, 200, 50));
     widget.setSignatureText(QStringLiteral("Fallback test text"));
     widget.setSignatureVisible(true);

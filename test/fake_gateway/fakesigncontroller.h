@@ -31,13 +31,17 @@ public:
     // ---- scripted state -----------------------------------------------------
     /// Replayed one `rowFinished` per entry, in order, before `finished`.
     QList<librecelik::agent::SignRowResult> scriptedRows;
-    /// Replayed as `phaseChanged` emissions before the rows.
+    /// Replayed as `phaseChanged` emissions from `start()` itself, before the
+    /// rows — including when the terminal is held (see @ref holdOpen).
     QList<LibreSCRS::AgentClient::OperationPhase> scriptedPhases;
     bool scriptedCanVisual = true;
     bool scriptedCanTsa = true;
     bool scriptedCanBatch = true;
-    /// Engaged script => `start()` records the request and emits NOTHING until
-    /// `releaseHold()` replays it (the in-flight shape a cancel test needs).
+    /// Engaged script => `start()` records the request, reports the scripted
+    /// phases, and then emits nothing more until `releaseHold()` replays the
+    /// rows and the terminal. That is the in-flight shape a cancel test needs,
+    /// and also the shape of a run parked at the agent's prompter: it has
+    /// already said where it is, and what it did is still unknown.
     bool holdOpen = false;
     bool cancelCalled = false;
     /// Records verb calls for assertions.

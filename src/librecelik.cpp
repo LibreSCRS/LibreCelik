@@ -17,6 +17,10 @@
 
 #include <LibreSCRS/AgentClient/AgentCapabilities.h>
 
+#ifdef LIBRECELIK_SIGNING_ENABLED
+#include "signing/signingwizard.h"
+#endif
+
 #ifdef Q_OS_MACOS
 #include "utils/macos_menu.h"
 #endif
@@ -701,10 +705,25 @@ void LibreCelik::attachPkiSection(const QString& cardId, QWidget* container, boo
                 dlg.exec();
             },
             Qt::QueuedConnection);
-        // No signRequested / changePinRequested connect exists in this window
-        // any more: both flows move into the agent-side dialogs (Tasks 24/27),
-        // and until they land the section renders both affordances disabled
-        // with an honest tooltip rather than wiring them to nothing.
+#ifdef LIBRECELIK_SIGNING_ENABLED
+        // No session, no plugin, no signing service to juggle: the agent owns
+        // the card, and the wizard asks the gateway for everything it needs.
+        // Closing on card removal is the wizard's own gateway subscription.
+        //
+        // Queued for the same reason as the viewer above: the request is
+        // emitted from inside a stack-allocated QMenu's exec() loop.
+        connect(
+            section, &TokenSection::signRequested, this,
+            [this](const CertificateInfo& cert, const QString& signCardId) {
+                SigningWizard wizard(cert, signCardId, gateway.get(), this);
+                wizard.exec();
+            },
+            Qt::QueuedConnection);
+#endif
+        // The change-PIN flow has no connect in this window yet: it moves into
+        // the agent-side dialog (Task 27), and until it lands the section
+        // renders that affordance disabled with an honest tooltip rather than
+        // wiring it to nothing.
         pkiWidget = section;
     }
     containerLayout->addWidget(pkiWidget);

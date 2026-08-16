@@ -2084,6 +2084,17 @@
         <source>Max file size: 256 MB. ZIP archives for ASiC-E: up to 100,000 files, 256 MB decompressed.</source>
         <translation>Max file size: 256 MB. ZIP archives for ASiC-E: up to 100,000 files, 256 MB decompressed.</translation>
     </message>
+    <message id="lc-sign-too-many-files">
+        <source>One signing run takes at most %1 files. The files beyond that were not added.</source>
+        <translation>One signing run takes at most %1 files. The files beyond that were not added.</translation>
+    </message>
+    <message numerus="yes" id="lc-sign-sequential-notice">
+        <source>Each file is confirmed separately — %n confirmations.</source>
+        <translation>
+            <numerusform>Each file is confirmed separately — %n confirmation.</numerusform>
+            <numerusform>Each file is confirmed separately — %n confirmations.</numerusform>
+        </translation>
+    </message>
     <message id="lc-sign-level-label">
         <source>Signature level:</source>
         <translation>Signature level:</translation>
@@ -2207,6 +2218,13 @@
     <message id="lc-sign-complete">
         <source>Signing complete: %1 succeeded, %2 failed</source>
         <translation>Signing complete: %1 succeeded, %2 failed</translation>
+    </message>
+    <message numerus="yes" id="lc-sign-consent-hint">
+        <source>You will confirm and enter your PIN in the system dialog %n times.</source>
+        <translation>
+            <numerusform>You will confirm and enter your PIN in the system dialog %n time.</numerusform>
+            <numerusform>You will confirm and enter your PIN in the system dialog %n times.</numerusform>
+        </translation>
     </message>
     <message id="lc-sign-expired-cert-title">
         <source>Expired Certificate</source>

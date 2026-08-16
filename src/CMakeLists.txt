@@ -134,8 +134,6 @@ if(LIBRECELIK_SIGNING_ENABLED)
         signing/pdfpreviewwidget.cpp
         signing/filedropzone.h
         signing/filedropzone.cpp
-        signing/certutils.h
-        signing/certutils.cpp
         signing/tsavalidation.h
         signing/wizardheaderwidget.h
         signing/wizardheaderwidget.cpp

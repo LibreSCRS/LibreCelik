@@ -69,6 +69,56 @@ TEST(SignRequest, PartitionIsStableSortedNotConsecutive)
     EXPECT_EQ(runs[1].sourceIndexes, (QList<int>{1}));
 }
 
+// The output-naming contract, per format and packaging. These cases came from
+// the signing suite's local copy of the sign page's path builder; they call the
+// production helper now, so the names a user finds in their output folder are
+// pinned by the code that actually produces them. The folder does not exist,
+// which is deliberate: the never-overwrite search only engages for a path that
+// is already taken.
+TEST(SignRequest, OutputNamePAdESIsBaseNameSigned)
+{
+    const SignRequestItem item{QStringLiteral("/tmp/document.pdf"), SignatureFormat::PAdES, Packaging::Enveloped};
+    EXPECT_EQ(outputPathFor(item, QStringLiteral("/out")), QStringLiteral("/out/document-signed.pdf"));
+}
+
+TEST(SignRequest, OutputNameXAdESEnvelopedIsBaseNameSigned)
+{
+    const SignRequestItem item{QStringLiteral("/tmp/data.xml"), SignatureFormat::XAdES, Packaging::Enveloped};
+    EXPECT_EQ(outputPathFor(item, QStringLiteral("/out")), QStringLiteral("/out/data-signed.xml"));
+}
+
+TEST(SignRequest, OutputNameXAdESDetachedKeepsTheWholeSourceName)
+{
+    // The detached signature is a SECOND file: it stays recognisable next to
+    // the document it belongs to, extension included.
+    const SignRequestItem item{QStringLiteral("/tmp/data.xml"), SignatureFormat::XAdES, Packaging::Detached};
+    EXPECT_EQ(outputPathFor(item, QStringLiteral("/out")), QStringLiteral("/out/data.xml.xsig"));
+}
+
+TEST(SignRequest, OutputNameAsicEIsBaseNameContainer)
+{
+    const SignRequestItem item{QStringLiteral("/tmp/report.docx"), SignatureFormat::ASiCe, Packaging::Enveloped};
+    EXPECT_EQ(outputPathFor(item, QStringLiteral("/out")), QStringLiteral("/out/report.asice"));
+}
+
+TEST(SignRequest, OutputNameCAdESKeepsTheWholeSourceName)
+{
+    const SignRequestItem item{QStringLiteral("/tmp/file.bin"), SignatureFormat::CAdES, Packaging::Detached};
+    EXPECT_EQ(outputPathFor(item, QStringLiteral("/out")), QStringLiteral("/out/file.bin.p7s"));
+}
+
+TEST(SignRequest, OutputNameJAdESKeepsTheWholeSourceName)
+{
+    const SignRequestItem item{QStringLiteral("/tmp/data.json"), SignatureFormat::JAdES, Packaging::Detached};
+    EXPECT_EQ(outputPathFor(item, QStringLiteral("/out")), QStringLiteral("/out/data.json.jose"));
+}
+
+TEST(SignRequest, OutputNameStripsOnlyTheLastExtension)
+{
+    const SignRequestItem item{QStringLiteral("/tmp/archive.tar.gz"), SignatureFormat::ASiCe, Packaging::Enveloped};
+    EXPECT_EQ(outputPathFor(item, QStringLiteral("/out")), QStringLiteral("/out/archive.tar.asice"));
+}
+
 TEST(SignRequest, RowSuccessNeedsNoErrorAndNonEmptyArtifact)
 {
     EXPECT_TRUE(batchRowSucceeded(ErrorCode::None, 2128));

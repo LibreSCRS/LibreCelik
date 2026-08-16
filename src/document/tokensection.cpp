@@ -390,18 +390,18 @@ void TokenSection::setCertificates(const QList<LibreSCRS::AgentClient::Certifica
     }
 
 #ifdef LIBRECELIK_SIGNING_ENABLED
-    // TEMP(C1-rewire): sign side re-enabled in Task 24, pin side in Task 27.
-    // The middleware signing launcher went with the middleware read path and
-    // the agent-side wizard has not landed yet, so the button stays visible
-    // and disabled with a tooltip that says why. An enabled button that did
-    // nothing would be a lie; a hidden one would be a silent capability
-    // regression the next release note could not explain.
-    if (!signBtn->graphicsEffect()) {
+    // The button is live exactly when this card offers a certificate that can
+    // sign; dimmed and disabled otherwise, never hidden.
+    const bool canSign = !signingCertificates().empty();
+    if (canSign) {
+        if (signBtn->graphicsEffect())
+            signBtn->setGraphicsEffect(nullptr);
+    } else if (!signBtn->graphicsEffect()) {
         auto* dimEffect = new QGraphicsOpacityEffect(signBtn);
         dimEffect->setOpacity(0.3);
         signBtn->setGraphicsEffect(dimEffect);
     }
-    signBtn->setEnabled(false);
+    signBtn->setEnabled(canSign);
 #endif
 
     updateTreeMinimumHeight();
@@ -467,13 +467,8 @@ void TokenSection::onContextMenu(const QPoint& pos)
 #ifdef LIBRECELIK_SIGNING_ENABLED
             if (certificateList.at(certIndex).signingCapable) {
                 QAction* signAction = menu.addAction(qtTrId("lc-sign-with-cert"));
-                // TEMP(C1-rewire): sign side re-enabled in Task 24 (the
-                // wire-typed signRequested connect lands with the agent-side
-                // wizard). Disabled-with-reason, never silently missing.
-                signAction->setEnabled(false);
-                signAction->setToolTip( // i18n-audit: ignore D8, transient action rebuilt per right-click
-                    qtTrId("lc-agent-action-pending-rewire"));
-                menu.setToolTipsVisible(true);
+                connect(signAction, &QAction::triggered, this,
+                        [this, certIndex]() { emit signRequested(certificateList.at(certIndex), cardId); });
             }
 #endif
         }
@@ -577,10 +572,8 @@ void TokenSection::retranslateUi()
         tokenPinItem->setText(0, qtTrId("lc-eid-tree-pin"));
 
 #ifdef LIBRECELIK_SIGNING_ENABLED
-    // TEMP(C1-rewire): sign side re-enabled in Task 24 — the tooltip goes back
-    // to "lc-sign-button" with the wire-typed launcher.
     if (signBtn)
-        signBtn->setToolTip(qtTrId("lc-agent-action-pending-rewire"));
+        signBtn->setToolTip(qtTrId("lc-sign-button"));
 #endif
 
     if (hasTokenGroup)

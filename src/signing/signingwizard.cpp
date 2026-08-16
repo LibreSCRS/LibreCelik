@@ -3,76 +3,34 @@
 
 #include "signingwizard.h"
 
-#include "certutils.h"
+#include "agent/agentgateway.h"
+#include "agent/signcontroller.h"
 #include "fileselectionpage.h"
 #include "signatureplacementpage.h"
 #include "signpage.h"
 #include "wizardheaderwidget.h"
 
-#include <LibreSCRS/Signing/SigningService.h>
-#include <LibreSCRS/Signing/VisualSignatureLayout.h>
-#include <LibreSCRS/Signing/VisualSignatureParams.h>
-
 #include <QByteArray>
 #include <QCloseEvent>
 #include <QEvent>
-#include <QFontDatabase>
 #include <QHBoxLayout>
 #include <QPushButton>
+#include <QRectF>
 #include <QStackedWidget>
-#include <QtGlobal>
 #include <QVBoxLayout>
+#include <QVariantMap>
 
-#include <mutex>
+#include <optional>
+#include <utility>
 
-namespace {
-
-// Register the bundled Liberation Sans TTF (sourced from LibreMiddleware) so
-// the LC preview surface (PdfPreviewWidget) renders appearance text using the
-// exact same font as the embedded PDF subset. Idempotent: std::once_flag
-// guarantees a single registration per process; failure is non-fatal — the
-// preview falls back to system sans-serif (per spec §8.5).
-//
-// Singleton-policy note: this is NOT a
-// classical singleton or Meyers idiom. The function-local std::once_flag is a
-// synchronization token (an initialization barrier), not stateful storage.
-// The actual state lives inside QFontDatabase, which is already a Qt-owned
-// global. Q_GLOBAL_STATIC would be appropriate if LC owned the singleton's
-// storage; here we only need a one-shot init guard for an external global.
-void ensureAppearanceFontRegistered() noexcept
+SigningWizard::SigningWizard(const LibreSCRS::AgentClient::CertificateInfo& cert, const QString& card,
+                             librecelik::agent::AgentGateway* agentGateway, QWidget* parent)
+    : QDialog(parent), certificate(cert), cardId(card), gateway(agentGateway)
 {
-    static std::once_flag flag;
-    std::call_once(flag, []() noexcept {
-        const auto bytes = LibreSCRS::Signing::embeddedAppearanceFontData();
-        if (bytes.empty()) {
-            qWarning("LibreSCRS: embedded Liberation Sans data is empty; "
-                     "preview will fall back to system sans-serif");
-            return;
-        }
-        const QByteArray ba(reinterpret_cast<const char*>(bytes.data()), static_cast<int>(bytes.size()));
-        if (QFontDatabase::addApplicationFontFromData(ba) < 0)
-            qWarning("LibreSCRS: failed to register Liberation Sans for preview; "
-                     "falling back to system sans-serif");
-    });
-}
-
-} // namespace
-
-SigningWizard::SigningWizard(const LibreSCRS::Plugin::CertificateData& cert, const std::string& readerName,
-                             std::shared_ptr<LibreSCRS::Signing::SigningService> service,
-                             std::shared_ptr<LibreSCRS::Plugin::CardPlugin> plugin,
-                             std::shared_ptr<LibreSCRS::SmartCard::CardSession> cardSession, QWidget* parent)
-    : QDialog(parent), certificate(cert), readerName(readerName), signingService(std::move(service)),
-      session(std::move(cardSession)), cardPlugin(std::move(plugin))
-{
-    Q_ASSERT(cardPlugin != nullptr);
-    Q_ASSERT(session != nullptr);
-
-    // Register the bundled Liberation Sans TTF on first wizard construction
-    // so PdfPreviewWidget renders with the same font as the embedded PDF
-    // subset (preview-vs-PDF parity). The function-local static guarantees
-    // a single registration per process; subsequent wizards skip the call.
-    ensureAppearanceFontRegistered();
+    // One controller per card, minted and parented by the gateway. A card id
+    // no longer in the roster answers null, and the wizard then offers a flow
+    // it cannot run — so every use below is null-checked rather than assumed.
+    controller = gateway != nullptr ? gateway->signController(cardId) : nullptr;
 
     setWindowTitle(qtTrId("lc-sign-wizard-title").arg(certificateCN()));
     setMinimumSize(600, 450);
@@ -86,9 +44,30 @@ SigningWizard::SigningWizard(const LibreSCRS::Plugin::CertificateData& cert, con
 
     // Pages
     filePage = new FileSelectionPage(this);
+    filePage->setObjectName(QStringLiteral("filePage"));
     placementPage = new SignaturePlacementPage(this);
+    placementPage->setObjectName(QStringLiteral("placementPage"));
     signPage = new SignPage(this);
-    signPage->setSigningService(signingService);
+    signPage->setObjectName(QStringLiteral("signPage"));
+    signPage->setSignController(controller);
+
+    // What the connected agent can actually do decides what the pages offer:
+    // no per-request timestamp authority means no TSA row, and no batch means
+    // one confirmation per file — announced, never silently degraded.
+    filePage->setCapabilities(controller != nullptr && controller->canTsaOverride(),
+                              controller != nullptr && controller->canBatch());
+
+    // Preview parity: the wrap, the font size and the glyph metrics all come
+    // from whoever will stamp the page. A null gateway answers no layout, and
+    // the preview then draws the placement box alone rather than inventing a
+    // wrap of its own.
+    placementPage->setLayoutProvider(
+        [this](const QString& text, QRectF box) -> std::optional<LibreSCRS::AgentClient::LayoutResult> {
+            if (gateway == nullptr)
+                return std::nullopt;
+            return gateway->layoutVisualSignature(text, box);
+        });
+    placementPage->setAppearanceFont(gateway != nullptr ? gateway->appearanceFontData() : QByteArray());
 
     stack = new QStackedWidget(this);
     stack->addWidget(filePage);      // index 0
@@ -122,10 +101,6 @@ SigningWizard::SigningWizard(const LibreSCRS::Plugin::CertificateData& cert, con
     connect(nextBtn, &QPushButton::clicked, this, &SigningWizard::goNext);
     connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
     connect(filePage, &FileSelectionPage::validityChanged, this, [this](bool) { updateButtons(); });
-    connect(signPage, &SignPage::pinReady, this, [this](bool ready) {
-        if (stack->currentIndex() == 2)
-            nextBtn->setEnabled(ready);
-    });
     connect(signPage, &SignPage::signingStarted, this, [this]() {
         // Prevent closing wizard while signing is in progress
         cancelBtn->setEnabled(false);
@@ -138,13 +113,15 @@ SigningWizard::SigningWizard(const LibreSCRS::Plugin::CertificateData& cert, con
         updateButtons();
     });
 
-    // Auto-close-on-removal is wired up by the caller (LibreCelik) so the
-    // wizard stays decoupled from any QObject-typed removal source: the
-    // unit-test fixture does not link the LibreCelik MOC and would
-    // otherwise see an undefined-reference at link time. See
-    // `librecelik.cpp` next to the `wizard.exec()` call site for the
-    // matching connect on `LibreCelik::cardRemoved` — it filters by the
-    // same `readerName` we hold here.
+    // Modal hygiene lives HERE, not in the window that opened us: a card that
+    // leaves takes this dialog with it, and so does agent loss — the gateway
+    // fans `cardRemoved` out over every card when presence drops.
+    if (gateway != nullptr) {
+        connect(gateway, &librecelik::agent::AgentGateway::cardRemoved, this, [this](const QString& removedCardId) {
+            if (removedCardId == cardId)
+                done(QDialog::Rejected);
+        });
+    }
 
     // Make Next/Sign the default button so Enter triggers it
     nextBtn->setDefault(true);
@@ -164,8 +141,19 @@ void SigningWizard::changeEvent(QEvent* event)
     QDialog::changeEvent(event);
 }
 
+void SigningWizard::cancelIfSigning()
+{
+    if (signPage != nullptr && signPage->isSigningInProgress() && controller != nullptr)
+        controller->cancel();
+}
+
 void SigningWizard::closeEvent(QCloseEvent* event)
 {
+    // Asking to close a run in flight IS asking to abandon it, so the request
+    // goes to the controller first. The dialog itself stays up until the
+    // controller reports a terminal — never blocking on it, and never
+    // vanishing with the result list before it has one to show.
+    cancelIfSigning();
     if (signPage && !signPage->isSigningComplete() && stack->currentIndex() == 2 && !cancelBtn->isEnabled()) {
         event->ignore();
         return;
@@ -175,6 +163,7 @@ void SigningWizard::closeEvent(QCloseEvent* event)
 
 void SigningWizard::reject()
 {
+    cancelIfSigning();
     if (signPage && !signPage->isSigningComplete() && stack->currentIndex() == 2 && !cancelBtn->isEnabled())
         return;
     QDialog::reject();
@@ -185,59 +174,52 @@ void SigningWizard::goNext()
     int current = stack->currentIndex();
 
     if (current == 0) {
-        if (filePage->hasPAdESFiles()) {
+        // A visible signature is offered only when the agent can both stamp
+        // one and lay it out for the preview: LC never offers a placement it
+        // cannot show honestly.
+        const bool visualOffered = controller != nullptr && controller->canVisualSign();
+        if (visualOffered && filePage->hasPAdESFiles()) {
             // Show placement page for PAdES files
-            auto names = signing::certNames(certificate.derBytes);
-            QString cn = names.subjectCN.isEmpty() ? QString::fromStdString(certificate.label) : names.subjectCN;
-            placementPage->loadPdf(filePage->firstPAdESFile(), cn, names.issuerCN);
+            placementPage->loadPdf(filePage->firstPAdESFile(), certificateCN(), certificate.issuer);
             placementShown = true;
             headerWidget->setPlacementShown(true);
             stack->setCurrentIndex(1);
         } else {
-            // No PDF files — skip placement, go directly to sign
+            // No PDF files, or no visible signature to place — go straight to
+            // sign with an invisible one.
             placementShown = false;
             headerWidget->setPlacementShown(false);
             signPage->configure(SignPage::Config{
                 certificate,
-                readerName,
+                cardId,
                 buildFileInfoList(),
                 filePage->signatureLevel(),
                 filePage->outputFolder(),
                 std::nullopt,
-                filePage->tsaUrl().toStdString(),
-                cardPlugin,
-                session,
-                session && session->hasLiveSecureChannel(),
+                filePage->tsaUrl(),
             });
             stack->setCurrentIndex(2);
         }
     } else if (current == 1) {
         // Placement → Sign
         placementPage->saveSettings();
-        std::optional<LibreSCRS::Signing::VisualSignatureParams> visual;
+        std::optional<QVariantMap> visual;
         if (placementPage->isVisualSignatureEnabled())
-            visual = placementPage->visualParams();
+            visual = placementPage->visualSignatureMap();
         signPage->configure(SignPage::Config{
             certificate,
-            readerName,
+            cardId,
             buildFileInfoList(),
             filePage->signatureLevel(),
             filePage->outputFolder(),
             std::move(visual),
-            filePage->tsaUrl().toStdString(),
-            cardPlugin,
-            session,
-            session && session->hasLiveSecureChannel(),
+            filePage->tsaUrl(),
         });
         stack->setCurrentIndex(2);
     } else if (current == 2) {
         // On sign page, Next becomes "Sign"
         signPage->startSigning();
     }
-
-    // Auto-focus PIN field when entering sign page
-    if (stack->currentIndex() == 2 && !signPage->isSigningComplete())
-        signPage->focusPin();
 
     updateButtons();
 }
@@ -282,7 +264,10 @@ void SigningWizard::updateButtons()
             cancelBtn->setEnabled(false);
         } else {
             backBtn->setEnabled(true);
-            nextBtn->setEnabled(signPage->hasPinInput());
+            // Nothing is collected on this page any more, so the only thing
+            // Sign waits on is having something to sign and someone to sign
+            // it with.
+            nextBtn->setEnabled(controller != nullptr && !filePage->selectedFiles().isEmpty());
             nextBtn->setText(qtTrId("lc-sign-btn-sign"));
             cancelBtn->setText(qtTrId("lc-sign-btn-cancel"));
         }
@@ -292,15 +277,17 @@ void SigningWizard::updateButtons()
 QList<FileSignInfo> SigningWizard::buildFileInfoList() const
 {
     QList<FileSignInfo> infos;
-    auto selectedFiles = filePage->selectedFiles();
-    for (int i = 0; i < selectedFiles.count(); ++i) {
+    const QStringList selectedFiles = filePage->selectedFiles();
+    infos.reserve(selectedFiles.count());
+    for (int i = 0; i < selectedFiles.count(); ++i)
         infos.append({selectedFiles.at(i), filePage->formatForFile(i), filePage->packagingForFile(i)});
-    }
     return infos;
 }
 
 QString SigningWizard::certificateCN() const
 {
-    QString cn = signing::subjectCN(certificate.derBytes);
-    return cn.isEmpty() ? QString::fromStdString(certificate.label) : cn;
+    // Honest without parsing anything: both transports feed the certificate's
+    // common name into `subject`, so this is a CN and not a full DN to
+    // truncate. The opaque id is the only fallback when none was reported.
+    return certificate.subject.isEmpty() ? certificate.id : certificate.subject;
 }

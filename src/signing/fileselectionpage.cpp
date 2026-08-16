@@ -27,57 +27,57 @@
 #include <QUrl>
 #include <QVBoxLayout>
 
-LibreSCRS::Signing::SignatureFormat FileSelectionPage::defaultFormatForExtension(const QString& suffix)
+LibreSCRS::AgentClient::SignatureFormat FileSelectionPage::defaultFormatForExtension(const QString& suffix)
 {
     const QString s = suffix.toLower();
     if (s == QStringLiteral("pdf"))
-        return LibreSCRS::Signing::SignatureFormat::Pades;
+        return LibreSCRS::AgentClient::SignatureFormat::PAdES;
     if (s == QStringLiteral("xml") || s == QStringLiteral("xsd") || s == QStringLiteral("xsl"))
-        return LibreSCRS::Signing::SignatureFormat::Xades;
+        return LibreSCRS::AgentClient::SignatureFormat::XAdES;
     if (s == QStringLiteral("json"))
-        return LibreSCRS::Signing::SignatureFormat::Jades;
-    return LibreSCRS::Signing::SignatureFormat::AsicE;
+        return LibreSCRS::AgentClient::SignatureFormat::JAdES;
+    return LibreSCRS::AgentClient::SignatureFormat::ASiCe;
 }
 
 QList<FileFormatInfo> FileSelectionPage::availableFormatsForExtension(const QString& suffix)
 {
-    using F = LibreSCRS::Signing::SignatureFormat;
-    using P = LibreSCRS::Signing::PackagingMode;
+    using F = LibreSCRS::AgentClient::SignatureFormat;
+    using P = LibreSCRS::AgentClient::Packaging;
     const QString s = suffix.toLower();
 
     if (s == QStringLiteral("pdf"))
-        return {{F::Pades, P::Enveloped}, {F::AsicE, P::Enveloped}};
+        return {{F::PAdES, P::Enveloped}, {F::ASiCe, P::Enveloped}};
     if (s == QStringLiteral("xml") || s == QStringLiteral("xsd") || s == QStringLiteral("xsl"))
         return {
-            {F::Xades, P::Enveloped},
-            {F::Xades, P::Detached},
-            {F::AsicE, P::Enveloped},
-            {F::Cades, P::Detached},
+            {F::XAdES, P::Enveloped},
+            {F::XAdES, P::Detached},
+            {F::ASiCe, P::Enveloped},
+            {F::CAdES, P::Detached},
         };
     if (s == QStringLiteral("json"))
         return {
-            {F::Jades, P::Detached},
-            {F::AsicE, P::Enveloped},
-            {F::Cades, P::Detached},
+            {F::JAdES, P::Detached},
+            {F::ASiCe, P::Enveloped},
+            {F::CAdES, P::Detached},
         };
-    return {{F::AsicE, P::Enveloped}, {F::Cades, P::Detached}};
+    return {{F::ASiCe, P::Enveloped}, {F::CAdES, P::Detached}};
 }
 
-QString FileSelectionPage::formatDisplayName(LibreSCRS::Signing::SignatureFormat format,
-                                             LibreSCRS::Signing::PackagingMode packaging)
+QString FileSelectionPage::formatDisplayName(LibreSCRS::AgentClient::SignatureFormat format,
+                                             LibreSCRS::AgentClient::Packaging packaging)
 {
-    using F = LibreSCRS::Signing::SignatureFormat;
-    using P = LibreSCRS::Signing::PackagingMode;
+    using F = LibreSCRS::AgentClient::SignatureFormat;
+    using P = LibreSCRS::AgentClient::Packaging;
     switch (format) {
-    case F::Pades:
+    case F::PAdES:
         return QStringLiteral("PAdES");
-    case F::Cades:
+    case F::CAdES:
         return QStringLiteral("CAdES (.p7s)");
-    case F::Xades:
+    case F::XAdES:
         return packaging == P::Enveloped ? QStringLiteral("XAdES (enveloped)") : QStringLiteral("XAdES (detached)");
-    case F::AsicE:
+    case F::ASiCe:
         return QStringLiteral("ASiC-E (.asice)");
-    case F::Jades:
+    case F::JAdES:
         return QStringLiteral("JAdES (.jose)");
     }
     return QStringLiteral("Unknown");
@@ -91,14 +91,25 @@ FileSelectionPage::FileSelectionPage(QWidget* parent) : QWidget(parent)
     dropZone = new FileDropZone(this);
     layout->addWidget(dropZone);
 
-    // File size limits info
+    // File size limits info (doubles as the selection-cap refusal line)
     limitsLabel = new QLabel(this);
+    limitsLabel->setObjectName(QStringLiteral("limitsLabel"));
     limitsLabel->setWordWrap(true);
     auto limitsFont = limitsLabel->font();
     limitsFont.setPointSize(limitsFont.pointSize() - 1);
     limitsLabel->setFont(limitsFont);
     limitsLabel->setForegroundRole(QPalette::PlaceholderText);
     layout->addWidget(limitsLabel);
+
+    // Announced only against an agent that cannot sign a batch (see
+    // setCapabilities); hidden by default because the page assumes the
+    // capability until told otherwise.
+    sequentialNotice = new QLabel(this);
+    sequentialNotice->setObjectName(QStringLiteral("sequentialNotice"));
+    sequentialNotice->setWordWrap(true);
+    sequentialNotice->setFont(limitsFont);
+    sequentialNotice->setVisible(false);
+    layout->addWidget(sequentialNotice);
 
     // File list (Delete key removes selected file)
     fileList = new QListWidget(this);
@@ -147,6 +158,8 @@ FileSelectionPage::FileSelectionPage(QWidget* parent) : QWidget(parent)
     tsaLayout->setContentsMargins(0, 0, 0, 0);
     tsaLayout->setSpacing(2);
 
+    tsaRow->setObjectName(QStringLiteral("tsaRow"));
+
     auto* tsaInputRow = new QHBoxLayout;
     tsaLabel = new QLabel(tsaRow);
     tsaCombo = new QComboBox(tsaRow);
@@ -176,12 +189,12 @@ FileSelectionPage::FileSelectionPage(QWidget* parent) : QWidget(parent)
     layout->addWidget(tsaRow);
 
     connect(levelCombo, &QComboBox::currentIndexChanged, this, [this]() {
-        tsaRow->setVisible(levelCombo->currentData().toString() != QStringLiteral("B_B"));
+        updateTsaRowVisibility();
         emit validityChanged(isValid());
     });
 
     // Initialize TSA visibility based on loaded default level
-    tsaRow->setVisible(levelCombo->currentData().toString() != QStringLiteral("B_B"));
+    updateTsaRowVisibility();
     connect(tsaCombo, &QComboBox::currentIndexChanged, this, [this]() {
         emit validityChanged(isValid());
         // Persist last selected TSA
@@ -248,18 +261,29 @@ QString FileSelectionPage::firstPAdESFile() const
     for (int i = 0; i < fileList->count(); ++i) {
         auto* item = fileList->item(i);
         auto format =
-            static_cast<LibreSCRS::Signing::SignatureFormat>(item->data(FileListDelegate::FormatRole).toInt());
-        if (format == LibreSCRS::Signing::SignatureFormat::Pades)
+            static_cast<LibreSCRS::AgentClient::SignatureFormat>(item->data(FileListDelegate::FormatRole).toInt());
+        if (format == LibreSCRS::AgentClient::SignatureFormat::PAdES)
             return files.at(i);
     }
     return {};
+}
+
+void FileSelectionPage::setCapabilities(bool tsaOverride, bool batch)
+{
+    tsaOverrideAvailable = tsaOverride;
+    batchCapable = batch;
+    updateTsaRowVisibility();
+    updateSequentialNotice();
 }
 
 bool FileSelectionPage::isValid() const
 {
     if (files.isEmpty())
         return false;
-    bool needsTsa = levelCombo->currentData().toString() != QStringLiteral("B_B");
+    // With no per-request authority to give, the page cannot be blocked by the
+    // authority it is not showing — the agent's configured one serves the
+    // timestamped levels.
+    bool needsTsa = tsaOverrideAvailable && levelCombo->currentData().toString() != QStringLiteral("B_B");
     if (!needsTsa)
         return true;
     // See signing::isValidTsaUrl — rejects empty / non-https / missing
@@ -272,39 +296,53 @@ void FileSelectionPage::recalcHasPAdES()
 {
     hasPAdES = false;
     for (int i = 0; i < fileList->count(); ++i) {
-        auto format = static_cast<LibreSCRS::Signing::SignatureFormat>(
+        auto format = static_cast<LibreSCRS::AgentClient::SignatureFormat>(
             fileList->item(i)->data(FileListDelegate::FormatRole).toInt());
-        if (format == LibreSCRS::Signing::SignatureFormat::Pades) {
+        if (format == LibreSCRS::AgentClient::SignatureFormat::PAdES) {
             hasPAdES = true;
             return;
         }
     }
 }
 
-LibreSCRS::Signing::SignatureFormat FileSelectionPage::formatForFile(int index) const
+LibreSCRS::AgentClient::SignatureFormat FileSelectionPage::formatForFile(int index) const
 {
     if (index < 0 || index >= fileList->count())
-        return LibreSCRS::Signing::SignatureFormat::AsicE;
-    return static_cast<LibreSCRS::Signing::SignatureFormat>(
+        return LibreSCRS::AgentClient::SignatureFormat::ASiCe;
+    return static_cast<LibreSCRS::AgentClient::SignatureFormat>(
         fileList->item(index)->data(FileListDelegate::FormatRole).toInt());
 }
 
-LibreSCRS::Signing::PackagingMode FileSelectionPage::packagingForFile(int index) const
+LibreSCRS::AgentClient::Packaging FileSelectionPage::packagingForFile(int index) const
 {
     if (index < 0 || index >= fileList->count())
-        return LibreSCRS::Signing::PackagingMode::Enveloped;
-    return static_cast<LibreSCRS::Signing::PackagingMode>(
+        return LibreSCRS::AgentClient::Packaging::Enveloped;
+    return static_cast<LibreSCRS::AgentClient::Packaging>(
         fileList->item(index)->data(FileListDelegate::PackagingRole).toInt());
 }
 
 void FileSelectionPage::onFilesChanged(const QStringList& paths)
 {
-    files = paths;
+    // One signing run is one ceremony, so the selection is capped at the
+    // client's batch bound (see the header note: this is LC policy, and it
+    // keeps every run inside the wire bound by construction). Files past the
+    // cap are refused rather than silently queued for a second run, and the
+    // drop zone is told so its list and this one stay the same list.
+    const int bound = static_cast<int>(LibreSCRS::AgentClient::kMaxBatchDocuments);
+    overBatchBound = paths.count() > bound;
+    if (overBatchBound) {
+        for (const QString& refused : paths.mid(bound))
+            dropZone->removeFile(refused);
+        files = paths.mid(0, bound);
+    } else {
+        files = paths;
+    }
+
     rebuildFileList();
 
     // Set output folder to directory of first file, unless a default is configured
-    if (!paths.isEmpty() && outputFolderEdit->text().isEmpty()) {
-        QFileInfo fi(paths.first());
+    if (!files.isEmpty() && outputFolderEdit->text().isEmpty()) {
+        QFileInfo fi(files.first());
         outputFolderEdit->setText(fi.absolutePath());
     }
 }
@@ -318,6 +356,9 @@ void FileSelectionPage::removeSelectedFile()
     const QString removed = files.at(row);
     files.removeAt(row);
     dropZone->removeFile(removed);
+    // The selection just shrank, so whatever was refused for exceeding the
+    // cap is no longer the reason this list looks the way it does.
+    overBatchBound = false;
     rebuildFileList();
 }
 
@@ -331,10 +372,10 @@ void FileSelectionPage::rebuildFileList()
         const QString suffix = fi.suffix();
         auto format = defaultFormatForExtension(suffix);
         // JAdES and CAdES default to DETACHED; PAdES, XAdES, ASiC-E default to ENVELOPED
-        auto packaging = (format == LibreSCRS::Signing::SignatureFormat::Jades ||
-                          format == LibreSCRS::Signing::SignatureFormat::Cades)
-                             ? LibreSCRS::Signing::PackagingMode::Detached
-                             : LibreSCRS::Signing::PackagingMode::Enveloped;
+        auto packaging = (format == LibreSCRS::AgentClient::SignatureFormat::JAdES ||
+                          format == LibreSCRS::AgentClient::SignatureFormat::CAdES)
+                             ? LibreSCRS::AgentClient::Packaging::Detached
+                             : LibreSCRS::AgentClient::Packaging::Enveloped;
 
         auto* item = new QListWidgetItem(fileList);
         item->setData(FileListDelegate::FileNameRole, fi.fileName());
@@ -347,6 +388,8 @@ void FileSelectionPage::rebuildFileList()
 
     recalcHasPAdES();
     updateFormatDescription();
+    updateLimitsLabel();
+    updateSequentialNotice();
 
     emit validityChanged(isValid());
 }
@@ -371,6 +414,28 @@ void FileSelectionPage::updateFormatDescription()
     formatDesc->setVisible(true);
 }
 
+void FileSelectionPage::updateLimitsLabel()
+{
+    if (overBatchBound) {
+        //% "One signing run takes at most %1 files. The files beyond that were not added."
+        limitsLabel->setText(qtTrId("lc-sign-too-many-files").arg(LibreSCRS::AgentClient::kMaxBatchDocuments));
+        return;
+    }
+    limitsLabel->setText(qtTrId("lc-sign-limits-info"));
+}
+
+void FileSelectionPage::updateSequentialNotice()
+{
+    //% "Each file is confirmed separately — %n confirmations."
+    sequentialNotice->setText(qtTrId("lc-sign-sequential-notice", files.count()));
+    sequentialNotice->setVisible(!batchCapable && files.count() > 1);
+}
+
+void FileSelectionPage::updateTsaRowVisibility()
+{
+    tsaRow->setVisible(tsaOverrideAvailable && levelCombo->currentData().toString() != QStringLiteral("B_B"));
+}
+
 void FileSelectionPage::dismissFormatCombos()
 {
     if (activeFormatCombo) {
@@ -393,9 +458,9 @@ void FileSelectionPage::showFormatComboForItem(int row)
 
     auto* item = fileList->item(row);
     auto currentFormat =
-        static_cast<LibreSCRS::Signing::SignatureFormat>(item->data(FileListDelegate::FormatRole).toInt());
+        static_cast<LibreSCRS::AgentClient::SignatureFormat>(item->data(FileListDelegate::FormatRole).toInt());
     auto currentPackaging =
-        static_cast<LibreSCRS::Signing::PackagingMode>(item->data(FileListDelegate::PackagingRole).toInt());
+        static_cast<LibreSCRS::AgentClient::Packaging>(item->data(FileListDelegate::PackagingRole).toInt());
 
     // Position combo at the format badge area (right side of the row)
     QRect itemRect = fileList->visualItemRect(item);
@@ -422,9 +487,10 @@ void FileSelectionPage::showFormatComboForItem(int row)
     connect(combo, &QComboBox::activated, this, [this, row, combo](int idx) {
         if (row < fileList->count()) {
             auto* targetItem = fileList->item(row);
-            auto format = static_cast<LibreSCRS::Signing::SignatureFormat>(combo->itemData(idx, Qt::UserRole).toInt());
+            auto format =
+                static_cast<LibreSCRS::AgentClient::SignatureFormat>(combo->itemData(idx, Qt::UserRole).toInt());
             auto packaging =
-                static_cast<LibreSCRS::Signing::PackagingMode>(combo->itemData(idx, Qt::UserRole + 1).toInt());
+                static_cast<LibreSCRS::AgentClient::Packaging>(combo->itemData(idx, Qt::UserRole + 1).toInt());
             targetItem->setData(FileListDelegate::FormatRole, static_cast<int>(format));
             targetItem->setData(FileListDelegate::PackagingRole, static_cast<int>(packaging));
             targetItem->setData(FileListDelegate::FormatDisplayRole, formatDisplayName(format, packaging));
@@ -492,5 +558,6 @@ void FileSelectionPage::retranslateUi()
     levelCombo->setItemText(2, qtTrId("lc-sign-level-blt"));
     levelCombo->setItemText(3, qtTrId("lc-sign-level-blta"));
     levelCombo->setCurrentIndex(idx);
-    limitsLabel->setText(qtTrId("lc-sign-limits-info"));
+    updateLimitsLabel();
+    updateSequentialNotice();
 }

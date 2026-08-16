@@ -3,8 +3,10 @@
 
 #pragma once
 
-#include <LibreSCRS/Signing/VisualSignatureParams.h>
+#include "pdfpreviewwidget.h"
 
+#include <QByteArray>
+#include <QVariantMap>
 #include <QWidget>
 
 class QCheckBox;
@@ -13,7 +15,6 @@ class QLabel;
 class QLineEdit;
 class QPushButton;
 class QSpinBox;
-class PdfPreviewWidget;
 
 class SignaturePlacementPage : public QWidget
 {
@@ -21,9 +22,17 @@ class SignaturePlacementPage : public QWidget
 public:
     explicit SignaturePlacementPage(QWidget* parent = nullptr);
 
+    /// Hand the preview the layout source and the appearance font. Both are
+    /// the signer's own, so the preview wraps and measures the way the stamped
+    /// page will; the wizard owns the wiring because the widget dials nothing.
+    void setLayoutProvider(PdfPreviewWidget::LayoutProvider provider);
+    void setAppearanceFont(const QByteArray& ttfBytes);
+
     void loadPdf(const QString& path, const QString& signerName, const QString& issuer);
     bool isVisualSignatureEnabled() const;
-    LibreSCRS::Signing::VisualSignatureParams visualParams() const;
+    /// The wire's six-key visualSignature map for the current placement.
+    /// Caller-guarded by @ref isVisualSignatureEnabled.
+    [[nodiscard]] QVariantMap visualSignatureMap() const;
     void saveSettings() const;
 
 protected:

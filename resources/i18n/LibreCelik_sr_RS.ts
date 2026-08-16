@@ -2084,6 +2084,18 @@
         <source>Max file size: 256 MB. ZIP archives for ASiC-E: up to 100,000 files, 256 MB decompressed.</source>
         <translation>Макс. величина фајла: 256 MB. ZIP архиве за ASiC-E: до 100.000 фајлова, 256 MB декомпресовано.</translation>
     </message>
+    <message id="lc-sign-too-many-files">
+        <source>One signing run takes at most %1 files. The files beyond that were not added.</source>
+        <translation>Једно потписивање обухвата највише %1 фајлова. Фајлови преко тог броја нису додати.</translation>
+    </message>
+    <message numerus="yes" id="lc-sign-sequential-notice">
+        <source>Each file is confirmed separately — %n confirmations.</source>
+        <translation>
+            <numerusform>Сваки фајл се потврђује засебно — %n потврда.</numerusform>
+            <numerusform>Сваки фајл се потврђује засебно — %n потврде.</numerusform>
+            <numerusform>Сваки фајл се потврђује засебно — %n потврда.</numerusform>
+        </translation>
+    </message>
     <message id="lc-sign-level-label">
         <source>Signature level:</source>
         <translation>Ниво потписа:</translation>
@@ -2207,6 +2219,14 @@
     <message id="lc-sign-complete">
         <source>Signing complete: %1 succeeded, %2 failed</source>
         <translation>Потписивање завршено: %1 успешно, %2 неуспешно</translation>
+    </message>
+    <message numerus="yes" id="lc-sign-consent-hint">
+        <source>You will confirm and enter your PIN in the system dialog %n times.</source>
+        <translation>
+            <numerusform>ПИН ћете потврдити и унети у системском прозору %n пут.</numerusform>
+            <numerusform>ПИН ћете потврдити и унети у системском прозору %n пута.</numerusform>
+            <numerusform>ПИН ћете потврдити и унети у системском прозору %n пута.</numerusform>
+        </translation>
     </message>
     <message id="lc-sign-expired-cert-title">
         <source>Expired Certificate</source>

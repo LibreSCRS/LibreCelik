@@ -3,16 +3,16 @@
 
 #include "pdfpreviewwidget.h"
 
-#include <LibreSCRS/Signing/VisualSignatureLayout.h>
-#include <LibreSCRS/Signing/VisualSignatureParams.h>
-
+#include <QFontDatabase>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPen>
+#include <QStringList>
 #include <QtPdf/QPdfDocument>
 
 #include <algorithm>
 #include <cmath>
+#include <utility>
 
 namespace {
 constexpr QColor kSigColor{45, 106, 79};
@@ -39,6 +39,32 @@ PdfPreviewWidget::PdfPreviewWidget(QWidget* parent) : QWidget(parent), document(
 }
 
 PdfPreviewWidget::~PdfPreviewWidget() = default;
+
+void PdfPreviewWidget::setLayoutProvider(LayoutProvider provider)
+{
+    layoutProvider = std::move(provider);
+    cachedLayoutText.clear(); // invalidate cached layout (the answerer changed)
+    update();
+}
+
+void PdfPreviewWidget::setAppearanceFont(const QByteArray& ttfBytes)
+{
+    if (ttfBytes == appearanceFontBytes)
+        return;
+
+    appearanceFontBytes = ttfBytes;
+    appearanceFontFamily.clear();
+    if (!ttfBytes.isEmpty()) {
+        // addApplicationFontFromData returns -1 on unreadable bytes, and
+        // applicationFontFamilies(-1) is empty — an unusable font degrades to
+        // the family-by-name path rather than to a broken preview.
+        const QStringList families =
+            QFontDatabase::applicationFontFamilies(QFontDatabase::addApplicationFontFromData(ttfBytes));
+        if (!families.isEmpty())
+            appearanceFontFamily = families.constFirst();
+    }
+    update();
+}
 
 bool PdfPreviewWidget::loadFile(const QString& path)
 {
@@ -95,14 +121,14 @@ QRectF PdfPreviewWidget::signatureRect() const
 void PdfPreviewWidget::setSignatureRect(const QRectF& rect)
 {
     sigRect = rect;
-    cachedLayoutText.clear(); // invalidate cached LM layout (rect changed)
+    cachedLayoutText.clear(); // invalidate cached layout (rect changed)
     update();
 }
 
 void PdfPreviewWidget::setSignatureText(const QString& text)
 {
     sigText = text;
-    cachedLayoutText.clear(); // invalidate cached LM layout (text changed)
+    cachedLayoutText.clear(); // invalidate cached layout (text changed)
     update();
 }
 
@@ -150,36 +176,43 @@ void PdfPreviewWidget::paintEvent(QPaintEvent* /*event*/)
         painter.setPen(pen);
         painter.drawRect(widgetSigRect);
 
-        // Signature text — FILL_BOX rendering driven by LM's authoritative
-        // layout. The widget never recomputes the wrap or font size locally;
-        // it just renders `cachedLayout.lines` verbatim. Preview = PDF.
+        // Signature text — FILL_BOX rendering driven by the signer's own
+        // layout, fetched through the layout provider. The widget never
+        // recomputes the wrap or font size locally; it just renders
+        // `cachedLayout->lines` verbatim. Preview = PDF.
         if (!sigText.isEmpty()) {
             recomputeLayoutIfNeeded();
 
-            painter.save();
-            if (cachedLayout.clipped)
-                painter.setClipRect(widgetSigRect);
+            // No layout to render means the placement box stands alone. The
+            // preview does not fall back to a wrap of its own: a guessed
+            // layout that disagrees with the stamp is worse than no preview
+            // text at all, because it looks authoritative.
+            if (cachedLayout) {
+                painter.save();
+                if (cachedLayout->clipped)
+                    painter.setClipRect(widgetSigRect);
 
-            painter.setPen(kSigColor);
-            QFont f(QStringLiteral("Liberation Sans"));
-            f.setPixelSize(std::max(1, static_cast<int>(std::lround(cachedLayout.fontSize * scale))));
-            painter.setFont(f);
+                painter.setPen(kSigColor);
+                QFont f(appearanceFontFamily.isEmpty() ? QStringLiteral("Liberation Sans") : appearanceFontFamily);
+                f.setPixelSize(std::max(1, static_cast<int>(std::lround(cachedLayout->fontSize * scale))));
+                painter.setFont(f);
 
-            const QRectF textRect = widgetSigRect.adjusted(kSigTextMargin * scale, kSigTextMargin * scale,
-                                                           -kSigTextMargin * scale, -kSigTextMargin * scale);
-            const qreal lineH = cachedLayout.lineHeight * scale;
-            // Baseline placement mirrors the PAdES emitter's Tm exactly:
-            //   pades_module.cpp emits topBaselineY = height − margin − fontSize
-            //   (PDF Y-up). In widget coords (Y-down mirror) that is
-            //   textRect.top() + fontSize*scale. Using lineHeight here would
-            //   shift the first line down by (leading − 1.0) × fontSize and
-            //   break preview = PDF parity.
-            qreal y = textRect.top() + cachedLayout.fontSize * scale;
-            for (const auto& line : cachedLayout.lines) {
-                painter.drawText(QPointF(textRect.left(), y), QString::fromStdString(line));
-                y += lineH;
+                const QRectF textRect = widgetSigRect.adjusted(kSigTextMargin * scale, kSigTextMargin * scale,
+                                                               -kSigTextMargin * scale, -kSigTextMargin * scale);
+                const qreal lineH = cachedLayout->lineHeight * scale;
+                // Baseline placement mirrors the PAdES emitter's Tm exactly:
+                //   the emitter places topBaselineY = height − margin − fontSize
+                //   (PDF Y-up). In widget coords (Y-down mirror) that is
+                //   textRect.top() + fontSize*scale. Using lineHeight here would
+                //   shift the first line down by (leading − 1.0) × fontSize and
+                //   break preview = PDF parity.
+                qreal y = textRect.top() + cachedLayout->fontSize * scale;
+                for (const auto& line : cachedLayout->lines) {
+                    painter.drawText(QPointF(textRect.left(), y), line);
+                    y += lineH;
+                }
+                painter.restore();
             }
-            painter.restore();
         }
     }
 }
@@ -393,15 +426,11 @@ void PdfPreviewWidget::recomputeLayoutIfNeeded() const
     if (cachedLayoutText == sigText && cachedLayoutBoxSize == boxSize)
         return;
 
-    LibreSCRS::Signing::Rect box{};
-    box.x = 0;
-    box.y = 0;
-    // Floor to integer PDF user units (matches the public Rect contract).
-    box.width = std::max(0, static_cast<int>(std::floor(sigRect.width())));
-    box.height = std::max(0, static_cast<int>(std::floor(sigRect.height())));
-
-    const QByteArray utf8 = sigText.toUtf8();
-    cachedLayout = LibreSCRS::Signing::layoutVisualSignature(std::string_view(utf8.constData(), utf8.size()), box);
+    // The box goes over at the origin: the wrap depends on the box's size, not
+    // on where the user dragged it, and the cache is keyed on the size alone.
+    // Moving a box of unchanged size therefore costs no round trip.
+    cachedLayout =
+        layoutProvider ? layoutProvider(sigText, QRectF(0.0, 0.0, sigRect.width(), sigRect.height())) : std::nullopt;
 
     cachedLayoutText = sigText;
     cachedLayoutBoxSize = boxSize;

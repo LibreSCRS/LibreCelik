@@ -16,11 +16,11 @@ namespace signing {
 /// malformed URLs (`https:/typo.com`), and empty input. Used by
 /// FileSelectionPage and SignPage as defensive validation before signing.
 ///
-/// Lives in its own header — and not in certutils — because it is the one
-/// certutils entry point that never touched a certificate: the rest of that
-/// header parses DER in-process, which the certificate display path no longer
-/// does. Two implementations of a security predicate must never coexist, so
-/// this is its single home.
+/// This header is the predicate's single home. It once shared one with the
+/// certificate-parsing helpers, which it never belonged to — it looks at a URL
+/// and nothing else — and those helpers are gone now that nothing in LC parses
+/// DER in-process. Two implementations of a security predicate must never
+/// coexist.
 [[nodiscard]] inline bool isValidTsaUrl(QStringView url)
 {
     if (url.isEmpty())

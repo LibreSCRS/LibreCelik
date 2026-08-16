@@ -3,51 +3,43 @@
 
 #include "signpage.h"
 
-#include "certutils.h"
+#include "agent/errortext.h"
+#include "agent/signrequest.h"
 #include "resultdelegate.h"
 #include "signingcolors.h"
 #include "tsavalidation.h"
-#include "utils/iconutils.h"
 #include "utils/dialogs.h"
 
-#include <LibreSCRS/Auth/AuthRequirement.h>
-#include <LibreSCRS/Auth/CredentialProvider.h>
-#include <LibreSCRS/Auth/CredentialResult.h>
-#include <LibreSCRS/Plugin/CardPlugin.h>
-#include <LibreSCRS/Signing/SigningRequest.h>
-#include <LibreSCRS/Signing/SigningResult.h>
-#include <LibreSCRS/Signing/SigningService.h>
-#include <LibreSCRS/Signing/TsaProvider.h>
-#include <LibreSCRS/SmartCard/CardSession.h>
-#include <LibreSCRS/Secure/String.h>
-
-#include <filesystem>
-
 #include <QAction>
+#include <QClipboard>
 #include <QDateTime>
-#include <QDebug>
-#include <QDir>
 #include <QEvent>
-#include <QFile>
 #include <QFileInfo>
 #include <QFont>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
-#include <QClipboard>
-#include <QGuiApplication>
 #include <QMenu>
 #include <QMessageBox>
 #include <QPalette>
-#include <QPointer>
 #include <QProgressBar>
-#include <QRegularExpression>
-#include <QRegularExpressionValidator>
-#include <QThread>
-#include <QUrl>
 #include <QVBoxLayout>
+
+#include <algorithm>
+#include <utility>
+
+namespace {
+
+using LibreSCRS::AgentClient::OperationPhase;
+
+// Result-row markers. Kept as literals next to the colours they are drawn in,
+// exactly as the results list has always rendered them.
+const QString kOkIcon = QStringLiteral("✔");
+const QString kFailIcon = QStringLiteral("✘");
+
+} // namespace
 
 SignPage::SignPage(QWidget* parent) : QWidget(parent)
 {
@@ -55,8 +47,10 @@ SignPage::SignPage(QWidget* parent) : QWidget(parent)
 
     // --- Summary card ---
     summaryCard = new QWidget(this);
-    auto* cardLayout = new QHBoxLayout(summaryCard);
+    auto* cardLayout = new QVBoxLayout(summaryCard);
     cardLayout->setContentsMargins(12, 10, 12, 10);
+
+    auto* columns = new QHBoxLayout;
 
     auto makeColumn = [&](const QString& headerText, QLabel*& headerOut, QLabel*& valueOut) {
         auto* col = new QVBoxLayout;
@@ -78,53 +72,26 @@ SignPage::SignPage(QWidget* parent) : QWidget(parent)
         return col;
     };
 
-    cardLayout->addLayout(makeColumn(qtTrId("lc-sign-summary-cert"), certHeaderLabel, certValueLabel));
-    cardLayout->addLayout(makeColumn(qtTrId("lc-sign-summary-files"), filesHeaderLabel, filesValueLabel));
-    cardLayout->addLayout(makeColumn(qtTrId("lc-sign-summary-level"), levelHeaderLabel, levelValueLabel));
-    cardLayout->addStretch();
+    columns->addLayout(makeColumn(qtTrId("lc-sign-summary-cert"), certHeaderLabel, certValueLabel));
+    columns->addLayout(makeColumn(qtTrId("lc-sign-summary-files"), filesHeaderLabel, filesValueLabel));
+    columns->addLayout(makeColumn(qtTrId("lc-sign-summary-level"), levelHeaderLabel, levelValueLabel));
+    columns->addStretch();
+    cardLayout->addLayout(columns);
+
+    // The consent count belongs on the summary card because it is part of what
+    // the holder is agreeing to: not just what gets signed, but how many times
+    // they will be asked for their PIN to sign it.
+    consentHintLabel = new QLabel(summaryCard);
+    consentHintLabel->setObjectName(QStringLiteral("consentHint"));
+    consentHintLabel->setWordWrap(true);
+    QFont hintFont = consentHintLabel->font();
+    hintFont.setPointSize(8);
+    consentHintLabel->setFont(hintFont);
+    consentHintLabel->setVisible(false);
+    cardLayout->addWidget(consentHintLabel);
 
     summaryCard->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     layout->addWidget(summaryCard);
-    layout->addSpacing(10);
-
-    // --- CAN entry (for contactless eMRTD cards) ---
-    canRow = new QWidget(this);
-    auto* canRowLayout = new QHBoxLayout(canRow);
-    canRowLayout->setContentsMargins(0, 0, 0, 0);
-    //% "CAN:"
-    canLabel = new QLabel(qtTrId("lc-sign-can-label"), canRow);
-    canRowLayout->addWidget(canLabel);
-    canEdit = new QLineEdit(canRow);
-    canEdit->setMaximumWidth(160);
-    // CAN is a 6-digit numeric code on Serbian eID / eMRTD cards, with
-    // longer variants (up to ~10 digits) defined in some EU profiles. We
-    // gate input to digits only via QRegularExpressionValidator instead
-    // of QIntValidator, which overflows for maxLength > 9.
-    canEdit->setMaxLength(10);
-    canEdit->setValidator(new QRegularExpressionValidator(QRegularExpression(QStringLiteral("^\\d*$")), canEdit));
-    canRowLayout->addWidget(canEdit);
-    canRowLayout->addStretch();
-    canRow->setVisible(false); // shown only for CL readers
-    layout->addWidget(canRow);
-
-    // --- PIN entry ---
-    pinRow = new QWidget(this);
-    auto* pinRowLayout = new QHBoxLayout(pinRow);
-    pinRowLayout->setContentsMargins(0, 0, 0, 0);
-    //% "PIN:"
-    pinLabel = new QLabel(qtTrId("lc-sign-pin-label"), pinRow);
-    pinRowLayout->addWidget(pinLabel);
-
-    pinEdit = new QLineEdit(pinRow);
-    pinEdit->setEchoMode(QLineEdit::Password);
-    pinEdit->setMaximumWidth(160);
-    pinEdit->setMaxLength(256);
-    pinEdit->setAttribute(Qt::WA_InputMethodEnabled, false);
-    iconutils::addToggleVisibilityAction(this, pinEdit);
-    pinRowLayout->addWidget(pinEdit);
-    pinRowLayout->addStretch();
-    layout->addWidget(pinRow);
-
     layout->addSpacing(10);
 
     // --- Progress ---
@@ -134,9 +101,11 @@ SignPage::SignPage(QWidget* parent) : QWidget(parent)
     progressLayout->setSpacing(4);
 
     progressLabel = new QLabel(progressWidget);
+    progressLabel->setObjectName(QStringLiteral("progressLabel"));
     progressLayout->addWidget(progressLabel);
 
     progressBar = new QProgressBar(progressWidget);
+    progressBar->setObjectName(QStringLiteral("progressBar"));
     progressBar->setFixedHeight(8);
     progressBar->setTextVisible(false);
     progressLayout->addWidget(progressBar);
@@ -148,6 +117,7 @@ SignPage::SignPage(QWidget* parent) : QWidget(parent)
 
     // --- Results list ---
     resultsList = new QListWidget(this);
+    resultsList->setObjectName(QStringLiteral("resultsList"));
     resultsList->setItemDelegate(new ResultDelegate(resultsList));
     resultsList->setContextMenuPolicy(Qt::CustomContextMenu);
     resultsList->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -171,58 +141,10 @@ SignPage::SignPage(QWidget* parent) : QWidget(parent)
 
     layout->addStretch();
 
-    // PIN validity drives the wizard's Sign button
-    auto checkReady = [this]() {
-        bool pinOk = !pinEdit->text().isEmpty() && !signingComplete;
-        bool canOk = !canRow->isVisible() || !canEdit->text().isEmpty();
-        emit pinReady(pinOk && canOk);
-    };
-    connect(pinEdit, &QLineEdit::textChanged, this, checkReady);
-    connect(canEdit, &QLineEdit::textChanged, this, checkReady);
-
     applyThemeColors();
 }
 
-SignPage::~SignPage()
-{
-    // Thread safety: the worker thread posts UI updates via QMetaObject::invokeMethod
-    // with a QPointer<SignPage> guard (see startSigning). The guard ensures that if
-    // this object is destroyed before a queued invocation runs, the call is silently
-    // dropped. We still disconnect signals and wait here for orderly shutdown.
-    //
-    // The wait is BOUNDED so a smart card or PKCS#11 module that hangs cannot
-    // block application shutdown indefinitely. PKCS#11 sign operations are not
-    // cancellable mid-call (SCardCancel is a no-op for SCardTransmit on Linux),
-    // so if the module truly hangs we accept leaking the worker thread (the
-    // OS reaps it on process exit) rather than freezing the entire app. The
-    // PIN material is held in a LibreSCRS::Secure::String captured by the
-    // lambda, so the leaked thread does NOT leave PIN bytes around
-    // indefinitely either — the String destructor still cleanses when the
-    // thread eventually returns.
-    //
-    // The worker captures shared_ptr<CardPlugin> and shared_ptr<CardSession>
-    // — their lifetime is provably bounded by the captured shared_ptrs, so
-    // if the 30-second wait expires and the thread keeps running the module
-    // is still accessing live objects (no UAF). SigningService::sign itself
-    // also retains the shared_ptrs for the duration of the call.
-    if (workerThread && workerThread->isRunning()) {
-        workerThread->disconnect(this);
-        constexpr int kShutdownWaitMs = 30000; // 30s — PC/SC transmit timeout plus PKCS#11 sign headroom
-        if (!workerThread->wait(kShutdownWaitMs)) {
-            qWarning("SignPage: worker thread did not finish within %dms; "
-                     "leaking thread to avoid blocking shutdown. The worker "
-                     "holds shared_ptr<CardPlugin> and shared_ptr<CardSession> "
-                     "so the underlying objects remain live until the thread "
-                     "eventually completes.",
-                     kShutdownWaitMs);
-            // Intentionally NOT calling terminate() — that would leave the
-            // PKCS#11 module in undefined state. Detach instead: the existing
-            // QThread::finished → deleteLater connection still self-cleans
-            // when the operation eventually returns.
-            workerThread = nullptr;
-        }
-    }
-}
+SignPage::~SignPage() = default;
 
 void SignPage::changeEvent(QEvent* event)
 {
@@ -233,8 +155,7 @@ void SignPage::changeEvent(QEvent* event)
         certHeaderLabel->setText(qtTrId("lc-sign-summary-cert"));
         filesHeaderLabel->setText(qtTrId("lc-sign-summary-files"));
         levelHeaderLabel->setText(qtTrId("lc-sign-summary-level"));
-        pinLabel->setText(qtTrId("lc-sign-pin-label"));
-        canLabel->setText(qtTrId("lc-sign-can-label"));
+        updateConsentHint();
     }
 }
 
@@ -258,9 +179,7 @@ void SignPage::applyThemeColors()
     setLabelColor(certValueLabel, textColor);
     setLabelColor(filesValueLabel, textColor);
     setLabelColor(levelValueLabel, textColor);
-
-    // PIN focus border
-    pinEdit->setStyleSheet(QStringLiteral("QLineEdit:focus { border: 1px solid %1; }").arg(signing::kTealHex));
+    setLabelColor(consentHintLabel, placeholderColor);
 
     // Progress bar
     progressBar->setStyleSheet(QStringLiteral("QProgressBar { background: %1; border-radius: 4px; }"
@@ -277,64 +196,50 @@ void SignPage::applyThemeColors()
 
 void SignPage::configure(Config cfg)
 {
-    Q_ASSERT(cfg.cardPlugin != nullptr);
-    Q_ASSERT(cfg.session != nullptr);
-
-    certificate = cfg.certificate;
-    readerName = cfg.readerName;
-    fileInfos = cfg.fileInfos;
-    sigLevel = cfg.level;
-    outputDir = cfg.outputFolder;
-    visualParams = std::move(cfg.visual);
-    tsaUrl = cfg.tsaUrl;
-    cardPlugin = std::move(cfg.cardPlugin);
-    session = std::move(cfg.session);
+    certificate = std::move(cfg.certificate);
+    fileInfos = std::move(cfg.fileInfos);
+    sigLevel = std::move(cfg.level);
+    outputDir = std::move(cfg.outputFolder);
+    visual = std::move(cfg.visual);
+    tsaUrl = std::move(cfg.tsaUrl);
     signingInProgress = false;
     signingComplete = false;
     failedCount = 0;
 
-    // Heuristic: reader name contains CL/Contactless. May false-positive for non-PACE readers.
-    const QString readerQ = QString::fromStdString(cfg.readerName);
-    const bool isCL = readerQ.contains(QStringLiteral("CL"), Qt::CaseInsensitive) ||
-                      readerQ.contains(QStringLiteral("Contactless"), Qt::CaseInsensitive);
-    canRow->setVisible(needsCanInput(isCL, cfg.smAlreadyUp));
-    canEdit->clear();
+    // The subject names the certificate here exactly as it does in the token
+    // list; the opaque id is the only honest fallback when the agent reported
+    // no subject at all.
+    certValueLabel->setText(certificate.subject.isEmpty() ? certificate.id : certificate.subject);
+    filesValueLabel->setText(QString::number(fileInfos.count()));
+    levelValueLabel->setText(QString(sigLevel).replace(QLatin1Char('_'), QLatin1Char('-')));
+    updateConsentHint();
 
-    certValueLabel->setText(QString::fromStdString(cfg.certificate.label));
-    filesValueLabel->setText(QString::number(cfg.fileInfos.count()));
-    levelValueLabel->setText(QString(cfg.level).replace(QLatin1Char('_'), QLatin1Char('-')));
-
-    pinRow->setVisible(true);
-    pinEdit->setEnabled(true);
     progressWidget->setVisible(false);
     progressLabel->clear();
     progressBar->setRange(0, 100);
     progressBar->setValue(0);
     resultsList->clear();
     resultsList->setVisible(false);
-
-    bool canOk = !canRow->isVisible() || !canEdit->text().isEmpty();
-    emit pinReady(!pinEdit->text().isEmpty() && canOk);
 }
 
-void SignPage::setSigningService(std::shared_ptr<LibreSCRS::Signing::SigningService> svc)
+void SignPage::setSignController(librecelik::agent::SignController* newController)
 {
-    signingService = std::move(svc);
-}
+    if (controller == newController)
+        return;
+    if (!controller.isNull())
+        controller->disconnect(this);
 
-bool SignPage::hasPinInput() const
-{
-    bool canOk = !canRow->isVisible() || !canEdit->text().isEmpty();
-    return !pinEdit->text().isEmpty() && canOk;
-}
+    controller = newController;
+    if (controller.isNull())
+        return;
 
-void SignPage::focusPin()
-{
-    // If CAN field is visible and empty, focus it first; otherwise focus PIN
-    if (canRow->isVisible() && canEdit->text().isEmpty())
-        canEdit->setFocus();
-    else
-        pinEdit->setFocus();
+    connect(controller, &librecelik::agent::SignController::phaseChanged, this, &SignPage::onPhaseChanged);
+    connect(controller, &librecelik::agent::SignController::rowFinished, this, &SignPage::onRowFinished);
+    connect(controller, &librecelik::agent::SignController::finished, this, &SignPage::onFinished);
+
+    // The controller answers whether the agent signs batches, which is the
+    // other half of what the consent count is made of.
+    updateConsentHint();
 }
 
 bool SignPage::isSigningComplete() const
@@ -352,41 +257,47 @@ bool SignPage::hasFailures() const
     return failedCount > 0;
 }
 
-namespace {
-std::string refreshTimestampIn(std::string text)
+int SignPage::ceremonyCount() const
 {
-    static const QRegularExpression dateRe(QStringLiteral("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"));
-    QString q = QString::fromStdString(text);
-    q.replace(dateRe, QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss")));
-    return q.toStdString();
+    if (fileInfos.isEmpty())
+        return 0;
+
+    // One ceremony per file is what a pre-batch agent costs, and it is also
+    // the honest answer while no controller has been handed over: promising
+    // fewer confirmations than the run will ask for is a consent-count lie.
+    if (controller.isNull() || !controller->canBatch())
+        return static_cast<int>(fileInfos.count());
+
+    QList<librecelik::agent::SignRequestItem> items;
+    items.reserve(fileInfos.count());
+    for (const auto& info : fileInfos)
+        items.append({info.filePath, info.format, info.packaging});
+    // One run is one call is one consent — a run of a single document included.
+    return static_cast<int>(librecelik::agent::partitionIntoRuns(items).count());
 }
 
-LibreSCRS::Signing::VisualSignatureParams
-cloneWithRefreshedTimestamp(const LibreSCRS::Signing::VisualSignatureParams& src)
+void SignPage::updateConsentHint()
 {
-    LibreSCRS::Signing::VisualSignatureParams::Builder b;
-    b.pageIndex(src.pageIndex())
-        .rect(LibreSCRS::Signing::Rect{src.x(), src.y(), src.width(), src.height()})
-        .textTemplate(refreshTimestampIn(src.textTemplate()));
-    return std::move(b).build();
+    const int ceremonies = ceremonyCount();
+    //% "You will confirm and enter your PIN in the system dialog %n times."
+    consentHintLabel->setText(qtTrId("lc-sign-consent-hint", ceremonies));
+    consentHintLabel->setVisible(ceremonies > 0);
 }
-} // namespace
 
 void SignPage::startSigning()
 {
-    if (workerThread && workerThread->isRunning())
+    if (signingInProgress || signingComplete)
+        return;
+    if (controller.isNull() || fileInfos.isEmpty())
         return;
 
-    if (!signingService || fileInfos.isEmpty() || !cardPlugin || !session)
-        return;
-
-    // Pre-flight: validate the output folder is a writable existing
-    // directory before we kick off any worker. The user could have selected
-    // a folder that has since been deleted, made read-only, unmounted, or
-    // replaced by a regular file. Failing here gives a clear error instead
-    // of a string of per-file write failures from the signing loop.
+    // Pre-flight: the output folder must still be a writable existing
+    // directory. The user could have selected one that has since been
+    // deleted, made read-only, unmounted, or replaced by a regular file —
+    // failing here gives a clear error instead of a string of per-row write
+    // failures after every document has already been signed.
     {
-        QFileInfo outInfo(outputDir);
+        const QFileInfo outInfo(outputDir);
         if (outputDir.isEmpty() || !outInfo.exists() || !outInfo.isDir() || !outInfo.isWritable()) {
             librecelik::dialogs::warning(this, qtTrId("lc-sign-output-folder-error-title"),
                                          qtTrId("lc-sign-output-folder-error-message"));
@@ -394,357 +305,100 @@ void SignPage::startSigning()
         }
     }
 
-    // Defensive: re-validate TSA URL. FileSelectionPage already enforces
-    // https+host for non-B_B levels via signing::isValidTsaUrl, but
-    // configure() could be called directly with anything — re-check here
-    // so the signing service is never handed an untrusted URL.
-    if (sigLevel != QStringLiteral("B_B") && !tsaUrl.empty()) {
-        if (!signing::isValidTsaUrl(QString::fromStdString(tsaUrl))) {
-            librecelik::dialogs::warning(this, qtTrId("lc-sign-tsa-invalid-title"),
-                                         qtTrId("lc-sign-tsa-invalid-message"));
-            return;
-        }
+    // Defensive: re-validate the TSA URL. FileSelectionPage already enforces
+    // https+host for non-B_B levels, but configure() could be called directly
+    // with anything — re-check so the agent is never handed an untrusted URL.
+    if (sigLevel != QStringLiteral("B_B") && !tsaUrl.isEmpty() && !signing::isValidTsaUrl(tsaUrl)) {
+        librecelik::dialogs::warning(this, qtTrId("lc-sign-tsa-invalid-title"), qtTrId("lc-sign-tsa-invalid-message"));
+        return;
     }
 
-    // Warn if certificate is expired and level is B-B (no revocation data embedded)
-    // Capture the user's accept decision so the per-job SigningRequest builder
-    // below can honour it via SigningRequest::Builder::allowExpiredCert(true);
-    // without this, the signing service would refuse the sign downstream even
-    // though the user explicitly opted in at the warning gate.
-    bool allowExpiredCert = false;
-    if (sigLevel == QStringLiteral("B_B") && signing::isCertificateExpired(certificate.derBytes)) {
-        auto answer = librecelik::dialogs::warning(this, qtTrId("lc-sign-expired-cert-title"),
-                                                   qtTrId("lc-sign-expired-cert-message"),
-                                                   QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    // An expired certificate at the baseline level: no revocation data is
+    // embedded, so the signature can never be shown to have been made while
+    // the certificate was valid. The agent honours the opt-in through the
+    // documented "allowExpired" consent, which applies at that level only.
+    bool allowExpired = false;
+    if (sigLevel == QStringLiteral("B_B") && certificate.notAfter < QDateTime::currentDateTimeUtc()) {
+        const auto answer = librecelik::dialogs::warning(this, qtTrId("lc-sign-expired-cert-title"),
+                                                         qtTrId("lc-sign-expired-cert-message"),
+                                                         QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
         if (answer != QMessageBox::Yes)
             return;
-        allowExpiredCert = true;
+        allowExpired = true;
     }
+
+    LibreSCRS::AgentClient::SignOptions options;
+    options.level = librecelik::agent::levelFromUiToken(sigLevel);
+    if (visual)
+        options.visualSignature = *visual;
+    if (!tsaUrl.isEmpty())
+        options.tsaUrl = tsaUrl;
+    if (allowExpired)
+        options.extra.insert(QStringLiteral("allowExpired"), true);
+
+    // Format and packaging travel per item: the controller partitions the
+    // selection into homogeneous runs and sets options.format/packaging from
+    // the run it is about to dial.
+    QList<librecelik::agent::SignRequestItem> items;
+    items.reserve(fileInfos.count());
+    for (const auto& info : fileInfos)
+        items.append({info.filePath, info.format, info.packaging});
 
     signingInProgress = true;
-    emit signingStarted();
-
-    // Read PIN + CAN into LibreSCRS::Secure::String BEFORE hiding the input
-    // rows. canRow->isVisible() is the CL-reader gate for the CAN:PIN path;
-    // hiding the row first would short-circuit the check and send only the
-    // raw PIN, breaking contactless signing. Moving this read up also
-    // shortens the window PIN material lives inside the QLineEdit's QString
-    // storage.
-    //
-    // The Secure::String(std::string&&) constructor adopts the rvalue from
-    // QString::toStdString() and cleanses its bytes (including the SSO
-    // inline buffer) before the rvalue dies, so no plaintext intermediate
-    // outlives the assignment.
-    LibreSCRS::Secure::String pinSecure{pinEdit->text().toStdString()};
-    LibreSCRS::Secure::String canSecure;
-    if (canRow->isVisible() && !canEdit->text().isEmpty())
-        canSecure = LibreSCRS::Secure::String{canEdit->text().toStdString()};
-
-    // PIN and CAN values are now safely in SecureBuffer. Hide the input
-    // rows so the progress + results area owns the bottom half of the
-    // page; the widgets have no further role during signing or on the
-    // completion screen.
-    pinRow->setVisible(false);
-    canRow->setVisible(false);
     progressWidget->setVisible(true);
-    progressBar->setRange(0, 0); // indeterminate
-    progressLabel->setText(qtTrId("lc-sign-preparing"));
+    progressBar->setRange(0, 0); // indeterminate until the first phase report
+    progressLabel->setText(librecelik::agent::phaseText(OperationPhase::Created));
+    resultsList->clear();
     resultsList->setVisible(true);
 
-    const int totalFiles = fileInfos.count();
-
-    const std::string keyAlias = certificate.label;
-    const LibreSCRS::Signing::SignatureLevel level = parseLevel(sigLevel);
-
-    struct SignJob
-    {
-        QString filePath;
-        QString outputPath;
-        LibreSCRS::Signing::SignatureFormat format;
-        LibreSCRS::Signing::PackagingMode packaging;
-    };
-
-    QList<SignJob> jobs;
-    for (const auto& info : fileInfos)
-        jobs.append({info.filePath, buildOutputPath(info), info.format, info.packaging});
-
-    auto svc = signingService;    // outlives wizard (owned by LibreCelik)
-    auto plugin = cardPlugin;     // shared — worker lambda retains ownership
-    auto activeSession = session; // shared — worker lambda retains ownership
-    auto visualTemplate = std::move(visualParams);
-    auto tsaUrlCopy = tsaUrl;
-    QPointer<SignPage> guard(this);
-
-    // Per-request TSA override: if the wizard's FileSelectionPage supplied a
-    // specific TSA URL (shown only for B-T and higher), each SigningRequest
-    // carries its own tsaOverride. The shared SigningService's service-level
-    // TsaProvider (installed once at startup from SigningConfiguration) is
-    // the fallback when no override is set — no service-wide state mutation,
-    // no RAII restore.
-    workerThread = QThread::create([this, guard, jobs, pinSecure = std::move(pinSecure),
-                                    canSecure = std::move(canSecure), keyAlias, level, totalFiles,
-                                    visualTemplate = std::move(visualTemplate), svc, plugin,
-                                    session = std::move(activeSession), tsaUrl = std::move(tsaUrlCopy),
-                                    allowExpiredCert]() mutable {
-        int succeeded = 0;
-        int failed = 0;
-        try {
-            // Hand the CAN to the plugin BEFORE the per-file loop so PACE
-            // runs once per signing session rather than once per file. The
-            // plugin stores its own cleansing copy; the worker-local
-            // canSecure cleanses on scope exit.
-            if (!canSecure.empty())
-                plugin->setCredentials(*session, "can", canSecure);
-
-            for (int i = 0; i < jobs.count(); ++i) {
-                const auto& job = jobs.at(i);
-                QFileInfo fi(job.filePath);
-
-                QMetaObject::invokeMethod(
-                    guard.data(), [guard, this, i, count = jobs.count(), name = fi.fileName(), totalFiles]() {
-                        if (!guard)
-                            return;
-                        progressLabel->setText(qtTrId("lc-sign-progress").arg(i + 1).arg(count).arg(name));
-                        if (totalFiles > 1) {
-                            progressBar->setRange(0, totalFiles);
-                            progressBar->setValue(i);
-                        } else {
-                            progressBar->setRange(0, 0);
-                        }
-                    });
-
-                // Pre-flight: refuse files larger than 256 MiB without touching the bridge.
-                constexpr qint64 maxFileSize = 256 * 1024 * 1024;
-                if (fi.size() > maxFileSize) {
-                    QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName()]() {
-                        if (!guard)
-                            return;
-                        addResultItem(QStringLiteral("\u2718"), signing::kErrorHex,
-                                      qtTrId("lc-sign-fail-too-large").arg(name));
-                    });
-                    ++failed;
-                    continue;
-                }
-
-                LibreSCRS::Signing::SigningRequest::Builder rb;
-                rb.inputFile(std::filesystem::path(job.filePath.toStdString()));
-                rb.outputFile(std::filesystem::path(job.outputPath.toStdString()));
-                rb.format(job.format);
-                rb.packaging(job.packaging);
-                rb.level(level);
-                rb.certificateLabel(keyAlias);
-                if (!tsaUrl.empty())
-                    rb.tsaOverride(LibreSCRS::Signing::staticTsa(tsaUrl));
-                if (job.format == LibreSCRS::Signing::SignatureFormat::Pades && visualTemplate.has_value())
-                    rb.visualParams(cloneWithRefreshedTimestamp(*visualTemplate));
-                if (allowExpiredCert)
-                    rb.allowExpiredCert(true);
-
-                LibreSCRS::Signing::SigningRequest req = std::move(rb).build();
-
-                // CredentialProvider: hands the signing PIN back in the
-                // "pin" field that AuthRequirement::forSigning declares. The
-                // CAN, when present, was installed on the plugin before the
-                // loop via setCredentials — it is not a signing credential.
-                //
-                // pinSecure is captured by reference; each invocation hands
-                // out a fresh per-copy-cleansing duplicate via Secure::String
-                // copy semantics. The CredentialResult-owned copy cleanses
-                // when the result goes out of scope.
-                auto credentialProvider =
-                    [&pinSecure](const LibreSCRS::Auth::AuthRequirement&) -> LibreSCRS::Auth::CredentialResult {
-                    std::vector<LibreSCRS::Auth::CredentialEntry> values;
-                    values.emplace_back("pin", pinSecure);
-                    return LibreSCRS::Auth::CredentialResult::ok(std::move(values));
-                };
-
-                LibreSCRS::Signing::SigningResult result = svc->sign(req, credentialProvider, plugin, session);
-
-                using S = LibreSCRS::Signing::SigningResult::Status;
-                if (result.status == S::Ok) {
-                    ++succeeded;
-                    QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName(),
-                                                             outName = QFileInfo(job.outputPath).fileName()]() {
-                        if (!guard)
-                            return;
-                        addResultItem(QStringLiteral("\u2714"), signing::kSuccessHex,
-                                      qtTrId("lc-sign-ok").arg(name, outName));
-                    });
-                } else {
-                    ++failed;
-                    QString msg;
-                    // Track whether the PIN pathway is now compromised so the
-                    // outer loop stops issuing further sign() calls. Every
-                    // subsequent call would re-send the same stored PIN and
-                    // consume another on-card retry (3 retries → permanent
-                    // block).
-                    bool pinCompromised = false;
-                    switch (result.status) {
-                    case S::UserCancelled:
-                        msg = qtTrId("lc-sign-fail-cancelled");
-                        break;
-                    case S::PinVerificationFailed:
-                        msg = qtTrId("lc-sign-fail-pin");
-                        pinCompromised = true;
-                        break;
-                    case S::CardBlocked:
-                        msg = qtTrId("lc-sign-fail-blocked");
-                        pinCompromised = true;
-                        break;
-                    case S::TsaUnreachable:
-                        msg = qtTrId("lc-sign-fail-tsa");
-                        break;
-                    case S::TrustStoreUnavailable:
-                        msg = qtTrId("lc-sign-fail-trust");
-                        break;
-                    case S::InvalidRequest:
-                        msg = qtTrId("lc-sign-fail-invalid");
-                        break;
-                    case S::InvalidDocument:
-                        msg = qtTrId("lc-sign-fail-document");
-                        break;
-                    case S::SigningEngineError:
-                    default:
-                        msg = result.diagnosticDetail.has_value()
-                                  ? qtTrId("lc-sign-fail-sign")
-                                        .arg(fi.fileName(), QString::fromStdString(*result.diagnosticDetail))
-                                  : qtTrId("lc-sign-fail-generic");
-                        break;
-                    }
-                    QMetaObject::invokeMethod(guard.data(), [guard, this, name = fi.fileName(), msg]() {
-                        if (!guard)
-                            return;
-                        addResultItem(QStringLiteral("\u2718"), signing::kErrorHex, msg);
-                        Q_UNUSED(name);
-                    });
-                    if (pinCompromised) {
-                        // Record every remaining job as failed with the same
-                        // PIN-related diagnostic and halt the loop. The user
-                        // will see one failure per file plus the original
-                        // PIN-failed entry; the card retry counter is only
-                        // burned once for the batch.
-                        const bool wasBlocked = (result.status == S::CardBlocked);
-                        for (int j = i + 1; j < jobs.count(); ++j) {
-                            const auto& skipJob = jobs.at(j);
-                            QFileInfo skipFi(skipJob.filePath);
-                            ++failed;
-                            const QString skipMsg =
-                                wasBlocked ? qtTrId("lc-sign-fail-blocked") : qtTrId("lc-sign-fail-pin");
-                            QMetaObject::invokeMethod(guard.data(), [guard, this, name = skipFi.fileName(), skipMsg]() {
-                                if (!guard)
-                                    return;
-                                addResultItem(QStringLiteral("\u2718"), signing::kErrorHex, skipMsg);
-                                Q_UNUSED(name);
-                            });
-                        }
-                        break;
-                    }
-                }
-            }
-
-        } catch (const std::exception& e) {
-            // Count any jobs we didn't reach as failed, and show the error
-            // to the user. The outer loop has already incremented succeeded
-            // / failed for jobs that ran to completion; anything left over
-            // never ran.
-            const int totalCount = static_cast<int>(jobs.count());
-            const int unreached = totalCount - succeeded - failed;
-            if (unreached > 0)
-                failed += unreached;
-            QMetaObject::invokeMethod(guard.data(), [guard, this, err = QString::fromUtf8(e.what())]() {
-                if (!guard)
-                    return;
-                addResultItem(QStringLiteral("\u2718"), signing::kErrorHex, err);
-            });
-        } catch (...) {
-            const int totalCount = static_cast<int>(jobs.count());
-            const int unreached = totalCount - succeeded - failed;
-            if (unreached > 0)
-                failed += unreached;
-            QMetaObject::invokeMethod(guard.data(), [guard, this]() {
-                if (!guard)
-                    return;
-                //% "Unknown signing error"
-                addResultItem(QStringLiteral("\u2718"), signing::kErrorHex, qtTrId("lc-sign-unknown-error"));
-            });
-        }
-
-        // PIN cleansing happens unconditionally via PinScrubber RAII at lambda exit.
-
-        // Final update on main thread
-        QMetaObject::invokeMethod(guard.data(), [guard, this, succeeded, failed, count = jobs.count()]() {
-            if (!guard)
-                return;
-            progressBar->setRange(0, count);
-            progressBar->setValue(count);
-            progressLabel->setText(qtTrId("lc-sign-complete").arg(succeeded).arg(failed));
-            clearPin();
-            signingInProgress = false;
-            signingComplete = true;
-            failedCount = failed;
-            emit signingFinished(succeeded, failed);
-        });
-    });
-
-    connect(workerThread, &QThread::finished, workerThread, &QThread::deleteLater);
-    connect(workerThread, &QThread::finished, this, [this]() { workerThread = nullptr; });
-    workerThread->start();
+    emit signingStarted();
+    controller->start(certificate.id, items, options, outputDir);
 }
 
-QString SignPage::buildOutputPath(const FileSignInfo& info) const
+void SignPage::onPhaseChanged(OperationPhase phase, double progress)
 {
-    QFileInfo fi(info.filePath);
-    QString outputPath;
-    switch (info.format) {
-    case LibreSCRS::Signing::SignatureFormat::Pades:
-        outputPath = QDir(outputDir).filePath(fi.completeBaseName() + QStringLiteral("-signed.pdf"));
-        break;
-    case LibreSCRS::Signing::SignatureFormat::Xades:
-        if (info.packaging == LibreSCRS::Signing::PackagingMode::Enveloped)
-            outputPath = QDir(outputDir).filePath(fi.completeBaseName() + QStringLiteral("-signed.xml"));
-        else
-            outputPath = QDir(outputDir).filePath(fi.fileName() + QStringLiteral(".xsig"));
-        break;
-    case LibreSCRS::Signing::SignatureFormat::AsicE:
-        outputPath = QDir(outputDir).filePath(fi.completeBaseName() + QStringLiteral(".asice"));
-        break;
-    case LibreSCRS::Signing::SignatureFormat::Cades:
-        outputPath = QDir(outputDir).filePath(fi.fileName() + QStringLiteral(".p7s"));
-        break;
-    case LibreSCRS::Signing::SignatureFormat::Jades:
-        outputPath = QDir(outputDir).filePath(fi.fileName() + QStringLiteral(".jose"));
-        break;
+    progressWidget->setVisible(true);
+    progressLabel->setText(librecelik::agent::phaseText(phase));
+
+    if (phase == OperationPhase::AwaitingConsent) {
+        // The pace here is the holder's, not the agent's: a determinate bar
+        // would animate a wait nobody is driving.
+        progressBar->setRange(0, 0);
+        return;
     }
-    if (QFile::exists(outputPath)) {
-        QFileInfo outFi(outputPath);
-        QString base = outFi.completeBaseName();
-        QString suffix = outFi.suffix();
-        QString dir = outFi.absolutePath();
-        // Cap the search: if the user somehow has 10000+ numbered siblings,
-        // bail with an empty path so the caller's open-for-write failure
-        // surfaces a normal error rather than us spinning forever.
-        constexpr int kMaxSuffixAttempts = 10000;
-        int counter = 2;
-        do {
-            outputPath = QDir(dir).filePath(QStringLiteral("%1(%2).%3").arg(base).arg(counter).arg(suffix));
-            ++counter;
-        } while (QFile::exists(outputPath) && counter <= kMaxSuffixAttempts);
-        if (QFile::exists(outputPath))
-            return {};
-    }
-    return outputPath;
+    progressBar->setRange(0, 100);
+    progressBar->setValue(static_cast<int>(std::clamp(progress, 0.0, 1.0) * 100.0));
 }
 
-LibreSCRS::Signing::SignatureLevel SignPage::parseLevel(const QString& level)
+void SignPage::onRowFinished(int index, const librecelik::agent::SignRowResult& result)
 {
-    using L = LibreSCRS::Signing::SignatureLevel;
-    if (level == QStringLiteral("B_B"))
-        return L::B_B;
-    if (level == QStringLiteral("B_LT"))
-        return L::B_LT;
-    if (level == QStringLiteral("B_LTA"))
-        return L::B_LTA;
-    return L::B_T;
+    // Rows appear in the order they finish, which is the order the runs were
+    // dialled in — the selection-order index the controller carries is what
+    // the run structure maps back to, not a position in this list.
+    Q_UNUSED(index)
+
+    const QString name = QFileInfo(result.filePath).fileName();
+    if (result.ok) {
+        addResultItem(kOkIcon, signing::kSuccessHex,
+                      qtTrId("lc-sign-ok").arg(name, QFileInfo(result.outputPath).fileName()));
+        return;
+    }
+    // Pass-through: the message is already the agent's own failure line,
+    // localized where the wire vocabulary is mapped.
+    addResultItem(kFailIcon, signing::kErrorHex, result.message);
+}
+
+void SignPage::onFinished(int succeeded, int failed)
+{
+    signingInProgress = false;
+    signingComplete = true;
+    failedCount = failed;
+
+    progressBar->setRange(0, 1);
+    progressBar->setValue(1);
+    progressLabel->setText(qtTrId("lc-sign-complete").arg(succeeded).arg(failed));
+
+    emit signingFinished(succeeded, failed);
 }
 
 void SignPage::addResultItem(const QString& icon, const QString& colorHex, const QString& message)
@@ -753,20 +407,4 @@ void SignPage::addResultItem(const QString& icon, const QString& colorHex, const
     item->setData(ResultDelegate::IconTextRole, icon);
     item->setData(ResultDelegate::IconColorRole, colorHex);
     item->setData(ResultDelegate::MessageRole, message);
-}
-
-void SignPage::clearPin()
-{
-    // Best-effort PIN clearing: fill QLineEdit text with null characters,
-    // then clear. Qt's internal QString storage is not directly controllable,
-    // but this overwrites the visible text in the widget's buffer.
-    int len = pinEdit->text().size();
-    pinEdit->setText(QString(len, QChar(0)));
-    pinEdit->clear();
-
-    if (canEdit) {
-        int canLen = canEdit->text().size();
-        canEdit->setText(QString(canLen, QChar(0)));
-        canEdit->clear();
-    }
 }

@@ -381,12 +381,16 @@ endif()
 if(LIBRECELIK_SIGNING_ENABLED)
     # certformat.cpp joins this target for the KeyUsage-bitmask cases; it is
     # LM-free from the certificate-viewer re-type onward, so it adds no
-    # middleware dependency. certutils.cpp and the LM links below stay until
-    # the signing wizard stops parsing DER in-process — the CertUtils suites
-    # still cover live production code.
+    # middleware dependency. The target itself goes LM-free with the signing
+    # wizard's re-type: nothing it compiles parses DER in-process any more.
+    # The file-selection page joins this target (with the drop zone and the
+    # list delegate it owns) so the routing and selection-cap cases exercise
+    # the production widget instead of a test-local copy of its tables.
     add_executable(SigningUnitTests
         signing_unit_test.cpp
-        ${CMAKE_SOURCE_DIR}/src/signing/certutils.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/fileselectionpage.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/filedropzone.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/filelistdelegate.cpp
         ${CMAKE_SOURCE_DIR}/src/certificate/certformat.cpp
     )
     target_include_directories(SigningUnitTests PRIVATE
@@ -397,9 +401,12 @@ if(LIBRECELIK_SIGNING_ENABLED)
         GTest::gtest
         Qt6::Core
         Qt6::Widgets
-        LibreSCRS::Certificate
-        LibreSCRS::Signing
+        # The page speaks the client's signature-format vocabulary and spells
+        # the batch bound from the client header.
+        LibreAgent::ClientQt
     )
+    # FileSelectionPage, FileDropZone and FileListDelegate are QObjects.
+    set_target_properties(SigningUnitTests PROPERTIES AUTOMOC ON)
     gtest_discover_tests(SigningUnitTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()
 
@@ -522,12 +529,12 @@ if(LIBRECELIK_SIGNING_ENABLED)
     find_package(Qt6 REQUIRED COMPONENTS PdfWidgets)
 
     # Paint-capture-based integration test for PdfPreviewWidget. Verifies
-    # that the preview widget renders the visual-signature appearance in
-    # agreement with LibreSCRS::Signing::layoutVisualSignature for the same
-    # (text, box) inputs. No friend classes, no test-only accessors — uses
+    # that the preview widget renders exactly the visual-signature layout its
+    # layout provider hands it — in production the agent's own, here a
+    # scripted stand-in. No friend classes, no test-only accessors — uses
     # a custom QPaintEngine to record every drawText / clip / font state
     # change during the widget's paint pass. Verifies the visible-signature
-    # fill-box layout (G3 amendment).
+    # fill-box layout.
     add_executable(PdfPreviewWidgetTests
         pdfpreviewwidget_test.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/pdfpreviewwidget.cpp
@@ -541,11 +548,17 @@ if(LIBRECELIK_SIGNING_ENABLED)
         Qt6::Widgets
         Qt6::PdfWidgets
         Qt6::Gui
-        LibreSCRS::Signing
+        # pdfpreviewwidget.h speaks the client's own layout result, and the
+        # widget asks the agent rather than the middleware for its layout.
+        LibreAgent::ClientQt
     )
     set_target_properties(PdfPreviewWidgetTests PROPERTIES AUTOMOC ON)
     gtest_discover_tests(PdfPreviewWidgetTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+    # Compiles every wizard translation unit directly, so it waits behind the
+    # switch until the last wizard page has been re-typed and comes back with
+    # its build description re-pointed in one edit.
+    if(LIBRECELIK_WIZARD_E2E_READY)
     add_executable(SigningWizardE2ETests
         signingwizard_e2e_test.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/signingwizard.cpp
@@ -554,7 +567,6 @@ if(LIBRECELIK_SIGNING_ENABLED)
         ${CMAKE_SOURCE_DIR}/src/signing/signpage.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/filedropzone.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/pdfpreviewwidget.cpp
-        ${CMAKE_SOURCE_DIR}/src/signing/certutils.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/wizardheaderwidget.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/filelistdelegate.cpp
         ${CMAKE_SOURCE_DIR}/src/signing/resultdelegate.cpp
@@ -597,6 +609,77 @@ if(LIBRECELIK_SIGNING_ENABLED)
     set_target_properties(SigningWizardE2ETests PROPERTIES AUTOMOC ON)
     add_dependencies(SigningWizardE2ETests pkcs15-plugin librescrs-pkcs11 LibreCelik_lrelease)
     gtest_discover_tests(SigningWizardE2ETests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    endif()
+
+    # --- Fake-driven wizard behavior suite (offscreen GUI) ---
+    #
+    # The whole wizard, every page it stacks, and NOTHING that dials: the
+    # gateway and the sign controller are the campaign's scripted fakes, so the
+    # cases assert what LC does with an agent's answers rather than whether an
+    # agent answered. The abstract vtable anchors
+    # (agentgateway/cardcontroller/signcontroller .cpp) ride along for the same
+    # reason the other fake-driven targets need them — the fakes derive from
+    # those classes and the target cannot link without them.
+    #
+    # signrequest.cpp is here because the sign page counts the ceremonies a
+    # selection really costs through the PRODUCTION partitioner, and
+    # errortext.cpp because the halt case asserts the agent's own failure line.
+    #
+    # NO LibreSCRS::* link: every translation unit in this target speaks the
+    # client's own vocabulary. A middleware link appearing here would mean a
+    # wizard TU started parsing card data in-process again.
+    #
+    # The TEST_PREFIX is load-bearing: gtest_discover_tests registers the gtest
+    # SUITE name (WizardFake), which does not contain "SigningWizardFake", so
+    # `ctest -R SigningWizardFake` only matches through the prefix.
+    add_executable(SigningWizardFakeTests
+        signingwizard_fake_test.cpp
+        fake_gateway/fakeagentgateway.cpp
+        fake_gateway/fakecardcontroller.cpp
+        fake_gateway/fakesigncontroller.cpp
+        ${CMAKE_SOURCE_DIR}/src/agent/agentgateway.cpp
+        ${CMAKE_SOURCE_DIR}/src/agent/cardcontroller.cpp
+        ${CMAKE_SOURCE_DIR}/src/agent/signcontroller.cpp
+        ${CMAKE_SOURCE_DIR}/src/agent/errortext.cpp
+        ${CMAKE_SOURCE_DIR}/src/agent/signrequest.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/signingwizard.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/fileselectionpage.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/signatureplacementpage.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/signpage.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/filedropzone.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/filelistdelegate.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/pdfpreviewwidget.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/resultdelegate.cpp
+        ${CMAKE_SOURCE_DIR}/src/signing/wizardheaderwidget.cpp
+        ${CMAKE_SOURCE_DIR}/src/utils/dialogs.cpp
+    )
+    target_include_directories(SigningWizardFakeTests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/src
+        ${PROJECT_BINARY_DIR}/../src
+    )
+    target_link_libraries(SigningWizardFakeTests PRIVATE
+        GTest::gtest_main
+        Qt6::Widgets
+        Qt6::Test
+        Qt6::PdfWidgets
+        LibreAgent::ClientQt
+    )
+    set_target_properties(SigningWizardFakeTests PROPERTIES
+        AUTOMOC ON
+        AUTOUIC ON
+    )
+    target_compile_definitions(SigningWizardFakeTests PRIVATE
+        # Build-tree .qm directory baked in at compile time so the fixture can
+        # install LibreCelik_en.qm (mirrors TokenSectionTests). Both plural
+        # lines this suite reads substitute a count into a TRANSLATED template,
+        # so an untranslated run would render the bare catalog id and drop the
+        # number the case is about.
+        LIBRECELIK_TRANSLATIONS_DIR_DEFAULT="${CMAKE_BINARY_DIR}/src")
+    add_dependencies(SigningWizardFakeTests LibreCelik_lrelease)
+    gtest_discover_tests(SigningWizardFakeTests
+        TEST_PREFIX "SigningWizardFake."
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()
 
 # Header-card placeholder render guard, plus the certificate/credential row

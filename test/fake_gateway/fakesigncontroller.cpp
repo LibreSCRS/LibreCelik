@@ -37,6 +37,12 @@ void FakeSignController::start(const QString& certId, const QList<librecelik::ag
     lastFiles = files;
     lastOptions = options;
     lastOutputFolder = outputFolder;
+    // The phases are what the run reports about ITSELF while it is still
+    // running, so they arrive here even when the terminal is withheld: a run
+    // held at the prompter has already said it is at the prompter.
+    for (const LibreSCRS::AgentClient::OperationPhase phase : std::as_const(scriptedPhases)) {
+        Q_EMIT phaseChanged(phase, 0.0);
+    }
     if (holdOpen) {
         return;
     }
@@ -57,9 +63,6 @@ void FakeSignController::releaseHold()
 
 void FakeSignController::replay()
 {
-    for (const LibreSCRS::AgentClient::OperationPhase phase : std::as_const(scriptedPhases)) {
-        Q_EMIT phaseChanged(phase, 0.0);
-    }
     int succeeded = 0;
     int failed = 0;
     for (int index = 0; index < scriptedRows.size(); ++index) {

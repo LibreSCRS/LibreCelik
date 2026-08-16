@@ -3,7 +3,7 @@
 
 #include "signatureplacementpage.h"
 
-#include "pdfpreviewwidget.h"
+#include "agent/signrequest.h"
 #include "settings/settingskeys.h"
 
 #include <QCheckBox>
@@ -16,6 +16,8 @@
 #include <QSettings>
 #include <QSpinBox>
 #include <QVBoxLayout>
+
+#include <utility>
 
 namespace {
 constexpr int kNavButtonWidth = 32;
@@ -120,6 +122,16 @@ void SignaturePlacementPage::retranslateUi()
     updatePreviewText();
 }
 
+void SignaturePlacementPage::setLayoutProvider(PdfPreviewWidget::LayoutProvider provider)
+{
+    preview->setLayoutProvider(std::move(provider));
+}
+
+void SignaturePlacementPage::setAppearanceFont(const QByteArray& ttfBytes)
+{
+    preview->setAppearanceFont(ttfBytes);
+}
+
 void SignaturePlacementPage::loadPdf(const QString& path, const QString& signerName, const QString& issuer)
 {
     currentSignerName = signerName;
@@ -156,29 +168,18 @@ bool SignaturePlacementPage::isVisualSignatureEnabled() const
     return visualSigCheckbox->isChecked();
 }
 
-LibreSCRS::Signing::VisualSignatureParams SignaturePlacementPage::visualParams() const
+QVariantMap SignaturePlacementPage::visualSignatureMap() const
 {
     // Caller guards this with isVisualSignatureEnabled(); the placement page
-    // is only asked for params when the checkbox is on, and the wizard
-    // passes std::nullopt otherwise. Builder validators (pageIndex >= 0,
-    // positive width/height) would reject an empty call anyway.
-    const QRectF rect = preview->signatureRect();
-
-    // signatureRect() is in PDF user space (origin bottom-left). The native
-    // PAdES engine writes these values straight into /Rect which is also in
-    // PDF user space, so pass through unchanged. A historical y-flip here
-    // converted to DSS's top-left origin and caused a double-transform once
-    // the DSS backend was retired (main commit 1185e24 fixed the regression).
-    const int x = static_cast<int>(rect.x());
-    const int y = static_cast<int>(rect.y());
-    const int w = static_cast<int>(rect.width());
-    const int h = static_cast<int>(rect.height());
-
-    LibreSCRS::Signing::VisualSignatureParams::Builder b;
-    b.pageIndex(preview->currentPage())
-        .rect(LibreSCRS::Signing::Rect{x, y, w, h})
-        .textTemplate(buildSignatureText().toStdString());
-    return std::move(b).build();
+    // is only asked for a placement when the checkbox is on, and the wizard
+    // passes std::nullopt otherwise.
+    //
+    // signatureRect() is in PDF user space (origin bottom-left), which is the
+    // space the wire's visualSignature map is defined in, so the rectangle
+    // passes through unchanged. A historical y-flip here converted to a
+    // top-left origin and caused a double transform in the signed output.
+    return librecelik::agent::makeVisualSignatureMap(preview->currentPage(), preview->signatureRect(),
+                                                     buildSignatureText());
 }
 
 void SignaturePlacementPage::saveSettings() const

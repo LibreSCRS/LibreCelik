@@ -1027,6 +1027,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-sign-summary-files");
     //% "Signing complete: %1 succeeded, %2 failed"
     QT_TRID_NOOP("lc-sign-complete");
+    //% "You will confirm and enter your PIN in the system dialog %n times."
+    QT_TRID_NOOP("lc-sign-consent-hint");
     //% "FAILED: %1 — %2"
     QT_TRID_NOOP("lc-sign-fail-sign");
     //% "FAILED: %1 — file exceeds 256 MB size limit"
@@ -1083,6 +1085,10 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-sign-copy-error");
     //% "Max file size: 256 MB. ZIP archives for ASiC-E: up to 100,000 files, 256 MB decompressed."
     QT_TRID_NOOP("lc-sign-limits-info");
+    //% "One signing run takes at most %1 files. The files beyond that were not added."
+    QT_TRID_NOOP("lc-sign-too-many-files");
+    //% "Each file is confirmed separately — %n confirmations."
+    QT_TRID_NOOP("lc-sign-sequential-notice");
     //% "Select a file and press Delete to remove it"
     QT_TRID_NOOP("lc-sign-filelist-tooltip");
 

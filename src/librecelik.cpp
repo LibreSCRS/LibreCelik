@@ -676,11 +676,12 @@ void LibreCelik::onIdentityReady(const QString& cardId, const QList<FieldGroup>&
 
     const bool visible = hasVisibleData(groups);
 
-    if (isSpinner(page->second)) {
-        // Non-streaming plugin (or a card whose groups never streamed): the
-        // whole model builds the widget in one go.
-        replaceCardWidget(cardId, makeCardPage(plugin->createWidget(groups, this), this));
-    }
+    // identityReady carries the AUTHORITATIVE final model, and the streamed
+    // page only ever saw what happened to stream: a recovered (instant) read
+    // streams nothing but the merged photo group, and the verification group
+    // rides the final model alone. Rebuild from the model unconditionally
+    // rather than patching the streamed page group by group.
+    replaceCardWidget(cardId, makeCardPage(plugin->createWidget(groups, this), this));
 
     QWidget* pluginWidget = pluginWidgetOf(page->second);
     if (pluginWidget == nullptr)

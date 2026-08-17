@@ -419,6 +419,37 @@ add_dependencies(i18n_settings_state_test LibreCelik_lrelease)
 gtest_discover_tests(i18n_settings_state_test PROPERTIES ENVIRONMENT
     "QT_QPA_PLATFORM=offscreen")
 
+# --- EidWidget full-model rendering coverage ---
+#
+# The full-model ctor is what a card page is (re)built from at identityReady,
+# and the model's group order is delivery-dependent (stream order vs the wire
+# map's keyed order on a recovered read). These cases pin that every section
+# renders regardless of arrival order.
+add_executable(eidwidget_test
+    eidwidget_test.cpp
+    ${CMAKE_SOURCE_DIR}/plugins/rs-eid/eidwidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/cardheadercard.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pluginwidgetbase.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
+)
+target_include_directories(eidwidget_test PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/plugins
+)
+target_link_libraries(eidwidget_test PRIVATE
+    GTest::gtest_main
+    Qt6::Core
+    Qt6::Widgets
+    LibreAgent::ClientQt
+)
+set_target_properties(eidwidget_test PROPERTIES AUTOMOC ON)
+gtest_discover_tests(eidwidget_test PROPERTIES ENVIRONMENT
+    "QT_QPA_PLATFORM=offscreen")
+
 # --- D9 runtime test: plugin card-widget retranslate coverage ---
 #
 # Compiles all 5 production plugin widgets into a single test binary

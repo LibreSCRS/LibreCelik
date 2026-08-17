@@ -3,6 +3,7 @@
 
 #include "agent/live/livesigncontroller.h"
 
+#include "agent/artifactio.h"
 #include "agent/errortext.h"
 #include "agent/opstallwatchdog.h"
 #include "agent/signrequest.h"
@@ -346,32 +347,9 @@ QString LiveSignController::writeArtifact(const SignRequestItem& item, FdHandle 
     if (path.isEmpty() || !artifact.valid()) {
         return {};
     }
-
-    QSaveFile out(path);
-    if (!out.open(QIODevice::WriteOnly)) {
-        return {};
-    }
-    // Fixed-size streaming, NOT the client's bounded payload reader: that
-    // reader's ceiling exists for photos, and a signed artifact — an ASiC-E
-    // container above all — is unbounded by design.
-    constexpr qint64 kChunkBytes = 64 * 1024;
-    QByteArray chunk(kChunkBytes, '\0');
-    for (;;) {
-        const ssize_t taken = ::read(artifact.get(), chunk.data(), static_cast<std::size_t>(kChunkBytes));
-        if (taken < 0) {
-            if (errno == EINTR) {
-                continue; // a signal is not a failure
-            }
-            return {}; // QSaveFile discards the partial file on destruction
-        }
-        if (taken == 0) {
-            break;
-        }
-        if (out.write(chunk.constData(), taken) != taken) {
-            return {};
-        }
-    }
-    return out.commit() ? path : QString();
+    // The tested consumer (artifactio.h): rewinds the fd the producer left at
+    // EOF, and refuses to commit a zero-byte artifact as a signed file.
+    return librecelik::agent::writeArtifactTo(artifact.get(), path);
 }
 
 void LiveSignController::emitRow(int sourceIndex, bool ok, const QString& outputPath, const QString& message)

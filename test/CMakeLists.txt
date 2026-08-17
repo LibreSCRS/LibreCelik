@@ -747,6 +747,7 @@ gtest_discover_tests(TokenSectionTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=o
 add_executable(AgentLayerTests
     agentlayer_test_main.cpp
     agent_presence_test.cpp
+    agent_artifactio_test.cpp
     agent_errortext_test.cpp
     agent_fieldmerge_test.cpp
     agent_opstallwatchdog_test.cpp

@@ -26,24 +26,33 @@ using LibreSCRS::AgentClient::PhotoItem;
 
 namespace {
 
-/// The group key the merged photo fields live under. The wire's own spelling —
-/// an identity read may already have produced a group with this key, and the
-/// merge joins that one rather than shadowing it with a second.
+/// The group key the PORTRAIT lives under, whatever group the agent named it
+/// in. The wire's own spelling — an identity read may already have produced a
+/// group with this key, and the merge joins that one rather than shadowing it
+/// with a second.
 const QString& photoGroupKey()
 {
     static const QString key = QStringLiteral("photo");
     return key;
 }
 
-/// The photo group of @p groups, appended first when the model has none.
-FieldGroup& photoGroupIn(QList<FieldGroup>& groups)
+/// The field key that makes a payload the portrait rather than some other
+/// image the card happens to carry.
+const QString& portraitFieldKey()
+{
+    static const QString key = QStringLiteral("photo");
+    return key;
+}
+
+/// The group of @p groups keyed @p key, appended when the model has none.
+FieldGroup& groupIn(QList<FieldGroup>& groups, const QString& key)
 {
     for (FieldGroup& group : groups) {
-        if (group.key == photoGroupKey()) {
+        if (group.key == key) {
             return group;
         }
     }
-    groups.append(FieldGroup{photoGroupKey(), {}, {}});
+    groups.append(FieldGroup{key, {}, {}});
     return groups.last();
 }
 
@@ -76,7 +85,23 @@ QList<FieldGroup> mergePhotoIntoGroups(QList<FieldGroup> groups, std::vector<Pho
         field.extra.insert(QStringLiteral("wireKey"), item.key);
         field.extra.insert(QStringLiteral("sourceGroup"), sourceGroup);
 
-        photoGroupIn(groups).fields.append(field);
+        // WHERE the payload lands. Every photo-typed field a card carries
+        // arrives on this ONE channel — an eMRTD's DG7 handwritten signature
+        // beside its DG2 portrait — and only the group half of the key tells
+        // them apart. Dropping them all into the portrait's group leaves a
+        // widget that renders a signature section nothing to render it from,
+        // and the image sits invisible among the portraits.
+        //
+        // The PORTRAIT is the deliberate exception: it lands under "photo"
+        // whatever group named it, because "photo" is where every consumer
+        // looks for it BY NAME — both card widgets, both print templates, and
+        // the controller's photo-first streaming — and the group half is not
+        // the same on every card (rs-eid sends "personal:photo", eMRTD
+        // "photo:photo"). The provenance above still records where it came
+        // from, so nothing is lost by landing it in one place.
+        const QString targetGroup =
+            (fieldKey == portraitFieldKey() || sourceGroup.isEmpty()) ? photoGroupKey() : sourceGroup;
+        groupIn(groups, targetGroup).fields.append(field);
     }
     return groups;
 }

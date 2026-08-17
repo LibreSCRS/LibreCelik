@@ -54,4 +54,26 @@ inline constexpr QLatin1StringView kGenericTokenCardType{"token"};
     return typeCanStillResolve ? QString() : QString(kGenericTokenCardType);
 }
 
+/// Whether a LATE type resolution must start the identity read the add-time
+/// decision skipped.
+///
+/// The fallback above renders the generic token page immediately when
+/// resolution cannot happen — and without the IdentityData capability the
+/// window never starts the identity read at all. An agent may still resolve
+/// the type afterwards (a restarted agent re-exports a seated card typeless,
+/// carrying the candidate INTERSECTION until its own insertion probe
+/// completes), and the token page must not be that card's final rendering:
+/// the read this predicate orders is what re-plugins the page, through
+/// identityReady's unconditional rebuild.
+///
+/// A read the window already started is never started twice — in the
+/// ordinary multi-candidate wait the RUNNING read is what resolved the type.
+/// And a resolved card that still carries no IdentityData has no read to
+/// start: the token page is that card's whole surface.
+[[nodiscard]] constexpr bool lateResolutionStartsRead(bool identityReadStarted, std::uint32_t capabilityBits) noexcept
+{
+    return !identityReadStarted &&
+           LibreSCRS::AgentClient::has(capabilityBits, LibreSCRS::AgentClient::Cap::IdentityData);
+}
+
 } // namespace librecelik::agent

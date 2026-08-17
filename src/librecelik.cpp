@@ -528,10 +528,12 @@ void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
     // model that was never going to exist. Such a card is a PKI surface and
     // nothing else: it goes straight to where a finished read would have left
     // it, with an empty model.
-    if (LibreSCRS::AgentClient::has(caps, Cap::IdentityData))
+    if (LibreSCRS::AgentClient::has(caps, Cap::IdentityData)) {
+        cardState[cardId].identityReadStarted = true;
         controller->startRead();
-    else
+    } else {
         onIdentityReady(cardId, {});
+    }
 
     // Feature-gated verbs, decided by the ONE Task-8 helper so the decision the
     // CI test drives is the decision production makes.
@@ -648,7 +650,7 @@ void LibreCelik::onGroupReady(const QString& cardId, const FieldGroup& group)
 void LibreCelik::onCardTypeResolved(const QString& cardId)
 {
     const auto state = cardState.find(cardId);
-    if (state == cardState.end() || state->second.bufferedGroups.isEmpty())
+    if (state == cardState.end())
         return;
 
     // Replay in arrival order through the ordinary path, which now resolves a
@@ -657,6 +659,18 @@ void LibreCelik::onCardTypeResolved(const QString& cardId)
     const QList<FieldGroup> buffered = std::exchange(state->second.bufferedGroups, {});
     for (const FieldGroup& group : buffered)
         onGroupReady(cardId, group);
+
+    // The provisional side of the generic-token fallback: a card that could
+    // not resolve at add time never got its identity read, and the resolved
+    // card may carry the IdentityData bit the candidate intersection dropped.
+    // The read ordered here is what re-plugins the page — identityReady
+    // rebuilds it from the final model under the now-resolved family plugin.
+    CardController* controller = gateway->cardController(cardId);
+    if (controller != nullptr &&
+        librecelik::agent::lateResolutionStartsRead(state->second.identityReadStarted, controller->capabilityBits())) {
+        state->second.identityReadStarted = true;
+        controller->startRead();
+    }
 }
 
 void LibreCelik::onIdentityReady(const QString& cardId, const QList<FieldGroup>& groups)

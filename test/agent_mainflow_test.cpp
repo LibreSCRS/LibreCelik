@@ -187,6 +187,32 @@ TEST_F(MainFlowTest, GuiPluginKeyResolutionCoversTheUnresolvableCard)
     EXPECT_EQ(effectiveGuiPluginKey(true, Cap::PinManagement, QString()), QString());
 }
 
+TEST_F(MainFlowTest, LateTypeResolutionStartsTheReadTheFallbackSkipped)
+{
+    // Companion decision to effectiveGuiPluginKey, same tested-helper rule.
+    // The fallback renders the generic token page IMMEDIATELY when
+    // resolution cannot happen (no IdentityData means the identity read is
+    // never started). An agent that resolves the type later anyway — a
+    // restart re-exports the seated card typeless with the candidate
+    // capability INTERSECTION until its own probe completes — must get the
+    // read the add-time decision skipped: identityReady's rebuild is what
+    // re-plugins the page off the provisional token rendering. A read the
+    // window already started must never be started twice by the same event.
+    using librecelik::agent::lateResolutionStartsRead;
+    namespace Cap = LibreSCRS::AgentClient::Cap;
+
+    // THE BENCH CASE: fallback page (read never started), late resolution
+    // re-exported the full family capability set — start the read now.
+    EXPECT_TRUE(lateResolutionStartsRead(false, Cap::Pki | Cap::IdentityData));
+    // Fallback page, resolved card still without IdentityData: there is no
+    // read to start; the token page IS that card's whole surface.
+    EXPECT_FALSE(lateResolutionStartsRead(false, Cap::Pki | Cap::PinManagement));
+    // The ordinary multi-candidate wait: the running read is what resolved
+    // the type — a second startRead would double-read the card.
+    EXPECT_FALSE(lateResolutionStartsRead(true, Cap::Pki | Cap::IdentityData));
+    EXPECT_FALSE(lateResolutionStartsRead(true, Cap::Pki));
+}
+
 TEST_F(MainFlowTest, TokenInfoAbsentFeatureIsSilentlyHiddenNeverAnError)
 {
     // Old-agent honesty: the client gates on the feature token. This drives

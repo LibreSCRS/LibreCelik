@@ -81,6 +81,12 @@ private:
         /// multi-candidate card would otherwise render nothing that streamed
         /// before the agent picked the driver.
         QList<LibreSCRS::AgentClient::FieldGroup> bufferedGroups;
+        /// Whether the identity read was dispatched for this card. The add
+        /// path skips the read entirely when the card carries no IdentityData
+        /// — so a LATE type resolution must order the read itself (see
+        /// lateResolutionStartsRead), and must never double-start one that is
+        /// already running.
+        bool identityReadStarted = false;
         /// PKI payloads that arrived before the token section was built (the
         /// section is created when the identity read completes; the optional
         /// sections are dispatched with the read).

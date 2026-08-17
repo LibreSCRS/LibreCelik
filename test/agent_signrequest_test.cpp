@@ -106,6 +106,56 @@ TEST(SignRequest, BatchRunOptionsCarryNoDocumentName)
     EXPECT_TRUE(runSignOptions({}, run).displayName.isEmpty());
 }
 
+// A placement is chosen ONCE for the whole request — the wizard shows the
+// placement page when the selection holds a PDF and carries one map for
+// everything selected — but it is meaningful for PAdES alone, and the agent
+// REFUSES a run that pairs it with any other format rather than ignoring it
+// (Error.UnsupportedSignatureParameter). A mixed selection is therefore only
+// signable if the split point strips it from the runs it cannot apply to.
+namespace {
+
+/// The request a user makes by selecting a PDF and accepting placement: a
+/// valid six-key map, meant for whichever runs turn out to be PAdES.
+SignOptions withPlacement()
+{
+    SignOptions options;
+    options.visualSignature = makeVisualSignatureMap(0, QRectF(10, 20, 200, 50), QStringLiteral("signed"));
+    options.tsaUrl = QStringLiteral("https://tsa.example/ts");
+    options.level = SignatureLevel::BT;
+    return options;
+}
+
+} // namespace
+
+TEST(SignRequest, PAdESRunKeepsThePlacement)
+{
+    const SignRun run{{0},
+                      {SignRequestItem{QStringLiteral("/tmp/a.pdf"), SignatureFormat::PAdES, Packaging::Enveloped}}};
+    EXPECT_EQ(runSignOptions(withPlacement(), run).visualSignature, withPlacement().visualSignature);
+}
+
+TEST(SignRequest, NonPAdESRunIsDialledWithoutThePlacement)
+{
+    // The bench case: a selection of PDFs plus one other file. The other
+    // file's run inherited the request's placement and the agent refused it.
+    const SignRun run{
+        {1}, {SignRequestItem{QStringLiteral("/tmp/notes.txt"), SignatureFormat::ASiCe, Packaging::Enveloped}}};
+    EXPECT_TRUE(runSignOptions(withPlacement(), run).visualSignature.isEmpty());
+}
+
+TEST(SignRequest, StrippingThePlacementLeavesTheRestOfTheRequestAlone)
+{
+    // Surgical: the level and the timestamp authority apply to every format,
+    // so a run that loses its placement must keep both.
+    const SignRun run{{1},
+                      {SignRequestItem{QStringLiteral("/tmp/data.xml"), SignatureFormat::XAdES, Packaging::Detached}}};
+    const SignOptions dialled = runSignOptions(withPlacement(), run);
+    ASSERT_TRUE(dialled.visualSignature.isEmpty());
+    EXPECT_EQ(dialled.tsaUrl, QStringLiteral("https://tsa.example/ts"));
+    EXPECT_EQ(dialled.level, SignatureLevel::BT);
+    EXPECT_EQ(dialled.displayName, QStringLiteral("data.xml"));
+}
+
 TEST(SignRequest, DisplayNameIsTheFileNameNeverThePath)
 {
     EXPECT_EQ(

@@ -125,6 +125,19 @@ SignOptions runSignOptions(const SignOptions& options, const SignRun& run)
     SignOptions dialled = options;
     dialled.format = run.items.constFirst().format;
     dialled.packaging = run.items.constFirst().packaging;
+    if (dialled.format != SignatureFormat::PAdES) {
+        // A placement is chosen ONCE for the whole request by design — the
+        // wizard offers it when the selection holds a PDF, and one map covers
+        // everything selected. It can only ever apply to the PAdES runs, and
+        // the agent REFUSES a run that pairs it with another format rather
+        // than ignoring it, so the split into runs is where it has to come
+        // off. Otherwise one PDF in a mixed selection costs every other file
+        // in it its signature.
+        //
+        // The level and the timestamp authority stay: those mean the same
+        // thing for every format.
+        dialled.visualSignature.clear();
+    }
     if (run.items.size() == 1) {
         // Single sign only. The ASiC-E entry is named from this — a container
         // built without a name is refused, not silently unnamed — and the

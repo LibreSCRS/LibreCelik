@@ -7,6 +7,7 @@
 #include "agent/cardcontroller.h"
 #include "agent/live/liveagentgateway.h"
 #include "agent/optionalsections.h"
+#include "agent/plugintyperesolution.h"
 #include "agent/settingsimport.h"
 #include "certificate/certificateviewerdlg.h"
 #include "config.h"
@@ -62,10 +63,8 @@ namespace {
 /// agent without it never sends one, which is a different situation from a
 /// card whose type has not resolved YET.
 constexpr QLatin1StringView kCardTypeFeature{"card-type"};
-
-/// The card type of the generic PKI page — the surface the middleware read
-/// path always used for a card no family plugin claimed.
-constexpr QLatin1StringView kGenericTokenCardType{"token"};
+// (the generic token page key lives in plugintyperesolution.h with the
+// decision that picks it)
 
 /// Display form of the ATR the agent reports for an unrecognised card: the
 /// leading @p maxBytes bytes, space-separated and upper-case, with a marker
@@ -596,21 +595,16 @@ CardWidgetPlugin* LibreCelik::pluginFor(const QString& cardId) const
     if (controller == nullptr)
         return nullptr;
 
-    if (const QString cardType = controller->cardType(); !cardType.isEmpty())
-        return guiPluginRegistry.findByCardType(cardType);
-
-    // No card type. Which of the two reasons it is decides what to do, and the
-    // feature token is the only thing that distinguishes them: an agent that
-    // advertises "card-type" simply has not resolved this multi-candidate card
-    // yet, and a caller must WAIT (cardTypeResolved replays what streamed
-    // meanwhile). An agent that does not advertise it will never send one at
-    // all, and waiting would leave a PKI card rendering nothing forever — so
-    // it falls back to the generic PKI page, which is what the middleware read
-    // path rendered for every card no family plugin claimed.
-    if (!gateway->hasFeature(kCardTypeFeature) && LibreSCRS::AgentClient::has(controller->capabilityBits(), Cap::Pki))
-        return guiPluginRegistry.findByCardType(kGenericTokenCardType);
-
-    return nullptr;
+    // The wait-vs-fallback decision lives in the tested helper
+    // (plugintyperesolution.h): resolved type → its plugin; unresolved →
+    // generic token page UNLESS the agent advertises "card-type" AND the card
+    // can still resolve (IdentityData present — resolution rides only on a
+    // completed identity/photo read, so without the bit waiting is provably
+    // unbounded); empty → wait (cardTypeResolved replays what streamed) or
+    // nothing to render at all.
+    const QString key = librecelik::agent::effectiveGuiPluginKey(gateway->hasFeature(kCardTypeFeature),
+                                                                 controller->capabilityBits(), controller->cardType());
+    return key.isEmpty() ? nullptr : guiPluginRegistry.findByCardType(key);
 }
 
 QWidget* LibreCelik::pluginWidgetOf(QWidget* page) const

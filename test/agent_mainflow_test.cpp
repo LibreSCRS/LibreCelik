@@ -17,6 +17,7 @@
 #include "agent/cardcontroller.h"
 #include "agent/errortext.h"
 #include "agent/optionalsections.h"
+#include "agent/plugintyperesolution.h"
 #include "fake_gateway/fakeagentgateway.h"
 #include "fake_gateway/fakecardcontroller.h"
 #include "mockwidgetplugin.h"
@@ -153,6 +154,37 @@ TEST_F(MainFlowTest, StreamedReadDeliversTheMergedPhotoGroupBeforeIdentityReady)
     ctrl.startRead();
     EXPECT_EQ(order, (QStringList{QStringLiteral("personal"), QStringLiteral("photo")}));
     EXPECT_TRUE(identityAfterPhoto);
+}
+
+TEST_F(MainFlowTest, GuiPluginKeyResolutionCoversTheUnresolvableCard)
+{
+    // Drives the PRODUCTION helper (plugintyperesolution.h) — the
+    // requestOptionalSections pattern: the decision the window makes must not
+    // exist only as untested window glue. The regression this pins: a
+    // CardEdge signing token kept multiple agent-side candidate
+    // plugins, so CardType stayed "" and Capabilities carried the candidate
+    // INTERSECTION — Pki|PinManagement, no IdentityData. The agent resolves a
+    // card's type authoritatively ONLY from a completed ReadIdentity/GetPhoto
+    // (Card1.xml), and refuses both verbs without IdentityData — so waiting
+    // for cardTypeResolved was provably unbounded and the page spun forever.
+    using librecelik::agent::effectiveGuiPluginKey;
+    using librecelik::agent::kGenericTokenCardType;
+    namespace Cap = LibreSCRS::AgentClient::Cap;
+
+    // A resolved type always wins, regardless of caps or feature level.
+    EXPECT_EQ(effectiveGuiPluginKey(true, Cap::Pki, QStringLiteral("rs-eid")), QStringLiteral("rs-eid"));
+    // Pre-card-type agent, PKI surface: the historical middleware-path
+    // fallback — render the generic token page rather than nothing.
+    EXPECT_EQ(effectiveGuiPluginKey(false, Cap::Pki, QString()), kGenericTokenCardType);
+    // THE BENCH CASE: card-type-capable agent, unresolved type, PKI without
+    // IdentityData — resolution can never happen, so waiting is wrong; the
+    // card is a PKI surface and must fall back to the generic token page.
+    EXPECT_EQ(effectiveGuiPluginKey(true, Cap::Pki | Cap::PinManagement, QString()), kGenericTokenCardType);
+    // Card-type-capable agent, unresolved type, IdentityData present: the
+    // identity read WILL resolve the type — waiting is correct, render later.
+    EXPECT_EQ(effectiveGuiPluginKey(true, Cap::Pki | Cap::IdentityData, QString()), QString());
+    // No PKI surface at all: nothing the generic token page could render.
+    EXPECT_EQ(effectiveGuiPluginKey(true, Cap::PinManagement, QString()), QString());
 }
 
 TEST_F(MainFlowTest, TokenInfoAbsentFeatureIsSilentlyHiddenNeverAnError)

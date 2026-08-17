@@ -14,7 +14,6 @@
 #include <LibreSCRS/AgentClient/ClientTimeouts.h>
 
 #include <QByteArray>
-#include <QFileInfo>
 #include <QLatin1StringView>
 #include <QSaveFile>
 
@@ -220,19 +219,16 @@ void LiveSignController::dispatchNextRun()
             dialled.items.append(item);
             // displayName feeds the agent's enumerated consent prompt — the
             // user must recognise what they are about to sign.
-            documents.push_back(BatchDocument{QFileInfo(item.filePath).fileName(), std::move(document)});
+            documents.push_back(BatchDocument{documentDisplayName(item), std::move(document)});
         }
         if (documents.empty()) {
             continue; // nothing left in this run to sign
         }
 
-        SignOptions runOptions = options;
-        // EXPLICIT per-run kind. A batch carries ONE format for every document
-        // in it and the wire sniffs only the first, so a run's kind is set from
-        // the run itself — never inferred, never left to a batch-wide guess
-        // that would apply one file's kind to all the others.
-        runOptions.format = dialled.items.constFirst().format;
-        runOptions.packaging = dialled.items.constFirst().packaging;
+        // Derived from the run, not from the documents: the fds below are moved
+        // into the call, and nothing about the dial may be read out of a
+        // moved-from vector.
+        const SignOptions runOptions = runSignOptions(options, dialled);
 
         const bool batched = documents.size() > 1;
         AgentOperation* operation = batched ? card->signBatch(certId, std::move(documents), runOptions)
@@ -282,7 +278,7 @@ void LiveSignController::consumeFinished(AgentOperation* operation, bool watchdo
         // enters the SAME consumption as a one-row batch so there is exactly
         // one place where "which rows succeeded" is decided.
         BatchSignRow row;
-        row.displayName = run.items.isEmpty() ? QString() : QFileInfo(run.items.constFirst().filePath).fileName();
+        row.displayName = run.items.isEmpty() ? QString() : documentDisplayName(run.items.constFirst());
         row.artifact = operation->takeSignedArtifact();
         row.error = opError;
         // signMeta() is deliberately not rendered anywhere: its chainComplete

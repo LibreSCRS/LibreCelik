@@ -28,6 +28,7 @@ using LibreSCRS::AgentClient::OperationStatus;
 using LibreSCRS::AgentClient::Packaging;
 using LibreSCRS::AgentClient::SignatureFormat;
 using LibreSCRS::AgentClient::SignatureLevel;
+using LibreSCRS::AgentClient::SignOptions;
 
 namespace {
 
@@ -112,6 +113,27 @@ QList<SignRun> partitionIntoRuns(const QList<SignRequestItem>& files)
         }
     }
     return runs;
+}
+
+QString documentDisplayName(const SignRequestItem& item)
+{
+    return QFileInfo(item.filePath).fileName();
+}
+
+SignOptions runSignOptions(const SignOptions& options, const SignRun& run)
+{
+    SignOptions dialled = options;
+    dialled.format = run.items.constFirst().format;
+    dialled.packaging = run.items.constFirst().packaging;
+    if (run.items.size() == 1) {
+        // Single sign only. The ASiC-E entry is named from this — a container
+        // built without a name is refused, not silently unnamed — and the
+        // detached JAdES/XAdES reference URI derives from it. A batch's rows
+        // carry their own names and the agent never reads the option off a
+        // SignBatch request, so setting it there would say nothing.
+        dialled.displayName = documentDisplayName(run.items.constFirst());
+    }
+    return dialled;
 }
 
 bool batchRowSucceeded(ErrorCode rowError, qint64 artifactSize)

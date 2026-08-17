@@ -69,6 +69,50 @@ TEST(SignRequest, PartitionIsStableSortedNotConsecutive)
     EXPECT_EQ(runs[1].sourceIndexes, (QList<int>{1}));
 }
 
+// The per-run dial. What a run's options carry is decided here rather than in
+// the live controller's dispatch loop, so the decision is provable without an
+// agent: the fds a real dispatch moves into the call make the options the only
+// thing left to read afterwards.
+TEST(SignRequest, RunOptionsTakeTheKindFromTheRunNotTheRequest)
+{
+    SignOptions requested;
+    requested.format = SignatureFormat::PAdES; // whatever the wizard last set
+    requested.packaging = Packaging::Enveloped;
+    const SignRun run{{1},
+                      {SignRequestItem{QStringLiteral("/tmp/data.xml"), SignatureFormat::XAdES, Packaging::Detached}}};
+    const SignOptions dialled = runSignOptions(requested, run);
+    EXPECT_EQ(dialled.format, SignatureFormat::XAdES);
+    EXPECT_EQ(dialled.packaging, Packaging::Detached);
+}
+
+TEST(SignRequest, SingleRunOptionsCarryTheDocumentName)
+{
+    // NOT chrome: the ASiC-E data entry is named from this and the detached
+    // JAdES/XAdES reference URI derives from it, so a byte-path single sign
+    // dialled without it is refused agent-side.
+    const SignRun run{
+        {0}, {SignRequestItem{QStringLiteral("/tmp/dir/report.docx"), SignatureFormat::ASiCe, Packaging::Enveloped}}};
+    EXPECT_EQ(runSignOptions({}, run).displayName, QStringLiteral("report.docx"));
+}
+
+TEST(SignRequest, BatchRunOptionsCarryNoDocumentName)
+{
+    // A batch names each document on its own row, and the agent never reads a
+    // displayName option off a SignBatch request — one file's name riding a
+    // whole batch's options would name the wrong documents.
+    const SignRun run{{0, 1},
+                      {SignRequestItem{QStringLiteral("/tmp/a.pdf"), SignatureFormat::PAdES, Packaging::Enveloped},
+                       SignRequestItem{QStringLiteral("/tmp/b.pdf"), SignatureFormat::PAdES, Packaging::Enveloped}}};
+    EXPECT_TRUE(runSignOptions({}, run).displayName.isEmpty());
+}
+
+TEST(SignRequest, DisplayNameIsTheFileNameNeverThePath)
+{
+    EXPECT_EQ(
+        documentDisplayName({QStringLiteral("/tmp/dir/report.docx"), SignatureFormat::ASiCe, Packaging::Enveloped}),
+        QStringLiteral("report.docx"));
+}
+
 // The output-naming contract, per format and packaging. These cases came from
 // the signing suite's local copy of the sign page's path builder; they call the
 // production helper now, so the names a user finds in their output folder are

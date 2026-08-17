@@ -51,6 +51,27 @@ struct SignRun
 };
 [[nodiscard]] QList<SignRun> partitionIntoRuns(const QList<SignRequestItem>& files);
 
+/// The name one document is announced under — its file name, never its path.
+/// The single source for it: the batch rows and the single sign's options must
+/// name the same document the same way.
+[[nodiscard]] QString documentDisplayName(const SignRequestItem& item);
+
+/// The options ONE run is dialled with, derived from the request's @p options
+/// and the run itself.
+///
+/// The KIND is explicit: a batch carries ONE format for every document in it
+/// and the wire sniffs only the first, so it is set from the run rather than
+/// inferred, and one file's kind can never be applied to all the others.
+///
+/// The DISPLAY NAME is set for a single-document run ONLY. It is not chrome
+/// there: the ASiC-E container's data entry is named from it (a container
+/// created without a name is refused) and the detached JAdES/XAdES reference
+/// URI derives from it, so a byte-path single sign without it fails agent-side.
+/// A batch names each document on its own `BatchDocument` row instead, and the
+/// agent deliberately never reads the option off a SignBatch request.
+[[nodiscard]] LibreSCRS::AgentClient::SignOptions runSignOptions(const LibreSCRS::AgentClient::SignOptions& options,
+                                                                 const SignRun& run);
+
 /// Ledger wire rule: rows carry NO status field — success is derived.
 [[nodiscard]] bool batchRowSucceeded(LibreSCRS::AgentClient::ErrorCode rowError, qint64 artifactSize);
 

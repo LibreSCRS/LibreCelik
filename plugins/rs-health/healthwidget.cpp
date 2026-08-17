@@ -70,7 +70,10 @@ static std::map<QString, QString> taxpayerTranslationMap()
 
 HealthWidget::HealthWidget(const QList<FieldGroup>& cardGroups, QWidget* parent) : HealthWidget(parent)
 {
-    for (const auto& group : cardGroups)
+    // Staged into the widget's own section order — the final wire model's
+    // group order is delivery-dependent (see stagedForBuild).
+    for (const auto& group : librecelik::plugin::stagedForBuild(
+             cardGroups, {u"personal", u"insurance", u"address", u"carrier", u"taxpayer"}))
         addGroup(group);
 }
 

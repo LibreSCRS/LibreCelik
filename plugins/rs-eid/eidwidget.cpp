@@ -19,8 +19,6 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-#include <algorithm>
-
 using librecelik::plugin::fieldDetailBytes;
 using librecelik::plugin::fieldValue;
 using librecelik::plugin::findGroup;
@@ -32,35 +30,6 @@ namespace {
 /// The portrait the gateway merged into the read: its own group, keyed with
 /// the field half of the wire's composite key. A group that carries the image
 /// under some other key still renders — the first field with bytes wins.
-/// The full model's group order is delivery-dependent — a streamed read hands
-/// over stream order, a recovered (instant) read the wire map's keyed order
-/// with the merged photo last — while addGroup's sections chain: "meta"
-/// raises the shell, "personal" hangs the photo row and the badge host off
-/// it, everything else attaches to those. Stage the model into the build
-/// order the chain needs; arrival order is a wire artifact, not a layout
-/// contract.
-QList<FieldGroup> stagedForBuild(QList<FieldGroup> groups)
-{
-    const auto stage = [](const FieldGroup& group) -> int {
-        if (group.key == QLatin1String("meta"))
-            return 0;
-        if (group.key == QLatin1String("personal"))
-            return 1;
-        if (group.key == QLatin1String("address"))
-            return 2;
-        if (group.key == QLatin1String("document"))
-            return 3;
-        if (group.key == QLatin1String("photo"))
-            return 4;
-        if (group.key == QLatin1String("verification"))
-            return 5;
-        return 6;
-    };
-    std::stable_sort(groups.begin(), groups.end(),
-                     [&stage](const FieldGroup& a, const FieldGroup& b) { return stage(a) < stage(b); });
-    return groups;
-}
-
 QByteArray photoBytes(const QList<FieldGroup>& groups)
 {
     QByteArray bytes = fieldDetailBytes(groups, u"photo", u"photo");
@@ -82,7 +51,11 @@ QByteArray photoBytes(const QList<FieldGroup>& groups)
 
 EidWidget::EidWidget(const QList<FieldGroup>& cardGroups, QWidget* parent) : EidWidget(parent)
 {
-    for (const auto& group : stagedForBuild(cardGroups))
+    // Staged: addGroup's sections chain ("meta" raises the shell, "personal"
+    // hangs the photo row and the badge host off it) and the final wire
+    // model's order is delivery-dependent (see stagedForBuild).
+    for (const auto& group : librecelik::plugin::stagedForBuild(
+             cardGroups, {u"meta", u"personal", u"address", u"document", u"photo", u"verification"}))
         addGroup(group);
     applyVerificationFromMeta();
 }

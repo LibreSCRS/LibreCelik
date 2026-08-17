@@ -45,6 +45,32 @@ QList<FieldGroup> makeFixture()
 
 } // namespace
 
+TEST(FieldValue, StagedForBuildOrdersGroupsByTheWidgetsOwnStageList)
+{
+    // The Leg-6 bench catch generalized: the final wire model's group order
+    // is delivery-dependent (a recovered read hands it over keyed, not
+    // staged), while every streaming widget lays sections out in ARRIVAL
+    // order — the vehicle page rendered its car-icon header mid-page. The
+    // full-model ctors stage the model into the widget's own branch order;
+    // unknown keys keep their relative order AFTER every staged one (data
+    // preserved, never reordered ahead of designed sections).
+    using librecelik::plugin::stagedForBuild;
+    QList<LibreSCRS::AgentClient::FieldGroup> model;
+    for (const char* key : {"owner", "national", "vehicle", "registration", "mystery_a", "mystery_b"}) {
+        LibreSCRS::AgentClient::FieldGroup g;
+        g.key = QString::fromLatin1(key);
+        model.append(g);
+    }
+    const QList<LibreSCRS::AgentClient::FieldGroup> staged =
+        stagedForBuild(model, {u"registration", u"vehicle", u"holder", u"owner", u"user", u"national"});
+    QStringList keys;
+    for (const auto& g : staged)
+        keys << g.key;
+    EXPECT_EQ(keys,
+              (QStringList{QStringLiteral("registration"), QStringLiteral("vehicle"), QStringLiteral("owner"),
+                           QStringLiteral("national"), QStringLiteral("mystery_a"), QStringLiteral("mystery_b")}));
+}
+
 TEST(FieldValue, GroupOverloadFindsPresentField)
 {
     const auto groups = makeFixture();

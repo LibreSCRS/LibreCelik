@@ -11,6 +11,9 @@
 #include <QStringView>
 #include <QVariant>
 
+#include <algorithm>
+#include <initializer_list>
+
 /// @file
 /// @brief Field lookups over the agent's field-group model — the successor of
 ///        the middleware-typed accessors LC widgets used to reach for.
@@ -93,6 +96,36 @@ using LibreSCRS::AgentClient::FieldGroup;
         }
     }
     return {};
+}
+
+/// @brief The full wire model re-staged into a widget's own section order.
+///
+/// The final model's group order is DELIVERY-DEPENDENT — a streamed read
+/// hands over stream order, a recovered (instant) read the wire map's keyed
+/// order — while every streaming widget lays its sections out in ARRIVAL
+/// order (and some chain: a group may build the container a later one hangs
+/// off). A full-model ctor therefore stages the model into the widget's own
+/// addGroup branch order first; arrival order is a wire artifact, not a
+/// layout contract. Keys outside @p stageOrder keep their relative order
+/// AFTER every staged one — data is preserved, never promoted ahead of a
+/// designed section.
+[[nodiscard]] inline QList<LibreSCRS::AgentClient::FieldGroup>
+stagedForBuild(QList<LibreSCRS::AgentClient::FieldGroup> groups, std::initializer_list<QStringView> stageOrder)
+{
+    const auto stage = [&stageOrder](const LibreSCRS::AgentClient::FieldGroup& group) -> int {
+        int rank = 0;
+        for (const QStringView key : stageOrder) {
+            if (group.key == key) {
+                return rank;
+            }
+            ++rank;
+        }
+        return rank; // unknown keys: after every staged one, relative order kept
+    };
+    std::stable_sort(groups.begin(), groups.end(),
+                     [&stage](const LibreSCRS::AgentClient::FieldGroup& a,
+                              const LibreSCRS::AgentClient::FieldGroup& b) { return stage(a) < stage(b); });
+    return groups;
 }
 
 } // namespace librecelik::plugin

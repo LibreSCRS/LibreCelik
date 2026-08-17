@@ -63,7 +63,10 @@ static std::map<QString, QString> keyHistoryTranslationMap()
 
 PIVWidget::PIVWidget(const QList<FieldGroup>& cardGroups, QWidget* parent) : PIVWidget(parent)
 {
-    for (const auto& group : cardGroups)
+    // Staged into the widget's own section order — the final wire model's
+    // group order is delivery-dependent (see stagedForBuild).
+    for (const auto& group :
+         librecelik::plugin::stagedForBuild(cardGroups, {u"chuid", u"ccc", u"printed", u"discovery", u"keyHistory"}))
         addGroup(group);
 }
 

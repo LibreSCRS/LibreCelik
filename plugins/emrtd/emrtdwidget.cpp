@@ -134,7 +134,12 @@ std::map<QString, QString> nationalTranslationMap()
 
 EMRTDWidget::EMRTDWidget(const QList<FieldGroup>& cardGroups, QWidget* parent) : EMRTDWidget(parent)
 {
-    for (const auto& group : cardGroups)
+    // Staged into the widget's own section order — the final wire model's
+    // group order is delivery-dependent (see stagedForBuild).
+    for (const auto& group : librecelik::plugin::stagedForBuild(
+             cardGroups,
+             {u"personal", u"document", u"photo", u"signature", u"additional", u"document_extra", u"presence",
+              u"portrait", u"contacts", u"biometric_fingerprint", u"biometric_iris", u"security_status"}))
         addGroup(group);
 }
 

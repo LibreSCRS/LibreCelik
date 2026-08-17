@@ -1189,6 +1189,14 @@
       "platforms": ["linux"]
     },
     {
+      "match": "libqconnman.so",
+      "name": "Qt 6 ConnMan network plugin",
+      "spdx": "LGPL-3.0-or-later",
+      "text": "resources/licenses/lgpl-3.0.txt",
+      "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
+      "platforms": ["linux"]
+    },
+    {
       "match": "libqpdf.dylib",
       "name": "Qt PDF image-format plugin",
       "spdx": "LGPL-3.0-or-later",

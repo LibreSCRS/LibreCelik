@@ -363,6 +363,40 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Phase 2c — Restore leancrypto from the host, unpatched.
+#
+# patchelf — the rpath rewrite linuxdeploy runs over everything it bundles —
+# corrupts this ELF's symbol lookup. The patched copy fails dlopen with an
+# undefined symbol its own .dynsym defines; loaded as a dependency inside a
+# larger graph it instead takes ld.so down walking the GNU-hash chains.
+# Printing is where it surfaced: QPrinter makes QFactoryLoader dlopen the CUPS
+# print-support plugin, which reaches leancrypto through libcups and libgnutls,
+# and the app died there.
+#
+# The library needs no RUNPATH at all — its only NEEDED is libc, and the
+# dependents that load it find it through their own $ORIGIN — so the repair is
+# a plain copy of the host's file with NO patchelf after it. It runs here,
+# after every other patchelf step, for exactly that reason.
+# ---------------------------------------------------------------------------
+echo "Restoring unpatched leancrypto..."
+# Read the loader cache ONCE into a variable: awk exiting on its first match
+# closes the pipe under `ldconfig`, and `set -o pipefail` turns that SIGPIPE
+# into a build failure.
+HOST_SONAMES="$(ldconfig -p 2>/dev/null || true)"
+for bundled in "$APPDIR/usr/lib"/libleancrypto*.so*; do
+    [[ -f "$bundled" ]] || continue
+    soname="$(basename "$bundled")"
+    pristine="$(awk -v n="$soname" '$1 == n { print $NF; exit }' <<< "$HOST_SONAMES")"
+    if [[ -z "$pristine" || ! -f "$pristine" ]]; then
+        echo "ERROR: $soname is bundled but no host copy resolves through ldconfig -p."
+        echo "       The bundled copy is patchelf-corrupted and cannot be shipped."
+        exit 1
+    fi
+    cp "$pristine" "$bundled"
+    echo "  restored $soname from $pristine (no patchelf)"
+done
+
+# ---------------------------------------------------------------------------
 # Verify every bundled shared library has a documented license. Runs after the
 # AppDir is fully assembled (all libs + plugins deployed) and before sealing.
 # Fail-closed: an unmapped/missing/hash-mismatched library aborts the build.
@@ -375,6 +409,77 @@ python3 "$PROJECT_ROOT/ci/scripts/check-bundled-licenses.py" \
         echo "ERROR: bundled-license check failed — a bundled library lacks a documented license (see ::error:: lines above)." >&2
         exit 1
     }
+
+# ---------------------------------------------------------------------------
+# Phase 2e — dlopen audit. THE gate that keeps a broken object out of a
+# shipped artifact.
+#
+# `ldd` is not enough: the leancrypto corruption above left a library whose
+# dependencies all resolved and whose .dynsym still defined every symbol, and
+# it failed only when something asked the loader to bind them. So every object
+# the AppImage ships is opened for real, with RTLD_NOW so undefined symbols
+# are found here rather than on a user's machine in whatever feature happens
+# to reach them first.
+#
+# One process per object: a corrupted object can crash the loader outright,
+# and a driver that dies must still name what it died on.
+# ---------------------------------------------------------------------------
+need cc
+
+DLOPEN_AUDIT="$TOOLS_DIR/dlopen-audit"
+cat > "$TOOLS_DIR/dlopen-audit.c" << 'AUDIT_EOF'
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Open one shared object with RTLD_NOW; print dlerror() and fail if it
+   cannot be loaded. Deliberately tiny: it must not itself pull in anything
+   that could mask a loader failure. */
+#include <dlfcn.h>
+#include <stdio.h>
+
+int main(int argc, char **argv)
+{
+    void *handle;
+
+    if (argc != 2) {
+        fprintf(stderr, "usage: dlopen-audit <path-to-so>\n");
+        return 2;
+    }
+    handle = dlopen(argv[1], RTLD_NOW);
+    if (handle == NULL) {
+        fprintf(stderr, "%s\n", dlerror());
+        return 1;
+    }
+    return 0;
+}
+AUDIT_EOF
+cc -o "$DLOPEN_AUDIT" "$TOOLS_DIR/dlopen-audit.c"
+
+echo ""
+echo "Auditing bundled objects with dlopen(RTLD_NOW)..."
+AUDIT_DIRS=("$APPDIR/usr/lib")
+[[ -d "$APPDIR/usr/plugins" ]] && AUDIT_DIRS+=("$APPDIR/usr/plugins")
+AUDIT_TOTAL=0
+AUDIT_FAILED=0
+while IFS= read -r object; do
+    AUDIT_TOTAL=$((AUDIT_TOTAL + 1))
+    set +e
+    AUDIT_ERR=$(LD_LIBRARY_PATH="$APPDIR/usr/lib" "$DLOPEN_AUDIT" "$object" 2>&1)
+    AUDIT_RC=$?
+    set -e
+    [[ $AUDIT_RC -eq 0 ]] && continue
+    AUDIT_FAILED=$((AUDIT_FAILED + 1))
+    echo "  FAILED ${object#"$APPDIR"/}"
+    if [[ -n "$AUDIT_ERR" ]]; then
+        echo "         $AUDIT_ERR"
+    else
+        echo "         dlopen driver died (exit $AUDIT_RC) — the loader itself went down"
+    fi
+done < <(find "${AUDIT_DIRS[@]}" -type f -name "*.so*" | sort)
+
+if [[ $AUDIT_FAILED -ne 0 ]]; then
+    echo "ERROR: $AUDIT_FAILED of $AUDIT_TOTAL bundled objects cannot be dlopen'd — not packaging." >&2
+    exit 1
+fi
+echo "  $AUDIT_TOTAL bundled objects loaded cleanly."
 
 # ---------------------------------------------------------------------------
 # Phase 3 — Package with appimagetool.

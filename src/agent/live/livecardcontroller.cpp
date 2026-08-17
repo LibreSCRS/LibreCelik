@@ -299,7 +299,12 @@ void LiveCardController::requestTokenInfo()
             }
             Q_EMIT tokenInfoReady(tokenGroup);
         } else {
-            Q_EMIT errorOccurred(terminalText(operation, watch));
+            // An ancillary surface hides on failure, exactly like the
+            // absent-feature guard above — errorOccurred is the READ's
+            // channel, and the window kills a still-spinning page on it
+            // (the Leg-5 bench catch: a per-card refusal raced the running
+            // identity read and released its page).
+            Q_EMIT tokenInfoReady(FieldGroup{QStringLiteral("token"), {}, {}});
         }
         operation->deleteLater();
     });
@@ -330,7 +335,10 @@ void LiveCardController::requestCredentials()
             // An empty list is a legitimate result, not a missing one.
             Q_EMIT credentialsReady(operation->credentialsResult());
         } else {
-            Q_EMIT errorOccurred(terminalText(operation, watch));
+            // Same hide-on-failure posture as token info above: the
+            // credentials block simply does not render, and the page the
+            // identity read is filling stays alive.
+            Q_EMIT credentialsReady({});
         }
         operation->deleteLater();
     });

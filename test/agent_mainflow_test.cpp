@@ -219,9 +219,15 @@ TEST_F(MainFlowTest, TokenInfoAbsentFeatureIsSilentlyHiddenNeverAnError)
     // the PRODUCTION gate — librecelik::agent::requestOptionalSections
     // (optionalsections.h, the exact code the window calls) — never a
     // test-local re-statement of the predicate.
+    namespace Cap = LibreSCRS::AgentClient::Cap;
     FakeAgentGateway gw;
     gw.scriptedFeatures = QStringList{}; // pre-feature agent
     FakeCardController ctrl;
+    // The positive arm below needs a card whose caps carry both surfaces —
+    // the helper now mirrors the agent's per-card gate too (see the
+    // caps-gate case), so a capless card would mask the feature dimension
+    // this case pins.
+    ctrl.scriptedCaps = Cap::Pki | Cap::PinManagement;
     gw.registerCardController(QStringLiteral("card-1"), &ctrl);
     int errors = 0;
     QObject::connect(&ctrl, &librecelik::agent::CardController::errorOccurred, [&](const QString&) { ++errors; });
@@ -240,4 +246,42 @@ TEST_F(MainFlowTest, TokenInfoAbsentFeatureIsSilentlyHiddenNeverAnError)
     EXPECT_TRUE(ctrl.callLog.contains(QStringLiteral("requestTokenInfo")));
     EXPECT_TRUE(ctrl.callLog.contains(QStringLiteral("requestCredentials")));
     EXPECT_EQ(errors, 0);
+}
+
+TEST_F(MainFlowTest, OptionalSectionsAreNeverDispatchedAgainstACardWithoutTheCapability)
+{
+    // The Leg-5 bench catch: a pure eMRTD (IdentityData|EmrtdCrypto, no Pki,
+    // no PinManagement) against a feature-capable agent. The agent refuses
+    // ReadTokenInfo without Pki and ListCredentials without PinManagement,
+    // per card — and those refusals came back through errorOccurred while
+    // the page was still the spinner, which the window reads as a failed
+    // READ and releases the page the still-running identity read was about
+    // to fill. The helper mirrors the agent's own per-card gate, so a verb
+    // the card provably cannot answer is never dispatched at all.
+    namespace Cap = LibreSCRS::AgentClient::Cap;
+    FakeAgentGateway gw;
+    gw.scriptedFeatures = QStringList{QStringLiteral("token-info"), QStringLiteral("credentials")};
+    FakeCardController ctrl;
+    ctrl.scriptedCaps = Cap::IdentityData | Cap::EmrtdCrypto; // the Czech-passport shape
+    gw.registerCardController(QStringLiteral("card-1"), &ctrl);
+    int errors = 0;
+    QObject::connect(&ctrl, &librecelik::agent::CardController::errorOccurred, [&](const QString&) { ++errors; });
+    const auto sections = librecelik::agent::requestOptionalSections(gw, ctrl);
+    EXPECT_FALSE(sections.tokenInfo);
+    EXPECT_FALSE(sections.credentials);
+    EXPECT_FALSE(ctrl.callLog.contains(QStringLiteral("requestTokenInfo")));
+    EXPECT_FALSE(ctrl.callLog.contains(QStringLiteral("requestCredentials")));
+    EXPECT_EQ(errors, 0);
+    // Split surfaces split the dispatch: Pki alone buys token info and
+    // nothing else; PinManagement alone buys credentials and nothing else.
+    FakeCardController pkiOnly;
+    pkiOnly.scriptedCaps = Cap::Pki;
+    const auto pki = librecelik::agent::requestOptionalSections(gw, pkiOnly);
+    EXPECT_TRUE(pki.tokenInfo);
+    EXPECT_FALSE(pki.credentials);
+    FakeCardController pinOnly;
+    pinOnly.scriptedCaps = Cap::PinManagement;
+    const auto pin = librecelik::agent::requestOptionalSections(gw, pinOnly);
+    EXPECT_FALSE(pin.tokenInfo);
+    EXPECT_TRUE(pin.credentials);
 }

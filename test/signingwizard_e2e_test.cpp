@@ -21,7 +21,6 @@
 ///   export DBUS_SESSION_BUS_ADDRESS=...  # the PRIVATE bus, never the desktop one
 ///   export LIBRESCRS_HW=1
 ///   export LIBRESCRS_READER_SUBSTR='<a substring of the bench reader name>'
-///   export LIBRESCRS_DSS_JAR=/path/to/the/verification/oracle.jar
 ///   ctest --test-dir build/test --no-tests=error -R SigningWizardE2E
 /// ```
 ///
@@ -170,7 +169,7 @@ protected:
                 QApplication::installTranslator(translator);
         }
 
-        // --- Gate 1: the hardware opt-in ---
+        // --- hardware opt-in ---
         // Nothing below this line is safe to run unattended on a developer
         // machine: it dials an agent and spends a credential.
         const char* hw = std::getenv("LIBRESCRS_HW");
@@ -179,7 +178,7 @@ protected:
             return;
         }
 
-        // --- Gate 2: reader targeting (mandatory) ---
+        // --- reader targeting (mandatory) ---
         // The auto-prompter answers every request on its bus with no reader or
         // card targeting, so the operator has to name the bench reader and the
         // suite has to agree that the one card it can see IS that reader's.
@@ -190,28 +189,21 @@ protected:
         }
         const QString readerNeedle = QString::fromUtf8(readerSubstr);
 
-        // --- Gate 3: the signature-verification oracle, env only ---
-        // The jar is named by the environment or it is not available at all:
-        // no build-time path is compiled in, because nothing in this build
-        // tree produces one any more.
-        const char* jarEnv = std::getenv("LIBRESCRS_DSS_JAR");
-        if (jarEnv == nullptr || *jarEnv == '\0' || !fs::exists(jarEnv)) {
-            suiteSkipReason = "Verification oracle not found: set LIBRESCRS_DSS_JAR to an existing jar";
-            return;
-        }
-        if (std::system("java -version > /dev/null 2>&1") != 0) {
-            suiteSkipReason = "Java not available";
-            return;
-        }
+        // (There is deliberately NO external-oracle gate here. The suite's
+        // oracle is its own artifact-shape assertions — the Task-37 review
+        // established that no external verification invocation ever existed
+        // in this suite — and the old LIBRESCRS_DSS_JAR gate demanded a jar
+        // NOTHING here runs, skipping the whole suite on a healthy bench:
+        // the Leg-10 bench catch, 2026-08-17.)
 
-        // --- Gate 4: an agent is actually there ---
+        // --- agent presence ---
         gateway = std::make_unique<librecelik::agent::LiveAgentGateway>();
         if (gateway->presence() != librecelik::agent::PresenceState::Ready) {
             suiteSkipReason = "No agent is available on this bus (presence is not Ready)";
             return;
         }
 
-        // --- Gate 5: single-card discipline ---
+        // --- single-card discipline ---
         // Two carded readers mean the prompter could authorise a ceremony on
         // the token the operator did NOT mean to spend. Say so loudly rather
         // than picking one.
@@ -660,6 +652,16 @@ TEST_F(SigningWizardE2ETest, LiveReadSatisfiesTheSharedEmissionContract)
 {
     auto* controller = gateway->cardController(cardId);
     ASSERT_NE(controller, nullptr);
+
+    // The success side of the read contract needs a card that CAN be read:
+    // the agent refuses ReadIdentity outright without the IdentityData
+    // capability, and a PKI-only signing token (the usual bench card for
+    // this suite) would fail the success assertion for a refusal that is
+    // correct behavior. Single-card discipline forbids seating a second,
+    // identity-capable card alongside — so this case skips honestly instead.
+    namespace Cap = LibreSCRS::AgentClient::Cap;
+    if (!LibreSCRS::AgentClient::has(controller->capabilityBits(), Cap::IdentityData))
+        GTEST_SKIP() << "The bench card carries no IdentityData: the live read contract needs an identity-capable card";
 
     // No expected script: what this card streams is the card's business. The
     // ordering and count invariants are the contract.

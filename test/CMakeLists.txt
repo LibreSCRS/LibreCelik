@@ -539,8 +539,9 @@ if(LIBRECELIK_SIGNING_ENABLED)
     # seams' vtable anchors, the live gateway plus the two controllers it mints,
     # and the pure helpers those controllers and the sign page share.
     #
-    # The suite's verification oracle is named by the environment
-    # (LIBRESCRS_DSS_JAR) alone; no jar path is compiled in.
+    # The suite's verification oracle is its own artifact-shape assertions —
+    # no external tool is invoked (the retired LIBRESCRS_DSS_JAR gate demanded
+    # a jar nothing here ever ran).
     add_executable(SigningWizardE2ETests
         signingwizard_e2e_test.cpp
         ${CMAKE_SOURCE_DIR}/src/agent/agentgateway.cpp

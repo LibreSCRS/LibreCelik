@@ -42,8 +42,11 @@ public:
     /// selection order); each run of >= 2 goes through signBatch (one
     /// consent+PIN per run) when canBatch(), else degrades to sequential
     /// per-file sign() (N prompts — today's behavior); a run of 1 through
-    /// sign(). options.format/packaging are taken per-item; the rest of
-    /// options (level, visualSignature, tsaUrl, extra) applies to all.
+    /// sign(). options.format/packaging are taken per-item; level, tsaUrl
+    /// and extra apply to all. visualSignature reaches the PAdES runs ONLY:
+    /// one placement is chosen for the whole request, and the agent refuses
+    /// it paired with any other format rather than ignoring it, so the runs
+    /// it cannot apply to are dialled without it.
     virtual void start(const QString& certId, const QList<SignRequestItem>& files,
                        const LibreSCRS::AgentClient::SignOptions& options, const QString& outputFolder) = 0;
     virtual void cancel() = 0;

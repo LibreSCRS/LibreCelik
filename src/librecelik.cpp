@@ -17,6 +17,7 @@
 #include "settings/settingskeys.h"
 #include "ui_librecelik.h"
 #include "utils/libreceliklog.h"
+#include "utils/spinnerpage.h"
 
 #include <LibreSCRS/AgentClient/AgentCapabilities.h>
 
@@ -38,11 +39,9 @@
 #include <QColor>
 #include <QDir>
 #include <QEvent>
-#include <QLabel>
 #include <QLibraryInfo>
 #include <QLocale>
 #include <QMenu>
-#include <QProgressBar>
 #include <QScrollArea>
 #include <QSettings>
 #include <QStringList>
@@ -51,6 +50,8 @@
 using librecelik::agent::AgentGateway;
 using librecelik::agent::CardController;
 using librecelik::agent::PresenceState;
+using librecelik::utils::isSpinner;
+using librecelik::utils::makeSpinnerPage;
 using LibreSCRS::AgentClient::CertificateInfo;
 using LibreSCRS::AgentClient::CredentialList;
 using LibreSCRS::AgentClient::FieldGroup;
@@ -86,13 +87,6 @@ constexpr QLatin1StringView kCardTypeFeature{"card-type"};
     return out;
 }
 
-/// Whether @p widget is the read-in-progress placeholder rather than a built
-/// card page.
-[[nodiscard]] bool isSpinner(QWidget* widget)
-{
-    return widget != nullptr && widget->property("isSpinner").toBool();
-}
-
 /// Group keys that carry no user-visible card data: the read's own
 /// bookkeeping, and the PKI material the token section renders instead.
 [[nodiscard]] bool isVisibleDataGroup(const FieldGroup& group)
@@ -107,26 +101,6 @@ constexpr QLatin1StringView kCardTypeFeature{"card-type"};
 [[nodiscard]] bool hasVisibleData(const QList<FieldGroup>& groups)
 {
     return std::any_of(groups.begin(), groups.end(), isVisibleDataGroup);
-}
-
-/// The read-in-progress page. @p text names what is being waited for — a card
-/// read, or the holder's answer in the agent's own dialog.
-[[nodiscard]] QWidget* makeSpinnerPage(const QString& text, QWidget* parent)
-{
-    auto* spinnerWidget = new QWidget(parent);
-    spinnerWidget->setProperty("isSpinner", true);
-    auto* layout = new QVBoxLayout(spinnerWidget);
-    layout->setAlignment(Qt::AlignCenter);
-    auto* bar = new QProgressBar(spinnerWidget);
-    bar->setRange(0, 0);
-    bar->setFixedWidth(200);
-    bar->setTextVisible(false);
-    auto* label = new QLabel(text, spinnerWidget);
-    label->setAlignment(Qt::AlignCenter);
-    label->setWordWrap(true);
-    layout->addWidget(bar);
-    layout->addWidget(label);
-    return spinnerWidget;
 }
 
 /// The card page shell every built page shares: a scroll area over a top-

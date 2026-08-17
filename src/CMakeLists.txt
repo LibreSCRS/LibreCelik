@@ -90,6 +90,8 @@ set(PROJECT_SOURCES
         utils/listitemdelegate.cpp
         utils/pluginwidgetbase.h
         utils/pluginwidgetbase.cpp
+        utils/spinnerpage.h
+        utils/spinnerpage.cpp
         utils/translations_catalog.cpp
         plugin/cardwidgetplugin.h
         plugin/cardwidgetpluginregistry.h

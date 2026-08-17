@@ -42,6 +42,9 @@ add_executable(
     securitystatuswidget_test.cpp
     ../src/utils/securitystatuswidget.h
     ../src/utils/securitystatuswidget.cpp
+    spinnerpage_test.cpp
+    ../src/utils/spinnerpage.h
+    ../src/utils/spinnerpage.cpp
 )
 target_link_libraries(
     ${PROJECT_NAME}

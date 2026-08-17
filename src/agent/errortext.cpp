@@ -138,6 +138,16 @@ QString errorText(ErrorCode code, CallError call, const QString& msgKey, const Q
         if (!message.isEmpty())
             return message;
     }
+    // An ANSWERED refusal (arguments/authorization/protocol): the agent
+    // classified the request and authored the message — arriving with an
+    // empty key on the entry-refusal path (AgentOperation::failEntry) — and
+    // that prose is the only precise record of why. The transport classes
+    // below keep the coarse copy instead: their message is raw bus text
+    // written for a developer, never shown to a user.
+    const bool agentAnswered =
+        call == CallError::InvalidArguments || call == CallError::AccessDenied || call == CallError::ProtocolError;
+    if (agentAnswered && !message.isEmpty())
+        return message;
     // The two classification axes are mutually exclusive on a failed op: when
     // the call never reached the agent, `code` is None and carries nothing.
     if (call != CallError::None)

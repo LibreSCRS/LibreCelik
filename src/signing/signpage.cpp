@@ -331,8 +331,11 @@ void SignPage::startSigning()
     options.level = librecelik::agent::levelFromUiToken(sigLevel);
     if (visual)
         options.visualSignature = *visual;
-    if (!tsaUrl.isEmpty())
-        options.tsaUrl = tsaUrl;
+    // Level decides whether the configured URL travels at all (tested helper):
+    // the agent refuses tsaUrl on a baseline request, at submit, before any
+    // card work.
+    if (const QString effectiveTsa = signing::tsaUrlForLevel(sigLevel, tsaUrl); !effectiveTsa.isEmpty())
+        options.tsaUrl = effectiveTsa;
     if (allowExpired)
         options.extra.insert(QStringLiteral("allowExpired"), true);
 

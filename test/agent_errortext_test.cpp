@@ -21,6 +21,31 @@ TEST(ErrorText, UnknownMsgKeyFallsBackToAgentFallbackText)
                                            QStringLiteral("Future thing")),
               QStringLiteral("Future thing"));
 }
+TEST(ErrorText, AnsweredRefusalPassesTheAgentsProseThroughWithoutAKey)
+{
+    // The entry-refusal shape (AgentOperation::failEntry): the agent ANSWERED
+    // with a classified refusal — errorCode None, callError InvalidArguments /
+    // AccessDenied / ProtocolError — and its authored message arrives as the
+    // FALLBACK with an EMPTY key. That prose is the only precise record of
+    // why (the Leg-1 bench catch: "tsaUrl is only meaningful for the
+    // timestamped/long-term family" rendered as the generic no-reason line).
+    const QString prose = QStringLiteral("tsaUrl is only meaningful for the timestamped/long-term family");
+    EXPECT_EQ(librecelik::agent::errorText(ErrorCode::None, CallError::InvalidArguments, {}, prose), prose);
+    EXPECT_EQ(librecelik::agent::errorText(ErrorCode::None, CallError::AccessDenied, {}, prose), prose);
+    EXPECT_EQ(librecelik::agent::errorText(ErrorCode::None, CallError::ProtocolError, {}, prose), prose);
+}
+
+TEST(ErrorText, TransportClassFailuresKeepTheCoarseCopyOverRawBusText)
+{
+    // The transport axis never reached (or never heard back from) the agent:
+    // its message is raw bus text written for a developer, and the coarse
+    // localized line must win.
+    const QString busText = QStringLiteral("org.freedesktop.DBus.Error.NoReply: did not receive a reply");
+    EXPECT_NE(librecelik::agent::errorText(ErrorCode::None, CallError::Timeout, {}, busText), busText);
+    EXPECT_NE(librecelik::agent::errorText(ErrorCode::None, CallError::AgentUnavailable, {}, busText), busText);
+    EXPECT_NE(librecelik::agent::errorText(ErrorCode::None, CallError::TransportFailure, {}, busText), busText);
+}
+
 TEST(ErrorText, UnknownFutureCodeYieldsGenericNotEmpty)
 {
     EXPECT_FALSE(librecelik::agent::errorText(static_cast<ErrorCode>(9999), CallError::None, {}, {}).isEmpty());

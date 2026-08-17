@@ -62,6 +62,34 @@ TEST(IsValidTsaUrl, EmptyRejected)
     EXPECT_FALSE(signing::isValidTsaUrl(QStringLiteral("")));
 }
 
+// ---------------------------------------------------------------------------
+// tsaUrlForLevel — the ONE decision of whether a sign request carries the
+// configured TSA URL at all. The agent refuses `tsaUrl` outside the
+// timestamped/long-term family (b-t/b-lt/b-lta) — a B_B request that
+// forwards a configured URL anyway is refused at submit, before any card
+// work (the Leg-1 bench catch, 2026-08-17).
+// ---------------------------------------------------------------------------
+
+TEST(TsaUrlForLevel, BaselineLevelNeverCarriesTheConfiguredUrl)
+{
+    EXPECT_TRUE(
+        signing::tsaUrlForLevel(QStringLiteral("B_B"), QStringLiteral("https://tsa.example.com/rfc3161")).isEmpty());
+}
+
+TEST(TsaUrlForLevel, TimestampedFamilyCarriesItVerbatim)
+{
+    const QString url = QStringLiteral("https://tsa.example.com/rfc3161");
+    EXPECT_EQ(signing::tsaUrlForLevel(QStringLiteral("B_T"), url), url);
+    EXPECT_EQ(signing::tsaUrlForLevel(QStringLiteral("B_LT"), url), url);
+    EXPECT_EQ(signing::tsaUrlForLevel(QStringLiteral("B_LTA"), url), url);
+}
+
+TEST(TsaUrlForLevel, EmptyUrlStaysEmptyForEveryLevel)
+{
+    EXPECT_TRUE(signing::tsaUrlForLevel(QStringLiteral("B_B"), QString()).isEmpty());
+    EXPECT_TRUE(signing::tsaUrlForLevel(QStringLiteral("B_LTA"), QString()).isEmpty());
+}
+
 TEST(IsValidTsaUrl, HttpRejected)
 {
     EXPECT_FALSE(signing::isValidTsaUrl(QStringLiteral("http://example.com/tsa")));

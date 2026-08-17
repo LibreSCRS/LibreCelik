@@ -270,6 +270,12 @@ void LiveSignController::consumeFinished(AgentOperation* operation, bool watchdo
     // ALWAYS taken, terminal or not: the wire delivers rows for every document
     // it attempted, including on a Finished(Error).
     std::vector<BatchSignRow> rows = operation->takeBatchResults();
+    // Wire-answered rows ONLY — counted BEFORE the single-sign synthesis
+    // below. The synthetic row carries the error-code axis alone, so a
+    // single sign that failed without a wire answer (an entry refusal above
+    // all) must fall through to opText, the only spelling that still has the
+    // call axis and the agent's authored message.
+    const auto answered = static_cast<std::size_t>(rows.size());
     if (!batched) {
         // A single sign() answers one artifact through its own accessor. It
         // enters the SAME consumption as a one-row batch so there is exactly
@@ -283,7 +289,6 @@ void LiveSignController::consumeFinished(AgentOperation* operation, bool watchdo
         row.meta = operation->signMeta();
         rows.push_back(std::move(row));
     }
-    const auto answered = static_cast<std::size_t>(rows.size());
 
     BatchOutcome outcome = consumeBatchOutcome(operation->status(), opError, std::move(rows), run);
 

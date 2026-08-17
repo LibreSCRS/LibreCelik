@@ -29,4 +29,16 @@ namespace signing {
     return parsed.isValid() && parsed.scheme() == QStringLiteral("https") && !parsed.host().isEmpty();
 }
 
+/// @brief The TSA URL a sign request at @p sigLevelToken actually carries:
+///        @p url for the timestamped/long-term family, empty for B_B.
+///
+/// The agent refuses `tsaUrl` outside b-t/b-lt/b-lta — the parameter is
+/// meaningless without a timestamp step — so a baseline request must not
+/// forward the configured URL it happens to have on hand: the refusal lands
+/// at submit, before any card work, and costs the user the whole run.
+[[nodiscard]] inline QString tsaUrlForLevel(const QString& sigLevelToken, const QString& url)
+{
+    return sigLevelToken == QStringLiteral("B_B") ? QString() : url;
+}
+
 } // namespace signing

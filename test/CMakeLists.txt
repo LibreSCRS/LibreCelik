@@ -753,6 +753,7 @@ add_executable(AgentLayerTests
     agent_presence_test.cpp
     agent_artifactio_test.cpp
     agent_errortext_test.cpp
+    agent_errortext_coverage_test.cpp
     agent_fieldmerge_test.cpp
     agent_opstallwatchdog_test.cpp
     agent_signrequest_test.cpp
@@ -796,6 +797,16 @@ target_compile_definitions(AgentLayerTests PRIVATE
     # passed as a CTest ENVIRONMENT property, same as SlotLabelFormatterTests.
     LIBRECELIK_TRANSLATIONS_DIR_DEFAULT="${CMAKE_BINARY_DIR}/src")
 add_dependencies(AgentLayerTests LibreCelik_lrelease)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+    # The coverage guard's whole mechanism: its classification switches carry no
+    # `default:` arm, so an enumerator appended to the client library's ErrorCode
+    # or CallError stops them being exhaustive and -Wswitch fires. Promoted to an
+    # error on THIS source only, because errortext.cpp itself must keep its
+    # default arms — at run time an unknown code has to reach the agent's own
+    # message rather than a diagnostic.
+    set_source_files_properties(agent_errortext_coverage_test.cpp
+        PROPERTIES COMPILE_OPTIONS "-Werror=switch")
+endif()
 # TIMEOUT 30: the live-gateway suite dials the agent transport, so a wedged
 # or absent bus must FAIL this gate rather than wedge it. The client's own
 # probes are bounded (1 s handshake / 3 s call), so 30 s is pure margin.

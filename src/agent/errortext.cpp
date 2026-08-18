@@ -8,6 +8,8 @@
 
 #include "agent/errortext.h"
 
+#include <QDebug>
+
 #include <QCoreApplication>
 
 #include <optional>
@@ -166,12 +168,26 @@ QString errorText(ErrorCode code, CallError call, const QString& msgKey, const Q
     //    authored in English and is never translated on the way here, so
     //    preferring it — which is what this function used to do for every
     //    failure that carried a key — leaked English into every non-English
-    //    session on the whole agent-answered class of errors. LC's own copy for
-    //    a code it recognises is both localized and no less accurate, so it
-    //    wins; the agent's prose stays available further down for the failures
-    //    LC genuinely cannot phrase.
-    if (const std::optional<QString> named = namedCodeText(code))
+    //    session on the whole agent-answered class of errors. LC's copy for a
+    //    code it recognises is the localized HEADLINE — but it is coarser than
+    //    the prose on the classes where the agent collapses distinct failures
+    //    onto one code and carries the distinction only in its message (a
+    //    signing-engine error names the actual engine complaint there; a
+    //    reader-communication failure says WHICH leg failed). Discarding that
+    //    prose would trade the only specific record of the failure for a
+    //    general sentence, so it rides below the headline as a detail line,
+    //    and is logged either way so a report without a screenshot still
+    //    carries it.
+    if (const std::optional<QString> named = namedCodeText(code)) {
+        if (!message.isEmpty() && message != *named) {
+            // Plain qWarning, not a category: this TU is compiled into test
+            // targets that do not carry the logging TU, and the line must not
+            // cost them a link dependency.
+            qWarning() << "agent detail behind localized error" << static_cast<quint32>(code) << ":" << message;
+            return *named + QLatin1Char('\n') + message;
+        }
         return *named;
+    }
     // 3. An ANSWERED refusal (arguments/authorization/protocol): the agent
     //    classified the request and authored the message — arriving with an
     //    empty key on the entry-refusal path (AgentOperation::failEntry) — and

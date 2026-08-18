@@ -239,12 +239,17 @@ TEST_F(ErrorTextCoverage, EveryEnumeratedCodeHasADeliberateOutcome)
             EXPECT_NE(text, generic) << "code " << value
                                      << " is classified Localized but renders the generic; a user cannot tell it "
                                         "apart from an unclassified failure";
-            EXPECT_FALSE(seen.contains(text))
-                << "code " << value << " shares its copy with another code; a user cannot tell the two apart";
-            seen.insert(text);
-            // The copy is the code's own, not the agent message dressed up: an
-            // absent message must render the identical string.
-            EXPECT_EQ(forCode(code, QString()), text);
+            {
+                // The uniqueness property belongs to the HEADLINE — the code's
+                // own copy. A present agent message may only ADD a detail line
+                // below it, never replace or reword it.
+                const QString headline = forCode(code, QString());
+                EXPECT_FALSE(seen.contains(headline))
+                    << "code " << value << " shares its copy with another code; a user cannot tell the two apart";
+                seen.insert(headline);
+                EXPECT_EQ(text.section(QLatin1Char('\n'), 0, 0), headline)
+                    << "code " << value << " let the agent message displace or reword its own localized headline";
+            }
             break;
         case Kind::AgentFallback:
             EXPECT_EQ(text, sentinel) << "code " << value

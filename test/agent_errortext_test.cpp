@@ -157,6 +157,27 @@ TEST_F(ErrorTextSerbian, NamedCodeRendersSerbianRatherThanTheAgentsEnglishProse)
     EXPECT_TRUE(hasCyrillic(text)) << "rendered \"" << text.toStdString() << "\", which is not the Serbian copy";
 }
 
+// One code covers many distinct failures on the signing and reader classes,
+// and the distinction travels only in the agent's prose: the localized line
+// must LEAD, but the specific reason must still reach the user below it —
+// discarding it would swap the only precise record for a general sentence.
+TEST_F(ErrorTextSerbian, NamedCodeKeepsTheAgentsSpecificsAsADetailLine)
+{
+    const QString prose = QStringLiteral("invalid signature parameters: appearance box outside the page");
+    const QString text = librecelik::agent::errorText(ErrorCode::SigningEngineError, CallError::None, QString(), prose);
+
+    const QStringList lines = text.split(QLatin1Char('\n'));
+    ASSERT_GE(lines.size(), 2) << "rendered \"" << text.toStdString() << "\" — the engine detail was discarded";
+    EXPECT_TRUE(hasCyrillic(lines.first())) << "the headline must be the localized copy";
+    EXPECT_EQ(lines.last(), prose) << "the engine's own complaint must survive verbatim";
+
+    // The detail rides only when it says something the headline does not: a
+    // prose equal to the headline would be the same sentence twice.
+    const QString headlineOnly =
+        librecelik::agent::errorText(ErrorCode::SigningEngineError, CallError::None, QString(), lines.first());
+    EXPECT_EQ(headlineOnly, lines.first());
+}
+
 // A cancelled operation reports NO error code, so the code axis declines and
 // nothing but the key can answer for it. Until the key was named, that left the
 // agent's own bare "Operation cancelled" — the one failure where an English line

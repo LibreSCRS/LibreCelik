@@ -10,6 +10,8 @@
 
 #include <QCoreApplication>
 
+#include <optional>
+
 namespace librecelik::agent {
 
 namespace {
@@ -19,14 +21,22 @@ using LibreSCRS::AgentClient::CredentialOutcome;
 using LibreSCRS::AgentClient::ErrorCode;
 using LibreSCRS::AgentClient::OperationPhase;
 
-/// Copy for the agent's wire-frozen error taxonomy.
+/// LC copy for the agent's wire-frozen error taxonomy — or nothing at all when
+/// this build does not name the code.
 ///
-/// The `default:` arm is REQUIRED, not stylistic: the client library decodes an
-/// ErrorCode value this build does not know through verbatim rather than
-/// rejecting it (see ErrorCode.h's append-tolerance note), so an unrecognised
-/// value is opaque display data and must land on the generic line. ErrorCode::None
-/// joins it there — a failure that named no code has nothing more specific to say.
-[[nodiscard]] QString codeText(ErrorCode code)
+/// The empty answer is the point of the `std::optional`: "this build has copy
+/// for that code" is a question `errorText` has to ASK before it decides whether
+/// the agent's own message is worth rendering, and a function that folded the
+/// unnamed case into a generic string could not be asked it. Two values land on
+/// the empty answer:
+///
+///   * `ErrorCode::None` — a failure that named no code has nothing to say, and
+///     whatever else the operation carries is more specific than a generic.
+///   * anything past this build's tail. The client library decodes an ErrorCode
+///     value it does not know through verbatim rather than rejecting it (see
+///     ErrorCode.h's append-tolerance note), so the `default:` arm is REQUIRED,
+///     not stylistic, and an unrecognised value is opaque display data.
+[[nodiscard]] std::optional<QString> namedCodeText(ErrorCode code)
 {
     switch (code) {
     case ErrorCode::CardRemoved:
@@ -69,7 +79,7 @@ using LibreSCRS::AgentClient::OperationPhase;
         return qtTrId("lc-agent-error-invalid-document");
     case ErrorCode::None:
     default:
-        return qtTrId("lc-agent-error-generic");
+        return std::nullopt;
     }
 }
 
@@ -128,31 +138,47 @@ QString errorText(ErrorCode code, CallError call, const QString& msgKey, const Q
     // an empty error line.
     const QString message = msgFallback.trimmed().isEmpty() ? QString() : msgFallback;
 
+    // 1. A key this build names. The most specific thing anyone knows about the
+    //    failure, in the user's own language.
     if (!msgKey.isEmpty()) {
         if (const QString named = knownMsgKeyText(msgKey); !named.isEmpty())
             return named;
-        // Unknown key: the agent authored this text for exactly this failure,
-        // so it beats anything the code axis could say about it. When the key
-        // arrived without a usable message there is nothing to pass through and
-        // resolution continues below rather than returning blank.
-        if (!message.isEmpty())
-            return message;
     }
-    // An ANSWERED refusal (arguments/authorization/protocol): the agent
-    // classified the request and authored the message — arriving with an
-    // empty key on the entry-refusal path (AgentOperation::failEntry) — and
-    // that prose is the only precise record of why. The transport classes
-    // below keep the coarse copy instead: their message is raw bus text
-    // written for a developer, never shown to a user.
+    // 2. A code this build names. The agent's message for such a failure is
+    //    authored in English and is never translated on the way here, so
+    //    preferring it — which is what this function used to do for every
+    //    failure that carried a key — leaked English into every non-English
+    //    session on the whole agent-answered class of errors. LC's own copy for
+    //    a code it recognises is both localized and no less accurate, so it
+    //    wins; the agent's prose stays available further down for the failures
+    //    LC genuinely cannot phrase.
+    if (const std::optional<QString> named = namedCodeText(code))
+        return *named;
+    // 3. An ANSWERED refusal (arguments/authorization/protocol): the agent
+    //    classified the request and authored the message — arriving with an
+    //    empty key on the entry-refusal path (AgentOperation::failEntry) — and
+    //    that prose is the only precise record of why. Rule 2 cannot have
+    //    consumed this shape: an entry refusal reports no error code.
     const bool agentAnswered =
         call == CallError::InvalidArguments || call == CallError::AccessDenied || call == CallError::ProtocolError;
     if (agentAnswered && !message.isEmpty())
         return message;
-    // The two classification axes are mutually exclusive on a failed op: when
-    // the call never reached the agent, `code` is None and carries nothing.
+    // 4. The transport axis, ahead of the agent's prose: on these routes the
+    //    message is raw bus text written for a developer, never shown to a user.
+    //    The two classification axes are mutually exclusive on a failed op —
+    //    when the call never reached the agent, `code` is None and carries
+    //    nothing.
     if (call != CallError::None)
         return callText(call);
-    return codeText(code);
+    // 5. The agent's authored message, in the degraded position it belongs in:
+    //    reachable only once neither axis named the failure, which is when that
+    //    message is the only thing left that carries meaning. Untranslated, and
+    //    that is the honest trade — an English sentence about the actual failure
+    //    beats a localized sentence about nothing.
+    if (!message.isEmpty())
+        return message;
+    // 6. The floor that makes a blank error line impossible.
+    return qtTrId("lc-agent-error-generic");
 }
 
 QString phaseText(OperationPhase phase)

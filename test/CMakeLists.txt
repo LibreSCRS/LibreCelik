@@ -789,6 +789,13 @@ target_link_libraries(AgentLayerTests PRIVATE
     LibreAgent::ClientQt
 )
 set_target_properties(AgentLayerTests PROPERTIES AUTOMOC ON)
+target_compile_definitions(AgentLayerTests PRIVATE
+    # The error-text suite loads the Serbian catalog: the English-leak defect it
+    # guards is invisible in an English session, where the leaked sentence and
+    # the correct one are the same words. Baked in at compile time rather than
+    # passed as a CTest ENVIRONMENT property, same as SlotLabelFormatterTests.
+    LIBRECELIK_TRANSLATIONS_DIR_DEFAULT="${CMAKE_BINARY_DIR}/src")
+add_dependencies(AgentLayerTests LibreCelik_lrelease)
 # TIMEOUT 30: the live-gateway suite dials the agent transport, so a wedged
 # or absent bus must FAIL this gate rather than wedge it. The client's own
 # probes are bounded (1 s handshake / 3 s call), so 30 s is pure margin.

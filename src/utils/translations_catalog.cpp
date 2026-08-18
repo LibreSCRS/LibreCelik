@@ -1235,6 +1235,18 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "The operation did not finish, and no reason was reported."
     QT_TRID_NOOP("lc-agent-error-generic");
 
+    // Agent-authored message keys this build names for itself.
+    //
+    // A key earns an entry here ONLY when the line below is at least as
+    // informative as what the agent sent alongside it. Most of the agent's
+    // vocabulary travels with an error code the taxonomy above already phrases
+    // more precisely, and a coarser key would displace that; the rest travel
+    // with prose that carries a specific reason no fixed string can restate.
+    // See errortext.cpp's knownMsgKeyText for the rule and the resolution order
+    // it feeds.
+    //% "The operation was cancelled."
+    QT_TRID_NOOP("lc-agent-msg-cancelled");
+
     // Transport-level call failures (client-local CallError).
     //% "Could not reach the smart card service. Check that it is installed and running."
     QT_TRID_NOOP("lc-agent-call-unavailable");

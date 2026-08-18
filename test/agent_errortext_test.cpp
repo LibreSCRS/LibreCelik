@@ -157,6 +157,22 @@ TEST_F(ErrorTextSerbian, NamedCodeRendersSerbianRatherThanTheAgentsEnglishProse)
     EXPECT_TRUE(hasCyrillic(text)) << "rendered \"" << text.toStdString() << "\", which is not the Serbian copy";
 }
 
+// A cancelled operation reports NO error code, so the code axis declines and
+// nothing but the key can answer for it. Until the key was named, that left the
+// agent's own bare "Operation cancelled" — the one failure where an English line
+// reached the user with nothing lost by translating it.
+TEST_F(ErrorTextSerbian, CancellationRendersSerbianRatherThanTheAgentsBareEnglish)
+{
+    const QString prose = QStringLiteral("Operation cancelled");
+    const QString text =
+        librecelik::agent::errorText(ErrorCode::None, CallError::None, QStringLiteral("op.cancelled"), prose);
+
+    EXPECT_NE(text, prose);
+    EXPECT_TRUE(hasCyrillic(text)) << "rendered \"" << text.toStdString() << "\", which is not the Serbian copy";
+    // Not the generic either: a cancellation is a specific thing to say.
+    EXPECT_NE(text, librecelik::agent::errorText(ErrorCode::None, CallError::None, QString(), QString()));
+}
+
 // The same for the transport axis, which had the ordering right already — pinned
 // here so both axes are proven under a loaded catalog rather than one of them
 // being taken on trust.

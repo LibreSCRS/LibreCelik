@@ -120,12 +120,30 @@ using LibreSCRS::AgentClient::OperationPhase;
 /// agent's own authored fallback is what a user reads rather than a guess made
 /// on this side. The key vocabulary is the agent's and it grows independently
 /// of this build, which is the whole reason the fallback pass-through exists.
+///
+/// Naming a key is not free, because this rule resolves AHEAD of the error code:
+/// a key coarser than the code it travels with would displace a more precise
+/// localized line with a vaguer one. Most of the agent's vocabulary is in
+/// exactly that position — one key covering many distinct failures that each
+/// arrive with their own code — and is deliberately absent here for that reason.
+/// The keys that belong here are the ones whose failures report NO code, so
+/// there is nothing more precise for them to displace:
+///
+///   * `op.card_removed` and `op.watchdog_timeout` both map onto the copy their
+///     own code would have produced, so the rule order cannot change what a user
+///     reads either way.
+///   * `op.cancelled` reports no code at all, and the message riding with it is
+///     a bare restatement of the key. Without an entry here it was the one
+///     failure where an untranslated English line reached the user with nothing
+///     lost by translating it.
 [[nodiscard]] QString knownMsgKeyText(const QString& msgKey)
 {
     if (msgKey == QLatin1StringView("op.card_removed"))
         return qtTrId("lc-agent-error-card-removed");
     if (msgKey == QLatin1StringView("op.watchdog_timeout"))
         return qtTrId("lc-agent-error-watchdog");
+    if (msgKey == QLatin1StringView("op.cancelled"))
+        return qtTrId("lc-agent-msg-cancelled");
     return {};
 }
 

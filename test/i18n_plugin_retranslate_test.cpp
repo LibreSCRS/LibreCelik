@@ -31,6 +31,7 @@
 #include <QWidget>
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <string>
@@ -115,5 +116,50 @@ INSTANTIATE_TEST_SUITE_P(AllPlugins, PluginRetranslateTest,
                                            PluginCase{"EMRTDWidget", &buildEmrtd},
                                            PluginCase{"EuVrcWidget", &buildEuVrc}, PluginCase{"PIVWidget", &buildPiv}),
                          [](const ::testing::TestParamInfo<PluginCase>& info) { return info.param.name; });
+
+/// Copy the widget walk above cannot reach, asserted against the catalog
+/// directly.
+///
+/// The walk only sees what a built widget renders, and for the PIV plugin two
+/// strings escape it for structural reasons rather than because they are
+/// correct: the outer collapsible section's title is not one of the widget roles
+/// the snapshot collects, and the discovery section is only built when a
+/// discovery field group arrives — the mock read carries none, and no producer
+/// sends one yet. Both ids nevertheless have live call sites in the plugin, so a
+/// Serbian entry that is still the English source is a real gap that this suite
+/// would otherwise report as translated.
+class PluginCatalogTest : public RetranslatableWidgetFixture
+{
+protected:
+    /// The rendering of @p id under @p language, with the fixture's translator
+    /// swapped for the duration of the call.
+    [[nodiscard]] QString rendered(const QString& language, const char* id)
+    {
+        switchTo(language);
+        QCoreApplication::processEvents();
+        return qtTrId(id);
+    }
+
+    [[nodiscard]] static bool hasCyrillic(const QString& text)
+    {
+        return std::ranges::any_of(text, [](QChar c) { return c.script() == QChar::Script_Cyrillic; });
+    }
+};
+
+TEST_F(PluginCatalogTest, PivCopyOutsideTheWidgetWalkIsTranslated)
+{
+    for (const char* id : {"lc-piv-widget-title", "lc-piv-section-discovery"}) {
+        SCOPED_TRACE(id);
+        const QString english = rendered(QStringLiteral("en"), id);
+        const QString serbian = rendered(QStringLiteral("sr_RS"), id);
+
+        ASSERT_FALSE(english.isEmpty()) << "id absent from the English catalog";
+        ASSERT_FALSE(serbian.isEmpty()) << "id absent from the Serbian catalog";
+        EXPECT_NE(serbian, english) << "the Serbian entry is still the English source";
+        // Serbian ships in Cyrillic, so script is what separates a translation
+        // from an untouched copy that happens to differ by punctuation.
+        EXPECT_TRUE(hasCyrillic(serbian)) << "rendered \"" << serbian.toStdString() << "\", which is not Serbian";
+    }
+}
 
 } // namespace librecelik::test::i18n

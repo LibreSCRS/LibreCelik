@@ -2187,6 +2187,10 @@
         <source>The operation did not finish, and no reason was reported.</source>
         <translation>The operation did not finish, and no reason was reported.</translation>
     </message>
+    <message id="lc-agent-msg-cancelled">
+        <source>The operation was cancelled.</source>
+        <translation>The operation was cancelled.</translation>
+    </message>
     <message id="lc-agent-call-unavailable">
         <source>Could not reach the smart card service. Check that it is installed and running.</source>
         <translation>Could not reach the smart card service. Check that it is installed and running.</translation>

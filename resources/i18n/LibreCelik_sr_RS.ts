@@ -1867,7 +1867,7 @@
     </message>
     <message id="lc-piv-widget-title">
         <source>PIV (NIST SP 800-73)</source>
-        <translation>PIV (NIST SP 800-73)</translation>
+        <translation>PIV картица (NIST SP 800-73)</translation>
     </message>
     <message id="lc-piv-print-title">
         <source>Print PIV Card</source>
@@ -1895,7 +1895,7 @@
     </message>
     <message id="lc-piv-section-discovery">
         <source>Discovery</source>
-        <translation>Discovery</translation>
+        <translation>Откривање</translation>
     </message>
     <message id="lc-piv-section-keyhistory">
         <source>Key History</source>
@@ -2188,6 +2188,10 @@
     <message id="lc-agent-error-generic">
         <source>The operation did not finish, and no reason was reported.</source>
         <translation>Операција није завршена, а разлог није пријављен.</translation>
+    </message>
+    <message id="lc-agent-msg-cancelled">
+        <source>The operation was cancelled.</source>
+        <translation>Операција је отказана.</translation>
     </message>
     <message id="lc-agent-call-unavailable">
         <source>Could not reach the smart card service. Check that it is installed and running.</source>

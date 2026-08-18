@@ -84,10 +84,12 @@ if(GIT_VERSION_OWN_REPO)
     #    off-tag and prints the bare tag on a tagged commit.
     #  * `--match` restricted to VERSION-SHAPED tags: a leading digit and two
     #    further dot-separated groups that each start with one. This repository
-    #    also carries local rollback/bookkeeping tags whose names are not
-    #    version strings, and the older `[0-9]*` glob accepted every one of
-    #    them that merely began with a digit — one `2026-08-18-backup` was
-    #    enough to become "the version".
+    #    carries local rollback/bookkeeping tags (SAVED_PRE_SQUASH_LC and
+    #    friends), and while none of them happens to begin with a digit today —
+    #    so the older `[0-9]*` glob was not actually letting one through — that
+    #    is a property of the names chosen so far, not a rule anyone enforces.
+    #    A date-stamped bookkeeping tag would satisfy the old glob on the day
+    #    someone makes one.
     execute_process(
         COMMAND ${GIT_EXECUTABLE} describe --tags --dirty
                 --match "[0-9]*.[0-9]*.[0-9]*" --match "v[0-9]*.[0-9]*.[0-9]*"

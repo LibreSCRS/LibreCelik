@@ -44,6 +44,8 @@ set(PROJECT_SOURCES
         agent/optionalsections.h
         agent/agentstatewidget.h
         agent/agentstatewidget.cpp
+        agent/cardstatuspage.h
+        agent/cardstatuspage.cpp
         agent/signrequest.h
         agent/signrequest.cpp
         agent/settingsimport.h

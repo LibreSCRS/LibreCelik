@@ -1469,6 +1469,14 @@
         <source>Card type %1 is not supported (no driver match).</source>
         <translation>Card type %1 is not supported (no driver match).</translation>
     </message>
+    <message id="lc-card-unsupported-reader">
+        <source>In reader: %1</source>
+        <translation>In reader: %1</translation>
+    </message>
+    <message id="lc-card-unsupported-interface-hint">
+        <source>If the document has a second interface, try that one: a contact reader for its chip, or a contactless reader.</source>
+        <translation>If the document has a second interface, try that one: a contact reader for its chip, or a contactless reader.</translation>
+    </message>
     <message id="lc-reading-card">
         <source>Reading card...</source>
         <translation>Reading card...</translation>

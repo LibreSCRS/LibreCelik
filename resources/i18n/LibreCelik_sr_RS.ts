@@ -1469,6 +1469,14 @@
         <source>Card type %1 is not supported (no driver match).</source>
         <translation>Картица типа %1 није подржана (нема одговарајућег драјвера).</translation>
     </message>
+    <message id="lc-card-unsupported-reader">
+        <source>In reader: %1</source>
+        <translation>У читачу: %1</translation>
+    </message>
+    <message id="lc-card-unsupported-interface-hint">
+        <source>If the document has a second interface, try that one: a contact reader for its chip, or a contactless reader.</source>
+        <translation>Ако документ има и другу врсту приступа, пробајте њу: контактни читач за чип, или бесконтактни читач.</translation>
+    </message>
     <message id="lc-reading-card">
         <source>Reading card...</source>
         <translation>Читање картице...</translation>

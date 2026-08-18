@@ -96,6 +96,11 @@ private:
     };
 
     void addCardPage(const QString& cardId, librecelik::agent::CardController* controller);
+    /// Give @p page the card's slot in the reader stack, the reader selector
+    /// and both per-card maps. Every card that gets a page goes through here —
+    /// the readable card's spinner and the unreadable card's status page
+    /// alike — so a card can never end up in one of the four and not the rest.
+    void registerCardPage(const QString& cardId, QWidget* page);
     void releaseCardPage(const QString& cardId);
     void replaceCardWidget(const QString& cardId, QWidget* newWidget);
     void onGroupReady(const QString& cardId, const LibreSCRS::AgentClient::FieldGroup& group);

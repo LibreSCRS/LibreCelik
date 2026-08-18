@@ -5,6 +5,7 @@
 #include "aboutdialog.h"
 #include "agent/agentstatewidget.h"
 #include "agent/cardcontroller.h"
+#include "agent/cardstatuspage.h"
 #include "agent/live/liveagentgateway.h"
 #include "agent/optionalsections.h"
 #include "agent/plugintyperesolution.h"
@@ -44,7 +45,6 @@
 #include <QMenu>
 #include <QScrollArea>
 #include <QSettings>
-#include <QStringList>
 #include <QVBoxLayout>
 
 using librecelik::agent::AgentGateway;
@@ -66,26 +66,6 @@ namespace {
 constexpr QLatin1StringView kCardTypeFeature{"card-type"};
 // (the generic token page key lives in plugintyperesolution.h with the
 // decision that picks it)
-
-/// Display form of the ATR the agent reports for an unrecognised card: the
-/// leading @p maxBytes bytes, space-separated and upper-case, with a marker
-/// when the ATR is longer.
-///
-/// The middleware read path built this out of the raw ATR bytes; the agent
-/// hands the ATR over as a flat hex string, so the same display shape is a
-/// regrouping of characters rather than a formatting of bytes. An odd-length
-/// input (which the client contract does not produce) keeps its trailing nibble
-/// rather than silently dropping it.
-[[nodiscard]] QString atrSnippet(const QString& atrHex, qsizetype maxBytes = 6)
-{
-    QStringList bytes;
-    for (qsizetype offset = 0; offset < atrHex.size() && bytes.size() < maxBytes; offset += 2)
-        bytes << atrHex.mid(offset, 2).toUpper();
-    QString out = bytes.join(QLatin1Char(' '));
-    if (bytes.size() * 2 < atrHex.size())
-        out += QStringLiteral(" ...");
-    return out;
-}
 
 /// Group keys that carry no user-visible card data: the read's own
 /// bookkeeping, and the PKI material the token section renders instead.
@@ -423,20 +403,27 @@ void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
     const UiState state = LibreSCRS::AgentClient::resolveCardState(caps, controller->preReadAuth(), /*present=*/true,
                                                                    /*identityRead=*/false);
 
-    if (state == UiState::UnknownCard) {
-        // The agent matched no driver. That is a definitive verdict, not a
-        // transient one — it has already had full APDU access to the card —
-        // so there is nothing to retry and no page to build.
-        ui->statusbar->show();
-        ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card-with-atr").arg(atrSnippet(controller->atrHex())));
-        return;
-    }
-
-    if (state == UiState::Error) {
-        // A driver matched, but its capabilities create no user surface at all
-        // (ancillary-only). There is nothing to render and nothing to retry.
-        ui->statusbar->show();
-        ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card"));
+    if (librecelik::agent::hasNoCardSurface(state)) {
+        // Nothing to read and nothing to retry: the agent matched no driver
+        // (a definitive verdict — it has already had full APDU access to the
+        // card), or the driver it matched is ancillary-only.
+        //
+        // The card still gets a PAGE rather than a line on the window's single
+        // status bar. The bar is global: the next readable card's arrival
+        // cleared the notice, and two readers holding two unreadable cards
+        // could only ever show one of them — while neither card appeared in
+        // the reader selector at all. The page carries the reader's name
+        // itself, because the selector is hidden while there is only one page.
+        //
+        // The verdict is per CARD, in the reader that holds it — never a
+        // window-wide "nothing readable anywhere" state: two readers can hold
+        // two different cards and each has to speak for itself.
+        //
+        // Nothing beyond this point applies to such a card: no read is
+        // dispatched, so no controller signal can arrive, and the page stands
+        // until the card leaves.
+        registerCardPage(cardId, new librecelik::agent::CardStatusPage(state, readerNameForCard(cardId),
+                                                                       controller->atrHex(), this));
         return;
     }
 
@@ -448,12 +435,7 @@ void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
     // where to look. No secret is ever collected in this process.
     QWidget* spinner = makeSpinnerPage(
         state == UiState::PreAuthRequired ? qtTrId("lc-agent-awaiting-preauth") : qtTrId("lc-reading-card"), this);
-    const int pageIndex = ui->readerStackedWidget->addWidget(spinner);
-    ui->readerComboBox->addItem(readerNameForCard(cardId));
-    ui->readerComboBox->setCurrentIndex(pageIndex);
-    activeCards[cardId] = spinner;
-    cardState[cardId] = {};
-    updateEmptyState();
+    registerCardPage(cardId, spinner);
 
     connect(controller, &CardController::groupReady, this,
             [this, cardId](const FieldGroup& group) { onGroupReady(cardId, group); });
@@ -520,6 +502,16 @@ void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
         entry->second.tokenInfoAllowed = sections.tokenInfo;
         entry->second.credentialsAllowed = sections.credentials;
     }
+}
+
+void LibreCelik::registerCardPage(const QString& cardId, QWidget* page)
+{
+    const int pageIndex = ui->readerStackedWidget->addWidget(page);
+    ui->readerComboBox->addItem(readerNameForCard(cardId));
+    ui->readerComboBox->setCurrentIndex(pageIndex);
+    activeCards[cardId] = page;
+    cardState[cardId] = {};
+    updateEmptyState();
 }
 
 void LibreCelik::releaseCardPage(const QString& cardId)

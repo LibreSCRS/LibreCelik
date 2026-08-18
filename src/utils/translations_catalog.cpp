@@ -34,6 +34,10 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-reader-unsupported-card");
     //% "Card type %1 is not supported (no driver match)."
     QT_TRID_NOOP("lc-reader-unsupported-card-with-atr");
+    //% "In reader: %1"
+    QT_TRID_NOOP("lc-card-unsupported-reader");
+    //% "If the document has a second interface, try that one: a contact reader for its chip, or a contactless reader."
+    QT_TRID_NOOP("lc-card-unsupported-interface-hint");
     //% "Reading card..."
     QT_TRID_NOOP("lc-reading-card");
     //% "Confirm the card access number in the system dialog to continue reading this card."

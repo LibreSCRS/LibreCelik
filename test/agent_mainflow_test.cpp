@@ -15,6 +15,7 @@
 
 #include "agent/agentstatewidget.h"
 #include "agent/cardcontroller.h"
+#include "agent/cardstatuspage.h"
 #include "agent/errortext.h"
 #include "agent/optionalsections.h"
 #include "agent/plugintyperesolution.h"
@@ -22,15 +23,18 @@
 #include "fake_gateway/fakecardcontroller.h"
 #include "mockwidgetplugin.h"
 
+#include <LibreSCRS/AgentClient/AgentCapabilities.h>
 #include <LibreSCRS/AgentClient/CallError.h>
 #include <LibreSCRS/AgentClient/ErrorCode.h>
 #include <LibreSCRS/AgentClient/Types.h>
 
 #include <QApplication>
+#include <QEvent>
 #include <QLabel>
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <QTranslator>
 #include <QWidget>
 
 #include <gtest/gtest.h>
@@ -284,4 +288,136 @@ TEST_F(MainFlowTest, OptionalSectionsAreNeverDispatchedAgainstACardWithoutTheCap
     const auto pin = librecelik::agent::requestOptionalSections(gw, pinOnly);
     EXPECT_FALSE(pin.tokenInfo);
     EXPECT_TRUE(pin.credentials);
+}
+
+// ---- the page a card gets when it has no readable surface -----------------
+
+/// The status page substitutes the reader name and the ATR into TRANSLATED
+/// templates, so an untranslated run would render the bare catalog ids and
+/// drop both — the cases below would then assert nothing about the two facts
+/// they exist for. The suite installs the English catalog itself rather than
+/// relying on another suite in this binary having run first.
+class CardStatusPageTest : public OffscreenGuiTest
+{
+protected:
+    void SetUp() override
+    {
+        OffscreenGuiTest::SetUp();
+        if (translator != nullptr)
+            return;
+        translator = new QTranslator();
+        const QString qmDir = QStringLiteral(LIBRECELIK_TRANSLATIONS_DIR_DEFAULT);
+        ASSERT_TRUE(translator->load(QStringLiteral("LibreCelik_en"), qmDir))
+            << "failed to load LibreCelik_en.qm from " << qmDir.toStdString();
+        QCoreApplication::installTranslator(translator);
+    }
+    static QTranslator* translator;
+};
+QTranslator* CardStatusPageTest::translator = nullptr;
+
+namespace {
+
+QString labelText(const QWidget& page, const char* objectName)
+{
+    auto* label = page.findChild<QLabel*>(QLatin1StringView(objectName));
+    return label ? label->text() : QString();
+}
+
+} // namespace
+
+TEST_F(CardStatusPageTest, OnlyTheStatesWithNothingToRenderTakeTheStatusPage)
+{
+    // The state-model half of the decision, driven through the SAME resolver
+    // the window calls (resolveCardState) rather than a test-local restating
+    // of it. Only the two states that produce no card page at all may divert
+    // to the status page; every readable state must still take the ordinary
+    // spinner-then-plugin path.
+    using librecelik::agent::hasNoCardSurface;
+    using LibreSCRS::AgentClient::PreReadAuth;
+    using LibreSCRS::AgentClient::resolveCardState;
+    using LibreSCRS::AgentClient::UiState;
+    namespace Cap = LibreSCRS::AgentClient::Cap;
+
+    // No plugin matched: an empty capability set resolves to UnknownCard.
+    EXPECT_TRUE(hasNoCardSurface(resolveCardState(0U, PreReadAuth::None, true, false)));
+    // Ancillary-only (eMRTD crypto / PIN management, no IdentityData, no PKI):
+    // a driver matched but it creates no user surface.
+    EXPECT_TRUE(
+        hasNoCardSurface(resolveCardState(Cap::EmrtdCrypto | Cap::PinManagement, PreReadAuth::None, true, false)));
+
+    // The pin: every readable card keeps the page flow it has today.
+    EXPECT_FALSE(hasNoCardSurface(resolveCardState(Cap::IdentityData | Cap::Pki, PreReadAuth::None, true, false)));
+    EXPECT_FALSE(hasNoCardSurface(resolveCardState(Cap::IdentityData, PreReadAuth::None, true, false)));
+    EXPECT_FALSE(hasNoCardSurface(resolveCardState(Cap::Pki, PreReadAuth::None, true, false)));
+    EXPECT_FALSE(hasNoCardSurface(resolveCardState(Cap::IdentityData, PreReadAuth::Can, true, false)));
+    EXPECT_FALSE(hasNoCardSurface(UiState::NoCard));
+    EXPECT_FALSE(hasNoCardSurface(UiState::None));
+}
+
+TEST_F(CardStatusPageTest, AnUnrecognisedCardGetsAPageNamingItsReaderAndItsAtr)
+{
+    // The dual-interface mis-tap: the contactless side of a card whose driver
+    // only binds over contact matches nothing, and the holder has to be told
+    // WHICH reader holds the card that could not be read — the reader
+    // selector is hidden whenever there is only one page, so the page itself
+    // is the only place that fact can appear.
+    using LibreSCRS::AgentClient::UiState;
+    librecelik::agent::CardStatusPage page(UiState::UnknownCard, QStringLiteral("ACS ACR1252 CL slot"),
+                                           QStringLiteral("3B818001808012"), nullptr);
+
+    EXPECT_TRUE(labelText(page, "cardStatusReader").contains(QStringLiteral("ACS ACR1252 CL slot")))
+        << "reader line: " << labelText(page, "cardStatusReader").toStdString();
+    EXPECT_TRUE(labelText(page, "cardStatusTitle").contains(QStringLiteral("3B 81 80 01 80 80")))
+        << "title: " << labelText(page, "cardStatusTitle").toStdString();
+    EXPECT_FALSE(labelText(page, "cardStatusHint").isEmpty()) << "the page must offer the holder something to try";
+}
+
+TEST_F(CardStatusPageTest, ACardWithNoUserSurfaceGetsTheSamePerReaderPage)
+{
+    // Error, not UnknownCard: a driver DID match, so there is no ATR verdict
+    // to report — but the card is just as unreadable and the holder still has
+    // to be told which reader it is in.
+    using LibreSCRS::AgentClient::UiState;
+    librecelik::agent::CardStatusPage page(UiState::Error, QStringLiteral("Gemalto PC Twin Reader"),
+                                           QStringLiteral("3B9F958131FE9F00"), nullptr);
+
+    EXPECT_TRUE(labelText(page, "cardStatusReader").contains(QStringLiteral("Gemalto PC Twin Reader")))
+        << "reader line: " << labelText(page, "cardStatusReader").toStdString();
+    EXPECT_FALSE(labelText(page, "cardStatusTitle").isEmpty());
+    EXPECT_FALSE(labelText(page, "cardStatusHint").isEmpty());
+
+    // The two verdicts are not the same sentence: one says no driver matched,
+    // the other says the matched driver has nothing to show.
+    librecelik::agent::CardStatusPage unknown(UiState::UnknownCard, QStringLiteral("Gemalto PC Twin Reader"),
+                                              QStringLiteral("3B9F958131FE9F00"), nullptr);
+    EXPECT_NE(labelText(page, "cardStatusTitle"), labelText(unknown, "cardStatusTitle"));
+}
+
+TEST_F(CardStatusPageTest, ALanguageChangeRebuildsThePageFromItsOwnInputs)
+{
+    // The page keeps the state, the reader name and the ATR, not the rendered
+    // sentences: a language change re-renders through the catalog, and a page
+    // that had only kept its text would either freeze in the old language or
+    // lose the two substituted facts entirely.
+    using LibreSCRS::AgentClient::UiState;
+    librecelik::agent::CardStatusPage page(UiState::UnknownCard, QStringLiteral("Reader 7"),
+                                           QStringLiteral("3B818001808012"), nullptr);
+    QEvent languageChange(QEvent::LanguageChange);
+    QApplication::sendEvent(&page, &languageChange);
+
+    EXPECT_TRUE(labelText(page, "cardStatusReader").contains(QStringLiteral("Reader 7")));
+    EXPECT_TRUE(labelText(page, "cardStatusTitle").contains(QStringLiteral("3B 81 80 01 80 80")));
+}
+
+TEST_F(CardStatusPageTest, TheAtrIsShownAsLeadingBytesWithTheRestMarked)
+{
+    // The agent hands the ATR over as a flat hex string; the display form is a
+    // regrouping of characters rather than a formatting of bytes.
+    using librecelik::agent::atrSnippet;
+    EXPECT_EQ(atrSnippet(QStringLiteral("3b818001808012")), QStringLiteral("3B 81 80 01 80 80 ..."));
+    EXPECT_EQ(atrSnippet(QStringLiteral("3B8180")), QStringLiteral("3B 81 80"));
+    EXPECT_EQ(atrSnippet(QString()), QString());
+    // An odd-length input (which the client contract does not produce) keeps
+    // its trailing nibble rather than silently dropping it.
+    EXPECT_EQ(atrSnippet(QStringLiteral("3B818")), QStringLiteral("3B 81 8"));
 }

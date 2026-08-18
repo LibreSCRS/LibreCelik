@@ -849,6 +849,7 @@ add_executable(AgentMainFlowTests
     ${CMAKE_SOURCE_DIR}/src/agent/cardcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/signcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/agentstatewidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/cardstatuspage.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/errortext.cpp
     ${CMAKE_SOURCE_DIR}/src/document/rs-eid/changepindlg.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/buttonbox.cpp

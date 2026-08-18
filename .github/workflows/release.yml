@@ -5,6 +5,12 @@ on:
   push:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+*'
+  # Rehearsal path. A maintainer can start this workflow from the Actions
+  # tab against an existing signed tag (Run workflow -> pick the tag as the
+  # ref) to exercise the whole chain, release notes included, without
+  # pushing a fresh tag. github.ref_name is the tag name on that path too,
+  # so every step below behaves exactly as it does on a tag push.
+  workflow_dispatch:
 
 jobs:
   verify-signature:
@@ -210,9 +216,74 @@ jobs:
             ! -name '*.sigstore.json' \
             -exec sh -c 'cosign sign-blob "$1" --bundle "$1.sigstore.json" --yes' _ {} \;
 
-      - uses: softprops/action-gh-release@v2
+      - name: Check out CHANGELOG
+        uses: actions/checkout@v4
         with:
-          generate_release_notes: true
-          files: |
-            artifacts/*
-            artifacts/*.sigstore.json
+          ref: ${{ github.ref }}
+          sparse-checkout: CHANGELOG.md
+          sparse-checkout-cone-mode: false
+          # Check out into a SUBDIR. The root workspace already holds the
+          # downloaded and cosigned artifacts/, and actions/checkout wipes
+          # its target directory whenever there is no pre-existing .git
+          # there (clean: false does NOT suppress that path). Isolating the
+          # checkout in _changelog/ leaves artifacts/ untouched.
+          path: _changelog
+
+      - name: Prepare release notes from CHANGELOG
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          NOTES_FILE="$RUNNER_TEMP/relnotes.md"
+          # Extract the section whose `## ` header carries the tag version,
+          # requiring a bracket or whitespace on each side of it: tag 4.2.0
+          # matches `## [4.2.0]`, `## [4.2.0] — <date>` and
+          # `## [Unreleased] — 4.2.0`, but not `## [4.2.0-rc1]` or
+          # `## [14.2.0]`. The header line itself is dropped — the release
+          # title already carries the tag.
+          awk -v ver="$VER" \
+            '/^## / { if ($0 ~ ("(\\[|[[:space:]])" ver "(\\]|[[:space:]]|$)")) {f=1; next} else if (f) exit } f' \
+            _changelog/CHANGELOG.md > "$NOTES_FILE"
+          # A miss must be loud. `gh release create --notes-file` accepts a
+          # blank file and publishes a release with no body at all, so test
+          # for a non-whitespace character rather than for file size: a
+          # header followed only by blank lines has to fall back too.
+          if grep -q '[^[:space:]]' "$NOTES_FILE"; then
+            echo "Release notes taken from the CHANGELOG section for $VER:"
+            cat "$NOTES_FILE"
+            echo "NOTES_ARG=--notes-file $NOTES_FILE" >> "$GITHUB_ENV"
+          else
+            echo "::warning::CHANGELOG has no section for $VER — falling back to --generate-notes"
+            echo "NOTES_ARG=--generate-notes" >> "$GITHUB_ENV"
+          fi
+
+      - name: Create GitHub release with all signed artefacts
+        # Replaces softprops/action-gh-release@v2, which races between
+        # asset upload and metadata update: releases carrying several
+        # artefacts fail at "error updating release asset metadata:
+        # HttpError: Not Found" even though every upload line reports
+        # success. `gh release create` publishes the assets in one
+        # deterministic request and exits.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Mark X.Y.Z-{rc,beta,alpha,…} as a pre-release; everything else
+          # is a stable release.
+          PRERELEASE_FLAG=""
+          case "$GITHUB_REF_NAME" in
+              *-rc*|*-beta*|*-alpha*|*-pre*) PRERELEASE_FLAG="--prerelease" ;;
+          esac
+          # --repo lets `gh` skip the .git autodetection: this job downloads
+          # artefacts and sparse-checks-out the CHANGELOG into a subdir, so
+          # the workspace root has no .git of its own. --verify-tag refuses
+          # to invent a tag if this ever runs against a ref that is not one.
+          # NOTES_ARG has to split into two argv entries and PRERELEASE_FLAG
+          # has to disappear when empty, so both stay deliberately unquoted:
+          # quoting NOTES_ARG would hand gh "--notes-file /path" as a single
+          # argument and every release would fail.
+          # shellcheck disable=SC2086
+          gh release create "$GITHUB_REF_NAME" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$GITHUB_REF_NAME" \
+              --verify-tag \
+              $NOTES_ARG \
+              $PRERELEASE_FLAG \
+              artifacts/*

@@ -269,7 +269,10 @@ void AboutDialog::retranslateUi()
 
     // About tab
     appNameLabel->setText(QStringLiteral("<b style='font-size:18px;'>%1</b>").arg(qtTrId("lc-about-app-name")));
-    versionLabel->setText(qtTrId("lc-about-version").arg(QLatin1String(LIBRECELIK_VERSION)));
+    // The FULL version, not the numeric triple: About is where a user is asked
+    // to read a version back in a bug report, and "4.2.0" for a tree 38 commits
+    // past that tag names the wrong build.
+    versionLabel->setText(qtTrId("lc-about-version").arg(QLatin1String(LIBRECELIK_VERSION_FULL)));
     descriptionLabel->setText(qtTrId("lc-about-description"));
     copyrightLabel->setText(qtTrId("lc-about-copyright"));
 

@@ -243,7 +243,10 @@ void LibreCelik::updateAboutText()
     // rendered as a dash rather than as a blank the reader has to interpret.
     const QString version = gateway ? gateway->agentVersion() : QString();
     const QString versionOrDash = version.isEmpty() ? QStringLiteral("—") : version;
-    ui->aboutLabel->setText(QString("<br><br>") + qtTrId("lc-main-about-librecelik").arg(LIBRECELIK_VERSION) +
+    // FULL, for the same reason the About dialog uses it: this banner is the
+    // version a user reads off the screen, and the numeric triple alone would
+    // present a between-tags build as the release it is descended from.
+    ui->aboutLabel->setText(QString("<br><br>") + qtTrId("lc-main-about-librecelik").arg(LIBRECELIK_VERSION_FULL) +
                             QString("<br>") + qtTrId("lc-main-about-agent").arg(versionOrDash) + QString("<br>") +
                             qtTrId("lc-main-about-donate"));
 }

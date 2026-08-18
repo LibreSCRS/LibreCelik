@@ -4,7 +4,15 @@
 #define LIBRECELIK_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
 #define LIBRECELIK_VERSION_MINOR @PROJECT_VERSION_MINOR@
 #define LIBRECELIK_VERSION_PATCH @PROJECT_VERSION_PATCH@
+
+// The numeric triple, for anything that compares versions.
 #define LIBRECELIK_VERSION "@PROJECT_VERSION@"
+
+// The full descriptive version — the triple plus commit distance, hash and
+// dirty marker when the build is not exactly a tagged release. This is what
+// every user-facing surface (banner, About, startup log) must show: a build
+// that prints only the triple is claiming to be a release it is not.
+#define LIBRECELIK_VERSION_FULL "@LIBRECELIK_VERSION_FULL@"
 #define LIBRECELIK_SYSTEM_NAME "@CMAKE_SYSTEM_NAME@"
 #define LIBRECELIK_GUI_PLUGIN_DIR "@LIBRECELIK_GUI_PLUGIN_DIR@"
 

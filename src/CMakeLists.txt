@@ -228,9 +228,14 @@ if(LIBRECELIK_SIGNING_ENABLED)
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::PdfWidgets)
 endif()
 
+# CFBundleVersion / CFBundleShortVersionString accept ONLY period-separated
+# integers; Apple rejects a bundle whose version carries a commit hash or a
+# dirty marker. Both keys are therefore spelled from the numeric components
+# explicitly rather than from any full/descriptive version string — the
+# distinction is load-bearing, not stylistic.
 set_target_properties(${PROJECT_NAME} PROPERTIES
     ${BUNDLE_ID_OPTION}
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
     MACOSX_BUNDLE_GUI_IDENTIFIER rs.librescrs.librecelik

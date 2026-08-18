@@ -20,10 +20,15 @@ set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_
 
 project(LibreCelik VERSION ${PROJECT_VERSION} LANGUAGES CXX)
 
-# CMake's project(VERSION X.Y.Z) strips pre-release suffixes; keep the full
-# version (with -rcN / -beta / -local) here so user-facing banners can show it.
-set(LIBRECELIK_VERSION_FULL "4.2.0" CACHE STRING "Full version string including pre-release suffix")
-add_compile_definitions(LIBRECELIK_VERSION_FULL="${LIBRECELIK_VERSION_FULL}")
+# project(VERSION X.Y.Z) accepts only a numeric triple, so PROJECT_VERSION can
+# never be more than that. The full string — commit distance, hash, dirty
+# marker, pre-release label — is what user-facing banners show, and it is
+# DERIVED, never written down: a literal here is a claim that stops being true
+# the moment the next commit lands, which is how a development build ends up
+# introducing itself as a release. Deliberately a plain variable rather than a
+# cache entry, so every re-configure restamps it instead of freezing the value
+# captured by the first one.
+set(LIBRECELIK_VERSION_FULL "${GIT_VERSION_FULL}")
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
     add_compile_options(-Wall -Wextra -Wpedantic)

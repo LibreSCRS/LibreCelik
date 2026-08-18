@@ -54,7 +54,11 @@ echo "macdeployqt: $MACDEPLOYQT"
 # ---------------------------------------------------------------------------
 # Determine version from git tag
 # ---------------------------------------------------------------------------
-VERSION=$(git -C "$PROJECT_ROOT" describe --tags --abbrev=0 2>/dev/null || echo "dev")
+# --abbrev=0 is deliberate HERE and nowhere else: the artefact file name wants
+# the release number, not a describe string with a commit hash in it. --match
+# keeps a local rollback/bookkeeping tag from ever becoming a "version" — the
+# same restriction cmake/GitVersion.cmake applies.
+VERSION=$(git -C "$PROJECT_ROOT" describe --tags --abbrev=0 --match "[0-9]*" --match "v[0-9]*" 2>/dev/null || echo "dev")
 echo "Building DMG for version: $VERSION"
 
 # ---------------------------------------------------------------------------

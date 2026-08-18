@@ -252,16 +252,45 @@ jobs:
         # this is the step that makes them loud. Pre-release tags
         # (-rc/-beta/…) are exempt: they publish as drafts of the coming
         # version and legitimately ride on --generate-notes.
+        #
+        # ONE predicate decides both the exemption here and how the release is
+        # published later, and it is exported so the two cannot drift apart.
+        # They were separate tests — this step exempted anything containing a
+        # character that is not a digit or a dot, while the publishing step
+        # marked a pre-release only on an -rc/-beta/-alpha/-pre suffix. The push
+        # filter accepts an arbitrary suffix, so every tag satisfying one test
+        # and not the other (4.3.0-final, 4.3.0a, 4.3.0.hotfix) skipped the
+        # lockstep entirely AND published as a stable release: exactly the two
+        # silences this gate exists to end.
         run: |
           VER="${GITHUB_REF_NAME#v}"
           case "$VER" in
-            *[!0-9.]*) echo "pre-release tag $VER — lockstep gate not applied"; exit 0 ;;
+            *-rc*|*-beta*|*-alpha*|*-pre*) IS_PRERELEASE=true ;;
+            *) IS_PRERELEASE=false ;;
           esac
+          echo "IS_PRERELEASE=$IS_PRERELEASE" >> "$GITHUB_ENV"
+          if [ "$IS_PRERELEASE" = "true" ]; then
+            echo "pre-release tag $VER — lockstep gate not applied"
+            exit 0
+          fi
           FAIL=0
-          VER_RE="$(printf '%s' "$VER" | sed 's/\./\\./g')"
-          if [ ! -f _changelog/CHANGELOG.md ] || \
-             ! grep -Eq "^## .*(\[|[[:space:]])${VER_RE}(\]|[[:space:]]|$)" _changelog/CHANGELOG.md; then
-            echo "::error::CHANGELOG.md has no section for $VER — the release would ship generic auto-notes. Rename the [Unreleased] header before tagging."
+          # Extract with the SAME awk the release-notes step uses, then require
+          # the section to hold a non-whitespace character. Testing only for the
+          # header let a header with nothing under it pass, and the release then
+          # shipped precisely the generic auto-notes this error text warns
+          # about. Matching with a second, near-miss pattern also made the two
+          # steps disagree: `^## .*(\[|[[:space:]])` spends the space in its own
+          # `## ` prefix, so a bracket-less `## 4.3.0` header was called missing
+          # here while the extractor read it correctly.
+          SECTION=""
+          if [ -f _changelog/CHANGELOG.md ]; then
+            SECTION="$(awk -v ver="$VER" \
+              'BEGIN { gsub(/\./, "\\.", ver) }
+               /^## / { if ($0 ~ ("(\\[|[[:space:]])" ver "(\\]|[[:space:]]|$)")) {f=1; next} else if (f) exit } f' \
+              _changelog/CHANGELOG.md)"
+          fi
+          if ! printf '%s' "$SECTION" | grep -q '[^[:space:]]'; then
+            echo "::error::CHANGELOG.md has no section for $VER, or the section is empty — the release would ship generic auto-notes. Rename the [Unreleased] header before tagging."
             FAIL=1
           fi
           FILE_VER="$(head -n1 _changelog/VERSION 2>/dev/null | tr -d '[:space:]')"
@@ -318,12 +347,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
-          # Mark X.Y.Z-{rc,beta,alpha,…} as a pre-release; everything else
-          # is a stable release.
+          # Mark X.Y.Z-{rc,beta,alpha,…} as a pre-release; everything else is a
+          # stable release. The verdict is the one the lockstep step computed
+          # and exported, so a tag can never be exempt from the gate here and
+          # stable there.
           PRERELEASE_FLAG=""
-          case "$GITHUB_REF_NAME" in
-              *-rc*|*-beta*|*-alpha*|*-pre*) PRERELEASE_FLAG="--prerelease" ;;
-          esac
+          if [ "$IS_PRERELEASE" = "true" ]; then
+              PRERELEASE_FLAG="--prerelease"
+          fi
           # A dispatch rehearsal publishes a DRAFT unless dry_run was
           # explicitly turned off; a tag push never drafts.
           DRAFT_FLAG=""

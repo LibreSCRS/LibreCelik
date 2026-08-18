@@ -230,6 +230,8 @@ if(LIBRECELIK_SIGNING_ENABLED)
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::PdfWidgets)
 endif()
 
+librecelik_warnings_as_errors(${PROJECT_NAME})
+
 # CFBundleVersion / CFBundleShortVersionString accept ONLY period-separated
 # integers; Apple rejects a bundle whose version carries a commit hash or a
 # dirty marker. Both keys are therefore spelled from the numeric components

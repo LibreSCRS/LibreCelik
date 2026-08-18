@@ -109,7 +109,7 @@ jobs:
         # `python3` so manifest2header.py codegen succeeds.
         run: python3 -m pip install --break-system-packages --user jsonschema
 
-      - name: Configure (Release)
+      - name: Configure (Release, warnings as errors)
         # Release matches what users receive — same `-O2 -DNDEBUG` code
         # path runs in production. Debug coverage lives in the developer
         # workflow; the CI gate exists to catch regressions in the
@@ -119,7 +119,15 @@ jobs:
         # this job also gives a consumer-side Release cross-check of that
         # exact client revision. Qt6 is the only external toolchain the
         # fetch needs.
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
+        #
+        # LIBRECELIK_WERROR covers the GUI, its printing library and the six
+        # GUI plugins; the fetched client, googletest and this repo's own test
+        # executables stay warning-only. Deliberately not set on the macOS job:
+        # the clean baseline this gate rests on was measured with GCC, and
+        # AppleClang's diagnostic set is a different one that has never been
+        # surveyed. Build type and the option are pinned together here so a
+        # later edit to one cannot quietly disarm the other.
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja -DLIBRECELIK_WERROR=ON
 
       - name: Build
         env:

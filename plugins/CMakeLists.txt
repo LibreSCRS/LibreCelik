@@ -15,3 +15,15 @@ add_subdirectory(rs-health)
 add_subdirectory(token)
 add_subdirectory(emrtd)
 add_subdirectory(piv)
+
+# Every GUI plugin is first-party code, so all of them follow the project's
+# warnings-as-errors setting from this one place rather than repeating the
+# call in six sibling files.
+librecelik_warnings_as_errors(
+    rs-eid-gui-plugin
+    eu-vrc-gui-plugin
+    rs-health-gui-plugin
+    token-gui-plugin
+    emrtd-gui-plugin
+    piv-gui-plugin
+)

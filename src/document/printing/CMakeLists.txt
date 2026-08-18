@@ -19,3 +19,5 @@ set_target_properties(LibreCelikPrinting PROPERTIES
     AUTOMOC ON
     POSITION_INDEPENDENT_CODE ON
 )
+
+librecelik_warnings_as_errors(LibreCelikPrinting)

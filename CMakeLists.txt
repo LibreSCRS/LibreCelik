@@ -34,6 +34,32 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+# Promote those warnings to errors. Default OFF so a local build stays
+# warning-only; CI turns it on for the configuration whose baseline is known
+# clean.
+#
+# Deliberately NOT an add_compile_options(-Werror) next to the line above:
+# that is directory-scoped and would also reach the agent client library and
+# googletest, both of which are built from source inside this build tree
+# (see cmake/FindOrUseLibreAgent.cmake). Their diagnostics belong to their own
+# projects and no change here could fix them, so a global -Werror would let an
+# upstream revision bump break this build. The opt-in below is per target and
+# is applied only to the GUI, its printing library and the GUI plugins. Test
+# executables stay warning-only for the same reason the strictness is scoped
+# at all: the gate exists to protect the shipped application code.
+option(LIBRECELIK_WERROR "Treat compiler warnings as errors" OFF)
+
+# Opts the named targets into LIBRECELIK_WERROR. A no-op when the option is
+# off, so call sites need no condition of their own.
+function(librecelik_warnings_as_errors)
+    if(NOT LIBRECELIK_WERROR)
+        return()
+    endif()
+    foreach(_target IN LISTS ARGN)
+        target_compile_options(${_target} PRIVATE -Werror)
+    endforeach()
+endfunction()
+
 # Apple Clang ships <stop_token> behind an experimental flag.
 if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_compile_options(-fexperimental-library)

@@ -372,6 +372,26 @@ TEST_F(CardStatusPageTest, AnUnrecognisedCardGetsAPageNamingItsReaderAndItsAtr)
     EXPECT_FALSE(labelText(page, "cardStatusHint").isEmpty()) << "the page must offer the holder something to try";
 }
 
+TEST_F(CardStatusPageTest, AnUnrecognisedCardWithoutAnAtrFallsBackToTheNoAtrSentence)
+{
+    // A session can surface UnknownCard before any ATR reaches the client.
+    // With nothing to quote, the page must use the same sentence as the
+    // no-verdict states — not the with-ATR sentence with a hole where the
+    // bytes belong.
+    using LibreSCRS::AgentClient::UiState;
+    librecelik::agent::CardStatusPage withAtr(UiState::UnknownCard, QStringLiteral("reader"),
+                                              QStringLiteral("3B818001808012"), nullptr);
+    librecelik::agent::CardStatusPage withoutAtr(UiState::UnknownCard, QStringLiteral("reader"), QString(), nullptr);
+    librecelik::agent::CardStatusPage errorPage(UiState::Error, QStringLiteral("reader"), QString(), nullptr);
+
+    EXPECT_NE(labelText(withoutAtr, "cardStatusTitle"), labelText(withAtr, "cardStatusTitle"))
+        << "an absent ATR must not render the with-ATR sentence";
+    EXPECT_EQ(labelText(withoutAtr, "cardStatusTitle"), labelText(errorPage, "cardStatusTitle"))
+        << "with nothing to quote the UnknownCard title is the plain no-verdict sentence";
+    EXPECT_FALSE(labelText(withoutAtr, "cardStatusTitle").contains(QStringLiteral("  ")))
+        << "no double space where the snippet would have been";
+}
+
 TEST_F(CardStatusPageTest, ACardWithNoUserSurfaceGetsTheSamePerReaderPage)
 {
     // Error, not UnknownCard: a driver DID match, so there is no ATR verdict

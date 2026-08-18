@@ -427,7 +427,9 @@ void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
         return;
     }
 
-    // A readable card is being added — clear any previous unsupported notice.
+    // The status bar carries transient notices (trust-list import results,
+    // another card's error line); a fresh readable card starts from a clean
+    // line so its own outcome is not read against a stale message.
     ui->statusbar->clearMessage();
 
     // PreAuthRequired: startRead() below makes the AGENT prompt for the CAN or
@@ -508,7 +510,12 @@ void LibreCelik::registerCardPage(const QString& cardId, QWidget* page)
 {
     const int pageIndex = ui->readerStackedWidget->addWidget(page);
     ui->readerComboBox->addItem(readerNameForCard(cardId));
-    ui->readerComboBox->setCurrentIndex(pageIndex);
+    // Select the new page only when it is the first one. The selector's
+    // change handler cancels the in-flight read of the page being navigated
+    // away from, so stealing focus on every insert let a second reader's
+    // card — readable or not — abort the first reader's read mid-flight.
+    if (ui->readerComboBox->count() == 1)
+        ui->readerComboBox->setCurrentIndex(pageIndex);
     activeCards[cardId] = page;
     cardState[cardId] = {};
     updateEmptyState();

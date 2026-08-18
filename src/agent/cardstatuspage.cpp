@@ -75,9 +75,12 @@ void CardStatusPage::retranslateUi()
     // UnknownCard is the only state with a verdict to quote: no driver matched
     // the ATR, so the ATR is what the holder — and a bug report — has to go
     // on. Error means a driver DID match, so that card's ATR proves nothing
-    // about why it renders nothing.
-    titleLabel->setText(cardState == LibreSCRS::AgentClient::UiState::UnknownCard
-                            ? qtTrId("lc-reader-unsupported-card-with-atr").arg(atrSnippet(atrHex))
+    // about why it renders nothing. An UnknownCard whose session never
+    // surfaced an ATR has nothing to quote either — same no-ATR sentence,
+    // not a sentence with a hole in it.
+    const QString snippet = atrSnippet(atrHex);
+    titleLabel->setText(cardState == LibreSCRS::AgentClient::UiState::UnknownCard && !snippet.isEmpty()
+                            ? qtTrId("lc-reader-unsupported-card-with-atr").arg(snippet)
                             : qtTrId("lc-reader-unsupported-card"));
     readerLabel->setText(qtTrId("lc-card-unsupported-reader").arg(readerName));
     hintLabel->setText(qtTrId("lc-card-unsupported-interface-hint"));

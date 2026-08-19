@@ -25,6 +25,8 @@ set(PROJECT_SOURCES
         librecelik.ui
         utils/libreceliklog.h
         utils/libreceliklog.cpp
+        utils/readerpages.h
+        utils/readerpages.cpp
         utils/printmanager.h
 	utils/utils.h
         utils/iconutils.h

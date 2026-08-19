@@ -6,6 +6,7 @@
 #include "agent/agentgateway.h"
 #include "config.h"
 #include "plugin/cardwidgetpluginregistry.h"
+#include "utils/readerpages.h"
 
 #include <LibreSCRS/AgentClient/CredentialTypes.h>
 #include <LibreSCRS/AgentClient/Types.h>
@@ -64,7 +65,8 @@ private slots:
     void onCardRemoved(const QString& cardId);
 
 private:
-    /// Per-card read bookkeeping. `activeCards` maps a card to its page; this
+    /// Per-card read bookkeeping. `readerPages` maps a card to its page and
+    /// keeps the selector in step with the stack; this
     /// maps the same card to what the page still needs and does not have yet —
     /// the F5 section verdicts, the groups that streamed before a plugin could
     /// render them, and the PKI payloads that arrived before the section
@@ -143,7 +145,9 @@ private:
     /// One page per card in the agent's roster, keyed by the agent's opaque
     /// card id. The page widget is whatever the card currently renders as: the
     /// spinner while it reads, the plugin's scroll area once it has data.
-    std::map<QString, QWidget*> activeCards;
+    /// Reader selector and page stack, and the card-to-page mapping between
+    /// them. Owned here, exercised on its own — see utils/readerpages.h.
+    ReaderPages* readerPages = nullptr;
     std::map<QString, CardReadState> cardState;
     /// Cards whose read failed before it could build a page. They keep their
     /// place in the agent's roster, so without this memory the next reader

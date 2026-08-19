@@ -879,3 +879,22 @@ add_dependencies(AgentMainFlowTests LibreCelik_lrelease)
 gtest_discover_tests(AgentMainFlowTests
     TEST_PREFIX "AgentMainFlow."
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# The reader selector and the page stack, lifted out of the window so the two
+# defects that lived between them are reachable at all. Needs no window, no
+# gateway and no plugins — two widgets and a map — so this target stays tiny.
+add_executable(ReaderPagesTests
+    reader_pages_test.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/readerpages.cpp
+)
+target_include_directories(ReaderPagesTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${PROJECT_BINARY_DIR}/../src
+)
+target_link_libraries(ReaderPagesTests PRIVATE
+    GTest::gtest_main
+    Qt6::Widgets
+    Qt6::Test
+)
+set_target_properties(ReaderPagesTests PROPERTIES AUTOMOC ON)
+gtest_discover_tests(ReaderPagesTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")

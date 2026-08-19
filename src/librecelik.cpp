@@ -141,18 +141,16 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
     // Reader selection: cancel the read of the card being navigated away from
     // before the switch. A page the user has left must not keep its card busy —
     // this is what the middleware path's per-reader stop source used to do.
-    connect(ui->readerComboBox, &QComboBox::currentIndexChanged, this, [this](int index) {
-        const int leaving = ui->readerStackedWidget->currentIndex();
-        if (leaving >= 0 && leaving != index) {
-            for (const auto& [cardId, page] : activeCards) {
-                if (ui->readerStackedWidget->indexOf(page) == leaving) {
-                    if (auto* controller = gateway->cardController(cardId))
-                        controller->cancel();
-                    break;
-                }
-            }
-        }
-        ui->readerStackedWidget->setCurrentIndex(index);
+    readerPages = new ReaderPages(ui->readerComboBox, ui->readerStackedWidget, this);
+    // Reader selection: cancel the read of the card being navigated away from.
+    // A page the user has left must not keep its card busy — this is what the
+    // middleware path's per-reader stop source used to do. ReaderPages raises
+    // this ONLY for a real selection change: adding and removing a page repair
+    // the selector themselves, and used to reach here with a stale index and
+    // cancel a bystander's read.
+    connect(readerPages, &ReaderPages::leftCard, this, [this](const QString& cardId) {
+        if (auto* controller = gateway->cardController(cardId))
+            controller->cancel();
     });
 
     ui->statusbar->hide();
@@ -333,7 +331,7 @@ void LibreCelik::onReadersChanged()
     // Arrivals: a card already in the roster when this window opened, or one
     // whose reader event reached us before its own cardChanged did.
     for (const librecelik::agent::ReaderInfo& reader : readers) {
-        if (reader.hasCard && !reader.cardId.isEmpty() && !activeCards.contains(reader.cardId))
+        if (reader.hasCard && !reader.cardId.isEmpty() && !readerPages->contains(reader.cardId))
             onCardChanged(reader.cardId);
     }
     ui->agentStateWidget->setState(gateway->presence(), !readers.isEmpty());
@@ -342,7 +340,7 @@ void LibreCelik::onReadersChanged()
 
 void LibreCelik::onCardChanged(const QString& objectId)
 {
-    if (activeCards.contains(objectId))
+    if (readerPages->contains(objectId))
         return; // a property change on a card that already has its page
     if (failedReads.contains(objectId))
         return; // its read already failed once; only a re-insertion retries it
@@ -362,7 +360,7 @@ void LibreCelik::onCardRemoved(const QString& cardId)
     // A card that leaves clears its failure memory: pulling and re-inserting
     // it is the one gesture that MUST get a fresh read.
     failedReads.erase(cardId);
-    if (!activeCards.contains(cardId))
+    if (!readerPages->contains(cardId))
         return;
 
     // Announce BEFORE teardown so page-level consumers inside this window's
@@ -382,7 +380,7 @@ void LibreCelik::updateEmptyState()
     ui->label_3->setVisible(!guided);
     ui->label_4->setVisible(!guided);
     ui->readerComboBox->setVisible(ui->readerComboBox->count() > 1);
-    ui->stackedWidget->setCurrentIndex(!guided && !activeCards.empty() ? 1 : 0);
+    ui->stackedWidget->setCurrentIndex(!guided && !readerPages->isEmpty() ? 1 : 0);
 }
 
 QString LibreCelik::readerNameForCard(const QString& cardId) const
@@ -467,8 +465,7 @@ void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
         applyPendingPki(cardId);
     });
     connect(controller, &CardController::errorOccurred, this, [this, cardId](const QString& message) {
-        const auto page = activeCards.find(cardId);
-        if (page == activeCards.end())
+        if (readerPages->page(cardId) == nullptr)
             return; // a stale terminal for a card whose page is already gone
         ui->statusbar->show();
         ui->statusbar->showMessage(message);
@@ -478,7 +475,7 @@ void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
         // The card is remembered as failed so the next roster event does not
         // re-add it and re-run the read that just failed — a reader property
         // change must not turn one failure into a retry storm against a card.
-        if (isSpinner(page->second)) {
+        if (isSpinner(readerPages->page(cardId))) {
             failedReads.insert(cardId);
             releaseCardPage(cardId);
         }
@@ -508,23 +505,14 @@ void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
 
 void LibreCelik::registerCardPage(const QString& cardId, QWidget* page)
 {
-    const int pageIndex = ui->readerStackedWidget->addWidget(page);
-    ui->readerComboBox->addItem(readerNameForCard(cardId));
-    // Select the new page only when it is the first one. The selector's
-    // change handler cancels the in-flight read of the page being navigated
-    // away from, so stealing focus on every insert let a second reader's
-    // card — readable or not — abort the first reader's read mid-flight.
-    if (ui->readerComboBox->count() == 1)
-        ui->readerComboBox->setCurrentIndex(pageIndex);
-    activeCards[cardId] = page;
+    readerPages->add(cardId, readerNameForCard(cardId), page);
     cardState[cardId] = {};
     updateEmptyState();
 }
 
 void LibreCelik::releaseCardPage(const QString& cardId)
 {
-    const auto page = activeCards.find(cardId);
-    if (page == activeCards.end())
+    if (!readerPages->contains(cardId))
         return;
 
     // Teardown-cancel: a page that is going away must not leave its card busy.
@@ -535,36 +523,17 @@ void LibreCelik::releaseCardPage(const QString& cardId)
     if (auto* controller = gateway->cardController(cardId))
         controller->cancel();
 
-    QWidget* widget = page->second;
-    if (widget) {
-        const int index = ui->readerStackedWidget->indexOf(widget);
-        if (index >= 0)
-            ui->readerComboBox->removeItem(index);
-        ui->readerStackedWidget->removeWidget(widget);
-        widget->deleteLater();
-    }
-    activeCards.erase(page);
+    readerPages->remove(cardId);
     cardState.erase(cardId);
 
-    if (activeCards.empty())
+    if (readerPages->isEmpty())
         ui->statusbar->clearMessage();
     updateEmptyState();
 }
 
 void LibreCelik::replaceCardWidget(const QString& cardId, QWidget* newWidget)
 {
-    const auto page = activeCards.find(cardId);
-    if (page == activeCards.end()) {
-        newWidget->deleteLater();
-        return;
-    }
-    QWidget* oldWidget = page->second;
-    const int index = ui->readerStackedWidget->indexOf(oldWidget);
-    ui->readerStackedWidget->removeWidget(oldWidget);
-    oldWidget->deleteLater();
-    ui->readerStackedWidget->insertWidget(index, newWidget);
-    ui->readerStackedWidget->setCurrentIndex(index);
-    page->second = newWidget;
+    readerPages->replace(cardId, newWidget);
 }
 
 CardWidgetPlugin* LibreCelik::pluginFor(const QString& cardId) const
@@ -599,9 +568,9 @@ void LibreCelik::onGroupReady(const QString& cardId, const FieldGroup& group)
     if (group.key == QLatin1StringView("error"))
         return;
 
-    const auto page = activeCards.find(cardId);
+    QWidget* pageWidget = readerPages->page(cardId);
     const auto state = cardState.find(cardId);
-    if (page == activeCards.end() || state == cardState.end())
+    if (pageWidget == nullptr || state == cardState.end())
         return;
 
     CardWidgetPlugin* plugin = pluginFor(cardId);
@@ -612,14 +581,16 @@ void LibreCelik::onGroupReady(const QString& cardId, const FieldGroup& group)
         return;
     }
 
-    if (isSpinner(page->second)) {
+    if (isSpinner(pageWidget)) {
         QWidget* emptyWidget = plugin->createEmptyWidget(this);
         if (emptyWidget == nullptr)
             return; // this plugin does not stream — the full model lands at identityReady
         replaceCardWidget(cardId, makeCardPage(emptyWidget, this));
     }
 
-    if (QWidget* pluginWidget = pluginWidgetOf(page->second))
+    // replaceCardWidget above may have swapped the page, so re-read it rather
+    // than reusing the pointer captured at entry.
+    if (QWidget* pluginWidget = pluginWidgetOf(readerPages->page(cardId)))
         plugin->addGroup(group, pluginWidget);
 }
 
@@ -651,8 +622,8 @@ void LibreCelik::onCardTypeResolved(const QString& cardId)
 
 void LibreCelik::onIdentityReady(const QString& cardId, const QList<FieldGroup>& groups)
 {
-    const auto page = activeCards.find(cardId);
-    if (page == activeCards.end())
+    QWidget* pageWidget = readerPages->page(cardId);
+    if (pageWidget == nullptr)
         return;
 
     CardWidgetPlugin* plugin = pluginFor(cardId);
@@ -673,7 +644,8 @@ void LibreCelik::onIdentityReady(const QString& cardId, const QList<FieldGroup>&
     // rather than patching the streamed page group by group.
     replaceCardWidget(cardId, makeCardPage(plugin->createWidget(groups, this), this));
 
-    QWidget* pluginWidget = pluginWidgetOf(page->second);
+    // The page was just replaced; re-read it instead of the entry pointer.
+    QWidget* pluginWidget = pluginWidgetOf(readerPages->page(cardId));
     if (pluginWidget == nullptr)
         return;
 
@@ -682,7 +654,7 @@ void LibreCelik::onIdentityReady(const QString& cardId, const QList<FieldGroup>&
     else if (plugin->supportsPrinting())
         plugin->enablePrintButton(pluginWidget);
 
-    auto* scrollArea = qobject_cast<QScrollArea*>(page->second);
+    auto* scrollArea = qobject_cast<QScrollArea*>(readerPages->page(cardId));
     QWidget* container = scrollArea ? scrollArea->widget() : nullptr;
     CardController* controller = gateway->cardController(cardId);
     if (container != nullptr && controller != nullptr &&
@@ -774,12 +746,12 @@ void LibreCelik::attachPkiSection(const QString& cardId, QWidget* container, boo
 
 void LibreCelik::applyPendingPki(const QString& cardId)
 {
-    const auto page = activeCards.find(cardId);
+    QWidget* pageWidget = readerPages->page(cardId);
     const auto state = cardState.find(cardId);
-    if (page == activeCards.end() || state == cardState.end())
+    if (pageWidget == nullptr || state == cardState.end())
         return;
 
-    auto* section = page->second->findChild<TokenSection*>();
+    auto* section = pageWidget->findChild<TokenSection*>();
     if (section == nullptr)
         return; // the section is built when the identity read completes
 

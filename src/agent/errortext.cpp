@@ -148,6 +148,14 @@ using LibreSCRS::AgentClient::OperationPhase;
         return qtTrId("lc-agent-error-watchdog");
     if (msgKey == QLatin1StringView("op.cancelled"))
         return qtTrId("lc-agent-msg-cancelled");
+    // Named here, not left to the code arm below, so the localized sentence
+    // stands ALONE. The agent's own prose for this key now says the same thing
+    // in English, and the code arm would append it as a "detail line" -- the
+    // holder would read one sentence twice, in two languages.
+    if (msgKey == QLatin1StringView("op.entry_expired"))
+        return qtTrId("lc-agent-error-entry-expired");
+    if (msgKey == QLatin1StringView("op.helper_too_old"))
+        return qtTrId("lc-agent-error-helper-too-old");
     return {};
 }
 

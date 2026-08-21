@@ -2189,6 +2189,10 @@
         <source>The document you tried to sign is invalid or could not be read. Check the file.</source>
         <translation>Документ који сте покушали да потпишете је неисправан или нечитљив. Проверите фајл.</translation>
     </message>
+    <message id="lc-agent-error-helper-too-old">
+        <source>The credential window helper is out of date. Restart your session.</source>
+        <translation>Помоћник за прозор уноса је застарео. Поново покрените сесију.</translation>
+    </message>
     <message id="lc-agent-error-entry-expired">
         <source>The entry window closed before a code was entered. Try again.</source>
         <translation>Прозор за унос се затворио пре него што је шифра унета. Покушајте поново.</translation>

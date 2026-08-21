@@ -2187,6 +2187,10 @@
         <source>The document you tried to sign is invalid or could not be read. Check the file.</source>
         <translation>The document you tried to sign is invalid or could not be read. Check the file.</translation>
     </message>
+    <message id="lc-agent-error-helper-too-old">
+        <source>The credential window helper is out of date. Restart your session.</source>
+        <translation>The credential window helper is out of date. Restart your session.</translation>
+    </message>
     <message id="lc-agent-error-entry-expired">
         <source>The entry window closed before a code was entered. Try again.</source>
         <translation>The entry window closed before a code was entered. Try again.</translation>

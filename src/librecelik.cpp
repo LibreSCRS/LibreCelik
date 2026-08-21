@@ -3,6 +3,7 @@
 
 #include "librecelik.h"
 #include "aboutdialog.h"
+#include "agent/errortext.h" // isRetryableReadFailure
 #include "agent/agentstatewidget.h"
 #include "agent/cardcontroller.h"
 #include "agent/cardstatuspage.h"
@@ -49,6 +50,7 @@
 
 using librecelik::agent::AgentGateway;
 using librecelik::agent::CardController;
+using librecelik::agent::isRetryableReadFailure;
 using librecelik::agent::PresenceState;
 using librecelik::utils::isSpinner;
 using librecelik::utils::makeSpinnerPage;
@@ -464,22 +466,30 @@ void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
         entry->second.pendingCredentials = credentials;
         applyPendingPki(cardId);
     });
-    connect(controller, &CardController::errorOccurred, this, [this, cardId](const QString& message) {
-        if (readerPages->page(cardId) == nullptr)
-            return; // a stale terminal for a card whose page is already gone
-        ui->statusbar->show();
-        ui->statusbar->showMessage(message);
-        // A failure while the page is still the spinner means the read never
-        // produced anything to show. Leaving the spinner turning would be a
-        // lie; the page goes and the window falls back to its empty state.
-        // The card is remembered as failed so the next roster event does not
-        // re-add it and re-run the read that just failed — a reader property
-        // change must not turn one failure into a retry storm against a card.
-        if (isSpinner(readerPages->page(cardId))) {
-            failedReads.insert(cardId);
-            releaseCardPage(cardId);
-        }
-    });
+    connect(controller, &CardController::errorOccurred, this,
+            [this, cardId](const QString& message, LibreSCRS::AgentClient::ErrorCode code) {
+                if (readerPages->page(cardId) == nullptr)
+                    return; // a stale terminal for a card whose page is already gone
+                ui->statusbar->show();
+                ui->statusbar->showMessage(message);
+                // A failure while the page is still the spinner means the read never
+                // produced anything to show. Leaving the spinner turning would be a
+                // lie; the page goes and the window falls back to its empty state.
+                // The card is remembered as failed so the next roster event does not
+                // re-add it and re-run the read that just failed — a reader property
+                // change must not turn one failure into a retry storm against a card.
+                //
+                // But ONLY for a failure repeating cannot fix. Latching a recoverable
+                // one strands the holder: the entry window expiring leaves this very
+                // status bar saying "try again" while the page that would let them is
+                // gone, and nothing short of physically re-seating the card brings it
+                // back. Measured on a live agent — three expiries, three retries,
+                // reader gone.
+                if (isSpinner(readerPages->page(cardId)) && !isRetryableReadFailure(code)) {
+                    failedReads.insert(cardId);
+                    releaseCardPage(cardId);
+                }
+            });
 
     // A card the agent reports no identity data for is REFUSED the identity
     // read (`UnsupportedOnThisCard`), so asking would buy an error line for a

@@ -10,6 +10,22 @@
 
 namespace librecelik::agent {
 
+/// @brief Can repeating a card read that failed with @p code plausibly succeed?
+///
+/// The window drops a card's page when its read fails while still showing the
+/// spinner, and refuses to re-add it until the card is physically re-seated.
+/// That is right for a card this build cannot read — it stops one failure
+/// becoming a retry storm — and wrong for every failure the HOLDER can clear,
+/// because it removes the surface they would clear it on. The entry window
+/// expiring is the sharp case: the status bar says "try again" while the page
+/// that would let them is already gone.
+///
+/// Retryable: the holder ran out of time, dismissed the prompt, or gave a wrong
+/// secret; the credential helper was momentarily unusable. Everything else — a
+/// card this build does not support, data it cannot parse, a transport that
+/// failed — is latched.
+[[nodiscard]] bool isRetryableReadFailure(LibreSCRS::AgentClient::ErrorCode code);
+
 /// Localized text for a failed operation. Resolution order, first match wins:
 ///
 ///   1. a msgKey this build names → LC's catalog string for it;

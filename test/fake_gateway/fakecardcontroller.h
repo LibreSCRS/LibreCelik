@@ -54,6 +54,10 @@ public:
     /// `librecelik::agent::errorText`, so a GUI suite asserts the SAME text the
     /// window renders rather than a literal of its own.
     QString scriptedError;
+    /// The taxonomy value that rides with scriptedError. Defaults to a
+    /// terminal one so an existing case still exercises the latch-and-drop
+    /// path it was written for; a case about a retryable failure sets it.
+    LibreSCRS::AgentClient::ErrorCode scriptedErrorCode = LibreSCRS::AgentClient::ErrorCode::CommunicationError;
     /// Engaged => the NEXT `startRead()` fails instead of reading (one-shot,
     /// as the name says — it clears itself). The failure replays the live
     /// controller's shape exactly: `readingStarted`, then `errorOccurred`, then

@@ -161,6 +161,24 @@ using LibreSCRS::AgentClient::OperationPhase;
 
 } // namespace
 
+bool isRetryableReadFailure(ErrorCode code)
+{
+    switch (code) {
+    case ErrorCode::EntryExpired:
+    case ErrorCode::CredentialWrong:
+    case ErrorCode::PrompterError:
+    case ErrorCode::CapabilityMissing:
+    case ErrorCode::None:
+        return true;
+    default:
+        // Deliberately a default, not an exhaustive switch: an appended code is
+        // treated as NOT retryable, so the retry-storm guard stays intact until
+        // someone decides otherwise. The client library also passes an
+        // unrecognised numeric value through verbatim, so this arm is reachable.
+        return false;
+    }
+}
+
 QString errorText(ErrorCode code, CallError call, const QString& msgKey, const QString& msgFallback)
 {
     // A whitespace-only agent message is not a message: non-empty to QString,

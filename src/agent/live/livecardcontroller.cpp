@@ -151,7 +151,7 @@ void LiveCardController::startRead()
 {
     Q_EMIT readingStarted();
     if (card.isNull()) {
-        failRead(cardGoneText());
+        failRead(cardGoneText(), ErrorCode::CardRemoved);
         return;
     }
 
@@ -171,7 +171,7 @@ void LiveCardController::startRead()
         operation->deleteLater();
 
         if (!ok) {
-            failRead(failure);
+            failRead(failure, operation->errorCode());
             return;
         }
         chainPhoto(std::move(groups));
@@ -228,16 +228,16 @@ void LiveCardController::finishRead(const QList<FieldGroup>& groups, bool photoM
     Q_EMIT readingFinished();
 }
 
-void LiveCardController::failRead(const QString& message)
+void LiveCardController::failRead(const QString& message, ErrorCode code)
 {
-    Q_EMIT errorOccurred(message);
+    Q_EMIT errorOccurred(message, code);
     Q_EMIT readingFinished();
 }
 
 void LiveCardController::requestCertificates()
 {
     if (card.isNull()) {
-        Q_EMIT errorOccurred(cardGoneText());
+        Q_EMIT errorOccurred(cardGoneText(), ErrorCode::CardRemoved);
         return;
     }
 
@@ -257,7 +257,7 @@ void LiveCardController::requestCertificates()
         if (operation->status() == OperationStatus::Ok) {
             Q_EMIT certificatesReady(operation->certificatesResult());
         } else {
-            Q_EMIT errorOccurred(terminalText(operation, watch));
+            Q_EMIT errorOccurred(terminalText(operation, watch), operation->errorCode());
         }
         operation->deleteLater();
     });
@@ -274,7 +274,7 @@ void LiveCardController::requestTokenInfo()
         return;
     }
     if (card.isNull()) {
-        Q_EMIT errorOccurred(cardGoneText());
+        Q_EMIT errorOccurred(cardGoneText(), ErrorCode::CardRemoved);
         return;
     }
 
@@ -320,7 +320,7 @@ void LiveCardController::requestCredentials()
         return;
     }
     if (card.isNull()) {
-        Q_EMIT errorOccurred(cardGoneText());
+        Q_EMIT errorOccurred(cardGoneText(), ErrorCode::CardRemoved);
         return;
     }
 
@@ -348,7 +348,7 @@ void LiveCardController::managePin(const QString& pinId, LibreSCRS::AgentClient:
                                    const LibreSCRS::AgentClient::ManagePinOptions& options)
 {
     if (card.isNull()) {
-        Q_EMIT errorOccurred(cardGoneText());
+        Q_EMIT errorOccurred(cardGoneText(), ErrorCode::CardRemoved);
         return;
     }
     AgentOperation* operation = card->managePin(pinId, verb, options);
@@ -378,7 +378,7 @@ void LiveCardController::managePin(const QString& pinId, LibreSCRS::AgentClient:
 void LiveCardController::activateSigningKey()
 {
     if (card.isNull()) {
-        Q_EMIT errorOccurred(cardGoneText());
+        Q_EMIT errorOccurred(cardGoneText(), ErrorCode::CardRemoved);
         return;
     }
     AgentOperation* operation = card->activateSigningKey();

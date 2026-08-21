@@ -136,6 +136,47 @@ TEST_F(MainFlowTest, ScriptedErrorCarriesTheLocalizedCatalogText)
     EXPECT_EQ(seen, librecelik::agent::errorText(ErrorCode::CardRemoved, CallError::None, {}, {}));
 }
 
+// A failed read costs the card its page, and only re-seating the card brings it
+// back. That has to depend on WHICH failure: latching one the holder can clear
+// strands them, because the message they are shown says "try again" while the
+// surface that would let them is gone. Measured on a live agent — three entry
+// windows allowed to expire, three retries, reader gone from the window.
+TEST_F(MainFlowTest, AFailureTheHolderCanClearIsNotLatched)
+{
+    using namespace LibreSCRS::AgentClient;
+    // The holder ran out of time, dismissed the prompt, or mistyped: asking
+    // again is exactly the right move, so the page must survive.
+    EXPECT_TRUE(librecelik::agent::isRetryableReadFailure(ErrorCode::EntryExpired));
+    EXPECT_TRUE(librecelik::agent::isRetryableReadFailure(ErrorCode::CredentialWrong));
+    EXPECT_TRUE(librecelik::agent::isRetryableReadFailure(ErrorCode::None));
+
+    // Repeating these cannot help, so the retry-storm guard still latches.
+    EXPECT_FALSE(librecelik::agent::isRetryableReadFailure(ErrorCode::UnsupportedCard));
+    EXPECT_FALSE(librecelik::agent::isRetryableReadFailure(ErrorCode::ParseError));
+    EXPECT_FALSE(librecelik::agent::isRetryableReadFailure(ErrorCode::CommunicationError));
+
+    // A code this build has no name for is NOT retryable: the guard stays shut
+    // until someone classifies it deliberately.
+    EXPECT_FALSE(librecelik::agent::isRetryableReadFailure(static_cast<ErrorCode>(9999)));
+}
+
+// The message and the code travel together, so a window can act on the code
+// while showing the message.
+TEST_F(MainFlowTest, ScriptedErrorCarriesItsTaxonomyValueAlongsideTheText)
+{
+    using namespace LibreSCRS::AgentClient;
+    FakeCardController ctrl;
+    ctrl.scriptedError = librecelik::agent::errorText(ErrorCode::EntryExpired, CallError::None, {}, {});
+    ctrl.scriptedErrorCode = ErrorCode::EntryExpired;
+    ErrorCode seen = ErrorCode::None;
+    QObject::connect(&ctrl, &librecelik::agent::CardController::errorOccurred,
+                     [&](const QString&, ErrorCode code) { seen = code; });
+    ctrl.failNextRead = true;
+    ctrl.startRead();
+    EXPECT_EQ(seen, ErrorCode::EntryExpired);
+    EXPECT_TRUE(librecelik::agent::isRetryableReadFailure(seen));
+}
+
 TEST_F(MainFlowTest, StreamedReadDeliversTheMergedPhotoGroupBeforeIdentityReady)
 {
     using namespace LibreSCRS::AgentClient;

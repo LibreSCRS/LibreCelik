@@ -54,7 +54,7 @@ void FakeCardController::startRead()
         // failed would make a later success in the same case impossible to
         // script.
         failNextRead = false;
-        Q_EMIT errorOccurred(scriptedError);
+        Q_EMIT errorOccurred(scriptedError, scriptedErrorCode);
         Q_EMIT readingFinished();
         return;
     }

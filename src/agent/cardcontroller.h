@@ -4,6 +4,7 @@
 #pragma once
 #include <LibreSCRS/AgentClient/AgentCapabilities.h> // PreReadAuth, Cap::, UiState
 #include <LibreSCRS/AgentClient/CredentialTypes.h>
+#include <LibreSCRS/AgentClient/ErrorCode.h>
 #include <LibreSCRS/AgentClient/OperationPhase.h>
 #include <LibreSCRS/AgentClient/SignOptions.h> // PinVerb, ManagePinOptions
 #include <LibreSCRS/AgentClient/Types.h>
@@ -52,7 +53,13 @@ signals:
     /// every verb; this signal is the slice of it a human is shown.
     void pinPhaseChanged(LibreSCRS::AgentClient::OperationPhase phase, double progress);
     void cardTypeResolved(const QString& cardType);
-    void errorOccurred(const QString& localizedMessage); // via errortext
+    /// @p code is the agent's taxonomy value behind @p localizedMessage. The
+    /// window needs it to tell a failure a holder can retry (an entry window
+    /// that expired, a dismissed prompt) from one that repeating cannot fix,
+    /// because it drops the card's page on failure and only a re-insertion
+    /// brings it back.
+    void errorOccurred(const QString& localizedMessage,
+                       LibreSCRS::AgentClient::ErrorCode code); // via errortext
     void readingFinished();
 };
 

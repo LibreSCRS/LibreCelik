@@ -72,7 +72,7 @@ private:
     /// otherwise (spec §5.4 merge-before-dispatch, D10).
     void finishRead(const QList<LibreSCRS::AgentClient::FieldGroup>& groups, bool photoMerged);
     /// The read-path failure shape: one localized line, then the terminal.
-    void failRead(const QString& message);
+    void failRead(const QString& message, LibreSCRS::AgentClient::ErrorCode code);
 
     /// The card is DELETED by the client on removal while queued slots may
     /// still run, so it is held weakly and null-checked at every use — never a

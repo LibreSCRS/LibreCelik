@@ -359,16 +359,32 @@ void LiveCardController::managePin(const QString& pinId, LibreSCRS::AgentClient:
     // owned by a dialog that has a row to put it in.
     connect(operation, &AgentOperation::phaseChanged, this, &CardController::pinPhaseChanged);
 
-    connect(operation, &AgentOperation::finished, this, [this, operation, watch] {
+    connect(operation, &AgentOperation::finished, this, [this, operation, watch, pinId, verb, options] {
         watch.dog->stop();
         forget(operation);
+        // The agent forgets a card's credential listing after an idle window,
+        // and a dialog left open across it still holds the ids from before.
+        // That refusal carries its own name so a client can re-list and try
+        // again instead of showing a failure repeating would have fixed —
+        // nothing was presented to the card, so the retry costs no attempt.
+        // Once only: a second identical refusal is a real disagreement, not a
+        // stale snapshot.
+        const bool staleIds = operation->syncError() == LibreSCRS::AgentClient::SyncError::UnknownCredential;
+        const auto result = operation->pinResult(); // read BEFORE scheduling deletion
+        operation->deleteLater();
+        if (staleIds && !pinRetryUsed) {
+            pinRetryUsed = true;
+            requestCredentials(); // repopulates the agent's snapshot
+            managePin(pinId, verb, options);
+            return;
+        }
+        pinRetryUsed = false;
         // ALWAYS: the client delivers a PinResult even for the soft-fail
         // outcomes that finish Error (a wrong PIN, a blocked credential), and
         // the outcome — with its retry counter — is exactly what the caller
         // must render. An error line here would hide it behind a generic
         // failure.
-        Q_EMIT pinResultReady(operation->pinResult());
-        operation->deleteLater();
+        Q_EMIT pinResultReady(result);
         // Mandatory re-list: a mutation may have changed a counter, a state,
         // or the credential set itself, and no other event announces that.
         requestCredentials();

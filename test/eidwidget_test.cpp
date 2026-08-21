@@ -16,7 +16,7 @@
 /// document sections, and worse orders dropped everything but the shell.
 
 #include "i18n_test_support/mock_plugin_data.h"
-#include "plugins/rs-eid/eidwidget.h"
+#include "rs-eid/eidwidget.h"
 #include "utils/collapsiblesection.h"
 
 #include <LibreSCRS/AgentClient/Types.h>

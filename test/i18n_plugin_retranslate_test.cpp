@@ -19,11 +19,11 @@
 #include "i18n_test_support/RetranslatableWidgetFixture.h"
 #include "i18n_test_support/mock_plugin_data.h"
 
-#include "plugins/emrtd/emrtdwidget.h"
-#include "plugins/eu-vrc/euvrcwidget.h"
-#include "plugins/piv/pivwidget.h"
-#include "plugins/rs-eid/eidwidget.h"
-#include "plugins/rs-health/healthwidget.h"
+#include "emrtd/emrtdwidget.h"
+#include "eu-vrc/euvrcwidget.h"
+#include "piv/pivwidget.h"
+#include "rs-eid/eidwidget.h"
+#include "rs-health/healthwidget.h"
 
 #include <QApplication>
 #include <QCoreApplication>

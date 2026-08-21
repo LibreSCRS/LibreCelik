@@ -17,11 +17,15 @@ FetchContent_Declare(googletest URL https://github.com/google/googletest/archive
 FetchContent_MakeAvailable(googletest)
 enable_testing()
 
-include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR})
+# The repository ROOT is deliberately not on the include path. It holds a file
+# named VERSION, and on a case-insensitive filesystem `#include <version>`
+# resolves to that instead of the standard header -- which fails the macOS build
+# inside libc++'s own includes while Linux, being case-sensitive, never notices.
+# Targets that reach into plugins/ name it through the plugins directory below.
 get_filename_component(PARENT_DIR ../ ABSOLUTE)
-include_directories(${PARENT_DIR})
 include_directories(${PARENT_DIR}/src)
-include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}/../src")
+include_directories(${PARENT_DIR}/plugins)
+include_directories("${PROJECT_BINARY_DIR}/../src")
 
 set(SOURCE_FILES
     ../src/utils/libreceliklog.h
@@ -439,7 +443,6 @@ add_executable(eidwidget_test
 )
 target_include_directories(eidwidget_test PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/plugins
 )
@@ -479,7 +482,6 @@ add_executable(i18n_plugin_retranslate_test
 )
 target_include_directories(i18n_plugin_retranslate_test PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/plugins
     ${PROJECT_BINARY_DIR}/../src

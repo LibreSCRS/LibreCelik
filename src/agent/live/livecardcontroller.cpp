@@ -312,15 +312,29 @@ void LiveCardController::requestTokenInfo()
 
 void LiveCardController::requestCredentials()
 {
+    listCredentials({});
+}
+
+void LiveCardController::listCredentials(std::function<void(bool)> onListed)
+{
+    // A refused listing still answers the continuation: a caller waiting to
+    // retry must learn it never got a snapshot, not wait forever.
+    const auto refuse = [&onListed]() {
+        if (onListed) {
+            onListed(false);
+        }
+    };
     // The same double-guard as token info: the socket transport drops
     // credential frames against an agent that never advertised them, so an
     // ungated listing is an error line for a section LC should hide.
     if (client == nullptr || !client->hasFeature(kCredentialsFeature)) {
         Q_EMIT credentialsReady({});
+        refuse();
         return;
     }
     if (card.isNull()) {
         Q_EMIT errorOccurred(cardGoneText(), ErrorCode::CardRemoved);
+        refuse();
         return;
     }
 
@@ -328,20 +342,25 @@ void LiveCardController::requestCredentials()
     track(operation);
     const OpWatch watch = armWatchdog(operation);
 
-    connect(operation, &AgentOperation::finished, this, [this, operation, watch] {
-        watch.dog->stop();
-        forget(operation);
-        if (operation->status() == OperationStatus::Ok) {
-            // An empty list is a legitimate result, not a missing one.
-            Q_EMIT credentialsReady(operation->credentialsResult());
-        } else {
-            // Same hide-on-failure posture as token info above: the
-            // credentials block simply does not render, and the page the
-            // identity read is filling stays alive.
-            Q_EMIT credentialsReady({});
-        }
-        operation->deleteLater();
-    });
+    connect(operation, &AgentOperation::finished, this,
+            [this, operation, watch, onListed = std::move(onListed)] {
+                watch.dog->stop();
+                forget(operation);
+                const bool listed = operation->status() == OperationStatus::Ok;
+                if (listed) {
+                    // An empty list is a legitimate result, not a missing one.
+                    Q_EMIT credentialsReady(operation->credentialsResult());
+                } else {
+                    // Same hide-on-failure posture as token info above: the
+                    // credentials block simply does not render, and the page the
+                    // identity read is filling stays alive.
+                    Q_EMIT credentialsReady({});
+                }
+                operation->deleteLater();
+                if (onListed) {
+                    onListed(listed);
+                }
+            });
 }
 
 void LiveCardController::managePin(const QString& pinId, LibreSCRS::AgentClient::PinVerb verb,
@@ -374,8 +393,21 @@ void LiveCardController::managePin(const QString& pinId, LibreSCRS::AgentClient:
         operation->deleteLater();
         if (staleIds && !pinRetryUsed) {
             pinRetryUsed = true;
-            requestCredentials(); // repopulates the agent's snapshot
-            managePin(pinId, verb, options);
+            // The retry waits for the listing to COMPLETE. The agent writes its
+            // snapshot at the end of the read, and resolves a mutation's pinId
+            // against the cache at method entry -- so a retry issued in this
+            // turn would draw the very same refusal, every time.
+            listCredentials([this, pinId, verb, options](bool listed) {
+                if (listed) {
+                    managePin(pinId, verb, options);
+                    return;
+                }
+                // No fresh snapshot, so the ids are still unresolvable and
+                // repeating would refuse again. Deliver the outcome the caller
+                // is waiting on rather than leaving the dialog spinning.
+                pinRetryUsed = false;
+                Q_EMIT pinResultReady({});
+            });
             return;
         }
         pinRetryUsed = false;

@@ -25,6 +25,7 @@
 #include <QString>
 
 #include <cstdint>
+#include <functional>
 
 namespace LibreSCRS::AgentClient {
 class AgentCard;
@@ -71,6 +72,13 @@ private:
     /// as a FINAL `groupReady` first — the progressive path cannot carry it
     /// otherwise (spec §5.4 merge-before-dispatch, D10).
     void finishRead(const QList<LibreSCRS::AgentClient::FieldGroup>& groups, bool photoMerged);
+    /// Start a credential listing and run @p onListed when it COMPLETES, told
+    /// whether it succeeded. Completion is the point the agent's snapshot
+    /// exists: it writes the snapshot at the end of the read, so a mutation
+    /// issued merely because a listing was ISSUED is refused exactly as if
+    /// nothing had been listed.
+    void listCredentials(std::function<void(bool)> onListed);
+
     /// The read-path failure shape: one localized line, then the terminal.
     /// One re-list-and-retry is allowed per managePin request. The agent's
     /// credential snapshot expires on an idle window, and a dialog left open

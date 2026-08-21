@@ -1234,6 +1234,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-agent-error-engine-unavailable");
     //% "The document you tried to sign is invalid or could not be read. Check the file."
     QT_TRID_NOOP("lc-agent-error-invalid-document");
+    QT_TRID_NOOP("lc-agent-error-entry-expired");
     //% "The document was signed, but the signed file could not be written to the output folder."
     QT_TRID_NOOP("lc-agent-error-artifact-write");
     //% "The operation did not finish, and no reason was reported."
@@ -1305,6 +1306,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-agent-outcome-key-activation-failed");
     //% "The card was removed before the change was made."
     QT_TRID_NOOP("lc-agent-outcome-card-removed");
+    QT_TRID_NOOP("lc-agent-outcome-entry-expired");
 }
 
 QT_WARNING_POP

@@ -2187,6 +2187,10 @@
         <source>The document you tried to sign is invalid or could not be read. Check the file.</source>
         <translation>The document you tried to sign is invalid or could not be read. Check the file.</translation>
     </message>
+    <message id="lc-agent-error-entry-expired">
+        <source>The entry window closed before a code was entered. Try again.</source>
+        <translation>The entry window closed before a code was entered. Try again.</translation>
+    </message>
     <message id="lc-agent-error-artifact-write">
         <source>The document was signed, but the signed file could not be written to the output folder.</source>
         <translation>The document was signed, but the signed file could not be written to the output folder.</translation>
@@ -2290,6 +2294,10 @@
     <message id="lc-agent-outcome-card-removed">
         <source>The card was removed before the change was made.</source>
         <translation>The card was removed before the change was made.</translation>
+    </message>
+    <message id="lc-agent-outcome-entry-expired">
+        <source>The entry window closed before a code was entered. Try again.</source>
+        <translation>The entry window closed before a code was entered. Try again.</translation>
     </message>
     <message id="lc-agent-outcome-unspecified">
         <source>No result was reported.</source>

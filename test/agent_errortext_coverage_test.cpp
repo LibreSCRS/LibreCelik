@@ -97,6 +97,7 @@ constexpr std::optional<Kind> expectedKindFor(ErrorCode code) noexcept
     case ErrorCode::RateLimited:
     case ErrorCode::EngineUnavailable:
     case ErrorCode::InvalidDocument:
+    case ErrorCode::EntryExpired:
         return Kind::Localized;
     }
     return std::nullopt; // past the enumerated tail (used to probe beyond it)
@@ -124,7 +125,7 @@ constexpr std::uint32_t kClassifiedCount = classifiedCount();
 //     group, leaves the switch exhaustive — and then only this assert trips,
 //     because the derived count outgrew the anchor.
 // So neither check is redundant with the other.
-static_assert(kClassifiedCount == static_cast<std::uint32_t>(ErrorCode::InvalidDocument) + 1u,
+static_assert(kClassifiedCount == static_cast<std::uint32_t>(ErrorCode::EntryExpired) + 1u,
               "classification switch out of step with the ErrorCode tail; move this anchor to the new last "
               "enumerator and classify the new code in expectedKindFor() in the same change");
 

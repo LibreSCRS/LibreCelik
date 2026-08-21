@@ -79,6 +79,8 @@ using LibreSCRS::AgentClient::OperationPhase;
         return qtTrId("lc-agent-error-engine-unavailable");
     case ErrorCode::InvalidDocument:
         return qtTrId("lc-agent-error-invalid-document");
+    case ErrorCode::EntryExpired:
+        return qtTrId("lc-agent-error-entry-expired");
     case ErrorCode::None:
     default:
         return std::nullopt;
@@ -263,6 +265,8 @@ QString outcomeText(CredentialOutcome outcome)
         return qtTrId("lc-agent-outcome-key-activation-failed");
     case CredentialOutcome::CardRemoved:
         return qtTrId("lc-agent-outcome-card-removed");
+    case CredentialOutcome::EntryExpired:
+        return qtTrId("lc-agent-outcome-entry-expired");
     case CredentialOutcome::Unspecified:
     default:
         // Unspecified has copy of its own rather than sharing a generic: it is

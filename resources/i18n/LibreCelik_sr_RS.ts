@@ -2189,6 +2189,10 @@
         <source>The document you tried to sign is invalid or could not be read. Check the file.</source>
         <translation>Документ који сте покушали да потпишете је неисправан или нечитљив. Проверите фајл.</translation>
     </message>
+    <message id="lc-agent-error-entry-expired">
+        <source>The entry window closed before a code was entered. Try again.</source>
+        <translation>Прозор за унос се затворио пре него што је шифра унета. Покушајте поново.</translation>
+    </message>
     <message id="lc-agent-error-artifact-write">
         <source>The document was signed, but the signed file could not be written to the output folder.</source>
         <translation>Документ је потписан, али потписани фајл није могао да се упише у излазну фасциклу.</translation>
@@ -2292,6 +2296,10 @@
     <message id="lc-agent-outcome-card-removed">
         <source>The card was removed before the change was made.</source>
         <translation>Картица је уклоњена пре него што је измена извршена.</translation>
+    </message>
+    <message id="lc-agent-outcome-entry-expired">
+        <source>The entry window closed before a code was entered. Try again.</source>
+        <translation>Прозор за унос се затворио пре него што је шифра унета. Покушајте поново.</translation>
     </message>
     <message id="lc-agent-outcome-unspecified">
         <source>No result was reported.</source>

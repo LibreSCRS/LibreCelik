@@ -53,5 +53,16 @@ else()
     FetchContent_Declare(LibreAgent
         GIT_REPOSITORY https://github.com/LibreSCRS/LibreAgent.git
         GIT_TAG ${LIBREAGENT_PIN})
-    FetchContent_MakeAvailable(LibreAgent) # provides LibreAgent::ClientQt
+    # CMAKE_INCLUDE_CURRENT_DIR is ON for this project (Qt convention) and it is a
+# *variable*, so it leaks into the fetched project and puts LibreAgent's own
+# source root on the include path of LibreAgent's own targets. That root holds a
+# file named VERSION, and on a case-insensitive filesystem `#include <version>`
+# resolves to it instead of the standard header -- so the macOS build fails to
+# parse libc++'s own includes while Linux, being case-sensitive, never notices.
+# Off for the duration of the fetch only; the GUI's own targets still get it.
+set(_librecelik_saved_include_current_dir ${CMAKE_INCLUDE_CURRENT_DIR})
+set(CMAKE_INCLUDE_CURRENT_DIR OFF)
+FetchContent_MakeAvailable(LibreAgent) # provides LibreAgent::ClientQt
+set(CMAKE_INCLUDE_CURRENT_DIR ${_librecelik_saved_include_current_dir})
+unset(_librecelik_saved_include_current_dir)
 endif()

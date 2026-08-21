@@ -25,6 +25,8 @@
 #include <QString>
 #include <QtGlobal>
 
+#include "anonymous_fd.h"
+
 #include <gtest/gtest.h>
 
 #include <utility>
@@ -246,7 +248,7 @@ namespace {
 /// invalid one.
 [[nodiscard]] FdHandle makeCountedFd(int bytes)
 {
-    const int fd = memfd_create("row", 0);
+    const int fd = librecelik::test::makeAnonymousFd("row");
     if (fd < 0) {
         return FdHandle{};
     }

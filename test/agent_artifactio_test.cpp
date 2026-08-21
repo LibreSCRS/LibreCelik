@@ -18,6 +18,8 @@
 #include <QString>
 #include <QTemporaryDir>
 
+#include "anonymous_fd.h"
+
 #include <gtest/gtest.h>
 
 #include <sys/mman.h>
@@ -29,7 +31,7 @@ namespace {
 /// the agent hands over.
 int memfdAtEof(const QByteArray& bytes)
 {
-    const int fd = ::memfd_create("artifactio-test", 0);
+    const int fd = librecelik::test::makeAnonymousFd("artifactio-test");
     EXPECT_GE(fd, 0);
     if (fd >= 0 && !bytes.isEmpty()) {
         EXPECT_EQ(::write(fd, bytes.constData(), static_cast<std::size_t>(bytes.size())),

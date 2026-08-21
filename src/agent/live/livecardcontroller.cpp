@@ -342,25 +342,24 @@ void LiveCardController::listCredentials(std::function<void(bool)> onListed)
     track(operation);
     const OpWatch watch = armWatchdog(operation);
 
-    connect(operation, &AgentOperation::finished, this,
-            [this, operation, watch, onListed = std::move(onListed)] {
-                watch.dog->stop();
-                forget(operation);
-                const bool listed = operation->status() == OperationStatus::Ok;
-                if (listed) {
-                    // An empty list is a legitimate result, not a missing one.
-                    Q_EMIT credentialsReady(operation->credentialsResult());
-                } else {
-                    // Same hide-on-failure posture as token info above: the
-                    // credentials block simply does not render, and the page the
-                    // identity read is filling stays alive.
-                    Q_EMIT credentialsReady({});
-                }
-                operation->deleteLater();
-                if (onListed) {
-                    onListed(listed);
-                }
-            });
+    connect(operation, &AgentOperation::finished, this, [this, operation, watch, onListed = std::move(onListed)] {
+        watch.dog->stop();
+        forget(operation);
+        const bool listed = operation->status() == OperationStatus::Ok;
+        if (listed) {
+            // An empty list is a legitimate result, not a missing one.
+            Q_EMIT credentialsReady(operation->credentialsResult());
+        } else {
+            // Same hide-on-failure posture as token info above: the
+            // credentials block simply does not render, and the page the
+            // identity read is filling stays alive.
+            Q_EMIT credentialsReady({});
+        }
+        operation->deleteLater();
+        if (onListed) {
+            onListed(listed);
+        }
+    });
 }
 
 void LiveCardController::managePin(const QString& pinId, LibreSCRS::AgentClient::PinVerb verb,

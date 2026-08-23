@@ -36,6 +36,10 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-reader-unsupported-card-with-atr");
     //% "In reader: %1"
     QT_TRID_NOOP("lc-card-unsupported-reader");
+    //% "The card was not read"
+    QT_TRID_NOOP("lc-card-retry-title");
+    //% "Read the card again"
+    QT_TRID_NOOP("lc-card-retry-button");
     //% "If the document has a second interface, try that one: a contact reader for its chip, or a contactless reader."
     QT_TRID_NOOP("lc-card-unsupported-interface-hint");
     //% "Reading card..."
@@ -837,9 +841,47 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Sex"
     QT_TRID_NOOP("lc-emrtd-doc-sex");
 
+    // --- national annex (signed extra personal data) ---
+    //% "Additional Personal Data"
+    QT_TRID_NOOP("lc-annex-additional-data");
+    //% "Address"
+    QT_TRID_NOOP("lc-annex-address-label");
+    //% "Street"
+    QT_TRID_NOOP("lc-annex-street");
+    //% "House Number"
+    QT_TRID_NOOP("lc-annex-house-number");
+    //% "House Letter"
+    QT_TRID_NOOP("lc-annex-house-letter");
+    //% "Entrance"
+    QT_TRID_NOOP("lc-annex-entrance");
+    //% "Floor"
+    QT_TRID_NOOP("lc-annex-floor");
+    //% "Apartment"
+    QT_TRID_NOOP("lc-annex-apartment-number");
+    //% "Place"
+    QT_TRID_NOOP("lc-annex-place");
+    //% "Community"
+    QT_TRID_NOOP("lc-annex-community");
+    //% "State"
+    QT_TRID_NOOP("lc-annex-state");
+    //% "Parent Given Name"
+    QT_TRID_NOOP("lc-annex-parent-given-name");
+    //% "Community of Birth"
+    QT_TRID_NOOP("lc-annex-community-of-birth");
+    //% "State of Birth"
+    QT_TRID_NOOP("lc-annex-state-of-birth");
+    //% "Document Number"
+    QT_TRID_NOOP("lc-annex-document-serial");
+    //% "Address Date"
+    QT_TRID_NOOP("lc-annex-address-date");
+    //% "Data Integrity"
+    QT_TRID_NOOP("lc-annex-integrity");
+    //% "Data Authenticity"
+    QT_TRID_NOOP("lc-annex-authenticity");
+    //% "Travel Document Verification"
+    QT_TRID_NOOP("lc-emrtd-security-status-travel-doc");
+
     // --- eMRTD security status ---
-    //% "Security Status"
-    QT_TRID_NOOP("lc-emrtd-security-status");
     //% "Data Integrity"
     QT_TRID_NOOP("lc-emrtd-security-integrity");
     //% "Data Authenticity"

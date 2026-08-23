@@ -98,6 +98,13 @@ private:
     };
 
     void addCardPage(const QString& cardId, librecelik::agent::CardController* controller);
+
+    /// Replace @p cardId's spinner with the page that offers another read.
+    ///
+    /// Only for a failure the HOLDER can clear. The card is deliberately NOT
+    /// remembered as failed: latching it would remove the very surface they
+    /// would clear it on.
+    void offerCardReadRetry(const QString& cardId, const QString& message);
     /// Give @p page the card's slot in the reader stack, the reader selector
     /// and both per-card maps. Every card that gets a page goes through here —
     /// the readable card's spinner and the unreadable card's status page

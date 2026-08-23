@@ -47,6 +47,7 @@ set(PROJECT_SOURCES
         agent/agentstatewidget.h
         agent/agentstatewidget.cpp
         agent/cardstatuspage.h
+        agent/cardretrypage.cpp
         agent/cardstatuspage.cpp
         agent/signrequest.h
         agent/signrequest.cpp

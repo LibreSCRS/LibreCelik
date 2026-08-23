@@ -5,6 +5,8 @@
 
 #include <LibreSCRS/AgentClient/IdentityRows.h>
 
+#include <algorithm>
+
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -16,7 +18,8 @@ namespace librecelik::utils {
 
 CollapsibleSection* FieldSectionBuilder::build(const QString& title, const LibreSCRS::AgentClient::FieldGroup& group,
                                                const std::map<QString, QString>& translationMap,
-                                               const std::set<QString>& hiddenFields, QWidget* parent)
+                                               const std::set<QString>& hiddenFields, QWidget* parent,
+                                               const QStringList& fieldOrder)
 {
     auto* section = new CollapsibleSection(title, parent);
     section->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
@@ -30,7 +33,22 @@ CollapsibleSection* FieldSectionBuilder::build(const QString& title, const Libre
     // in the client's shared flatten rule, so every consumer renders the same
     // row set. Empty values are dropped locally — the flatten deliberately
     // retains them for tabular renderers, this grid is not one.
-    for (const auto& identityRow : LibreSCRS::AgentClient::flattenIdentityFields({group})) {
+    auto rows = LibreSCRS::AgentClient::flattenIdentityFields({group});
+    if (!fieldOrder.isEmpty()) {
+        // Stable, so an unlisted key keeps its delivery position relative to
+        // the other unlisted ones instead of being reordered arbitrarily.
+        const auto rank = [&fieldOrder](const QString& key) {
+            const qsizetype at = fieldOrder.indexOf(key);
+            return at < 0 ? fieldOrder.size() : at;
+        };
+        std::stable_sort(
+            rows.begin(), rows.end(),
+            [&rank](const LibreSCRS::AgentClient::IdentityRow& a, const LibreSCRS::AgentClient::IdentityRow& b) {
+                return rank(a.fieldKey) < rank(b.fieldKey);
+            });
+    }
+
+    for (const auto& identityRow : rows) {
         if (identityRow.value.isEmpty())
             continue;
         if (hiddenFields.count(identityRow.fieldKey))

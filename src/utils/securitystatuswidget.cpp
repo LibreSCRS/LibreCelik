@@ -10,6 +10,70 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
+namespace librecelik::utils {
+
+QString localizedStatusText(SecurityCheck::Status status)
+{
+    switch (status) {
+    case SecurityCheck::Status::Passed:
+        return qtTrId("lc-emrtd-security-passed");
+    case SecurityCheck::Status::Failed:
+        return qtTrId("lc-emrtd-security-failed");
+    case SecurityCheck::Status::NotSupported:
+        return qtTrId("lc-emrtd-security-not-supported");
+    case SecurityCheck::Status::Skipped:
+        return qtTrId("lc-emrtd-security-skipped");
+    case SecurityCheck::Status::NotPerformed:
+        return qtTrId("lc-emrtd-security-not-performed");
+    }
+    return qtTrId("lc-emrtd-security-not-performed");
+}
+
+QString statusColorHex(SecurityCheck::Status status)
+{
+    switch (status) {
+    case SecurityCheck::Status::Passed:
+        return QStringLiteral("#4CAF50");
+    case SecurityCheck::Status::Failed:
+        return QStringLiteral("#F44336");
+    case SecurityCheck::Status::NotSupported:
+    case SecurityCheck::Status::Skipped:
+        return QStringLiteral("#FFC107");
+    case SecurityCheck::Status::NotPerformed:
+        return QStringLiteral("#9E9E9E");
+    }
+    return QStringLiteral("#9E9E9E");
+}
+
+QWidget* makeStatusRow(const QString& label, SecurityCheck::Status status, QWidget* parent)
+{
+    auto* row = new QWidget(parent);
+    auto* rowLayout = new QHBoxLayout(row);
+    rowLayout->setContentsMargins(4, 2, 4, 2);
+    rowLayout->setSpacing(8);
+
+    auto* icon = new QLabel(row);
+    icon->setObjectName(QStringLiteral("icon"));
+    icon->setFixedSize(16, 16);
+    icon->setStyleSheet(QStringLiteral("background: %1; border-radius: 8px;").arg(statusColorHex(status)));
+    icon->setAccessibleName(localizedStatusText(status));
+
+    const QString text = label + QStringLiteral(": ") + localizedStatusText(status);
+    auto* textLabel = new QLabel(text, row);
+    textLabel->setObjectName(QStringLiteral("text"));
+    // Card-derived vocabulary reaches this row; never let AutoText promote a
+    // value that happens to look like markup.
+    textLabel->setTextFormat(Qt::PlainText);
+    textLabel->setStyleSheet(QStringLiteral("font-size: 12px;"));
+    textLabel->setAccessibleName(text);
+
+    rowLayout->addWidget(icon);
+    rowLayout->addWidget(textLabel, 1);
+    return row;
+}
+
+} // namespace librecelik::utils
+
 SecurityStatusWidget::SecurityStatusWidget(QWidget* parent) : QWidget(parent)
 {
     buildLayout();
@@ -79,59 +143,21 @@ void SecurityStatusWidget::refreshSummaryRows()
 
 QWidget* SecurityStatusWidget::createStatusRow(const QString& label, librecelik::utils::SecurityCheck::Status status)
 {
-    auto* row = new QWidget();
-    auto* rowLayout = new QHBoxLayout(row);
-    rowLayout->setContentsMargins(4, 2, 4, 2);
-    rowLayout->setSpacing(8);
-
-    auto* icon = new QLabel(row);
-    icon->setObjectName("icon");
-    icon->setFixedSize(16, 16);
-    icon->setStyleSheet(QString("background: %1; border-radius: 8px;").arg(statusColor(status)));
-    icon->setAccessibleName(statusText(status));
-
-    auto* text = new QLabel(label + ": " + statusText(status), row);
-    text->setObjectName("text");
-    text->setStyleSheet("font-size: 12px;");
-    text->setAccessibleName(label + ": " + statusText(status));
-
-    rowLayout->addWidget(icon);
-    rowLayout->addWidget(text, 1);
-
-    return row;
+    // Delegates to the shared builder rather than keeping a second copy of the
+    // same row. The copy that used to live here also lacked the PlainText
+    // format the shared one sets, so a check label shaped like markup was
+    // rendered as markup in this pane only.
+    return librecelik::utils::makeStatusRow(label, status);
 }
 
 QString SecurityStatusWidget::statusColor(librecelik::utils::SecurityCheck::Status status) const
 {
-    switch (status) {
-    case librecelik::utils::SecurityCheck::Status::Passed:
-        return QStringLiteral("#4CAF50");
-    case librecelik::utils::SecurityCheck::Status::Failed:
-        return QStringLiteral("#F44336");
-    case librecelik::utils::SecurityCheck::Status::NotSupported:
-    case librecelik::utils::SecurityCheck::Status::Skipped:
-        return QStringLiteral("#FFC107");
-    case librecelik::utils::SecurityCheck::Status::NotPerformed:
-        return QStringLiteral("#9E9E9E");
-    }
-    return QStringLiteral("#9E9E9E");
+    return librecelik::utils::statusColorHex(status);
 }
 
 QString SecurityStatusWidget::statusText(librecelik::utils::SecurityCheck::Status status) const
 {
-    switch (status) {
-    case librecelik::utils::SecurityCheck::Status::Passed:
-        return qtTrId("lc-emrtd-security-passed");
-    case librecelik::utils::SecurityCheck::Status::Failed:
-        return qtTrId("lc-emrtd-security-failed");
-    case librecelik::utils::SecurityCheck::Status::NotSupported:
-        return qtTrId("lc-emrtd-security-not-supported");
-    case librecelik::utils::SecurityCheck::Status::Skipped:
-        return qtTrId("lc-emrtd-security-skipped");
-    case librecelik::utils::SecurityCheck::Status::NotPerformed:
-        return qtTrId("lc-emrtd-security-not-performed");
-    }
-    return qtTrId("lc-emrtd-security-not-performed");
+    return librecelik::utils::localizedStatusText(status);
 }
 
 void SecurityStatusWidget::setSecurityStatus(const librecelik::utils::SecurityStatusModel& status)
@@ -228,7 +254,7 @@ void SecurityStatusWidget::changeEvent(QEvent* event)
 
 void SecurityStatusWidget::retranslateUi()
 {
-    section->setTitle(qtTrId("lc-emrtd-security-status"));
+    section->setTitle(qtTrId("lc-emrtd-security-status-travel-doc"));
     refreshSummaryRows();
     rebuildDetailRows();
 }

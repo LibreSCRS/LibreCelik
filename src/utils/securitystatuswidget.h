@@ -134,6 +134,25 @@ struct SecurityStatusModel
     return std::nullopt;
 }
 
+/// @brief Localized display text for a status.
+///
+/// Free rather than a member because two surfaces render a verdict now: this
+/// pane, and the compact strip an annex section carries. A second copy of the
+/// switch is how the two would drift into disagreeing about what NOT_PERFORMED
+/// is called.
+[[nodiscard]] QString localizedStatusText(SecurityCheck::Status status);
+
+/// @brief The dot colour a status is drawn with. Same reason as above.
+///
+/// NotPerformed is deliberately GREY, not red: a check nobody ran is neither a
+/// failure nor a pass, and painting it red would accuse the card of something.
+[[nodiscard]] QString statusColorHex(SecurityCheck::Status status);
+
+/// @brief One compact "label: status" row with a coloured dot.
+///
+/// Ownership passes to the caller's layout.
+[[nodiscard]] QWidget* makeStatusRow(const QString& label, SecurityCheck::Status status, QWidget* parent = nullptr);
+
 } // namespace librecelik::utils
 
 class SecurityStatusWidget : public QWidget

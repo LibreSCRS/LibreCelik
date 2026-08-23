@@ -179,6 +179,16 @@ bool isRetryableReadFailure(ErrorCode code)
     }
 }
 
+ReadFailureAction readFailureAction(bool pageIsSpinner, ErrorCode code)
+{
+    if (!pageIsSpinner) {
+        // Groups already streamed onto the page. A failure arriving now costs
+        // the holder data they can already read; leave it standing.
+        return ReadFailureAction::LeaveAlone;
+    }
+    return isRetryableReadFailure(code) ? ReadFailureAction::OfferRetry : ReadFailureAction::LatchAndDrop;
+}
+
 QString errorText(ErrorCode code, CallError call, const QString& msgKey, const QString& msgFallback)
 {
     // A whitespace-only agent message is not a message: non-empty to QString,

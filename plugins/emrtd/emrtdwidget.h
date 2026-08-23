@@ -7,7 +7,11 @@
 
 #include <LibreSCRS/AgentClient/Types.h>
 
+#include <QHash>
 #include <QList>
+#include <QString>
+
+#include <map>
 
 class CollapsibleSection;
 class QLabel;
@@ -37,6 +41,12 @@ public:
         return groups;
     }
 
+    /// The annex label table, exposed so a gate can COUNT it. A key with no
+    /// entry silently falls back to the plugin's English label, which is the
+    /// exact complaint this table answers, so "it renders" is not enough of a
+    /// check — the count is what catches an entry dropped later.
+    [[nodiscard]] static std::map<QString, QString> annexTranslationMapForTest();
+
 signals:
     void printRequested(const QList<LibreSCRS::AgentClient::FieldGroup>& groups);
 
@@ -45,6 +55,13 @@ protected:
 
 private:
     void buildShell();
+
+    /// Build (or find) the section for annex @p id, and flush any verdict that
+    /// arrived before it existed.
+    void addAnnexPersonal(const QString& id, const LibreSCRS::AgentClient::FieldGroup& group);
+    /// Attach @p group's verdict to annex @p id's section, or hold it until the
+    /// section exists.
+    void addAnnexSecurity(const QString& id, const LibreSCRS::AgentClient::FieldGroup& group);
 
     QList<LibreSCRS::AgentClient::FieldGroup> groups;
     QToolButton* printBtn = nullptr;
@@ -56,4 +73,10 @@ private:
     QLabel* photoLabel = nullptr;
     SecurityStatusWidget* securityStatusWidget = nullptr;
     bool noDataMessageShown = false;
+
+    // Keyed by annex id, never single members: the group keys are DERIVED from
+    // the annex's id precisely so two annexes on one card cannot collide, and a
+    // lone member here would hand that collision straight back.
+    QHash<QString, CollapsibleSection*> annexSections;
+    QHash<QString, LibreSCRS::AgentClient::FieldGroup> pendingAnnexVerdicts;
 };

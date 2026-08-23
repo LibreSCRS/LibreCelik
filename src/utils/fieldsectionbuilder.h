@@ -9,6 +9,8 @@
 
 #include <QString>
 
+#include <QStringList>
+
 #include <map>
 #include <set>
 
@@ -25,9 +27,18 @@ public:
     // shared client-side flatten rule drops them, so this renderer and the
     // other hosts' row renderers cannot drift).
     // hiddenFields: field keys to hide (e.g., foreigner-only fields when not foreigner).
+    //
+    // fieldOrder: preferred field-key order. Empty (the default) keeps delivery
+    // order, which is what every existing caller wants. It exists because
+    // delivery order is not a display order: identity crosses the wire as
+    // map-of-maps, so fields arrive sorted by KEY — an address rendered that way
+    // puts the street last and the apartment third. Keys outside the list keep
+    // their relative order AFTER every listed one, the same rule `stagedForBuild`
+    // applies to groups.
     static CollapsibleSection* build(const QString& title, const LibreSCRS::AgentClient::FieldGroup& group,
                                      const std::map<QString, QString>& translationMap,
-                                     const std::set<QString>& hiddenFields = {}, QWidget* parent = nullptr);
+                                     const std::set<QString>& hiddenFields = {}, QWidget* parent = nullptr,
+                                     const QStringList& fieldOrder = {});
 
     // Post-process: highlight fields whose date (dd.MM.yyyy) is in the past.
     static void highlightExpiredDates(CollapsibleSection* section, const LibreSCRS::AgentClient::FieldGroup& group,

@@ -989,9 +989,81 @@
         <source>Fuel tank capacity (W)</source>
         <translation>Запремина резервоара (W)</translation>
     </message>
-    <message id="lc-emrtd-security-status">
-        <source>Security Status</source>
-        <translation>Безбедносни статус</translation>
+    <message id="lc-annex-additional-data">
+        <source>Additional Personal Data</source>
+        <translation>Додатни лични подаци</translation>
+    </message>
+    <message id="lc-annex-address-label">
+        <source>Address</source>
+        <translation>Адреса</translation>
+    </message>
+    <message id="lc-annex-street">
+        <source>Street</source>
+        <translation>Улица</translation>
+    </message>
+    <message id="lc-annex-house-number">
+        <source>House Number</source>
+        <translation>Кућни број</translation>
+    </message>
+    <message id="lc-annex-house-letter">
+        <source>House Letter</source>
+        <translation>Слово</translation>
+    </message>
+    <message id="lc-annex-entrance">
+        <source>Entrance</source>
+        <translation>Улаз</translation>
+    </message>
+    <message id="lc-annex-floor">
+        <source>Floor</source>
+        <translation>Спрат</translation>
+    </message>
+    <message id="lc-annex-apartment-number">
+        <source>Apartment</source>
+        <translation>Стан</translation>
+    </message>
+    <message id="lc-annex-place">
+        <source>Place</source>
+        <translation>Место</translation>
+    </message>
+    <message id="lc-annex-community">
+        <source>Community</source>
+        <translation>Општина</translation>
+    </message>
+    <message id="lc-annex-state">
+        <source>State</source>
+        <translation>Држава</translation>
+    </message>
+    <message id="lc-annex-parent-given-name">
+        <source>Parent Given Name</source>
+        <translation>Име родитеља</translation>
+    </message>
+    <message id="lc-annex-community-of-birth">
+        <source>Community of Birth</source>
+        <translation>Општина рођења</translation>
+    </message>
+    <message id="lc-annex-state-of-birth">
+        <source>State of Birth</source>
+        <translation>Држава рођења</translation>
+    </message>
+    <message id="lc-annex-document-serial">
+        <source>Document Number</source>
+        <translation>Број документа</translation>
+    </message>
+    <message id="lc-annex-address-date">
+        <source>Address Date</source>
+        <translation>Датум промене адресе</translation>
+    </message>
+    <message id="lc-annex-integrity">
+        <source>Data Integrity</source>
+        <translation>Интегритет података</translation>
+    </message>
+    <message id="lc-annex-authenticity">
+        <source>Data Authenticity</source>
+        <translation>Аутентичност података</translation>
+    </message>
+    <message id="lc-emrtd-security-status-travel-doc">
+        <source>Travel Document Verification</source>
+        <translation>Провера података путне исправе</translation>
     </message>
     <message id="lc-emrtd-security-integrity">
         <source>Data Integrity</source>
@@ -1472,6 +1544,14 @@
     <message id="lc-card-unsupported-reader">
         <source>In reader: %1</source>
         <translation>У читачу: %1</translation>
+    </message>
+    <message id="lc-card-retry-title">
+        <source>The card was not read</source>
+        <translation>Картица није прочитана</translation>
+    </message>
+    <message id="lc-card-retry-button">
+        <source>Read the card again</source>
+        <translation>Покрени читање поново</translation>
     </message>
     <message id="lc-card-unsupported-interface-hint">
         <source>If the document has a second interface, try that one: a contact reader for its chip, or a contactless reader.</source>

@@ -15,7 +15,9 @@
 
 #include "agent/agentstatewidget.h"
 #include "agent/cardcontroller.h"
+#include "agent/cardretrypage.h"
 #include "agent/cardstatuspage.h"
+#include "utils/spinnerpage.h"
 #include "agent/errortext.h"
 #include "agent/optionalsections.h"
 #include "agent/plugintyperesolution.h"
@@ -31,6 +33,8 @@
 #include <QApplication>
 #include <QEvent>
 #include <QLabel>
+#include <QPushButton>
+#include <QSignalSpy>
 #include <QObject>
 #include <QString>
 #include <QStringList>
@@ -481,4 +485,105 @@ TEST_F(CardStatusPageTest, TheAtrIsShownAsLeadingBytesWithTheRestMarked)
     // An odd-length input (which the client contract does not produce) keeps
     // its trailing nibble rather than silently dropping it.
     EXPECT_EQ(atrSnippet(QStringLiteral("3B818")), QStringLiteral("3B 81 8"));
+}
+
+/// The retry page substitutes the reader name into a TRANSLATED template, so
+/// an untranslated run renders the bare catalog id and drops the name — the
+/// case below would then assert nothing about the fact it exists for. Reuses
+/// the status page's catalog install rather than standing up a second one.
+class CardRetryPageTest : public CardStatusPageTest
+{};
+
+// --- what the window does with a failed read --------------------------------
+//
+// The three-way decision, driven through the PRODUCTION helper: no test binary
+// links the window, so a decision left inside its signal handler is one no gate
+// can reach. Same reason requestOptionalSections and effectiveGuiPluginKey
+// exist.
+
+TEST_F(MainFlowTest, AReadThatProducedNothingAndCanBeRetriedOffersRetry)
+{
+    using namespace LibreSCRS::AgentClient;
+    using librecelik::agent::ReadFailureAction;
+    using librecelik::agent::readFailureAction;
+
+    // Still the spinner: nothing was rendered, and the holder can clear these.
+    EXPECT_EQ(readFailureAction(true, ErrorCode::EntryExpired), ReadFailureAction::OfferRetry);
+    EXPECT_EQ(readFailureAction(true, ErrorCode::CredentialWrong), ReadFailureAction::OfferRetry);
+    EXPECT_EQ(readFailureAction(true, ErrorCode::PrompterError), ReadFailureAction::OfferRetry);
+
+    // Still the spinner, but repeating cannot help: the retry-storm guard holds.
+    EXPECT_EQ(readFailureAction(true, ErrorCode::UnsupportedCard), ReadFailureAction::LatchAndDrop);
+    EXPECT_EQ(readFailureAction(true, ErrorCode::ParseError), ReadFailureAction::LatchAndDrop);
+    EXPECT_EQ(readFailureAction(true, ErrorCode::CommunicationError), ReadFailureAction::LatchAndDrop);
+
+    // A code this build cannot name stays latched: the guard opens only when
+    // someone classifies a failure deliberately.
+    EXPECT_EQ(readFailureAction(true, static_cast<ErrorCode>(9999)), ReadFailureAction::LatchAndDrop);
+}
+
+TEST_F(MainFlowTest, AFailureArrivingOverRenderedDataLeavesThePageStanding)
+{
+    using namespace LibreSCRS::AgentClient;
+    using librecelik::agent::ReadFailureAction;
+    using librecelik::agent::readFailureAction;
+
+    // Groups already streamed. Whatever the code, tearing the page down now
+    // would cost the holder data they can already read.
+    for (const ErrorCode code : {ErrorCode::EntryExpired, ErrorCode::UnsupportedCard, ErrorCode::CommunicationError}) {
+        EXPECT_EQ(readFailureAction(false, code), ReadFailureAction::LeaveAlone) << static_cast<int>(code);
+    }
+}
+
+TEST_F(CardRetryPageTest, TheRetryPageRendersItsReasonAndAsksForAnotherRead)
+{
+    librecelik::agent::CardRetryPage page(QStringLiteral("The entry window expired."), QStringLiteral("Reader <One>"));
+
+    // The reason is the only specific record of WHICH failure happened.
+    const auto* reason = page.findChild<QLabel*>(QStringLiteral("cardRetryReason"));
+    ASSERT_NE(reason, nullptr);
+    EXPECT_EQ(reason->text(), QStringLiteral("The entry window expired."));
+
+    // Angle brackets in a reader name must survive rather than be eaten as
+    // markup by the default AutoText.
+    const auto* readerLine = page.findChild<QLabel*>(QStringLiteral("cardRetryReader"));
+    ASSERT_NE(readerLine, nullptr);
+    EXPECT_TRUE(readerLine->text().contains(QStringLiteral("Reader <One>")));
+
+    auto* button = page.findChild<QPushButton*>(QStringLiteral("cardRetryButton"));
+    ASSERT_NE(button, nullptr);
+    QSignalSpy asked(&page, &librecelik::agent::CardRetryPage::retryRequested);
+    button->click();
+    EXPECT_EQ(asked.count(), 1);
+}
+
+// The page must not answer to isSpinner(): the streamed-group path replaces
+// whatever it finds a spinner with an empty plugin widget, so a retry page that
+// answered yes would be torn out by the next group to arrive.
+TEST_F(CardRetryPageTest, TheRetryPageIsNotASpinner)
+{
+    librecelik::agent::CardRetryPage page(QStringLiteral("reason"), QStringLiteral("reader"));
+    EXPECT_FALSE(librecelik::utils::isSpinner(&page));
+}
+
+// An empty reason leaves the headline to speak alone rather than showing a
+// blank row where an explanation belongs.
+TEST_F(CardRetryPageTest, TheRetryPageHidesAnEmptyReason)
+{
+    // isHidden(), NOT isVisible(). Neither page below is ever shown, so
+    // isVisible() is false for every child of both regardless of what the code
+    // does — an assertion on it stays green with the setVisible() call deleted.
+    // isHidden() reflects the explicit hide, so it can tell the two apart.
+    librecelik::agent::CardRetryPage empty(QString(), QStringLiteral("reader"));
+    const auto* emptyReason = empty.findChild<QLabel*>(QStringLiteral("cardRetryReason"));
+    ASSERT_NE(emptyReason, nullptr);
+    EXPECT_TRUE(emptyReason->isHidden());
+    EXPECT_TRUE(emptyReason->text().isEmpty());
+
+    // The other direction is what makes this a gate rather than half of one: a
+    // page WITH a reason must not hide the line that carries it.
+    librecelik::agent::CardRetryPage withReason(QStringLiteral("The entry window expired."), QStringLiteral("reader"));
+    const auto* shownReason = withReason.findChild<QLabel*>(QStringLiteral("cardRetryReason"));
+    ASSERT_NE(shownReason, nullptr);
+    EXPECT_FALSE(shownReason->isHidden());
 }

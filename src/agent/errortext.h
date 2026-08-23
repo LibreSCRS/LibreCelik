@@ -8,6 +8,8 @@
 #include <LibreSCRS/AgentClient/OperationPhase.h>
 #include <QString>
 
+#include <cstdint>
+
 namespace librecelik::agent {
 
 /// @brief Can repeating a card read that failed with @p code plausibly succeed?
@@ -25,6 +27,34 @@ namespace librecelik::agent {
 /// card this build does not support, data it cannot parse, a transport that
 /// failed — is latched.
 [[nodiscard]] bool isRetryableReadFailure(LibreSCRS::AgentClient::ErrorCode code);
+
+/// @brief What the window does with a card whose read just failed.
+///
+/// Three outcomes, because two were not enough. The window used to choose
+/// between dropping the card's page (right for a failure repeating cannot fix:
+/// it stops one failure becoming a retry storm) and doing NOTHING — and every
+/// failure the holder could actually clear fell into "nothing", leaving the
+/// page spinning under "confirm the access number in the system window" long
+/// after that window was gone, while the status bar said to try again and
+/// offered no way to.
+///
+/// So a recoverable failure now gets its own outcome: stop the spinner and
+/// stand there with a button.
+enum class ReadFailureAction : std::uint8_t {
+    LeaveAlone,   ///< The page already shows real card data; a late failure must not tear it down.
+    LatchAndDrop, ///< Nothing was rendered and repeating cannot help: drop the page, remember the card.
+    OfferRetry,   ///< Nothing was rendered but the holder can clear this: offer to read again.
+};
+
+/// @param pageIsSpinner Whether the card's page is still the read-in-progress
+///                      placeholder — i.e. the read produced nothing to show.
+/// @param code          The agent's taxonomy value for the failure.
+///
+/// Lives here rather than inside the window's signal handler for the reason
+/// `requestOptionalSections` and `effectiveGuiPluginKey` do: no test binary
+/// links the window, so a decision left in that handler is a decision no gate
+/// can reach.
+[[nodiscard]] ReadFailureAction readFailureAction(bool pageIsSpinner, LibreSCRS::AgentClient::ErrorCode code);
 
 /// Localized text for a failed operation. Resolution order, first match wins:
 ///

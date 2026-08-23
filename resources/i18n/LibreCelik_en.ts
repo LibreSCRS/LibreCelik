@@ -989,9 +989,81 @@
         <source>Fuel tank capacity (W)</source>
         <translation>Fuel tank capacity (W)</translation>
     </message>
-    <message id="lc-emrtd-security-status">
-        <source>Security Status</source>
-        <translation>Security Status</translation>
+    <message id="lc-annex-additional-data">
+        <source>Additional Personal Data</source>
+        <translation>Additional Personal Data</translation>
+    </message>
+    <message id="lc-annex-address-label">
+        <source>Address</source>
+        <translation>Address</translation>
+    </message>
+    <message id="lc-annex-street">
+        <source>Street</source>
+        <translation>Street</translation>
+    </message>
+    <message id="lc-annex-house-number">
+        <source>House Number</source>
+        <translation>House Number</translation>
+    </message>
+    <message id="lc-annex-house-letter">
+        <source>House Letter</source>
+        <translation>House Letter</translation>
+    </message>
+    <message id="lc-annex-entrance">
+        <source>Entrance</source>
+        <translation>Entrance</translation>
+    </message>
+    <message id="lc-annex-floor">
+        <source>Floor</source>
+        <translation>Floor</translation>
+    </message>
+    <message id="lc-annex-apartment-number">
+        <source>Apartment</source>
+        <translation>Apartment</translation>
+    </message>
+    <message id="lc-annex-place">
+        <source>Place</source>
+        <translation>Place</translation>
+    </message>
+    <message id="lc-annex-community">
+        <source>Community</source>
+        <translation>Community</translation>
+    </message>
+    <message id="lc-annex-state">
+        <source>State</source>
+        <translation>State</translation>
+    </message>
+    <message id="lc-annex-parent-given-name">
+        <source>Parent Given Name</source>
+        <translation>Parent Given Name</translation>
+    </message>
+    <message id="lc-annex-community-of-birth">
+        <source>Community of Birth</source>
+        <translation>Community of Birth</translation>
+    </message>
+    <message id="lc-annex-state-of-birth">
+        <source>State of Birth</source>
+        <translation>State of Birth</translation>
+    </message>
+    <message id="lc-annex-document-serial">
+        <source>Document Number</source>
+        <translation>Document Number</translation>
+    </message>
+    <message id="lc-annex-address-date">
+        <source>Address Date</source>
+        <translation>Address Date</translation>
+    </message>
+    <message id="lc-annex-integrity">
+        <source>Data Integrity</source>
+        <translation>Data Integrity</translation>
+    </message>
+    <message id="lc-annex-authenticity">
+        <source>Data Authenticity</source>
+        <translation>Data Authenticity</translation>
+    </message>
+    <message id="lc-emrtd-security-status-travel-doc">
+        <source>Travel Document Verification</source>
+        <translation>Travel Document Verification</translation>
     </message>
     <message id="lc-emrtd-security-integrity">
         <source>Data Integrity</source>
@@ -1472,6 +1544,14 @@
     <message id="lc-card-unsupported-reader">
         <source>In reader: %1</source>
         <translation>In reader: %1</translation>
+    </message>
+    <message id="lc-card-retry-title">
+        <source>The card was not read</source>
+        <translation>The card was not read</translation>
+    </message>
+    <message id="lc-card-retry-button">
+        <source>Read the card again</source>
+        <translation>Read the card again</translation>
     </message>
     <message id="lc-card-unsupported-interface-hint">
         <source>If the document has a second interface, try that one: a contact reader for its chip, or a contactless reader.</source>

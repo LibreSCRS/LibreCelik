@@ -3,7 +3,8 @@
 
 #include "librecelik.h"
 #include "aboutdialog.h"
-#include "agent/errortext.h" // isRetryableReadFailure
+#include "agent/cardretrypage.h"
+#include "agent/errortext.h" // readFailureAction
 #include "agent/agentstatewidget.h"
 #include "agent/cardcontroller.h"
 #include "agent/cardstatuspage.h"
@@ -50,7 +51,6 @@
 
 using librecelik::agent::AgentGateway;
 using librecelik::agent::CardController;
-using librecelik::agent::isRetryableReadFailure;
 using librecelik::agent::PresenceState;
 using librecelik::utils::isSpinner;
 using librecelik::utils::makeSpinnerPage;
@@ -467,27 +467,33 @@ void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
         applyPendingPki(cardId);
     });
     connect(controller, &CardController::errorOccurred, this,
-            [this, cardId](const QString& message, LibreSCRS::AgentClient::ErrorCode code) {
+            [this, cardId, controller](const QString& message, LibreSCRS::AgentClient::ErrorCode code) {
                 if (readerPages->page(cardId) == nullptr)
                     return; // a stale terminal for a card whose page is already gone
                 ui->statusbar->show();
                 ui->statusbar->showMessage(message);
-                // A failure while the page is still the spinner means the read never
-                // produced anything to show. Leaving the spinner turning would be a
-                // lie; the page goes and the window falls back to its empty state.
-                // The card is remembered as failed so the next roster event does not
-                // re-add it and re-run the read that just failed — a reader property
-                // change must not turn one failure into a retry storm against a card.
-                //
-                // But ONLY for a failure repeating cannot fix. Latching a recoverable
-                // one strands the holder: the entry window expiring leaves this very
-                // status bar saying "try again" while the page that would let them is
-                // gone, and nothing short of physically re-seating the card brings it
-                // back. Measured on a live agent — three expiries, three retries,
-                // reader gone.
-                if (isSpinner(readerPages->page(cardId)) && !isRetryableReadFailure(code)) {
+                // The three-way decision lives in the tested helper, not here:
+                // no test binary links this file, so a rule written inline is a
+                // rule no gate can reach (the requestOptionalSections pattern).
+                switch (librecelik::agent::readFailureAction(isSpinner(readerPages->page(cardId)), code)) {
+                case librecelik::agent::ReadFailureAction::LeaveAlone:
+                    break;
+                case librecelik::agent::ReadFailureAction::LatchAndDrop:
+                    // Nothing was rendered and repeating cannot help. The page
+                    // goes, and the card is remembered as failed so the next
+                    // roster event does not re-run the read that just failed —
+                    // a reader property change must not turn one failure into a
+                    // retry storm against a card.
                     failedReads.insert(cardId);
                     releaseCardPage(cardId);
+                    break;
+                case librecelik::agent::ReadFailureAction::OfferRetry:
+                    // Nothing was rendered, but the holder can clear this one.
+                    // NOT latched — that would strand them — and no longer left
+                    // spinning either: the spinner's text points at a system
+                    // window that is already gone.
+                    offerCardReadRetry(cardId, message);
+                    break;
                 }
             });
 
@@ -511,6 +517,44 @@ void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
         entry->second.tokenInfoAllowed = sections.tokenInfo;
         entry->second.credentialsAllowed = sections.credentials;
     }
+}
+
+void LibreCelik::offerCardReadRetry(const QString& cardId, const QString& message)
+{
+    auto* page = new librecelik::agent::CardRetryPage(message, readerNameForCard(cardId), this);
+    connect(page, &librecelik::agent::CardRetryPage::retryRequested, this, [this, cardId] {
+        // Re-resolved rather than captured: the controller is owned by the
+        // gateway, and the removal path releases it before this page goes. It
+        // cannot dangle today because both happen in one synchronous chain, but
+        // holding a raw reference makes that ordering load-bearing, and every
+        // other card verb in this file re-resolves.
+        CardController* controller = gateway->cardController(cardId);
+        if (controller == nullptr)
+            return; // the card left while its retry page was on screen
+
+        // Drop what the FAILED attempt streamed. Groups are buffered whenever
+        // the card's type has not resolved yet — which is exactly the
+        // multi-candidate card that reaches a pre-auth failure — and the buffer
+        // is drained only by cardTypeResolved, which a failed read never
+        // reaches. Retrying without this appends the second attempt's groups to
+        // the first attempt's, and the eventual replay renders every section
+        // twice. replaceCardWidget preserves this card's state map, which is the
+        // point; it preserves the stale buffer with it.
+        if (auto entry = cardState.find(cardId); entry != cardState.end())
+            entry->second.bufferedGroups.clear();
+
+        // Spinner FIRST, then the read. The controller may answer synchronously,
+        // and a second failure arriving before the spinner is up would find the
+        // retry page instead — decided as LeaveAlone, leaving a stale reason on
+        // screen for a read that has since failed again.
+        replaceCardWidget(cardId, makeSpinnerPage(qtTrId("lc-reading-card"), this));
+        controller->startRead();
+    });
+    // replaceCardWidget, never registerCardPage: the latter resets this card's
+    // state map, which is where requestOptionalSections recorded — once, at add
+    // time — whether this card may be asked for token info and credentials.
+    // Losing that silently drops both sections until the card is re-seated.
+    replaceCardWidget(cardId, page);
 }
 
 void LibreCelik::registerCardPage(const QString& cardId, QWidget* page)

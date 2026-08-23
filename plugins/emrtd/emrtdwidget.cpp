@@ -8,6 +8,9 @@
 #include "utils/iconutils.h"
 #include "utils/securitystatuswidget.h"
 
+#include <QGridLayout>
+#include <QStringList>
+
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QToolButton>
@@ -130,6 +133,85 @@ std::map<QString, QString> nationalTranslationMap()
     };
 }
 
+// --- the national annex -----------------------------------------------------
+//
+// A card may carry a signed annex of extra personal detail beside its
+// travel-document data. It arrives as two groups whose keys are DERIVED from
+// the annex's id — `annex.<id>.personal` and `annex.<id>.security` — so that a
+// card carrying two annexes cannot have one silently shadow the other.
+
+constexpr QLatin1StringView kAnnexPrefix{"annex."};
+
+/// The `<id>` in `annex.<id>.<suffix>`, or empty when @p key is not an annex
+/// key of exactly that shape.
+///
+/// Total by construction: the key is produced by the middleware, but this
+/// widget treats it as foreign input, and half-parsing a malformed one into a
+/// section with no id is worse than ignoring it.
+QString annexIdOf(const QString& key, QLatin1StringView suffix)
+{
+    if (!key.startsWith(kAnnexPrefix)) {
+        return {};
+    }
+    const QStringList parts = key.split(u'.');
+    if (parts.size() != 3 || parts.at(1).isEmpty() || parts.at(2) != suffix) {
+        return {};
+    }
+    return parts.at(1);
+}
+
+/// True for any annex group at all, well-formed or not — used only to stop a
+/// malformed annex key falling through to another branch.
+bool looksLikeAnnexKey(const QString& key)
+{
+    return key.startsWith(kAnnexPrefix);
+}
+
+/// Reading order for the annex's fields.
+///
+/// Identity crosses the wire as map-of-maps, so fields arrive sorted by KEY.
+/// For a group whose substance is an address that means "Apartment" third and
+/// "Street" last. This is the order a person reads an address in.
+QStringList annexFieldOrder()
+{
+    return {
+        QStringLiteral("address_label"),     QStringLiteral("street"),
+        QStringLiteral("house_number"),      QStringLiteral("house_letter"),
+        QStringLiteral("entrance"),          QStringLiteral("floor"),
+        QStringLiteral("apartment_number"),  QStringLiteral("place"),
+        QStringLiteral("community"),         QStringLiteral("state"),
+        QStringLiteral("parent_given_name"), QStringLiteral("community_of_birth"),
+        QStringLiteral("state_of_birth"),    QStringLiteral("document_serial"),
+        QStringLiteral("address_date"),
+    };
+}
+
+std::map<QString, QString> annexTranslationMap()
+{
+    return {
+        // Address, in reading order.
+        {QStringLiteral("address_label"), qtTrId("lc-annex-address-label")},
+        {QStringLiteral("street"), qtTrId("lc-annex-street")},
+        {QStringLiteral("house_number"), qtTrId("lc-annex-house-number")},
+        {QStringLiteral("house_letter"), qtTrId("lc-annex-house-letter")},
+        {QStringLiteral("entrance"), qtTrId("lc-annex-entrance")},
+        {QStringLiteral("floor"), qtTrId("lc-annex-floor")},
+        {QStringLiteral("apartment_number"), qtTrId("lc-annex-apartment-number")},
+        {QStringLiteral("place"), qtTrId("lc-annex-place")},
+        {QStringLiteral("community"), qtTrId("lc-annex-community")},
+        {QStringLiteral("state"), qtTrId("lc-annex-state")},
+        // Origin and document.
+        {QStringLiteral("parent_given_name"), qtTrId("lc-annex-parent-given-name")},
+        {QStringLiteral("community_of_birth"), qtTrId("lc-annex-community-of-birth")},
+        {QStringLiteral("state_of_birth"), qtTrId("lc-annex-state-of-birth")},
+        {QStringLiteral("document_serial"), qtTrId("lc-annex-document-serial")},
+        {QStringLiteral("address_date"), qtTrId("lc-annex-address-date")},
+        // The verdict's own two fields.
+        {QStringLiteral("annex_integrity"), qtTrId("lc-annex-integrity")},
+        {QStringLiteral("annex_authenticity"), qtTrId("lc-annex-authenticity")},
+    };
+}
+
 } // namespace
 
 EMRTDWidget::EMRTDWidget(const QList<FieldGroup>& cardGroups, QWidget* parent) : EMRTDWidget(parent)
@@ -176,6 +258,21 @@ void EMRTDWidget::addGroup(const FieldGroup& group)
 
     // Store the group for the fieldGroups() accessor
     groups.append(group);
+
+    // Annex groups are matched on a PREFIX, never on the full key: the id in
+    // the middle comes from the reader, and this issuer has already moved its
+    // applet identifier once. Binding to `annex.rs.` would make the next annex
+    // vanish exactly as both of these did before this branch existed.
+    if (looksLikeAnnexKey(key)) {
+        if (const QString id = annexIdOf(key, QLatin1StringView("personal")); !id.isEmpty()) {
+            addAnnexPersonal(id, group);
+        } else if (const QString secId = annexIdOf(key, QLatin1StringView("security")); !secId.isEmpty()) {
+            addAnnexSecurity(secId, group);
+        }
+        // Anything else under the prefix is a key this build does not
+        // understand: ignored, never guessed at.
+        return;
+    }
 
     if (key == QLatin1String("personal")) {
         auto* photoRow = new QHBoxLayout();
@@ -345,6 +442,73 @@ void EMRTDWidget::addGroup(const FieldGroup& group)
     }
 }
 
+std::map<QString, QString> EMRTDWidget::annexTranslationMapForTest()
+{
+    return annexTranslationMap();
+}
+
+void EMRTDWidget::addAnnexPersonal(const QString& id, const FieldGroup& group)
+{
+    // One section per annex id. A repeat would overwrite the tracked pointer and
+    // strand the first section in the layout: two identical headings on screen,
+    // and any later verdict for this id reaching only the second. The key is
+    // foreign input by this widget's own rule, so a duplicate is inside the
+    // threat model rather than outside it.
+    if (annexSections.contains(id)) {
+        return;
+    }
+
+    auto* section = librecelik::utils::FieldSectionBuilder::build(
+        qtTrId("lc-annex-additional-data"), group, annexTranslationMap(), {}, outerSection, annexFieldOrder());
+    annexSections.insert(id, section);
+    sectionLayout->addWidget(section);
+
+    // A verdict that arrived before its section did.
+    if (const auto pending = pendingAnnexVerdicts.constFind(id); pending != pendingAnnexVerdicts.constEnd()) {
+        const FieldGroup verdict = *pending;
+        pendingAnnexVerdicts.erase(pending);
+        addAnnexSecurity(id, verdict);
+    }
+}
+
+void EMRTDWidget::addAnnexSecurity(const QString& id, const FieldGroup& group)
+{
+    CollapsibleSection* section = annexSections.value(id, nullptr);
+    if (section == nullptr) {
+        // The section is not there yet (streamed reads deliver emission order).
+        // Hold it rather than rendering a verdict with no data behind it: on a
+        // failed verification the middleware emits ZERO groups, so a lone
+        // verdict never describes anything the reader can see.
+        pendingAnnexVerdicts.insert(id, group);
+        return;
+    }
+
+    auto* grid = qobject_cast<QGridLayout*>(section->layout());
+    if (grid == nullptr) {
+        return;
+    }
+
+    // Inside the section, spanning both columns. This placement IS the
+    // requirement: the travel document's passive authentication and this
+    // weaker verdict read as one guarantee when they share a flat list, and a
+    // reader then credits the annex with a check nobody ran.
+    // Bound to a local ONCE. Calling the factory twice in one expression builds
+    // two independent maps, so the iterator and the end() it is compared
+    // against belong to different containers — and both temporaries die at the
+    // semicolon, before the value is read.
+    const std::map<QString, QString> labels = annexTranslationMap();
+
+    int row = grid->rowCount();
+    for (const Field& field : group.fields) {
+        const auto status = librecelik::utils::statusFromString(field.value)
+                                .value_or(librecelik::utils::SecurityCheck::Status::NotPerformed);
+        const QString fallback = field.extra.value(QStringLiteral("labelFallback")).toString();
+        const auto label = labels.find(field.key);
+        const QString text = label != labels.end() ? label->second : (fallback.isEmpty() ? field.key : fallback);
+        grid->addWidget(librecelik::utils::makeStatusRow(text, status, section), row++, 0, 1, 2);
+    }
+}
+
 void EMRTDWidget::showNoDataMessage()
 {
     noDataMessageShown = true;
@@ -381,6 +545,11 @@ void EMRTDWidget::retranslateUi()
     photoLabel = nullptr;
     securityStatusWidget = nullptr;
     printBtn = nullptr;
+    // The sections were children of the torn-down shell; the pending map has to
+    // go with them, or a verdict already rendered would be replayed onto the
+    // rebuilt section a second time.
+    annexSections.clear();
+    pendingAnnexVerdicts.clear();
 
     buildShell();
     for (const auto& group : cachedGroups)

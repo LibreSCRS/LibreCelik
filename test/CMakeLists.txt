@@ -456,6 +456,44 @@ set_target_properties(eidwidget_test PROPERTIES AUTOMOC ON)
 gtest_discover_tests(eidwidget_test PROPERTIES ENVIRONMENT
     "QT_QPA_PLATFORM=offscreen")
 
+# --- EMRTDWidget annex coverage ---
+#
+# The annex sections and, above all, that the annex's own verdict renders
+# INSIDE the section it describes. Two verdicts on one screen (the travel
+# document's passive authentication and the annex's weaker one) read as a
+# single guarantee when they share a flat list. securitystatuswidget.cpp is
+# linked here and NOT in eidwidget_test: only this widget builds the pane.
+add_executable(emrtdwidget_annex_test
+    emrtdwidget_annex_test.cpp
+    ${CMAKE_SOURCE_DIR}/plugins/emrtd/emrtdwidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/cardheadercard.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pluginwidgetbase.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/securitystatuswidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
+)
+target_include_directories(emrtdwidget_annex_test PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/plugins
+)
+target_link_libraries(emrtdwidget_annex_test PRIVATE
+    GTest::gtest_main
+    Qt6::Core
+    Qt6::Widgets
+    LibreAgent::ClientQt
+)
+set_target_properties(emrtdwidget_annex_test PROPERTIES AUTOMOC ON)
+# The section-title cases compare RENDERED titles, so they need the real
+# catalog: with no translator, qtTrId() hands back the bare id and two sections
+# that collide in Serbian look distinct to the test.
+target_compile_definitions(emrtdwidget_annex_test PRIVATE
+    LIBRECELIK_TRANSLATIONS_DIR_DEFAULT="${CMAKE_BINARY_DIR}/src")
+add_dependencies(emrtdwidget_annex_test LibreCelik_lrelease)
+gtest_discover_tests(emrtdwidget_annex_test PROPERTIES ENVIRONMENT
+    "QT_QPA_PLATFORM=offscreen")
+
 # --- D9 runtime test: plugin card-widget retranslate coverage ---
 #
 # Compiles all 5 production plugin widgets into a single test binary
@@ -851,8 +889,10 @@ add_executable(AgentMainFlowTests
     ${CMAKE_SOURCE_DIR}/src/agent/cardcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/signcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/agentstatewidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/cardretrypage.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/cardstatuspage.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/errortext.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/spinnerpage.cpp
     ${CMAKE_SOURCE_DIR}/src/document/rs-eid/changepindlg.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/buttonbox.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp

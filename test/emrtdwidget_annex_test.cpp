@@ -315,6 +315,23 @@ TEST_F(EmrtdAnnexTest, AnnexFieldsFollowAddressOrderNotAlphabet)
     EXPECT_EQ(values, expected);
 }
 
+// The annex reader ships the address-change date as the card's raw ddMMyyyy
+// digits; the widget normalises them to dd.MM.yyyy for display (the middleware
+// never reformats signed card bytes).
+TEST_F(EmrtdAnnexTest, AddressDateRawDigitsRenderAsFormattedDate)
+{
+    EMRTDWidget widget(nullptr);
+    widget.addGroup(
+        group(QStringLiteral("annex.rs.personal"),
+              {textField(QStringLiteral("address_date"), QStringLiteral("Address Date"), QStringLiteral("06082016"))}));
+
+    const CollapsibleSection* section = sectionTitled(widget, qtTrId("lc-annex-additional-data"));
+    ASSERT_NE(section, nullptr);
+    const QStringList values = valuesUnder(*section);
+    ASSERT_EQ(values.size(), 1);
+    EXPECT_EQ(values.first(), QStringLiteral("06.08.2016"));
+}
+
 // --- the labels are the point of the exercise -------------------------------
 
 // A key with no entry falls back to the plugin's English label, which is the

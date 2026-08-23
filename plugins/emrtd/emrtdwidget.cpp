@@ -8,6 +8,7 @@
 #include "utils/iconutils.h"
 #include "utils/securitystatuswidget.h"
 
+#include <QDate>
 #include <QGridLayout>
 #include <QStringList>
 
@@ -184,6 +185,27 @@ QStringList annexFieldOrder()
         QStringLiteral("state_of_birth"),    QStringLiteral("document_serial"),
         QStringLiteral("address_date"),
     };
+}
+
+// The annex reader ships the address-change date as the card's raw ddMMyyyy
+// digits (e.g. "06082016"); the middleware never reformats signed card bytes,
+// so the display normalises it to dd.MM.yyyy here. A value that is already
+// formatted, or that parses as neither shape (a placeholder), is left
+// untouched — presentation-only, no data is invented.
+LibreSCRS::AgentClient::FieldGroup normalizeAnnexDates(LibreSCRS::AgentClient::FieldGroup group)
+{
+    for (LibreSCRS::AgentClient::Field& field : group.fields) {
+        if (field.key != QLatin1String("address_date") || field.value.isEmpty()) {
+            continue;
+        }
+        if (QDate::fromString(field.value, QStringLiteral("dd.MM.yyyy")).isValid()) {
+            continue; // already display-formatted
+        }
+        if (const QDate d = QDate::fromString(field.value, QStringLiteral("ddMMyyyy")); d.isValid()) {
+            field.value = d.toString(QStringLiteral("dd.MM.yyyy"));
+        }
+    }
+    return group;
 }
 
 std::map<QString, QString> annexTranslationMap()
@@ -458,8 +480,9 @@ void EMRTDWidget::addAnnexPersonal(const QString& id, const FieldGroup& group)
         return;
     }
 
-    auto* section = librecelik::utils::FieldSectionBuilder::build(
-        qtTrId("lc-annex-additional-data"), group, annexTranslationMap(), {}, outerSection, annexFieldOrder());
+    auto* section =
+        librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-annex-additional-data"), normalizeAnnexDates(group),
+                                                      annexTranslationMap(), {}, outerSection, annexFieldOrder());
     annexSections.insert(id, section);
     sectionLayout->addWidget(section);
 

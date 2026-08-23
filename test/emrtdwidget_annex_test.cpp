@@ -189,6 +189,77 @@ TEST_F(EmrtdAnnexTest, AnnexSecurityRendersInsideTheAnnexSection)
     EXPECT_TRUE(text.join(u'\n').contains(qtTrId("lc-annex-authenticity")));
 }
 
+// The wire delivers the verdict as a key-sorted map, so "annex_authenticity"
+// arrives before "annex_integrity". The pane must still render integrity first
+// — matching the travel document's own order — and under a scoped heading, so a
+// reader never credits the annex badges to the passport.
+TEST_F(EmrtdAnnexTest, AnnexVerdictRendersIntegrityFirstUnderItsOwnHeading)
+{
+    EMRTDWidget widget(nullptr);
+    widget.addGroup(annexPersonal(QStringLiteral("rs")));
+    // Wire order: authenticity BEFORE integrity (alphabetical by key).
+    widget.addGroup(group(
+        QStringLiteral("annex.rs.security"),
+        {textField(QStringLiteral("annex_authenticity"), QStringLiteral("Data Authenticity"),
+                   QStringLiteral("NOT_PERFORMED")),
+         textField(QStringLiteral("annex_integrity"), QStringLiteral("Data Integrity"), QStringLiteral("PASSED"))}));
+
+    const CollapsibleSection* section = sectionTitled(widget, qtTrId("lc-annex-additional-data"));
+    ASSERT_NE(section, nullptr);
+    const QStringList labels = labelsUnder(*section);
+
+    // The status rows render as "<label>: <status>", so match by prefix.
+    const auto indexStarting = [&labels](const QString& prefix) -> qsizetype {
+        for (qsizetype i = 0; i < labels.size(); ++i) {
+            if (labels.at(i).startsWith(prefix)) {
+                return i;
+            }
+        }
+        return -1;
+    };
+    const qsizetype heading = labels.indexOf(qtTrId("lc-annex-verification"));
+    const qsizetype integrity = indexStarting(qtTrId("lc-annex-integrity"));
+    const qsizetype authenticity = indexStarting(qtTrId("lc-annex-authenticity"));
+    ASSERT_GE(heading, 0) << "the annex verdict must sit under its own scoped heading";
+    ASSERT_GE(integrity, 0);
+    ASSERT_GE(authenticity, 0);
+    EXPECT_LT(heading, integrity) << "the heading must precede the verdict rows";
+    EXPECT_LT(integrity, authenticity)
+        << "integrity must render before authenticity, matching the travel-document pane";
+}
+
+// The shared wire vocabulary can grow: a security-group field outside the
+// pinned integrity/authenticity pair must still render — after the pair,
+// through the labelFallback path — never be silently dropped.
+TEST_F(EmrtdAnnexTest, UnknownSecurityFieldStillRendersAfterTheVerdictPair)
+{
+    EMRTDWidget widget(nullptr);
+    widget.addGroup(annexPersonal(QStringLiteral("rs")));
+    widget.addGroup(group(
+        QStringLiteral("annex.rs.security"),
+        {textField(QStringLiteral("annex_authenticity"), QStringLiteral("Data Authenticity"),
+                   QStringLiteral("NOT_PERFORMED")),
+         textField(QStringLiteral("annex_freshness"), QStringLiteral("Data Freshness"), QStringLiteral("PASSED")),
+         textField(QStringLiteral("annex_integrity"), QStringLiteral("Data Integrity"), QStringLiteral("PASSED"))}));
+
+    const CollapsibleSection* section = sectionTitled(widget, qtTrId("lc-annex-additional-data"));
+    ASSERT_NE(section, nullptr);
+    const QStringList labels = labelsUnder(*section);
+    const auto indexStarting = [&labels](const QString& prefix) -> qsizetype {
+        for (qsizetype i = 0; i < labels.size(); ++i) {
+            if (labels.at(i).startsWith(prefix)) {
+                return i;
+            }
+        }
+        return -1;
+    };
+    const qsizetype authenticity = indexStarting(qtTrId("lc-annex-authenticity"));
+    const qsizetype freshness = indexStarting(QStringLiteral("Data Freshness"));
+    ASSERT_GE(authenticity, 0);
+    ASSERT_GE(freshness, 0) << "a field outside the pinned pair must not be dropped";
+    EXPECT_LT(authenticity, freshness) << "unpinned fields follow the pinned pair";
+}
+
 TEST_F(EmrtdAnnexTest, AnnexSecurityArrivingFirstStillLandsInTheSection)
 {
     EMRTDWidget widget(nullptr);

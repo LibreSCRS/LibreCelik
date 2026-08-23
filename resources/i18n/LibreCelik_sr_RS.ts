@@ -1065,6 +1065,10 @@
         <source>Travel Document Verification</source>
         <translation>Провера података путне исправе</translation>
     </message>
+    <message id="lc-annex-verification">
+        <source>Additional Data Verification</source>
+        <translation>Провера додатних података</translation>
+    </message>
     <message id="lc-emrtd-security-integrity">
         <source>Data Integrity</source>
         <translation>Интегритет података</translation>

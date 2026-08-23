@@ -9,8 +9,11 @@
 #include "utils/securitystatuswidget.h"
 
 #include <QDate>
+#include <QFont>
 #include <QGridLayout>
 #include <QStringList>
+
+#include <algorithm>
 
 #include <QHBoxLayout>
 #include <QPainter>
@@ -521,14 +524,54 @@ void EMRTDWidget::addAnnexSecurity(const QString& id, const FieldGroup& group)
     // semicolon, before the value is read.
     const std::map<QString, QString> labels = annexTranslationMap();
 
+    // An empty group would leave the heading below describing nothing.
+    if (group.fields.isEmpty()) {
+        return;
+    }
+
     int row = grid->rowCount();
-    for (const Field& field : group.fields) {
+
+    // A scoped sub-heading so the badges below read as a verdict ABOUT the
+    // annex — parallel to the travel document's own "Travel Document
+    // Verification" title — rather than two more data rows the reader might
+    // credit to the passport. Bold, spanning both columns, with breathing room
+    // above.
+    auto* verdictHeading = new QLabel(qtTrId("lc-annex-verification"), section);
+    verdictHeading->setObjectName(QStringLiteral("annexVerdictHeading"));
+    QFont headingFont = verdictHeading->font();
+    headingFont.setBold(true);
+    verdictHeading->setFont(headingFont);
+    verdictHeading->setContentsMargins(0, 8, 0, 0);
+    grid->addWidget(verdictHeading, row++, 0, 1, 2);
+
+    const auto renderRow = [&](const Field& field) {
         const auto status = librecelik::utils::statusFromString(field.value)
                                 .value_or(librecelik::utils::SecurityCheck::Status::NotPerformed);
         const QString fallback = field.extra.value(QStringLiteral("labelFallback")).toString();
         const auto label = labels.find(field.key);
         const QString text = label != labels.end() ? label->second : (fallback.isEmpty() ? field.key : fallback);
         grid->addWidget(librecelik::utils::makeStatusRow(text, status, section), row++, 0, 1, 2);
+    };
+
+    // Fixed order — integrity then authenticity — matching the travel
+    // document's pane. The wire delivers the verdict as a key-sorted map, so
+    // "annex_authenticity" would otherwise sort ahead of "annex_integrity" and
+    // the two panes would disagree on order.
+    const QStringList pinned{QStringLiteral("annex_integrity"), QStringLiteral("annex_authenticity")};
+    for (const QString& key : pinned) {
+        const auto it =
+            std::find_if(group.fields.begin(), group.fields.end(), [&key](const Field& f) { return f.key == key; });
+        if (it != group.fields.end()) {
+            renderRow(*it);
+        }
+    }
+    // Every other field the wire ships in this group still renders — in
+    // delivery order, through the same labelFallback path — so the shared
+    // vocabulary can grow without this widget silently dropping rows.
+    for (const Field& field : group.fields) {
+        if (!pinned.contains(field.key)) {
+            renderRow(field);
+        }
     }
 }
 

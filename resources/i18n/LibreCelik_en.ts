@@ -1065,6 +1065,10 @@
         <source>Travel Document Verification</source>
         <translation>Travel Document Verification</translation>
     </message>
+    <message id="lc-annex-verification">
+        <source>Additional Data Verification</source>
+        <translation>Additional Data Verification</translation>
+    </message>
     <message id="lc-emrtd-security-integrity">
         <source>Data Integrity</source>
         <translation>Data Integrity</translation>

@@ -878,6 +878,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-annex-integrity");
     //% "Data Authenticity"
     QT_TRID_NOOP("lc-annex-authenticity");
+    //% "Additional Data Verification"
+    QT_TRID_NOOP("lc-annex-verification");
     //% "Travel Document Verification"
     QT_TRID_NOOP("lc-emrtd-security-status-travel-doc");
 

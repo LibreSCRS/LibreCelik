@@ -31,9 +31,9 @@
 *.out
 *.app
 
-# Build
+# Build (build-*/ also covers throwaway gate trees: build-gate/, build-asan/, ...)
 build/
-build-release*/
+build-*/
 CMakeLists.txt.user
 
 # Generated translation files (compiled from .ts by qt_add_translations at build time)

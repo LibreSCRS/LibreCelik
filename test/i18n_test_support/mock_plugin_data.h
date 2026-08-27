@@ -157,6 +157,16 @@ inline QList<LibreSCRS::AgentClient::FieldGroup> makeEmrtdMock()
             textField(QStringLiteral("issuing_state"), QStringLiteral("Issuing state"), QStringLiteral("USA")),
             dateField(QStringLiteral("date_of_expiry"), QStringLiteral("Expiry"), QStringLiteral("2030-01-01")),
         }));
+    // Presence keys per emrtdwidget.cpp::presenceTranslationMap(); the
+    // auth_method value is one of the plugin's closed set, so the localized
+    // value dictionary runs under this fixture too.
+    groups.append(group(
+        QStringLiteral("presence"),
+        {
+            textField(QStringLiteral("data_groups"), QStringLiteral("Data Groups"), QStringLiteral("DG1, DG2, DG14")),
+            textField(QStringLiteral("auth_method"), QStringLiteral("Authentication Method"),
+                      QStringLiteral("Chip Authentication")),
+        }));
     return groups;
 }
 

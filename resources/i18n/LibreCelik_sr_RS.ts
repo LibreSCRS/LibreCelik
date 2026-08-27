@@ -1117,6 +1117,26 @@
         <source>Authentication Method</source>
         <translation>Метод аутентификације</translation>
     </message>
+    <message id="lc-emrtd-auth-bac">
+        <source>BAC</source>
+        <translation>BAC</translation>
+    </message>
+    <message id="lc-emrtd-auth-pace-can">
+        <source>PACE (CAN)</source>
+        <translation>PACE (CAN)</translation>
+    </message>
+    <message id="lc-emrtd-auth-pace-mrz">
+        <source>PACE (MRZ)</source>
+        <translation>PACE (MRZ)</translation>
+    </message>
+    <message id="lc-emrtd-auth-chip">
+        <source>Chip Authentication</source>
+        <translation>Аутентификација чипа</translation>
+    </message>
+    <message id="lc-emrtd-auth-none">
+        <source>None (plain read)</source>
+        <translation>Без заштите (отворено читање)</translation>
+    </message>
     <message id="lc-emrtd-sex">
         <source>Sex</source>
         <translation>Пол</translation>

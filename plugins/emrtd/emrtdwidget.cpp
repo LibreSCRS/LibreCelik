@@ -129,6 +129,23 @@ std::map<QString, QString> presenceTranslationMap()
     };
 }
 
+/// The access-control methods the plugin names in the presence group, as a
+/// closed five-token value dictionary; an unknown method passes through
+/// verbatim (append-only wire). Keyed to the auth_method FIELD so data_groups
+/// — a machine list riding the same group — stays untouched.
+QString localizedAuthMethodValue(const QString& value)
+{
+    static const std::map<QString, const char*> tokens{
+        {QStringLiteral("BAC"), "lc-emrtd-auth-bac"},
+        {QStringLiteral("PACE (CAN)"), "lc-emrtd-auth-pace-can"},
+        {QStringLiteral("PACE (MRZ)"), "lc-emrtd-auth-pace-mrz"},
+        {QStringLiteral("Chip Authentication"), "lc-emrtd-auth-chip"},
+        {QStringLiteral("None (plain read)"), "lc-emrtd-auth-none"},
+    };
+    const auto it = tokens.find(value);
+    return it == tokens.end() ? value : qtTrId(it->second);
+}
+
 std::map<QString, QString> nationalTranslationMap()
 {
     return {
@@ -371,8 +388,16 @@ void EMRTDWidget::addGroup(const FieldGroup& group)
             sectionLayout->addWidget(extraSection);
         }
     } else if (key == QLatin1String("presence")) {
-        auto* presenceSection =
-            librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-emrtd-presence"), group, presenceTranslationMap());
+        // Localize the auth_method VALUE before the section is built — it is
+        // the plugin's English prose beside localized labels otherwise.
+        LibreSCRS::AgentClient::FieldGroup localized = group;
+        for (auto& field : localized.fields) {
+            if (field.key == QLatin1String("auth_method")) {
+                field.value = localizedAuthMethodValue(field.value);
+            }
+        }
+        auto* presenceSection = librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-emrtd-presence"), localized,
+                                                                              presenceTranslationMap());
         sectionLayout->addWidget(presenceSection);
     } else if (key == QLatin1String("portrait")) {
         // DG5 portrait image — similar to signature display

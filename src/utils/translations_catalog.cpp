@@ -910,6 +910,16 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-emrtd-data-groups");
     //% "Authentication Method"
     QT_TRID_NOOP("lc-emrtd-auth-method");
+    //% "BAC"
+    QT_TRID_NOOP("lc-emrtd-auth-bac");
+    //% "PACE (CAN)"
+    QT_TRID_NOOP("lc-emrtd-auth-pace-can");
+    //% "PACE (MRZ)"
+    QT_TRID_NOOP("lc-emrtd-auth-pace-mrz");
+    //% "Chip Authentication"
+    QT_TRID_NOOP("lc-emrtd-auth-chip");
+    //% "None (plain read)"
+    QT_TRID_NOOP("lc-emrtd-auth-none");
     //% "Sex"
     QT_TRID_NOOP("lc-emrtd-sex");
     //% "Portrait"

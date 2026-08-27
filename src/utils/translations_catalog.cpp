@@ -1019,7 +1019,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Signing complete: %1 succeeded, %2 failed"
     QT_TRID_NOOP("lc-sign-complete");
     //% "You will confirm and enter your PIN in the system dialog %n times."
-    QT_TRID_NOOP("lc-sign-consent-hint");
+    QT_TRID_N_NOOP("lc-sign-consent-hint");
     //% "OK: %1 → %2"
     QT_TRID_NOOP("lc-sign-ok");
     //% "Previous"
@@ -1059,7 +1059,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "One signing run takes at most %1 files. The files beyond that were not added."
     QT_TRID_NOOP("lc-sign-too-many-files");
     //% "Each file is confirmed separately — %n confirmations."
-    QT_TRID_NOOP("lc-sign-sequential-notice");
+    QT_TRID_N_NOOP("lc-sign-sequential-notice");
     //% "Select a file and press Delete to remove it"
     QT_TRID_NOOP("lc-sign-filelist-tooltip");
 

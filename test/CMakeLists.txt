@@ -945,3 +945,14 @@ target_link_libraries(ReaderPagesTests PRIVATE
 )
 set_target_properties(ReaderPagesTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(ReaderPagesTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# The i18n audit ran only in CI while a documented lupdate run could quietly
+# strip the Serbian plural forms on a developer machine — the numerus guard
+# (dimension D9) must fail the LOCAL gate too, so the audit is a ctest. The
+# tool exits 1 on any non-allowlisted finding.
+find_package(Python3 COMPONENTS Interpreter)
+if(Python3_FOUND)
+    add_test(NAME I18nAudit
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/i18n_audit.py --strict)
+    set_tests_properties(I18nAudit PROPERTIES TIMEOUT 120)
+endif()

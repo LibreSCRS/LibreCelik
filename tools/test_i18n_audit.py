@@ -387,6 +387,128 @@ class TestD8:
 
 
 # --------------------------------------------------------------------------
+# D9 — numerus discipline (plural-aware declarations + .ts plural forms)
+# --------------------------------------------------------------------------
+
+
+class TestD9:
+    def _repo(
+        self,
+        tmp_path,
+        catalog_body: str,
+        en_messages: str = "",
+        sr_messages: str = "",
+    ) -> Path:
+        repo = _materialise(tmp_path, {})
+        (repo / "src" / "utils" / "translations_catalog.cpp").write_text(
+            "// SPDX-License-Identifier: GPL-3.0-or-later\n"
+            "static void _translationsCatalog() {\n" + catalog_body + "}\n",
+            encoding="utf-8",
+        )
+        (repo / "resources" / "i18n" / "LibreCelik_en.ts").write_text(
+            EMPTY_TS.format(lang="en_US", messages=en_messages), encoding="utf-8"
+        )
+        (repo / "resources" / "i18n" / "LibreCelik_sr_RS.ts").write_text(
+            EMPTY_TS.format(lang="sr_RS", messages=sr_messages), encoding="utf-8"
+        )
+        return repo
+
+    def test_percent_n_source_with_singular_noop_is_flagged(self, tmp_path):
+        # The exact defect that shipped: lupdate reads the singular NOOP and
+        # strips ("Removed plural forms") the hand-maintained numerus entries.
+        repo = self._repo(
+            tmp_path,
+            '    //% "Each file is confirmed separately — %n confirmations."\n'
+            '    QT_TRID_NOOP("lc-seq");\n',
+        )
+        rc, fs = _run(repo, dims=["D9"])
+        assert rc == 1
+        assert any(f.dim == "D9" and "lc-seq" in f.message for f in fs)
+
+    def test_percent_n_source_with_plural_noop_is_clean(self, tmp_path):
+        en = (
+            '    <message numerus="yes" id="lc-seq">\n'
+            "        <source>— %n confirmations.</source>\n"
+            "        <translation>\n"
+            "            <numerusform>— %n confirmation.</numerusform>\n"
+            "            <numerusform>— %n confirmations.</numerusform>\n"
+            "        </translation>\n"
+            "    </message>"
+        )
+        sr = (
+            '    <message numerus="yes" id="lc-seq">\n'
+            "        <source>— %n confirmations.</source>\n"
+            "        <translation>\n"
+            "            <numerusform>— %n потврда.</numerusform>\n"
+            "            <numerusform>— %n потврде.</numerusform>\n"
+            "            <numerusform>— %n потврда.</numerusform>\n"
+            "        </translation>\n"
+            "    </message>"
+        )
+        repo = self._repo(
+            tmp_path,
+            '    //% "— %n confirmations."\n    QT_TRID_N_NOOP("lc-seq");\n',
+            en_messages=en,
+            sr_messages=sr,
+        )
+        rc, fs = _run(repo, dims=["D9"])
+        assert rc == 0, [f.__dict__ for f in fs]
+
+    def test_plural_noop_id_counts_as_catalog_entry_for_d5(self, tmp_path):
+        # Regression guard: switching a declaration NOOP → N_NOOP must not
+        # make D5 report the id as missing from translations_catalog.cpp.
+        files = {"src/foo/bar.cpp": 'void f() { auto x = qtTrId("lc-seq"); }\n'}
+        repo = _materialise(tmp_path, files, ids_in_catalog=["lc-seq"])
+        (repo / "src" / "utils" / "translations_catalog.cpp").write_text(
+            "static void _translationsCatalog() {\n"
+            '    //% "%n things"\n'
+            '    QT_TRID_N_NOOP("lc-seq");\n'
+            "}\n",
+            encoding="utf-8",
+        )
+        rc, fs = _run(repo, dims=["D5"])
+        assert rc == 0, [f.__dict__ for f in fs]
+
+    def test_ts_percent_n_without_numerus_is_flagged(self, tmp_path):
+        # The post-destruction state: source still says %n but the message
+        # lost its numerus="yes" (what the destructive lupdate leaves behind).
+        en = (
+            '    <message id="lc-seq">\n'
+            "        <source>— %n confirmations.</source>\n"
+            '        <translation type="unfinished"></translation>\n'
+            "    </message>"
+        )
+        repo = self._repo(
+            tmp_path,
+            '    //% "— %n confirmations."\n    QT_TRID_N_NOOP("lc-seq");\n',
+            en_messages=en,
+        )
+        rc, fs = _run(repo, dims=["D9"])
+        assert rc == 1
+        assert any(f.dim == "D9" and "numerus" in f.message for f in fs)
+
+    def test_sr_numerus_with_too_few_forms_is_flagged(self, tmp_path):
+        # Serbian needs three plural forms; a collapse to one is a loss even
+        # when numerus="yes" survives.
+        sr = (
+            '    <message numerus="yes" id="lc-seq">\n'
+            "        <source>— %n confirmations.</source>\n"
+            "        <translation>\n"
+            "            <numerusform>— %n потврда.</numerusform>\n"
+            "        </translation>\n"
+            "    </message>"
+        )
+        repo = self._repo(
+            tmp_path,
+            '    //% "— %n confirmations."\n    QT_TRID_N_NOOP("lc-seq");\n',
+            sr_messages=sr,
+        )
+        rc, fs = _run(repo, dims=["D9"])
+        assert rc == 1
+        assert any(f.dim == "D9" and "numerusform" in f.message for f in fs)
+
+
+# --------------------------------------------------------------------------
 # Allowlist syntax
 # --------------------------------------------------------------------------
 

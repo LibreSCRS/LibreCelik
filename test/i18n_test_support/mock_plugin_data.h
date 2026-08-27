@@ -216,6 +216,14 @@ inline QList<LibreSCRS::AgentClient::FieldGroup> makePivMock()
                   textField(QStringLiteral("serialNumber"), QStringLiteral("Serial"), QStringLiteral("123456")),
                   textField(QStringLiteral("issuerId"), QStringLiteral("Issuer"), QStringLiteral("01234")),
               }));
+    // Discovery keys per pivwidget.cpp::discoveryTranslationMap(). Without
+    // this group the retranslate test never builds the discovery section, so
+    // its title and field label sit outside every snapshot.
+    groups.append(group(
+        QStringLiteral("discovery"),
+        {
+            textField(QStringLiteral("pinPolicy"), QStringLiteral("PIN policy"), QStringLiteral("App PIN preferred")),
+        }));
     return groups;
 }
 

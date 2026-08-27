@@ -6,7 +6,7 @@
 See tools/README-i18n-audit.md for the audit design and remediation
 patterns.
 
-Detects six classes of i18n retranslate bug from source + .ts files:
+Detects seven classes of i18n retranslate bug from source + .ts files:
 
     D1 — class uses qtTrId() but lacks retranslateUi() or
          changeEvent(LanguageChange).
@@ -17,6 +17,10 @@ Detects six classes of i18n retranslate bug from source + .ts files:
     D6 — .ts <message id="..."> with no source-file consumer.
     D8 — setToolTip / setAccessibleName / setStatusTip / setWhatsThis
          called with qtTrId outside retranslateUi closure.
+    D9 — numerus discipline: a `//%` source with %n declared via the
+         singular QT_TRID_NOOP (lupdate then strips the plural forms),
+         or a .ts message whose source has %n but is not numerus="yes"
+         with the language's full numerusform count (en 2, sr 3).
 
 Exit codes:
 
@@ -47,7 +51,7 @@ SCHEMA_VERSION = 1
 # Data model
 # --------------------------------------------------------------------------
 
-ALL_DIMS: tuple[str, ...] = ("D1", "D2", "D3", "D5", "D6", "D8")
+ALL_DIMS: tuple[str, ...] = ("D1", "D2", "D3", "D5", "D6", "D8", "D9")
 
 SEVERITY: Mapping[str, str] = {
     "D1": "high",
@@ -56,6 +60,7 @@ SEVERITY: Mapping[str, str] = {
     "D5": "medium",
     "D6": "low",
     "D8": "medium",
+    "D9": "high",
 }
 
 FIX_HINTS: Mapping[str, str] = {
@@ -83,6 +88,12 @@ FIX_HINTS: Mapping[str, str] = {
     "D8": (
         "move setToolTip/setAccessibleName/setStatusTip/setWhatsThis "
         "into retranslateUi() (or a same-class helper reachable from it)"
+    ),
+    "D9": (
+        "declare a %n source with QT_TRID_N_NOOP (never QT_TRID_NOOP) and "
+        "keep numerus=\"yes\" translations with the language's full "
+        "numerusform count; rerun lupdate only after the declaration is "
+        "plural-aware"
     ),
 }
 
@@ -119,7 +130,11 @@ _INLINE_ALLOWLIST_RE = re.compile(r"//\s*i18n-audit:\s*ignore\s+(D\d+),\s*(.+?)\
 
 _QTTRID_LITERAL_RE = re.compile(r'\bqtTrId\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*[,)]')
 _QTTRID_ANY_RE = re.compile(r"\bqtTrId\(\s*([^)]*?)\)")
-_QT_TRID_NOOP_RE = re.compile(r'\bQT_TRID_NOOP\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*\)')
+# Both the singular and the plural (QT_TRID_N_NOOP) declaration register an
+# id in the catalog; treating only the singular form as a catalog entry made
+# D5 report every id the moment its declaration went plural-aware.
+_QT_TRID_NOOP_RE = re.compile(r'\bQT_TRID_(?:N_)?NOOP\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*\)')
+_QT_TRID_NOOP_ANY_RE = re.compile(r"\bQT_TRID_(?:N_)?NOOP\(\s*([^)]*?)\)")
 
 # D3 patterns
 _D3_INLINE_STATIC_RE = re.compile(
@@ -386,7 +401,7 @@ def _scan_callsites(file_str: str, body_text: str, base_line: int) -> tuple[list
             "if", "for", "while", "switch", "return", "sizeof",
             "static_cast", "dynamic_cast", "reinterpret_cast", "const_cast",
             "qtTrId", "QString", "qDebug", "qWarning", "qInfo", "qCritical",
-            "qFatal", "QT_TRID_NOOP", "Q_EMIT", "emit", "Q_UNUSED",
+            "qFatal", "QT_TRID_NOOP", "QT_TRID_N_NOOP", "Q_EMIT", "emit", "Q_UNUSED",
             "Q_ASSERT", "Q_OBJECT",
         }:
             continue
@@ -436,7 +451,7 @@ def _scan_callsites_with_originals(
             "if", "for", "while", "switch", "return", "sizeof",
             "static_cast", "dynamic_cast", "reinterpret_cast", "const_cast",
             "qtTrId", "QString", "qDebug", "qWarning", "qInfo", "qCritical",
-            "qFatal", "QT_TRID_NOOP", "Q_EMIT", "emit", "Q_UNUSED",
+            "qFatal", "QT_TRID_NOOP", "QT_TRID_N_NOOP", "Q_EMIT", "emit", "Q_UNUSED",
             "Q_ASSERT", "Q_OBJECT", "tr",
         }:
             continue
@@ -907,10 +922,7 @@ def _catalog_noop_ids(catalog_path: Path) -> set[str]:
     # Anchor: each NOOP callsite must remain visible after comment/string
     # stripping. Recover the literal id from the un-stripped text at the
     # matching offset.
-    noop_any_re = re.compile(r"\bQT_TRID_NOOP\(\s*([^)]*?)\)")
-    for m in noop_any_re.finditer(stripped):
-        if stripped[m.start() : m.start() + len("QT_TRID_NOOP(")] != "QT_TRID_NOOP(":
-            continue
+    for m in _QT_TRID_NOOP_ANY_RE.finditer(stripped):
         lm = _QT_TRID_NOOP_RE.match(text, m.start())
         if lm is not None:
             out.add(lm.group(1))
@@ -953,10 +965,7 @@ def _all_noop_ids_in_sources(
         except (OSError, UnicodeDecodeError):
             continue
         stripped = strip_comments_and_strings(text)
-        noop_any_re = re.compile(r"\bQT_TRID_NOOP\(\s*([^)]*?)\)")
-        for m in noop_any_re.finditer(stripped):
-            if stripped[m.start() : m.start() + len("QT_TRID_NOOP(")] != "QT_TRID_NOOP(":
-                continue
+        for m in _QT_TRID_NOOP_ANY_RE.finditer(stripped):
             lm = _QT_TRID_NOOP_RE.match(text, m.start())
             if lm is not None:
                 ids.add(lm.group(1))
@@ -1135,6 +1144,117 @@ def detect_d6(
                 f"references it"
             ),
         )
+    return out
+
+
+# --------------------------------------------------------------------------
+# Numerus discipline (D9)
+# --------------------------------------------------------------------------
+
+# `//% "..."` metadata line, as written in translations_catalog.cpp.
+_TRID_META_RE = re.compile(r'^\s*//%\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*$')
+_SINGULAR_NOOP_LINE_RE = re.compile(r'^\s*QT_TRID_NOOP\(\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*\)')
+
+# Plural-form counts for the languages the project ships. Key is the language
+# prefix of the TS root's `language` attribute ("en_US" → "en").
+_NPLURALS_BY_LANG = {"en": 2, "sr": 3}
+
+
+def detect_d9(catalog_cpp: Path, ts_files: Sequence[Path], rel_to: Path) -> list[Finding]:
+    """D9 — numerus discipline.
+
+    (a) In the NOOP catalog: a `//% "...%n..."` source declared on the next
+        line with the singular QT_TRID_NOOP. lupdate trusts the declaration,
+        so the next run demotes the message and strips its hand-maintained
+        plural forms ("Removed plural forms").
+    (b) In each .ts file: a message whose <source> contains %n must be
+        numerus="yes" and carry the language's full numerusform count —
+        the post-destruction state stays red until the forms are restored.
+    """
+
+    out: list[Finding] = []
+
+    def rel(p: Path) -> str:
+        return str(p.relative_to(rel_to)) if rel_to in p.parents else str(p)
+
+    # (a) catalog declarations
+    try:
+        lines = catalog_cpp.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        lines = []
+    for i, line in enumerate(lines):
+        meta = _TRID_META_RE.match(line)
+        if meta is None or "%n" not in meta.group(1):
+            continue
+        # The declaration is the next non-blank line.
+        j = i + 1
+        while j < len(lines) and not lines[j].strip():
+            j += 1
+        if j >= len(lines):
+            continue
+        noop = _SINGULAR_NOOP_LINE_RE.match(lines[j])
+        if noop is not None:
+            _emit(
+                out,
+                dim="D9",
+                file=rel(catalog_cpp),
+                line=j + 1,
+                cls=None,
+                message=(
+                    f"\"{noop.group(1)}\": source metadata carries %n but the "
+                    f"declaration is the singular QT_TRID_NOOP — the next "
+                    f"lupdate run strips the plural forms; use QT_TRID_N_NOOP"
+                ),
+            )
+
+    # (b) .ts plural forms
+    for ts in ts_files:
+        if not ts.is_file():
+            continue
+        try:
+            tree = ET.parse(ts)
+            raw = ts.read_text(encoding="utf-8")
+        except (ET.ParseError, OSError, UnicodeDecodeError):
+            continue
+        lang = tree.getroot().attrib.get("language", "")
+        expected = _NPLURALS_BY_LANG.get(lang.split("_")[0].split("@")[0], 2)
+
+        def line_of(mid: str) -> int:
+            idx = raw.find(f'id="{mid}"')
+            return raw.count("\n", 0, idx) + 1 if idx != -1 else 1
+
+        for msg in tree.getroot().iter("message"):
+            source = msg.findtext("source") or ""
+            if "%n" not in source:
+                continue
+            mid = msg.attrib.get("id", "?")
+            if msg.attrib.get("numerus") != "yes":
+                _emit(
+                    out,
+                    dim="D9",
+                    file=rel(ts),
+                    line=line_of(mid),
+                    cls=None,
+                    message=(
+                        f"message \"{mid}\": source contains %n but the entry "
+                        f"is not numerus=\"yes\" — plural handling lost"
+                    ),
+                )
+                continue
+            forms = msg.findall("./translation/numerusform")
+            if len(forms) < expected:
+                _emit(
+                    out,
+                    dim="D9",
+                    file=rel(ts),
+                    line=line_of(mid),
+                    cls=None,
+                    message=(
+                        f"message \"{mid}\": {len(forms)} numerusform(s) but "
+                        f"language \"{lang}\" needs {expected} — plural forms "
+                        f"were stripped or never written"
+                    ),
+                )
     return out
 
 
@@ -1329,6 +1449,8 @@ def run_audit(
         findings.extend(detect_d5(classes, all_files, rel_to, catalog))
     if "D6" in dims:
         findings.extend(detect_d6(classes, all_files, rel_to, catalog, catalog_cpp))
+    if "D9" in dims:
+        findings.extend(detect_d9(catalog_cpp, [en_ts, sr_ts], rel_to))
 
     if diff_files is not None:
         diff_set = {

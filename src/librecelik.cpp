@@ -848,5 +848,10 @@ void LibreCelik::showAboutDialog()
 
 LibreCelik::~LibreCelik()
 {
+#ifdef Q_OS_MACOS
+    // Runs while Cocoa and the file-scope strings the block reads are alive;
+    // static destruction order is undefined.
+    macosRemoveAppMenuObserver();
+#endif
     delete ui;
 }

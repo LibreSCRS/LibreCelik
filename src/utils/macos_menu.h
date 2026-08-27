@@ -20,4 +20,7 @@ struct MacOsAppMenuStrings
 };
 
 void macosRetranslateAppMenu(const MacOsAppMenuStrings& strings);
+
+/// @brief Balances the observer macosRetranslateAppMenu installs lazily; call while Cocoa is still alive.
+void macosRemoveAppMenuObserver();
 #endif

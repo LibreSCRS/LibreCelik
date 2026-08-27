@@ -86,3 +86,17 @@ void macosRetranslateAppMenu(const MacOsAppMenuStrings& strings)
                                                                    }];
     }
 }
+
+void macosRemoveAppMenuObserver()
+{
+    if (s_observer == nil)
+        return;
+
+    // Any notification already enqueued on the main queue can still run after
+    // removeObserver:; the sole caller today is the window destructor, which runs
+    // after the event loop has ended, so the queue never spins again. Clearing the
+    // handle keeps installation idempotent — macosRetranslateAppMenu installs only
+    // when s_observer is nil, so a later retranslation re-installs cleanly.
+    [[NSNotificationCenter defaultCenter] removeObserver:s_observer];
+    s_observer = nil;
+}

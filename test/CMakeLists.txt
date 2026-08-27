@@ -13,6 +13,10 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 include(FetchContent)
+# googletest's own install rules default ON and would leak libgtest*.a and
+# include/gtest/ into the production prefix; it is a test dependency, not a
+# shipped artefact.
+set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(googletest URL https://github.com/google/googletest/archive/refs/tags/v1.16.0.zip DOWNLOAD_EXTRACT_TIMESTAMP ON)
 FetchContent_MakeAvailable(googletest)
 

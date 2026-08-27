@@ -16,6 +16,12 @@
 #define LIBRECELIK_SYSTEM_NAME "@CMAKE_SYSTEM_NAME@"
 #define LIBRECELIK_GUI_PLUGIN_DIR "@LIBRECELIK_GUI_PLUGIN_DIR@"
 
+// Where the installed tree keeps libraries, relative to the prefix — the
+// same value that drives the install rules and the $ORIGIN RPATH, so the
+// runtime plugin resolver walks the tree the install actually wrote
+// ("lib64" on some distros, never a hardcoded "lib").
+#define LIBRECELIK_INSTALL_LIBDIR "@CMAKE_INSTALL_LIBDIR@"
+
 #cmakedefine LIBRECELIK_SIGNING_ENABLED
 
 #endif // CONFIG_H_IN

@@ -27,3 +27,19 @@ librecelik_warnings_as_errors(
     emrtd-gui-plugin
     piv-gui-plugin
 )
+
+# The application resolves gui-plugins/ next to its own lib dir at runtime;
+# an installed tree must actually put the plugins there, or a prefix install
+# starts with no card pages at all. One rule for all six first-party plugins,
+# in the same spot that already treats them as a set.
+include(GNUInstallDirs)
+if(UNIX AND NOT APPLE)
+    install(TARGETS
+        rs-eid-gui-plugin
+        eu-vrc-gui-plugin
+        rs-health-gui-plugin
+        token-gui-plugin
+        emrtd-gui-plugin
+        piv-gui-plugin
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/gui-plugins)
+endif()

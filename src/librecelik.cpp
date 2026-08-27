@@ -129,8 +129,10 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
         // .app/Contents/MacOS/../PlugIns/<subdir>
         QDir bundleDir(appDir.filePath("../PlugIns/" + subdir));
 #else
-        // AppImage: usr/bin/../lib/<subdir>
-        QDir bundleDir(appDir.filePath("../lib/" + subdir));
+        // AppImage / prefix install: usr/bin/../<libdir>/<subdir> — the same
+        // libdir the install rules and the RPATH use ("lib64" on some
+        // distros), so the resolver walks the tree the install wrote.
+        QDir bundleDir(appDir.filePath(QStringLiteral("../" LIBRECELIK_INSTALL_LIBDIR "/") + subdir));
 #endif
         if (bundleDir.exists())
             return bundleDir.absolutePath();

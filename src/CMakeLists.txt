@@ -13,6 +13,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets LinguistTools PrintSupport)
 find_package(Qt6 REQUIRED COMPONENTS Widgets LinguistTools PrintSupport)
 
+# Before configure_file: config.h bakes CMAKE_INSTALL_LIBDIR so ONE value
+# drives the install rules, the $ORIGIN RPATH and the runtime plugin
+# resolver — included later, the variable would configure in empty.
+include(GNUInstallDirs)
+
 configure_file (
     "${PROJECT_SOURCE_DIR}/src/config.h.in"
     "${PROJECT_BINARY_DIR}/src/config.h"
@@ -249,7 +254,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
-include(GNUInstallDirs)
 install(TARGETS ${PROJECT_NAME}
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

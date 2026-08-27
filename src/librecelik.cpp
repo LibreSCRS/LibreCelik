@@ -508,15 +508,6 @@ void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
     } else {
         onIdentityReady(cardId, {});
     }
-
-    // Feature-gated verbs, decided by the ONE Task-8 helper so the decision the
-    // CI test drives is the decision production makes.
-    const librecelik::agent::OptionalSections sections =
-        librecelik::agent::requestOptionalSections(*gateway, *controller);
-    if (auto entry = cardState.find(cardId); entry != cardState.end()) {
-        entry->second.tokenInfoAllowed = sections.tokenInfo;
-        entry->second.credentialsAllowed = sections.credentials;
-    }
 }
 
 void LibreCelik::offerCardReadRetry(const QString& cardId, const QString& message)
@@ -551,9 +542,11 @@ void LibreCelik::offerCardReadRetry(const QString& cardId, const QString& messag
         controller->startRead();
     });
     // replaceCardWidget, never registerCardPage: the latter resets this card's
-    // state map, which is where requestOptionalSections recorded — once, at add
-    // time — whether this card may be asked for token info and credentials.
-    // Losing that silently drops both sections until the card is re-seated.
+    // state map, which is where the identity-success path records whether this
+    // card may be asked for token info and credentials. Losing that silently
+    // drops both sections until the card is re-seated — and since that record is
+    // now written when the read SUCCEEDS rather than when the card appears, a
+    // reset here also loses it for a card whose retry is still in flight.
     replaceCardWidget(cardId, page);
 }
 
@@ -679,6 +672,24 @@ void LibreCelik::onIdentityReady(const QString& cardId, const QList<FieldGroup>&
     QWidget* pageWidget = readerPages->page(cardId);
     if (pageWidget == nullptr)
         return;
+
+    // Feature-gated verbs, decided by the ONE helper so the decision the CI test
+    // drives is the decision production makes.
+    //
+    // Dispatched HERE, on the identity read's success, not when the card is
+    // added: token info and credentials ride the same authenticated channel the
+    // identity read establishes, so asking for them first buys a refusal apiece
+    // when that read cannot authenticate -- and on a card that needs an access
+    // number, one entry window per verb, serialised, each with its own full
+    // deadline. The holder saw three windows two minutes apart for one insertion.
+    if (CardController* optionalsController = gateway->cardController(cardId); optionalsController != nullptr) {
+        const librecelik::agent::OptionalSections sections =
+            librecelik::agent::requestOptionalSections(*gateway, *optionalsController);
+        if (auto entry = cardState.find(cardId); entry != cardState.end()) {
+            entry->second.tokenInfoAllowed = sections.tokenInfo;
+            entry->second.credentialsAllowed = sections.credentials;
+        }
+    }
 
     CardWidgetPlugin* plugin = pluginFor(cardId);
     if (plugin == nullptr) {

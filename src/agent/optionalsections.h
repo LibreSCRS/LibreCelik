@@ -2,8 +2,8 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 
 // src/agent/optionalsections.h — the SINGLE F5 feature-gate decision,
-// header-only so production (librecelik.cpp, Task 18) and the CI test
-// (Task 19) compile the SAME code — the consumeBatchOutcome pattern: the
+// header-only so production (librecelik.cpp) and the CI test
+// compile the SAME code — the consumeBatchOutcome pattern: the
 // gate must not exist only as untested window glue re-stated by its test.
 #pragma once
 #include "agent/agentgateway.h"

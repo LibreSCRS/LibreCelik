@@ -60,7 +60,7 @@ public:
     [[nodiscard]] virtual QVariantMap configSnapshot() const = 0;
     [[nodiscard]] virtual std::optional<LibreSCRS::AgentClient::SyncError> setConfigValue(const QString& key,
                                                                                           const QVariant& value) = 0;
-    /// Config1.Reset — the per-tab "restore defaults" path (Task 29).
+    /// Config1.Reset — the per-tab "restore defaults" path.
     [[nodiscard]] virtual std::optional<LibreSCRS::AgentClient::SyncError> resetConfigValue(const QString& key) = 0;
 
     // Raw DER fetch for the cert viewer's export path (Phase B).

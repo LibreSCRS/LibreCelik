@@ -479,7 +479,7 @@ TEST_F(WizardFake, RejectDuringSigningCancelsTheController)
 
 TEST_F(WizardFake, MixedSelectionDisclosesTheRealCeremonyCount)
 {
-    // (a.pdf, b.xml, c.pdf) → stable-sort partition = TWO runs (Task 9);
+    // (a.pdf, b.xml, c.pdf) → stable-sort partition = TWO runs;
     // the consent hint must say 2, and interleaving must not make it 3.
     addFiles({filePdfA(), fileXmlB(), filePdfC()});
     driveToSignPage();

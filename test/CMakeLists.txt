@@ -579,7 +579,7 @@ if(LIBRECELIK_SIGNING_ENABLED)
     # gateway, the live controllers it mints, and the agent's own prompter
     # collecting every credential. It builds and is discovered everywhere and
     # SKIPS everywhere the bench is not set up, so it costs CI nothing but a
-    # link — and it is the Task 39 hardware gate's suite, not a CI suite.
+    # link — and it is the hardware gate's suite, not a CI suite.
     #
     # NO LibreSCRS::* link and no plugin/module dependencies: nothing in this
     # target talks to a card in-process any more. What it compiles beyond the
@@ -817,7 +817,7 @@ add_executable(AgentLayerTests
     ${CMAKE_SOURCE_DIR}/src/agent/signrequest.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/settingsimport.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/live/liveagentgateway.cpp
-    # The live gateway MINTS these two (Task 9 Step 3b), so the suite that
+    # The live gateway MINTS these two, so the suite that
     # compiles it links them: a test target that stubbed them out would prove
     # something the application never runs.
     ${CMAKE_SOURCE_DIR}/src/agent/live/livecardcontroller.cpp

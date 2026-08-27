@@ -6,6 +6,7 @@
 #include "utils/libreceliklog.h"
 
 #include <QApplication>
+#include <QGuiApplication>
 #include <QIcon>
 
 using namespace std::literals;
@@ -22,6 +23,10 @@ int main(int argc, char* argv[])
     QApplication a(argc, argv);
 
     qSetMessagePattern(LOGPATTERN);
+    // Ties the running window to the installed librecelik.desktop. The entry's
+    // StartupWMClass covers X11 only; on Wayland the association is made by the
+    // app id, which is exactly what this sets.
+    QGuiApplication::setDesktopFileName(QStringLiteral("librecelik"));
     a.setWindowIcon(QIcon(":/images/smartcard-id-512.png"));
 
     qCInfo(lcGeneral) << "Starting LibreCelik - Version: " << LIBRECELIK_VERSION_FULL;

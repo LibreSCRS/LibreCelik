@@ -256,6 +256,20 @@ install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+if(UNIX AND NOT APPLE)
+    # DATAROOTDIR, not DATADIR: DATADIR is the project-specific knob a packager
+    # may repoint at share/librecelik, which would hide these from launchers.
+    install(FILES ${PROJECT_SOURCE_DIR}/resources/linux/librecelik.desktop
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
+    install(FILES ${PROJECT_SOURCE_DIR}/resources/smartcard-id-512.png
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/512x512/apps
+            RENAME librecelik.png)
+    # APPEND, not set: a distro packager drives policy through
+    # -DCMAKE_INSTALL_RPATH, which seeds this property at target creation.
+    set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY
+        INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+endif()
+
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(${PROJECT_NAME})
 endif()

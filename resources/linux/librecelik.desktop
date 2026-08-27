@@ -7,3 +7,4 @@ Type=Application
 Categories=Utility;Office;
 Keywords=smart card;eID;identity;vehicle registration;eMRTD;PKCS#11;
 StartupNotify=true
+StartupWMClass=LibreCelik

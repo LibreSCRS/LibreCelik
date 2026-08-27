@@ -147,13 +147,19 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release \
 cmake --build build -j4
 ```
 
-`ctest` may not discover Qt-driven LibreCelik test suites; in that case run
-the test binaries directly:
+Run the suites from the top of the build tree; the Qt-driven ones need an
+offscreen platform plugin, and `--no-tests=error` turns an empty run into a
+failure instead of a green gate over zero tests:
 
 ```bash
-for t in build/test/LibreCelik*; do
-  [ -x "$t" ] && [ -f "$t" ] && "$t"
-done
+QT_QPA_PLATFORM=offscreen ctest --test-dir build --output-on-failure --no-tests=error
+```
+
+A single suite can also be run directly, which is handy when you want its
+raw output:
+
+```bash
+QT_QPA_PLATFORM=offscreen build/test/LibreCelikTests
 ```
 
 Cap parallel build jobs to `-j4` to avoid system saturation.

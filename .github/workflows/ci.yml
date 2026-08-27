@@ -137,7 +137,7 @@ jobs:
       - name: Test (LibreCelik)
         env:
           QT_QPA_PLATFORM: offscreen
-        run: ctest --output-on-failure --no-tests=error --test-dir build/test
+        run: ctest --output-on-failure --no-tests=error --test-dir build
 
   build-macos:
     runs-on: macos-latest
@@ -180,7 +180,7 @@ jobs:
       - name: Test (LibreCelik)
         env:
           QT_QPA_PLATFORM: offscreen
-        run: ctest --output-on-failure --no-tests=error --test-dir build/test
+        run: ctest --output-on-failure --no-tests=error --test-dir build
 
   changes:
     runs-on: ubuntu-latest

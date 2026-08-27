@@ -15,6 +15,11 @@ set(CMAKE_AUTORCC ON)
 include(FetchContent)
 FetchContent_Declare(googletest URL https://github.com/google/googletest/archive/refs/tags/v1.16.0.zip DOWNLOAD_EXTRACT_TIMESTAMP ON)
 FetchContent_MakeAvailable(googletest)
+
+# enable_testing() is safe to call again here even though the root
+# CMakeLists.txt already calls it before add_subdirectory(test). Keeping this
+# call is what makes `ctest --test-dir build/test` work on its own, so that
+# path stays alive no matter how the root file is later reordered.
 enable_testing()
 
 # The repository ROOT is deliberately not on the include path. It holds a file

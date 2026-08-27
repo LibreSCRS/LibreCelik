@@ -133,7 +133,7 @@ jobs:
       - name: Test (LibreCelik)
         env:
           QT_QPA_PLATFORM: offscreen
-        run: ctest --output-on-failure --no-tests=error --test-dir build/test
+        run: ctest --output-on-failure --no-tests=error --test-dir build
 
       # DSS Java backend removed — native signing does not require Java.
 
@@ -195,7 +195,7 @@ jobs:
       - name: Test (LibreCelik)
         env:
           QT_QPA_PLATFORM: offscreen
-        run: ctest --output-on-failure --no-tests=error --test-dir build/test
+        run: ctest --output-on-failure --no-tests=error --test-dir build
 
       # DSS Java backend removed — native signing does not require Java.
 

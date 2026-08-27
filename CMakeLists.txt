@@ -79,6 +79,22 @@ set(LIBRECELIK_SIGNING_ENABLED ${ENABLE_SIGNING})
 set(LIBRECELIK_GUI_PLUGIN_DIR "${CMAKE_BINARY_DIR}/gui-plugins" CACHE PATH
     "Directory where GUI plugin .so files are placed")
 
+# Two placement invariants, both load-bearing:
+#
+# AFTER the dependency include above -- enable_testing() switches testing on
+# for this directory and everything added under it, and the LibreAgent subtree
+# FetchContent adds is not ours to enrol. Included first, it keeps whatever
+# testing decision its own CMakeLists.txt makes.
+#
+# BEFORE the add_subdirectory() block -- a child inherits the setting as it is
+# added, so a child that does not call enable_testing() itself is processed
+# with testing off and its add_test() registrations go nowhere. The root
+# CTestTestfile.cmake lists every child in subdirs() either way, which is what
+# would make that loss quiet. test/ makes its own call, so today's suite
+# survives either order; the ordering is what keeps the NEXT subdirectory to
+# add a test visible to `ctest --test-dir build`.
+enable_testing()
+
 add_subdirectory(resources)
 add_subdirectory(src)
 add_subdirectory(plugins)

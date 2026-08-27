@@ -1,10 +1,13 @@
 [Desktop Entry]
 Name=LibreCelik
+GenericName=Smart Card Reader
+GenericName[sr]=Читач паметних картица
 Comment=Open-source smart card reader — any card, any platform
+Comment[sr]=Читач паметних картица и алат за дигитално потписивање отвореног кода
 Exec=LibreCelik
 Icon=librecelik
 Type=Application
-Categories=Utility;Office;
+Categories=Utility;Security;
 Keywords=smart card;eID;identity;vehicle registration;eMRTD;PKCS#11;
 StartupNotify=true
 StartupWMClass=LibreCelik

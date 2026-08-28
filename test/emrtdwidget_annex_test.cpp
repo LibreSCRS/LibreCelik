@@ -38,6 +38,8 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
+
 using LibreSCRS::AgentClient::Field;
 using LibreSCRS::AgentClient::FieldGroup;
 
@@ -384,6 +386,48 @@ TEST_F(EmrtdAnnexTest, AnnexFieldsFollowAddressOrderNotAlphabet)
     const QStringList expected{QStringLiteral("V-STREET"), QStringLiteral("V-HOUSENUMBER"),
                                QStringLiteral("V-APARTMENT"), QStringLiteral("V-PLACE")};
     EXPECT_EQ(values, expected);
+}
+
+// The full 15-key reading order, pinned end to end: fields arrive in the wire
+// map's alphabetical order and must render in address-reading order. The list
+// is byte-identical to the KDE client's copy (LibreKDE,
+// shared/agentclient/IdentityRows.cpp, fieldOrderForGroup()); no shared
+// library links the two repositories, so each pins its own copy — change both
+// together.
+TEST_F(EmrtdAnnexTest, AnnexReadingOrderIsPinnedInFull)
+{
+    const QStringList readingOrder{
+        QStringLiteral("address_label"),     QStringLiteral("street"),
+        QStringLiteral("house_number"),      QStringLiteral("house_letter"),
+        QStringLiteral("entrance"),          QStringLiteral("floor"),
+        QStringLiteral("apartment_number"),  QStringLiteral("place"),
+        QStringLiteral("community"),         QStringLiteral("state"),
+        QStringLiteral("parent_given_name"), QStringLiteral("community_of_birth"),
+        QStringLiteral("state_of_birth"),    QStringLiteral("document_serial"),
+        QStringLiteral("address_date"),
+    };
+
+    // Delivery deliberately differs from the assertion target, so a reading
+    // list that ever degrades to plain key-sorting cannot pass vacuously.
+    QStringList wireOrder = readingOrder;
+    std::sort(wireOrder.begin(), wireOrder.end());
+    ASSERT_NE(wireOrder, readingOrder);
+
+    QList<Field> fields;
+    for (const QString& key : wireOrder) {
+        fields.append(textField(key, key, QStringLiteral("V-") + key));
+    }
+    EMRTDWidget widget(nullptr);
+    widget.addGroup(group(QStringLiteral("annex.rs.personal"), fields));
+
+    const CollapsibleSection* section = sectionTitled(widget, qtTrId("lc-annex-additional-data"));
+    ASSERT_NE(section, nullptr);
+
+    QStringList expectedValues;
+    for (const QString& key : readingOrder) {
+        expectedValues << QStringLiteral("V-") + key;
+    }
+    EXPECT_EQ(valuesUnder(*section), expectedValues);
 }
 
 // The annex reader ships the address-change date as the card's raw ddMMyyyy

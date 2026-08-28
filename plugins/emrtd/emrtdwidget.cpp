@@ -193,6 +193,10 @@ bool looksLikeAnnexKey(const QString& key)
 /// Identity crosses the wire as map-of-maps, so fields arrive sorted by KEY.
 /// For a group whose substance is an address that means "Apartment" third and
 /// "Street" last. This is the order a person reads an address in.
+///
+/// Byte-identical twin in LibreKDE, shared/agentclient/IdentityRows.cpp
+/// (fieldOrderForGroup()); each repository pins its copy with a test —
+/// change both together.
 QStringList annexFieldOrder()
 {
     return {

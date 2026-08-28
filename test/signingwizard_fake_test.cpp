@@ -517,3 +517,134 @@ TEST_F(WizardFake, CardRemovalClosesTheWizardMidFlow)
     EXPECT_EQ(wizard()->result(), QDialog::Rejected);
     EXPECT_FALSE(wizard()->isVisible());
 }
+
+// ---------------------------------------------------------------------------
+// SignPage::Config value semantics — a bare SignPage (no wizard around it),
+// driven directly through configure()/startSigning(), against a
+// FakeSignController that records exactly what it was dialled with.
+//
+// A Config is meant to be a complete, self-sufficient description of one
+// run: reconfigure() must fully SUPERSEDE whatever the page held before, not
+// merge into it. Two things could leak from one configure() call to the
+// next if that stopped being true: (1) what gets dialled to the controller
+// (a stale certificate id, file list, output folder or visual map from the
+// previous run), and (2) the transient outcome of the previous run
+// (isSigningComplete/hasFailures/isSigningInProgress) bleeding into a page
+// that has since been reconfigured for a new one. Both are exercised here by
+// running the page to completion once under Config A, then reconfiguring
+// under a deliberately DIFFERENT Config B and checking that nothing of A
+// survives — neither in what B dials next, nor in the page's own state.
+// ---------------------------------------------------------------------------
+
+class SignPageConfigTest : public ::testing::Test
+{
+protected:
+    static void SetUpTestSuite()
+    {
+        if (!QApplication::instance()) {
+            static int argc = 0;
+            app = new QApplication(argc, nullptr);
+        }
+    }
+
+    QTemporaryDir dirA;
+    QTemporaryDir dirB;
+    static QApplication* app;
+};
+QApplication* SignPageConfigTest::app = nullptr;
+
+TEST_F(SignPageConfigTest, ReconfigureReplacesEveryFieldAndResetsTheRunOutcomeRatherThanMerging)
+{
+    ASSERT_TRUE(dirA.isValid());
+    ASSERT_TRUE(dirB.isValid());
+
+    SignPage page;
+    FakeSignController fake;
+    page.setSignController(&fake);
+
+    // --- Config A: one PAdES/Enveloped file, a visual signature engaged ---
+    const QString pathA = dirA.filePath(QStringLiteral("a.pdf"));
+    {
+        QFile file(pathA);
+        ASSERT_TRUE(file.open(QIODevice::WriteOnly));
+        file.write("%PDF-1.4\n");
+    }
+    CertificateInfo certA;
+    certA.id = QStringLiteral("cert-a");
+    certA.subject = QStringLiteral("Alice");
+    const FileSignInfo infoA{pathA, LibreSCRS::AgentClient::SignatureFormat::PAdES,
+                             LibreSCRS::AgentClient::Packaging::Enveloped};
+    const QVariantMap visualA{{QStringLiteral("page"), 0}, {QStringLiteral("text"), QStringLiteral("A")}};
+    // Genuinely different from B's, and both non-empty: two empty URLs would
+    // not tell a carry-over bug apart from a correctly-reset one.
+    const QString tsaUrlA = QStringLiteral("https://tsa-a.example.com/rfc3161");
+
+    page.configure(SignPage::Config{
+        certA, QStringLiteral("card-a"), {infoA}, QStringLiteral("B_T"), dirA.path(), visualA, tsaUrlA});
+
+    // A run that FAILS: isSigningComplete()/hasFailures() both become true —
+    // the state Config B must not inherit.
+    fake.scriptedRows = {SignRowResult{pathA, {}, false, QStringLiteral("boom")}};
+    page.startSigning();
+
+    ASSERT_EQ(fake.lastCertId, QStringLiteral("cert-a"));
+    ASSERT_EQ(fake.lastFiles.size(), 1);
+    EXPECT_EQ(fake.lastFiles.constFirst().filePath, pathA);
+    EXPECT_EQ(fake.lastOutputFolder, dirA.path());
+    EXPECT_EQ(fake.lastOptions.visualSignature, visualA);
+    // startSigning() derives BOTH of these from Config-carried state
+    // (sigLevel/tsaUrl) that configure() must have just set — not left over
+    // from whatever the page held before this configure() call.
+    EXPECT_EQ(fake.lastOptions.level, LibreSCRS::AgentClient::SignatureLevel::BT);
+    EXPECT_EQ(fake.lastOptions.tsaUrl, tsaUrlA);
+    ASSERT_TRUE(page.isSigningComplete());
+    ASSERT_TRUE(page.hasFailures());
+
+    // --- Config B: a different cert, a different file (format AND
+    // packaging), no visual signature, a different output folder. Nothing
+    // above may still be true of the page once this lands. ---
+    const QString pathB = dirB.filePath(QStringLiteral("b.xml"));
+    {
+        QFile file(pathB);
+        ASSERT_TRUE(file.open(QIODevice::WriteOnly));
+        file.write("<doc/>\n");
+    }
+    CertificateInfo certB;
+    certB.id = QStringLiteral("cert-b");
+    certB.subject = QStringLiteral("Bob");
+    const FileSignInfo infoB{pathB, LibreSCRS::AgentClient::SignatureFormat::XAdES,
+                             LibreSCRS::AgentClient::Packaging::Detached};
+    // Different host from A's, so a leftover A URL cannot be mistaken for it.
+    const QString tsaUrlB = QStringLiteral("https://tsa-b.example.com/rfc3161");
+
+    page.configure(SignPage::Config{
+        certB, QStringLiteral("card-b"), {infoB}, QStringLiteral("B_LT"), dirB.path(), std::nullopt, tsaUrlB});
+
+    // configure() alone — before any new run — must already have cleared the
+    // outcome of the run Config A drove.
+    EXPECT_FALSE(page.isSigningComplete());
+    EXPECT_FALSE(page.hasFailures());
+    EXPECT_FALSE(page.isSigningInProgress());
+
+    // This run SUCCEEDS, so a leftover `failed` tally from run A would be the
+    // only way hasFailures() could still read true afterwards.
+    fake.scriptedRows = {SignRowResult{pathB, pathB + QStringLiteral(".signed"), true, {}}};
+    page.startSigning();
+
+    EXPECT_EQ(fake.lastCertId, QStringLiteral("cert-b"));
+    ASSERT_EQ(fake.lastFiles.size(), 1);
+    EXPECT_EQ(fake.lastFiles.constFirst().filePath, pathB);
+    EXPECT_EQ(fake.lastFiles.constFirst().format, LibreSCRS::AgentClient::SignatureFormat::XAdES);
+    EXPECT_EQ(fake.lastFiles.constFirst().packaging, LibreSCRS::AgentClient::Packaging::Detached);
+    EXPECT_EQ(fake.lastOutputFolder, dirB.path());
+    // The map from Config A must not still be riding along on a Config that
+    // asked for an invisible signature.
+    EXPECT_TRUE(fake.lastOptions.visualSignature.isEmpty());
+    // Same carry-over risk as A's, checked against B's OWN level/URL — a
+    // regression that freezes sigLevel/tsaUrl at Config A's values would
+    // pass every assertion above and only show up here.
+    EXPECT_EQ(fake.lastOptions.level, LibreSCRS::AgentClient::SignatureLevel::BLT);
+    EXPECT_EQ(fake.lastOptions.tsaUrl, tsaUrlB);
+    EXPECT_TRUE(page.isSigningComplete());
+    EXPECT_FALSE(page.hasFailures());
+}

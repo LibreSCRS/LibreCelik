@@ -16,6 +16,7 @@
 #include "fake_gateway/fakeagentgateway.h"
 #include "fake_gateway/fakecardcontroller.h"
 #include "fake_gateway/fakesigncontroller.h"
+#include "qstring_printto.h"
 
 #include <LibreSCRS/AgentClient/CredentialTypes.h>
 #include <LibreSCRS/AgentClient/SignOptions.h>

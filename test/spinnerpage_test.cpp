@@ -120,3 +120,18 @@ TEST_F(SpinnerPageTest, ShortTextStaysCentredAndUnstretched)
     ASSERT_NE(laid.label, nullptr);
     EXPECT_LE(laid.label->height(), laid.label->sizeHint().height() + 2);
 }
+
+// This page's label used to be the one place among the placeholder pages that
+// left Qt::TextFormat at the default AutoText — the unreadable-card and
+// read-failure pages had already learned to pin Qt::PlainText, because both
+// substitute card- or reader-supplied text where the default would parse a
+// recognised HTML tag out of it. Sharing the same construction now pins it
+// here too, so a future caller that starts passing untrusted text into this
+// page inherits the guard rather than the gap.
+TEST_F(SpinnerPageTest, TextIsNeverInterpretedAsMarkup)
+{
+    QWidget owner;
+    const LaidOutPage laid = layOut(makeSpinnerPage(QStringLiteral("reading"), &owner), 420, 600);
+    ASSERT_NE(laid.label, nullptr);
+    EXPECT_EQ(laid.label->textFormat(), Qt::PlainText);
+}

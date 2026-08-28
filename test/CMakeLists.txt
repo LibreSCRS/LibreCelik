@@ -58,6 +58,8 @@ add_executable(
     spinnerpage_test.cpp
     ../src/utils/spinnerpage.h
     ../src/utils/spinnerpage.cpp
+    ../src/utils/messageline.h
+    ../src/utils/messageline.cpp
 )
 target_link_libraries(
     ${PROJECT_NAME}
@@ -902,6 +904,7 @@ add_executable(AgentMainFlowTests
     ${CMAKE_SOURCE_DIR}/src/agent/cardstatuspage.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/errortext.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/spinnerpage.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/messageline.cpp
     ${CMAKE_SOURCE_DIR}/src/document/rs-eid/changepindlg.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/buttonbox.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp

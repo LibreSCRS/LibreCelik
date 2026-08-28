@@ -13,6 +13,7 @@
 #include "agent/signrequest.h"
 
 #include "agent/errortext.h"
+#include "qstring_printto.h"
 
 #include <LibreSCRS/AgentClient/ErrorCode.h>
 #include <LibreSCRS/AgentClient/FdHandle.h>

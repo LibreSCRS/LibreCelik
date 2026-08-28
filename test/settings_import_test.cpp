@@ -20,6 +20,7 @@
 #include "agent/settingsimport.h"
 
 #include "fake_gateway/fakeagentgateway.h"
+#include "qstring_printto.h"
 
 #include <LibreSCRS/AgentClient/SyncError.h>
 

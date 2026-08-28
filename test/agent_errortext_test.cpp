@@ -3,6 +3,8 @@
 
 #include "agent/errortext.h"
 
+#include "qstring_printto.h"
+
 #include <QCoreApplication>
 #include <QString>
 #include <QTranslator>
@@ -10,17 +12,8 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
-#include <ostream>
 
 using namespace LibreSCRS::AgentClient;
-
-// Readable QString diagnostics. Without it a copy mismatch renders as pages of
-// raw UTF-16 byte objects, which is precisely useless for the assertions below —
-// their whole subject is which words a user ends up reading.
-inline void PrintTo(const QString& value, std::ostream* os)
-{
-    *os << '"' << value.toStdString() << '"';
-}
 
 TEST(ErrorText, CallErrorWinsWhenEngaged)
 {

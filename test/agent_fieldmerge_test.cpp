@@ -8,6 +8,8 @@
 
 #include "agent/fieldmerge.h"
 
+#include "qstring_printto.h"
+
 #include <LibreSCRS/AgentClient/FdHandle.h>
 #include <LibreSCRS/AgentClient/SignOptions.h> // PhotoItem
 #include <LibreSCRS/AgentClient/Types.h>

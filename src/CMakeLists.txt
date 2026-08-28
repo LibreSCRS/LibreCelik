@@ -98,6 +98,8 @@ set(PROJECT_SOURCES
         utils/fieldsectionbuilder.cpp
         utils/listitemdelegate.h
         utils/listitemdelegate.cpp
+        utils/messageline.h
+        utils/messageline.cpp
         utils/pluginwidgetbase.h
         utils/pluginwidgetbase.cpp
         utils/spinnerpage.h

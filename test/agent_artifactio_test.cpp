@@ -13,6 +13,8 @@
 
 #include "agent/artifactio.h"
 
+#include "qstring_printto.h"
+
 #include <QByteArray>
 #include <QFile>
 #include <QString>

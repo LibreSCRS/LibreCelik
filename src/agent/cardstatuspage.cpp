@@ -3,6 +3,8 @@
 
 #include "agent/cardstatuspage.h"
 
+#include "utils/messageline.h"
+
 #include <QEvent>
 #include <QLabel>
 #include <QStringList>
@@ -11,6 +13,8 @@
 #include <utility>
 
 namespace librecelik::agent {
+
+using librecelik::utils::addMessageLine;
 
 QString atrSnippet(const QString& atrHex, qsizetype maxBytes)
 {
@@ -32,21 +36,10 @@ CardStatusPage::CardStatusPage(LibreSCRS::AgentClient::UiState state, QString re
     // Test seams: the offscreen suite reads each rendered line back through
     // these names, and they are also how a manual smoke tells a page that
     // rendered nothing apart from a page that was never asked to render.
-    auto addLine = [this, layout](const QString& objectName, bool bold) {
-        auto* label = new QLabel(this);
-        label->setObjectName(objectName);
-        label->setAlignment(Qt::AlignCenter);
-        label->setWordWrap(true);
-        // None of these lines carries markup, and one of them substitutes a
-        // reader name the agent supplies — under the default AutoText a name
-        // with angle brackets in it would be parsed as HTML and partly
-        // disappear from the very line that exists to identify the reader.
-        label->setTextFormat(Qt::PlainText);
-        if (bold)
-            label->setStyleSheet(QStringLiteral("QLabel { font-size: 14px; font-weight: bold; }"));
-        layout->addWidget(label);
-        return label;
-    };
+    // addMessageLine also pins Qt::PlainText — one of these lines substitutes
+    // a reader name the agent supplies, and under the default AutoText a name
+    // with angle brackets in it would be parsed as HTML and partly disappear
+    // from the very line that exists to identify the reader.
 
     // Centred by STRETCHES rather than by an alignment on the layout itself,
     // for the reason the read-in-progress page documents: an aligned layout
@@ -55,9 +48,9 @@ CardStatusPage::CardStatusPage(LibreSCRS::AgentClient::UiState state, QString re
     // interface hint is several sentences long and is exactly the text a
     // clipped page would swallow.
     layout->addStretch();
-    titleLabel = addLine(QStringLiteral("cardStatusTitle"), /*bold=*/true);
-    readerLabel = addLine(QStringLiteral("cardStatusReader"), /*bold=*/false);
-    hintLabel = addLine(QStringLiteral("cardStatusHint"), /*bold=*/false);
+    titleLabel = addMessageLine(layout, this, QStringLiteral("cardStatusTitle"), /*bold=*/true);
+    readerLabel = addMessageLine(layout, this, QStringLiteral("cardStatusReader"));
+    hintLabel = addMessageLine(layout, this, QStringLiteral("cardStatusHint"));
     layout->addStretch();
 
     retranslateUi();

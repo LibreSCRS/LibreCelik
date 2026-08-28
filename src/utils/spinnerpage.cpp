@@ -3,6 +3,8 @@
 
 #include "utils/spinnerpage.h"
 
+#include "utils/messageline.h"
+
 #include <QLabel>
 #include <QProgressBar>
 #include <QVBoxLayout>
@@ -32,9 +34,6 @@ QWidget* makeSpinnerPage(const QString& text, QWidget* parent)
     bar->setRange(0, 0);
     bar->setFixedWidth(kBarWidth);
     bar->setTextVisible(false);
-    auto* label = new QLabel(text, spinnerWidget);
-    label->setAlignment(Qt::AlignCenter);
-    label->setWordWrap(true);
 
     // Centred by STRETCHES, not by an alignment on the layout itself, and the
     // bar is centred as an item rather than by sizing the whole column to it.
@@ -50,7 +49,7 @@ QWidget* makeSpinnerPage(const QString& text, QWidget* parent)
     // middle rather than filling the page.
     layout->addStretch();
     layout->addWidget(bar, 0, Qt::AlignHCenter);
-    layout->addWidget(label);
+    addMessageLine(layout, spinnerWidget)->setText(text);
     layout->addStretch();
     return spinnerWidget;
 }

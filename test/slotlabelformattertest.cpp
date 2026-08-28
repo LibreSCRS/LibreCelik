@@ -38,6 +38,13 @@ protected:
             << "failed to load LibreCelik_en.qm from " << qmDir.toStdString();
         QCoreApplication::installTranslator(g_translator);
     }
+
+    static void TearDownTestSuite()
+    {
+        QCoreApplication::removeTranslator(g_translator);
+        delete g_translator;
+        g_translator = nullptr;
+    }
 };
 
 } // namespace

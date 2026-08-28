@@ -127,6 +127,15 @@ protected:
         openWizard();
     }
 
+    /// Removed again once every case in this suite has run, so it cannot
+    /// colour another suite sharing this binary.
+    static void TearDownTestSuite()
+    {
+        QCoreApplication::removeTranslator(translator);
+        delete translator;
+        translator = nullptr;
+    }
+
     // ---- fixture helpers ----------------------------------------------------
 
     [[nodiscard]] SigningWizard* wizard() const

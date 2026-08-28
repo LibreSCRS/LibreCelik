@@ -27,6 +27,8 @@
 
 #include "agent/errortext.h"
 
+#include "qstring_printto.h"
+
 #include <QCoreApplication>
 #include <QSet>
 #include <QString>
@@ -36,13 +38,6 @@
 
 #include <cstdint>
 #include <optional>
-#include <ostream>
-
-// Readable QString diagnostics — see the identical note in agent_errortext_test.cpp.
-inline void PrintTo(const QString& value, std::ostream* os)
-{
-    *os << '"' << value.toStdString() << '"';
-}
 
 namespace {
 

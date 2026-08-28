@@ -48,6 +48,7 @@ get_filename_component(GIT_VERSION_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}/.." REALPA
 set(GIT_VERSION_FULL "")
 set(GIT_VERSION_OWN_REPO FALSE)
 set(GIT_VERSION_GIT_DIR "")
+set(GIT_VERSION_REFS_DIR "")
 
 if(GIT_EXECUTABLE)
     # WHOSE repository is answering? git searches from the working directory
@@ -127,13 +128,33 @@ if(GIT_VERSION_OWN_REPO)
     if(GIT_VERSION_GIT_DIR_ERROR_CODE)
         set(GIT_VERSION_GIT_DIR "")
     endif()
+
+    # The COMMON dir, as opposed to the absolute one above: in a linked
+    # worktree, --absolute-git-dir answers with the worktree's PRIVATE
+    # gitdir (HEAD, index, logs — nothing else), which carries no refs/tags
+    # and no packed-refs at all; those live only in the dir every worktree
+    # shares. In an ordinary checkout the two answers coincide, so this is
+    # never wrong to ask, only sometimes redundant.
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --path-format=absolute --git-common-dir
+        WORKING_DIRECTORY ${GIT_VERSION_SRC_DIR}
+        OUTPUT_VARIABLE GIT_VERSION_REFS_DIR
+        RESULT_VARIABLE GIT_VERSION_REFS_DIR_ERROR_CODE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+        )
+    if(GIT_VERSION_REFS_DIR_ERROR_CODE)
+        set(GIT_VERSION_REFS_DIR "")
+    endif()
 endif()
 
 if(GIT_VERSION_GIT_DIR)
     # HEAD moves on a checkout, a branch switch and a detach; the index is
     # rewritten by every commit and every `git add`, which is what makes a
     # `-dirty` marker go stale. Touching either re-runs configure, and the
-    # stamp is derived again from the tree that is actually there.
+    # stamp is derived again from the tree that is actually there. Both are
+    # PER-WORKTREE state, so both are watched at the worktree-private gitdir
+    # — never at the common one, which has neither.
     foreach(GIT_VERSION_STAMP_INPUT IN ITEMS HEAD index)
         if(EXISTS "${GIT_VERSION_GIT_DIR}/${GIT_VERSION_STAMP_INPUT}")
             set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
@@ -141,6 +162,30 @@ if(GIT_VERSION_GIT_DIR)
         endif()
     endforeach()
     unset(GIT_VERSION_STAMP_INPUT)
+endif()
+
+if(GIT_VERSION_REFS_DIR)
+    # Neither HEAD nor the index moves on the event that actually changes what
+    # `describe --tags` answers on an otherwise unmoved HEAD: creating a
+    # release tag. A tag is repository-wide, not per-worktree, so it has to be
+    # watched at the COMMON dir (see above) rather than at the worktree's own
+    # — in a linked worktree the private gitdir carries neither packed-refs
+    # nor a refs/tags directory at all, so watching it there is silently inert.
+    #
+    # packed-refs is watched the same way index is: `git pack-refs` can fold a
+    # loose tag into it and rewrite it without touching HEAD or the index.
+    if(EXISTS "${GIT_VERSION_REFS_DIR}/packed-refs")
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${GIT_VERSION_REFS_DIR}/packed-refs")
+    endif()
+
+    # A newly created loose tag lands under refs/tags instead, touching
+    # neither HEAD, the index, nor packed-refs. Re-globbing the directory at
+    # build time and comparing the matched file set is the same
+    # CONFIGURE_DEPENDS mechanism this project's licenses glob already relies
+    # on (src/CMakeLists.txt) — it notices an added or removed file rather
+    # than trusting the directory's raw mtime.
+    file(GLOB_RECURSE GIT_VERSION_TAG_REFS CONFIGURE_DEPENDS "${GIT_VERSION_REFS_DIR}/refs/tags/*")
+    unset(GIT_VERSION_TAG_REFS)
 endif()
 
 if(GIT_VERSION_FULL STREQUAL "" AND EXISTS "${GIT_VERSION_SRC_DIR}/VERSION")
@@ -189,5 +234,7 @@ unset(GIT_VERSION_TOPLEVEL)
 unset(GIT_VERSION_TOPLEVEL_ERROR_CODE)
 unset(GIT_VERSION_GIT_DIR)
 unset(GIT_VERSION_GIT_DIR_ERROR_CODE)
+unset(GIT_VERSION_REFS_DIR)
+unset(GIT_VERSION_REFS_DIR_ERROR_CODE)
 unset(GIT_DESCRIBE_VERSION)
 unset(GIT_DESCRIBE_ERROR_CODE)

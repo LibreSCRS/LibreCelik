@@ -81,6 +81,15 @@ protected:
         QCoreApplication::installTranslator(translator);
     }
 
+    /// Removed again once every case in this suite has run, so it cannot
+    /// colour another suite sharing this binary.
+    static void TearDownTestSuite()
+    {
+        QCoreApplication::removeTranslator(translator);
+        delete translator;
+        translator = nullptr;
+    }
+
     static QApplication* app;
     static QTranslator* translator;
 };

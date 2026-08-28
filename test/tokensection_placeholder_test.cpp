@@ -53,6 +53,14 @@ protected:
             QCoreApplication::installTranslator(translator);
         }
     }
+
+    static void TearDownTestSuite()
+    {
+        QCoreApplication::removeTranslator(translator);
+        delete translator;
+        translator = nullptr;
+    }
+
     static QApplication* app;
     static QTranslator* translator;
 };

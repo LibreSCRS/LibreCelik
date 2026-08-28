@@ -2093,7 +2093,7 @@
         <source>One signing run takes at most %1 files. The files beyond that were not added.</source>
         <translation>One signing run takes at most %1 files. The files beyond that were not added.</translation>
     </message>
-    <message numerus="yes" id="lc-sign-sequential-notice">
+    <message id="lc-sign-sequential-notice" numerus="yes">
         <source>Each file is confirmed separately — %n confirmations.</source>
         <translation>
             <numerusform>Each file is confirmed separately — %n confirmation.</numerusform>
@@ -2184,7 +2184,7 @@
         <source>Signing complete: %1 succeeded, %2 failed</source>
         <translation>Signing complete: %1 succeeded, %2 failed</translation>
     </message>
-    <message numerus="yes" id="lc-sign-consent-hint">
+    <message id="lc-sign-consent-hint" numerus="yes">
         <source>You will confirm and enter your PIN in the system dialog %n times.</source>
         <translation>
             <numerusform>You will confirm and enter your PIN in the system dialog %n time.</numerusform>

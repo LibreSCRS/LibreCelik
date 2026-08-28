@@ -1288,7 +1288,9 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-agent-error-engine-unavailable");
     //% "The document you tried to sign is invalid or could not be read. Check the file."
     QT_TRID_NOOP("lc-agent-error-invalid-document");
+    //% "The entry window closed before a code was entered. Try again."
     QT_TRID_NOOP("lc-agent-error-entry-expired");
+    //% "The credential window helper is out of date. Restart your session."
     QT_TRID_NOOP("lc-agent-error-helper-too-old");
     //% "The document was signed, but the signed file could not be written to the output folder."
     QT_TRID_NOOP("lc-agent-error-artifact-write");
@@ -1361,6 +1363,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-agent-outcome-key-activation-failed");
     //% "The card was removed before the change was made."
     QT_TRID_NOOP("lc-agent-outcome-card-removed");
+    //% "The entry window closed before a code was entered. Try again."
     QT_TRID_NOOP("lc-agent-outcome-entry-expired");
 }
 

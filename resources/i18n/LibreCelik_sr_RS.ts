@@ -2093,7 +2093,7 @@
         <source>One signing run takes at most %1 files. The files beyond that were not added.</source>
         <translation>Једно потписивање обухвата највише %1 фајлова. Фајлови преко тог броја нису додати.</translation>
     </message>
-    <message numerus="yes" id="lc-sign-sequential-notice">
+    <message id="lc-sign-sequential-notice" numerus="yes">
         <source>Each file is confirmed separately — %n confirmations.</source>
         <translation>
             <numerusform>Сваки фајл се потврђује засебно — %n потврда.</numerusform>
@@ -2185,7 +2185,7 @@
         <source>Signing complete: %1 succeeded, %2 failed</source>
         <translation>Потписивање завршено: %1 успешно, %2 неуспешно</translation>
     </message>
-    <message numerus="yes" id="lc-sign-consent-hint">
+    <message id="lc-sign-consent-hint" numerus="yes">
         <source>You will confirm and enter your PIN in the system dialog %n times.</source>
         <translation>
             <numerusform>ПИН ћете потврдити и унети у системском прозору %n пут.</numerusform>

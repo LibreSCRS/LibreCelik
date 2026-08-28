@@ -14,6 +14,17 @@
 /// field-group read, snapshots translatable widget state, switches
 /// translator, snapshots again, and asserts every shared key changed.
 ///
+/// The recursive widget walk keys each snapshotted role by DFS position,
+/// which drifts across the two snapshots for anything a rebuild tears down
+/// and reconstructs: `deleteLater()` does not destroy the previous
+/// generation synchronously, so a stale section is still a child when the
+/// second snapshot is taken, and the position the walk assigns to the live
+/// section no longer lines up with where it was in the first snapshot. The
+/// outer section — the plugin widget's own heading, present in every
+/// plugin — is read directly instead (outerSectionOf()) and folded into
+/// both snapshots under a fixed key, sidestepping the drift for that one
+/// role.
+///
 /// All tests run with QT_QPA_PLATFORM=offscreen.
 
 #include "i18n_test_support/RetranslatableWidgetFixture.h"
@@ -24,6 +35,7 @@
 #include "piv/pivwidget.h"
 #include "rs-eid/eidwidget.h"
 #include "rs-health/healthwidget.h"
+#include "utils/collapsiblesection.h"
 
 #include <QApplication>
 #include <QCoreApplication>
@@ -37,6 +49,23 @@
 #include <string>
 
 namespace librecelik::test::i18n {
+
+namespace {
+
+/// @brief The plugin widget's own outer collapsible section — a direct
+/// child of the widget under test in every one of the 5 plugins. A
+/// retranslateUi() rebuild constructs the replacement before the old
+/// section is actually destroyed (deleteLater() only schedules that), so
+/// more than one generation can be a direct child at once; Qt appends a
+/// new child at the end of the parent's child list, so the last one is
+/// always the current, on-screen generation.
+CollapsibleSection* outerSectionOf(QWidget* root)
+{
+    const auto sections = root->findChildren<CollapsibleSection*>(QString(), Qt::FindDirectChildrenOnly);
+    return sections.isEmpty() ? nullptr : sections.constLast();
+}
+
+} // namespace
 
 /// @brief Plugin-widget factory: build a fresh QWidget* of the given
 /// plugin type, populated with the corresponding mock field groups. The
@@ -63,8 +92,12 @@ TEST_P(PluginRetranslateTest, dynamicLabelsRetranslateOnLanguageChange)
     // Snapshot in the default (English / qtTrId source IDs) state.
     switchTo(QStringLiteral("en"));
     QCoreApplication::processEvents();
-    const auto before = snapshotTexts(widget.get());
+    auto before = snapshotTexts(widget.get());
     ASSERT_FALSE(before.isEmpty()) << "snapshot empty — widget did not populate any translatable role";
+    // The walk above does not reliably see the outer heading (see the
+    // file comment) — read it directly under a DFS-independent key.
+    if (auto* outer = outerSectionOf(widget.get()))
+        before.insert(QStringLiteral("outerSection:heading"), outer->title());
 
     // Switch language and confirm Qt sent QEvent::LanguageChange (the
     // PluginWidgetBase base class observes this and invokes
@@ -72,8 +105,10 @@ TEST_P(PluginRetranslateTest, dynamicLabelsRetranslateOnLanguageChange)
     switchTo(QStringLiteral("sr_RS"));
     QCoreApplication::processEvents();
 
-    const auto after = snapshotTexts(widget.get());
+    auto after = snapshotTexts(widget.get());
     ASSERT_FALSE(after.isEmpty());
+    if (auto* outer = outerSectionOf(widget.get()))
+        after.insert(QStringLiteral("outerSection:heading"), outer->title());
 
     // Tolerate equal strings only when locale-stable wordlist or
     // technical-value heuristic apply (numbers, dates, URLs, the
@@ -120,14 +155,15 @@ INSTANTIATE_TEST_SUITE_P(AllPlugins, PluginRetranslateTest,
 /// Copy the widget walk above cannot reach, asserted against the catalog
 /// directly.
 ///
-/// The walk only sees what a built widget renders, and for the PIV plugin two
-/// strings escape it for structural reasons rather than because they are
-/// correct: the outer collapsible section's title is not one of the widget roles
-/// the snapshot collects, and the discovery section is only built when a
-/// discovery field group arrives — the mock read carries none, and no producer
-/// sends one yet. Both ids nevertheless have live call sites in the plugin, so a
-/// Serbian entry that is still the English source is a real gap that this suite
-/// would otherwise report as translated.
+/// The mock PIV read carries a discovery field group, so its section is
+/// built and its outer heading is folded into the snapshot by
+/// outerSectionOf() — but "lc-piv-section-discovery" itself names a nested
+/// section (a child of the outer section, not of the widget), which is
+/// exactly the DFS-drift case the file comment describes: it is not read
+/// directly, and its walk-assigned key is not guaranteed to line up between
+/// the two snapshots. It still has a live call site in the plugin, so a
+/// Serbian entry that is still the English source is a real gap this suite
+/// would otherwise miss.
 class PluginCatalogTest : public RetranslatableWidgetFixture
 {
 protected:

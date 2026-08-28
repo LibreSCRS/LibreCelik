@@ -90,6 +90,25 @@ You **must**:
   (or equivalent) declaration plus translations in **both**
   `resources/i18n/LibreCelik_en.ts` and `LibreCelik_sr_RS.ts`.
 
+`LibreCelik_sr_Latn_RS.ts` (the Latin-script transliteration) is
+**derived**, never hand-translated: `LibreCelik_lupdate` also merges into
+it directly (it is one of `TS_PROJECT_FILES`), which lands each new source
+string there as `type="unfinished"` since `lupdate` has no way to
+transliterate Cyrillic. The full sequence after adding or changing a
+string:
+
+1. Run `LibreCelik_lupdate` (or `cmake --build --target LibreCelik_lupdate`).
+2. Translate the new/changed strings in `LibreCelik_sr_RS.ts` (Cyrillic).
+3. Regenerate the Latin catalogue from it:
+   ```bash
+   python3 tools/sr_cyrillic_to_latin.py \
+       resources/i18n/LibreCelik_sr_RS.ts \
+       resources/i18n/LibreCelik_sr_Latn_RS.ts
+   ```
+4. Run the audit (`python3 tools/i18n_audit.py --strict`) — D10 fails if
+   step 3 was skipped, since the derived catalogue would then carry more
+   `unfinished` messages than its source.
+
 If a string is genuinely transient (e.g. evaluated at click time
 inside a lambda for a modal QFileDialog whose lifetime ends with
 `exec()`), annotate the source line with the canonical inline
@@ -113,9 +132,10 @@ for the canonical summary.
 ### Locale-stable wordlist amendments
 
 `test/i18n_test_support/locale_stable_words.h` lists strings that
-read identically in en and sr_RS by convention (acronyms like
-`PIN`, `PIV`, `URL`; language endonyms `English` / `Српски`; Qt
-built-in dialog button strings translated via `qt_*.qm`). Adding to
+read identically across every shipped language (en, sr_RS, sr_Latn_RS)
+by convention (acronyms like `PIN`, `PIV`, `URL`; language endonyms
+`English` / `Српски` / `Srpski (latinica)`; Qt built-in dialog button
+strings translated via `qt_*.qm`). Adding to
 this list requires PR review — every new entry is a tacit promise
 that the term is universally understood. Prefer to *translate*
 instead of allowlisting whenever the receiving audience may not

@@ -3,6 +3,7 @@
 
 set(TS_PROJECT_FILES
     ${PROJECT_SOURCE_DIR}/resources/i18n/LibreCelik_sr_RS.ts
+    ${PROJECT_SOURCE_DIR}/resources/i18n/LibreCelik_sr_Latn_RS.ts
     ${PROJECT_SOURCE_DIR}/resources/i18n/LibreCelik_en.ts
 CACHE INTERNAL "ts_project_files")
 set(RESOURCE_FILE ${PROJECT_SOURCE_DIR}/resources/librecelik.qrc CACHE INTERNAL "resource_file")

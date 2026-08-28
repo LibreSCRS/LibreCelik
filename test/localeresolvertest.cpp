@@ -77,3 +77,16 @@ TEST(LocaleResolverTest, SupportedLocaleCodesContractEnglishAlwaysPresent)
     ASSERT_FALSE(supported.isEmpty());
     EXPECT_TRUE(supported.contains(QStringLiteral("en")));
 }
+
+// Pins the owner's Cyrillic-primary directive against the REAL production
+// supported-locale list (not a hand-written stand-in), so it does not
+// silently depend on a QLocale implementation detail nobody is asserting
+// against: a Latin-preferring system locale must still resolve to Cyrillic
+// "sr_RS", never to "sr_Latn_RS", because QLocale::name() always drops the
+// script segment.
+TEST(LocaleResolverTest, CyrillicPrimaryOverSystemLatinPreference)
+{
+    EXPECT_EQ(utils::resolveActiveLocale({}, utils::supportedLocaleCodes(),
+                                         {QStringLiteral("sr-Latn-RS"), QStringLiteral("sr-RS")}),
+              QStringLiteral("sr_RS"));
+}

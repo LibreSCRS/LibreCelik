@@ -116,24 +116,21 @@ TEST_F(SettingsStateTest, languageComboReflectsEffectiveLanguageNotStalePreferen
     // the CI runner.
     auto dlg = makeDialog();
 
-    // Locate the language combo by walking the dialog's child widgets.
-    // The widget has no objectName by default; we identify it by its
-    // contents (English + Српски items, both supported codes). Avoids
-    // brittle hard-coding of object-name conventions.
-    QComboBox* langCombo = nullptr;
-    for (auto* cb : dlg->findChildren<QComboBox*>()) {
-        if (cb->count() == 2 && cb->findData(QStringLiteral("en")) >= 0 && cb->findData(QStringLiteral("sr_RS")) >= 0) {
-            langCombo = cb;
-            break;
-        }
-    }
+    // languageCombo carries a stable objectName (set in SettingsDialog's
+    // ctor) — findChild by name is a single robust lookup, not a
+    // content-sniffing walk over every combo in the dialog.
+    auto* langCombo = dlg->findChild<QComboBox*>(QStringLiteral("languageCombo"));
     ASSERT_NE(langCombo, nullptr) << "language combo not found in SettingsDialog";
 
-    // Both supported codes resolved by the resolver must be reachable
-    // from the combo. This is the b23a825 invariant: findData(<resolved>)
-    // must succeed for any value the resolver could return.
-    EXPECT_GE(langCombo->findData(QStringLiteral("en")), 0);
-    EXPECT_GE(langCombo->findData(QStringLiteral("sr_RS")), 0);
+    // Every code in the real production supported-locale list must be
+    // reachable from the combo — this is the b23a825 invariant
+    // (findData(<resolved>) must succeed for any value the resolver could
+    // return), generalised to iterate utils::supportedLocaleCodes() rather
+    // than hardcoding today's two-entry list, so a future third (or
+    // fourth) supported locale keeps this test honest instead of stale.
+    for (const auto& code : utils::supportedLocaleCodes()) {
+        EXPECT_GE(langCombo->findData(code), 0) << "combo missing entry for supported locale " << code.toStdString();
+    }
 }
 
 /// Modal SettingsDialog stays visible during an external language

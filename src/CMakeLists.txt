@@ -218,8 +218,15 @@ qt_add_translations(${PROJECT_NAME}
 # resource that races with lrelease on a clean CI build, embedding empty data and
 # overriding the correct qt_add_translations resource (root cause of broken
 # AppImage translations in 1.7.1 and 1.7.2).
-# To update translations: edit .ts files, then run LibreCelik_lupdate to sync
-# source strings, and LibreCelik_lrelease to recompile (or just cmake --build).
+# To update translations: run LibreCelik_lupdate to sync source strings (this
+# also merges into the derived LibreCelik_sr_Latn_RS.ts, landing any new
+# string there as type="unfinished" since lupdate cannot transliterate),
+# translate the new Cyrillic strings in LibreCelik_sr_RS.ts, then run
+# tools/sr_cyrillic_to_latin.py to regenerate LibreCelik_sr_Latn_RS.ts from
+# it, run the i18n audit (tools/i18n_audit.py --strict; D10 catches a
+# regenerate that was skipped), and finally LibreCelik_lrelease to recompile
+# (or just cmake --build). See CONTRIBUTING.md's i18n section for the full
+# sequence.
 # 4.0 LM: trust anchors live inside the LibreSCRS::Trust::TrustStore
 # composed and exposed by SigningService; LC no longer embeds raw cert files
 # via Qt resources or links OpenSSL directly. All certificate parsing and

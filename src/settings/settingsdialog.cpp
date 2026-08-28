@@ -123,6 +123,10 @@ SettingsDialog::SettingsDialog(librecelik::agent::AgentGateway* agentGateway, QW
     languageCombo->setObjectName(QStringLiteral("languageCombo"));
     languageCombo->addItem(QStringLiteral("English"), QStringLiteral("en"));
     languageCombo->addItem(QStringLiteral("Српски"), QStringLiteral("sr_RS"));
+    // Latin-script rendering of the same Serbian catalogue. Cyrillic stays
+    // the primary Serbian entry above; this is an explicit additional
+    // choice, never a silent replacement.
+    languageCombo->addItem(QStringLiteral("Srpski (latinica)"), QStringLiteral("sr_Latn_RS"));
     languageLabel = new QLabel(generalTab);
     generalLayout->addRow(languageLabel, languageCombo);
 

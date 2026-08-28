@@ -27,8 +27,9 @@
 
 namespace librecelik::test::i18n {
 
-/// @brief Set of strings that read identically in en and sr_RS by
-/// convention (acronyms, technical identifiers).
+/// @brief Set of strings that read identically across every shipped
+/// language (en, sr_RS, sr_Latn_RS) by convention (acronyms, technical
+/// identifiers).
 ///
 /// Initial population per spec §7.2:
 ///   PIN, PUK, PIV, eID, MRZ, BAC, PACE, OK, RFID, NFC, ICAO, EU,
@@ -79,6 +80,7 @@ inline const QSet<QString>& localeStableWords()
         // SettingsDialog language combo uses literal QStringLiterals.
         QStringLiteral("English"),
         QStringLiteral("Српски"),
+        QStringLiteral("Srpski (latinica)"),
     };
     return kWords;
 }

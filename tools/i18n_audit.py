@@ -51,7 +51,7 @@ SCHEMA_VERSION = 1
 # Data model
 # --------------------------------------------------------------------------
 
-ALL_DIMS: tuple[str, ...] = ("D1", "D2", "D3", "D5", "D6", "D8", "D9")
+ALL_DIMS: tuple[str, ...] = ("D1", "D2", "D3", "D5", "D6", "D8", "D9", "D10")
 
 SEVERITY: Mapping[str, str] = {
     "D1": "high",
@@ -61,6 +61,7 @@ SEVERITY: Mapping[str, str] = {
     "D6": "low",
     "D8": "medium",
     "D9": "high",
+    "D10": "high",
 }
 
 FIX_HINTS: Mapping[str, str] = {
@@ -94,6 +95,12 @@ FIX_HINTS: Mapping[str, str] = {
         "keep numerus=\"yes\" translations with the language's full "
         "numerusform count; rerun lupdate only after the declaration is "
         "plural-aware"
+    ),
+    "D10": (
+        "translate the new Cyrillic strings, then run "
+        "tools/sr_cyrillic_to_latin.py to regenerate the derived catalogue "
+        "from its source catalogue so its msgid set and unfinished count "
+        "match the source again"
     ),
 }
 
@@ -1212,9 +1219,24 @@ def detect_d9(catalog_cpp: Path, ts_files: Sequence[Path], rel_to: Path) -> list
         if not ts.is_file():
             continue
         try:
-            tree = ET.parse(ts)
             raw = ts.read_text(encoding="utf-8")
-        except (ET.ParseError, OSError, UnicodeDecodeError):
+        except (OSError, UnicodeDecodeError):
+            continue
+        try:
+            tree = ET.parse(ts)
+        except ET.ParseError as e:
+            # A malformed catalogue must fail the gate, not read as clean —
+            # silently skipping it here would let a corrupted .ts (e.g. a
+            # botched hand-edit or a broken transliteration re-run) pass
+            # numerus discipline by simply not being checked.
+            _emit(
+                out,
+                dim="D9",
+                file=rel(ts),
+                line=1,
+                cls=None,
+                message=f"{ts.name}: malformed XML ({e}) — cannot verify numerus discipline",
+            )
             continue
         lang = tree.getroot().attrib.get("language", "")
         expected = _NPLURALS_BY_LANG.get(lang.split("_")[0].split("@")[0], 2)
@@ -1255,6 +1277,122 @@ def detect_d9(catalog_cpp: Path, ts_files: Sequence[Path], rel_to: Path) -> list
                         f"were stripped or never written"
                     ),
                 )
+    return out
+
+
+# --------------------------------------------------------------------------
+# Derived-catalogue parity (D10)
+# --------------------------------------------------------------------------
+
+
+def _is_unfinished(message_elem: ET.Element) -> bool:
+    """True when a <message> is unfinished per the Qt .ts schema.
+
+    `type="unfinished"` is an attribute of the nested <translation>
+    element, NOT of <message> itself — checking message_elem.attrib
+    directly always returns False (message elements never carry a `type`
+    attribute), which would make this a silent no-op check.
+    """
+
+    translation = message_elem.find("translation")
+    return translation is not None and translation.attrib.get("type") == "unfinished"
+
+
+def detect_derived_catalog_parity(
+    source_ts: Path, derived_ts_files: Sequence[Path], rel_to: Path
+) -> list[Finding]:
+    """D10 — a script-derived catalogue (e.g. LibreCelik_sr_Latn_RS.ts,
+    transliterated from LibreCelik_sr_RS.ts rather than produced by
+    lupdate) must carry exactly the source catalogue's msgid set, and no
+    more `type="unfinished"` messages than the source has.
+
+    Nothing else guards this. lupdate only ever touches the catalogues
+    named in resources/CMakeLists.txt's TS_FILES, so a new source string
+    lands in the canonical en/sr catalogues (a human fills the sr
+    translation) while the derived catalogue silently falls behind — its
+    msgid set would drift and this would go unnoticed until someone reads
+    the rendered UI in that language. This check is what makes the
+    "identical msgid set" gate a standing property instead of a one-time
+    fact about the day the catalogue was generated.
+    """
+
+    out: list[Finding] = []
+
+    def rel(p: Path) -> str:
+        return str(p.relative_to(rel_to)) if rel_to in p.parents else str(p)
+
+    if not source_ts.is_file():
+        return out
+    try:
+        source_tree = ET.parse(source_ts)
+    except ET.ParseError as e:
+        _emit(
+            out,
+            dim="D10",
+            file=rel(source_ts),
+            line=1,
+            cls=None,
+            message=f"{source_ts.name}: malformed XML ({e}) — cannot verify derived-catalogue parity",
+        )
+        return out
+    source_root = source_tree.getroot()
+    source_ids = {m.attrib.get("id") for m in source_root.iter("message") if m.attrib.get("id")}
+    source_unfinished = {m.attrib.get("id") for m in source_root.iter("message") if _is_unfinished(m)}
+
+    for derived in derived_ts_files:
+        if not derived.is_file():
+            continue
+        try:
+            derived_tree = ET.parse(derived)
+        except ET.ParseError as e:
+            _emit(
+                out,
+                dim="D10",
+                file=rel(derived),
+                line=1,
+                cls=None,
+                message=f"{derived.name}: malformed XML ({e}) — cannot verify parity against {source_ts.name}",
+            )
+            continue
+        derived_root = derived_tree.getroot()
+        derived_ids = {m.attrib.get("id") for m in derived_root.iter("message") if m.attrib.get("id")}
+
+        missing = sorted(source_ids - derived_ids)
+        extra = sorted(derived_ids - source_ids)
+        if missing or extra:
+            parts = []
+            if missing:
+                parts.append(f"{len(missing)} missing from {derived.name} (e.g. {missing[0]!r})")
+            if extra:
+                parts.append(f"{len(extra)} present only in {derived.name} (e.g. {extra[0]!r})")
+            _emit(
+                out,
+                dim="D10",
+                file=rel(derived),
+                line=1,
+                cls=None,
+                message=(
+                    f"{derived.name}: msgid set diverges from {source_ts.name} — " + "; ".join(parts)
+                ),
+            )
+
+        derived_unfinished = {
+            m.attrib.get("id") for m in derived_root.iter("message") if _is_unfinished(m)
+        }
+        regressed = sorted(derived_unfinished - source_unfinished)
+        if regressed:
+            _emit(
+                out,
+                dim="D10",
+                file=rel(derived),
+                line=1,
+                cls=None,
+                message=(
+                    f"{derived.name}: {len(regressed)} message(s) unfinished that are finished in "
+                    f"{source_ts.name} (e.g. {regressed[0]!r}) — derived catalogue must not carry "
+                    f"more unfinished translations than its source"
+                ),
+            )
     return out
 
 
@@ -1401,6 +1539,30 @@ def _all_source_files(roots: Sequence[Path]) -> list[Path]:
     return out
 
 
+def discover_ts_catalogs(repo_root: Path) -> tuple[Path, Path, list[Path]]:
+    """Return (en_ts, sr_ts, derived_ts) for a LibreCelik checkout.
+
+    `derived_ts` is discovered by globbing
+    resources/i18n/LibreCelik_*.ts and excluding the two canonical
+    catalogues — self-maintaining, so renaming or adding a derived
+    catalogue in resources/CMakeLists.txt's TS_FILES cannot silently stop
+    the audit from covering it (a hardcoded path here would drift out of
+    sync with the build and go unnoticed, since the missing-file case is
+    otherwise legitimately silent).
+    """
+
+    i18n_dir = repo_root / "resources" / "i18n"
+    en_ts = i18n_dir / "LibreCelik_en.ts"
+    sr_ts = i18n_dir / "LibreCelik_sr_RS.ts"
+    derived_ts: list[Path] = []
+    if i18n_dir.is_dir():
+        canonical = {en_ts, sr_ts}
+        for p in sorted(i18n_dir.glob("LibreCelik_*.ts")):
+            if p not in canonical:
+                derived_ts.append(p)
+    return en_ts, sr_ts, derived_ts
+
+
 def _diff_since_files(ref: str, repo_root: Path) -> list[Path] | None:
     try:
         proc = subprocess.run(
@@ -1429,8 +1591,21 @@ def run_audit(
     rel_to: Path,
     dims: Sequence[str],
     diff_files: Sequence[Path] | None = None,
+    derived_ts: Sequence[Path] = (),
 ) -> tuple[list[Finding], dict]:
-    """Run the audit. Returns (findings, summary)."""
+    """Run the audit. Returns (findings, summary).
+
+    `derived_ts` names additional .ts files that are *derived* from `sr_ts`
+    by a script rather than produced by lupdate (currently: a transliterated
+    Serbian Latin catalogue). They do not participate in D5/D6 (those
+    compare specifically against the canonical en/sr catalogues); instead
+    D9's numerus-discipline check also covers them, and D10
+    (detect_derived_catalog_parity) verifies each one's msgid set and
+    unfinished count against `sr_ts` — so a source string added to the
+    canonical catalogues without updating the derived one is a gate failure,
+    not a silent drift. Missing files are skipped (both detectors tolerate
+    that), so passing a path that does not exist yet is harmless.
+    """
 
     classes = index_sources(src_roots, rel_to)
     all_files = _all_source_files(src_roots)
@@ -1450,7 +1625,9 @@ def run_audit(
     if "D6" in dims:
         findings.extend(detect_d6(classes, all_files, rel_to, catalog, catalog_cpp))
     if "D9" in dims:
-        findings.extend(detect_d9(catalog_cpp, [en_ts, sr_ts], rel_to))
+        findings.extend(detect_d9(catalog_cpp, [en_ts, sr_ts, *derived_ts], rel_to))
+    if "D10" in dims:
+        findings.extend(detect_derived_catalog_parity(sr_ts, derived_ts, rel_to))
 
     if diff_files is not None:
         diff_set = {
@@ -1543,8 +1720,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         src_roots = [Path(r).resolve() for r in args.src_roots]
     else:
         src_roots = [repo_root / "src", repo_root / "plugins"]
-    en_ts = repo_root / "resources" / "i18n" / "LibreCelik_en.ts"
-    sr_ts = repo_root / "resources" / "i18n" / "LibreCelik_sr_RS.ts"
+    en_ts, sr_ts, derived_ts = discover_ts_catalogs(repo_root)
     catalog_cpp = repo_root / "src" / "utils" / "translations_catalog.cpp"
     allowlist_path = (
         Path(args.allowlist).resolve()
@@ -1584,6 +1760,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             rel_to=repo_root,
             dims=dims,
             diff_files=diff_files,
+            derived_ts=derived_ts,
         )
     except AllowlistError as e:
         print(f"i18n-audit: {e}", file=sys.stderr)

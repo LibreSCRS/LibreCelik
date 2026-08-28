@@ -507,6 +507,187 @@ class TestD9:
         assert rc == 1
         assert any(f.dim == "D9" and "numerusform" in f.message for f in fs)
 
+    def test_sr_latin_numerus_with_too_few_forms_is_flagged(self, tmp_path):
+        # D9 must also cover the script-derived Serbian Latin catalogue
+        # (LibreCelik_sr_Latn_RS.ts), not just the canonical en/sr pair —
+        # it is transliterated by a script rather than produced by lupdate,
+        # so it gets no other numerus-discipline check of its own.
+        repo = self._repo(
+            tmp_path,
+            '    //% "— %n confirmations."\n    QT_TRID_N_NOOP("lc-seq");\n',
+        )
+        latin = (
+            '    <message numerus="yes" id="lc-seq">\n'
+            "        <source>— %n confirmations.</source>\n"
+            "        <translation>\n"
+            "            <numerusform>— %n potvrda.</numerusform>\n"
+            "        </translation>\n"
+            "    </message>"
+        )
+        (repo / "resources" / "i18n" / "LibreCelik_sr_Latn_RS.ts").write_text(
+            EMPTY_TS.format(lang="sr_Latn_RS", messages=latin), encoding="utf-8"
+        )
+        rc, fs = _run(repo, dims=["D9"])
+        assert rc == 1
+        assert any(
+            f.dim == "D9" and "numerusform" in f.message and "sr_Latn_RS" in f.file for f in fs
+        )
+
+    def test_sr_latin_ts_absent_is_not_flagged(self, tmp_path):
+        # No LibreCelik_sr_Latn_RS.ts in the tree (e.g. a repo state before
+        # this catalogue existed) must not be treated as a D9 finding —
+        # detect_d9 skips files that are not present.
+        repo = self._repo(
+            tmp_path,
+            '    //% "— %n confirmations."\n    QT_TRID_N_NOOP("lc-seq");\n',
+        )
+        assert not (repo / "resources" / "i18n" / "LibreCelik_sr_Latn_RS.ts").exists()
+        rc, fs = _run(repo, dims=["D9"])
+        assert rc == 0, [f.__dict__ for f in fs]
+
+    def test_malformed_ts_is_flagged_not_silently_skipped(self, tmp_path):
+        # A broken catalogue must fail the gate, not read as clean because
+        # ET.parse() raised and the old code swallowed the exception.
+        repo = self._repo(
+            tmp_path,
+            '    //% "— %n confirmations."\n    QT_TRID_N_NOOP("lc-seq");\n',
+        )
+        (repo / "resources" / "i18n" / "LibreCelik_sr_RS.ts").write_text(
+            '<?xml version="1.0" encoding="utf-8"?>\n<TS version="2.1" language="sr_RS"><unclosed',
+            encoding="utf-8",
+        )
+        rc, fs = _run(repo, dims=["D9"])
+        assert rc == 1
+        assert any(f.dim == "D9" and "malformed XML" in f.message for f in fs)
+
+
+# --------------------------------------------------------------------------
+# D10 — derived-catalogue parity (msgid set + unfinished count vs source)
+# --------------------------------------------------------------------------
+
+
+class TestD10:
+    def _repo_with_source(self, tmp_path, ids: list[str]) -> Path:
+        # ids_in_catalog fixes the exact msgid set in en/sr/catalog.cpp so
+        # the derived-catalogue comparison target is known precisely.
+        return _materialise(tmp_path, {}, ids_in_catalog=ids)
+
+    def _write_derived(self, repo: Path, name: str, lang: str, messages: str) -> Path:
+        p = repo / "resources" / "i18n" / name
+        p.write_text(EMPTY_TS.format(lang=lang, messages=messages), encoding="utf-8")
+        return p
+
+    def test_derived_catalog_missing_msgid_is_flagged(self, tmp_path):
+        repo = self._repo_with_source(tmp_path, ["lc-a", "lc-b"])
+        self._write_derived(
+            repo,
+            "LibreCelik_sr_Latn_RS.ts",
+            "sr_Latn_RS",
+            '    <message id="lc-a">\n        <source>lc-a</source>\n'
+            "        <translation>lc-a</translation>\n    </message>",
+        )
+        rc, fs = _run(repo, dims=["D10"])
+        assert rc == 1
+        assert any(f.dim == "D10" and "missing" in f.message and "lc-b" in f.message for f in fs)
+
+    def test_derived_catalog_extra_msgid_is_flagged(self, tmp_path):
+        repo = self._repo_with_source(tmp_path, ["lc-a"])
+        self._write_derived(
+            repo,
+            "LibreCelik_sr_Latn_RS.ts",
+            "sr_Latn_RS",
+            '    <message id="lc-a">\n        <source>lc-a</source>\n'
+            "        <translation>lc-a</translation>\n    </message>\n"
+            '    <message id="lc-ghost">\n        <source>lc-ghost</source>\n'
+            "        <translation>lc-ghost</translation>\n    </message>",
+        )
+        rc, fs = _run(repo, dims=["D10"])
+        assert rc == 1
+        assert any(
+            f.dim == "D10" and "present only in" in f.message and "lc-ghost" in f.message for f in fs
+        )
+
+    def test_derived_catalog_matching_msgids_is_clean(self, tmp_path):
+        repo = self._repo_with_source(tmp_path, ["lc-a", "lc-b"])
+        self._write_derived(
+            repo,
+            "LibreCelik_sr_Latn_RS.ts",
+            "sr_Latn_RS",
+            '    <message id="lc-a">\n        <source>lc-a</source>\n'
+            "        <translation>lc-a</translation>\n    </message>\n"
+            '    <message id="lc-b">\n        <source>lc-b</source>\n'
+            "        <translation>lc-b</translation>\n    </message>",
+        )
+        rc, fs = _run(repo, dims=["D10"])
+        assert rc == 0, [f.__dict__ for f in fs]
+
+    def test_derived_catalog_extra_unfinished_is_flagged(self, tmp_path):
+        # _make_ts's default sr_RS entry for "lc-a" is finished; the derived
+        # catalogue regresses it to unfinished — that must be a finding
+        # even though the msgid sets match.
+        repo = self._repo_with_source(tmp_path, ["lc-a"])
+        self._write_derived(
+            repo,
+            "LibreCelik_sr_Latn_RS.ts",
+            "sr_Latn_RS",
+            '    <message id="lc-a">\n        <source>lc-a</source>\n'
+            '        <translation type="unfinished"></translation>\n    </message>',
+        )
+        rc, fs = _run(repo, dims=["D10"])
+        assert rc == 1
+        assert any(f.dim == "D10" and "unfinished" in f.message and "lc-a" in f.message for f in fs)
+
+    def test_missing_derived_catalog_is_not_flagged(self, tmp_path):
+        repo = self._repo_with_source(tmp_path, ["lc-a"])
+        assert not (repo / "resources" / "i18n" / "LibreCelik_sr_Latn_RS.ts").exists()
+        rc, fs = _run(repo, dims=["D10"])
+        assert rc == 0, [f.__dict__ for f in fs]
+
+    def test_malformed_source_ts_is_flagged(self, tmp_path):
+        repo = self._repo_with_source(tmp_path, ["lc-a"])
+        (repo / "resources" / "i18n" / "LibreCelik_sr_RS.ts").write_text(
+            '<?xml version="1.0" encoding="utf-8"?>\n<TS version="2.1" language="sr_RS"><unclosed',
+            encoding="utf-8",
+        )
+        rc, fs = _run(repo, dims=["D10"])
+        assert rc == 1
+        assert any(f.dim == "D10" and "malformed XML" in f.message for f in fs)
+
+
+# --------------------------------------------------------------------------
+# Catalog discovery — self-maintaining glob, not a hardcoded path
+# --------------------------------------------------------------------------
+
+
+class TestDerivedCatalogDiscovery:
+    def test_glob_discovers_any_additional_catalog_without_hardcoding(self, tmp_path):
+        # Proves discover_ts_catalogs() is a glob over
+        # resources/i18n/LibreCelik_*.ts, not a name the tool has to know
+        # in advance: a hypothetical future derived catalogue under a name
+        # this tool has never seen is still picked up by D9/D10.
+        repo = _materialise(tmp_path, {}, ids_in_catalog=["lc-a"])
+        weird = repo / "resources" / "i18n" / "LibreCelik_sr_Ijek_RS.ts"
+        weird.write_text(
+            EMPTY_TS.format(
+                lang="sr_Ijek_RS",
+                messages=(
+                    '    <message id="lc-a">\n        <source>lc-a</source>\n'
+                    '        <translation type="unfinished"></translation>\n    </message>'
+                ),
+            ),
+            encoding="utf-8",
+        )
+        rc, fs = _run(repo, dims=["D10"])
+        assert rc == 1
+        assert any(f.dim == "D10" and "LibreCelik_sr_Ijek_RS.ts" in f.file for f in fs)
+
+    def test_canonical_catalogs_are_not_treated_as_derived(self, tmp_path):
+        repo = _materialise(tmp_path, {}, ids_in_catalog=["lc-a"])
+        _, _, derived = ia.discover_ts_catalogs(repo)
+        names = {p.name for p in derived}
+        assert "LibreCelik_en.ts" not in names
+        assert "LibreCelik_sr_RS.ts" not in names
+
 
 # --------------------------------------------------------------------------
 # Allowlist syntax

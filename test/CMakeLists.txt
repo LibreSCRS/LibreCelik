@@ -957,9 +957,21 @@ gtest_discover_tests(ReaderPagesTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=of
 # strip the Serbian plural forms on a developer machine — the numerus guard
 # (dimension D9) must fail the LOCAL gate too, so the audit is a ctest. The
 # tool exits 1 on any non-allowlisted finding.
-find_package(Python3 COMPONENTS Interpreter)
-if(Python3_FOUND)
-    add_test(NAME I18nAudit
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/i18n_audit.py --strict)
-    set_tests_properties(I18nAudit PROPERTIES TIMEOUT 120)
+#
+# Registered UNCONDITIONALLY. Wrapping the add_test() in
+# if(Python3_Interpreter_FOUND) meant that on a host without an interpreter
+# the test did not exist at all and ctest reported a clean run — the same
+# silent pass this gate exists to end, and precisely the configuration a
+# packager builds in. A missing interpreter must fail the gate, not delete
+# it. Python3 is now a declared test dependency, and when find_package
+# cannot locate one the script is invoked through its own shebang so the
+# failure is loud. Same pattern as LibreKDE's tests/CMakeLists.txt
+# CatalogReconcile test.
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(Python3_Interpreter_FOUND)
+    set(_i18n_audit_command ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/i18n_audit.py --strict)
+else()
+    set(_i18n_audit_command ${CMAKE_SOURCE_DIR}/tools/i18n_audit.py --strict)
 endif()
+add_test(NAME I18nAudit COMMAND ${_i18n_audit_command})
+set_tests_properties(I18nAudit PROPERTIES TIMEOUT 120)

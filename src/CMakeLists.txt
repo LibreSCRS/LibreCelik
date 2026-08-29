@@ -200,9 +200,46 @@ set_source_files_properties(${APP_ICON_MACOS} PROPERTIES MACOSX_PACKAGE_LOCATION
 
 add_subdirectory(document/printing)
 
+# ── Application object library ────────────────────────────────────────────
+# Everything except main.cpp compiles here so a test binary can link the SAME
+# objects the executable ships. Until this library existed, a test that wanted
+# the main window had to restate the whole application's source list, so the
+# window was compiled into no test target at all and every case that would
+# have covered it was written against its parts instead.
+#
+# OBJECT, not STATIC: a static archive drops objects nothing references, and
+# Qt reaches resource and moc registrations only through static initialisers --
+# precisely the objects an archive would discard.
+#
+# Resources and translations deliberately stay on the EXECUTABLE below.
+# qt_add_translations() attaches its own generated /i18n resource to whatever
+# target it is given, and a second copy on a second target is exactly the
+# duplicate the comment further down warns about.
+set(APP_SOURCES ${PROJECT_SOURCES})
+list(REMOVE_ITEM APP_SOURCES main.cpp)
+add_library(librecelik_app OBJECT ${APP_SOURCES})
+
+# PUBLIC throughout: the executable and every test binary linking this library
+# compile against the same headers and the same Qt modules.
+target_link_libraries(librecelik_app PUBLIC
+    Qt6::Widgets
+    Qt6::PrintSupport
+    LibreCelikPrinting
+    LibreAgent::ClientQt)
+target_include_directories(librecelik_app PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR})
+if(LIBRECELIK_SIGNING_ENABLED)
+    target_link_libraries(librecelik_app PUBLIC Qt6::PdfWidgets)
+endif()
+
+# The warning gate has to sit where the code compiles. Left on the executable
+# alone it would now cover main.cpp and nothing else.
+librecelik_warnings_as_errors(librecelik_app)
+
 qt_add_executable(${PROJECT_NAME}
     MANUAL_FINALIZATION
-    ${PROJECT_SOURCES}
+    main.cpp
     ${RESOURCE_SOURCES}
 )
 
@@ -234,6 +271,7 @@ qt_add_translations(${PROJECT_NAME}
 # and LibreSCRS::Trust::TrustStore.
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
+    librecelik_app
     Qt6::Widgets
     Qt6::PrintSupport
     LibreCelikPrinting

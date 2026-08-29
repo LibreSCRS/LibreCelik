@@ -104,7 +104,10 @@ constexpr QLatin1StringView kCardTypeFeature{"card-type"};
 
 } // namespace
 
-LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreCelik)
+LibreCelik::LibreCelik(QWidget* parent) : LibreCelik(std::make_unique<librecelik::agent::LiveAgentGateway>(), parent) {}
+
+LibreCelik::LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> injectedGateway, QWidget* parent)
+    : QMainWindow(parent), ui(new Ui::LibreCelik)
 {
     qCDebug(lcGeneral, "Setting up GUI");
 
@@ -199,7 +202,7 @@ LibreCelik::LibreCelik(QWidget* parent) : QMainWindow(parent), ui(new Ui::LibreC
             ui->statusbar->hide();
     });
 
-    gateway = std::make_unique<librecelik::agent::LiveAgentGateway>();
+    gateway = std::move(injectedGateway);
     connect(gateway.get(), &AgentGateway::presenceChanged, this, &LibreCelik::onPresenceChanged);
     // The banner names the agent's version, which is only knowable while the
     // agent answers — so it is re-rendered on every presence move.

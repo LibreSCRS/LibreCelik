@@ -39,6 +39,14 @@ class LibreCelik : public QMainWindow
 
 public:
     LibreCelik(QWidget* parent = nullptr);
+    /// @brief Builds the window over @p gateway instead of the live one.
+    ///
+    /// The gateway is this window's only card I/O seam, so handing it in is
+    /// what lets the composition be exercised at all: the window that ships
+    /// and the window under test are then the same code reading a different
+    /// roster. The default constructor above delegates here with the live
+    /// gateway, so nothing about the shipped application changes.
+    explicit LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> gateway, QWidget* parent = nullptr);
     ~LibreCelik();
 
 signals:

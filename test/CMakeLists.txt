@@ -975,3 +975,21 @@ else()
 endif()
 add_test(NAME I18nAudit COMMAND ${_i18n_audit_command})
 set_tests_properties(I18nAudit PROPERTIES TIMEOUT 120)
+
+# The main window itself. Every other target here names the individual src/
+# files it needs; this one cannot, because the window composes most of the
+# application. It links the application object library instead — the same
+# objects the executable ships — which is what made the window testable at all.
+add_executable(MainWindowTests
+    mainwindow_test.cpp
+    fake_gateway/fakeagentgateway.cpp
+    fake_gateway/fakecardcontroller.cpp
+    fake_gateway/fakesigncontroller.cpp
+)
+target_include_directories(MainWindowTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(MainWindowTests PRIVATE
+    GTest::gtest_main
+    Qt6::Test
+    librecelik_app)
+set_target_properties(MainWindowTests PROPERTIES AUTOMOC ON)
+gtest_discover_tests(MainWindowTests)

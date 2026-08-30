@@ -29,6 +29,7 @@
 #include <QVariant>
 #include <QVariantMap>
 
+#include <expected>
 #include <memory>
 #include <optional>
 
@@ -65,6 +66,8 @@ public:
     [[nodiscard]] std::optional<LibreSCRS::AgentClient::SyncError> setConfigValue(const QString& key,
                                                                                   const QVariant& value) override;
     [[nodiscard]] std::optional<LibreSCRS::AgentClient::SyncError> resetConfigValue(const QString& key) override;
+    [[nodiscard]] std::expected<LibreSCRS::AgentClient::CscaAnchorState, LibreSCRS::AgentClient::SyncError>
+    importCscaMasterList(int masterListFd) override;
 
     void fetchCertificateDer(const QString& readerId, const QString& certId) override;
 

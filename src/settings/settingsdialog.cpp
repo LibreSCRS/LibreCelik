@@ -12,10 +12,14 @@
 #include "utils/buttonbox.h"
 #include "utils/localeresolver.h"
 
+#include <LibreSCRS/AgentClient/FdHandle.h>
+
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDateTime>
 #include <QEvent>
 #include <QDialogButtonBox>
+#include <QFile>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QInputDialog>
@@ -31,6 +35,8 @@
 #include <QTabWidget>
 #include <QUrl>
 #include <QVBoxLayout>
+
+#include <fcntl.h>
 
 #include <utility>
 
@@ -250,6 +256,36 @@ SettingsDialog::SettingsDialog(librecelik::agent::AgentGateway* agentGateway, QW
         }
     });
 
+    // Country-signing anchors. Deliberately NOT a second source list beside
+    // the trusted ones: nothing fetches from such a list, and an "add source"
+    // that silently does nothing leaves a reader believing they configured
+    // something. What there is instead is the one step a person can actually
+    // take — hand the agent a signed master list — and an honest account of
+    // what came back.
+    cscaAnchorsLabel = new QLabel(trustTab);
+    trustLayout->addWidget(cscaAnchorsLabel);
+
+    cscaSummaryLabel = new QLabel(trustTab);
+    cscaSummaryLabel->setObjectName(QStringLiteral("cscaSummaryLabel"));
+    cscaSummaryLabel->setWordWrap(true);
+    cscaSummaryLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    trustLayout->addWidget(cscaSummaryLabel);
+
+    cscaStatusLabel = new QLabel(trustTab);
+    cscaStatusLabel->setObjectName(QStringLiteral("cscaStatusLabel"));
+    cscaStatusLabel->setWordWrap(true);
+    cscaStatusLabel->setVisible(false);
+    trustLayout->addWidget(cscaStatusLabel);
+
+    cscaImportButton = new QPushButton(trustTab);
+    cscaImportButton->setObjectName(QStringLiteral("cscaImportButton"));
+    auto* cscaButtonRow = new QHBoxLayout;
+    cscaButtonRow->addStretch();
+    cscaButtonRow->addWidget(cscaImportButton);
+    trustLayout->addLayout(cscaButtonRow);
+
+    connect(cscaImportButton, &QPushButton::clicked, this, &SettingsDialog::onCscaImportRequested);
+
     trustRestoreDefaultsBtn = new QPushButton(trustTab);
     trustRestoreDefaultsBtn->setObjectName(QStringLiteral("trustRestoreDefaultsButton"));
     auto* trustButtonRow = new QHBoxLayout;
@@ -334,6 +370,119 @@ SettingsDialog::SettingsDialog(librecelik::agent::AgentGateway* agentGateway, QW
     loadSettings();
     loadConfig();
     applyPresence();
+}
+
+void SettingsDialog::importMasterList(int masterListFd)
+{
+    if (gateway == nullptr || gateway->presence() != PresenceState::Ready)
+        return;
+
+    const auto imported = gateway->importCscaMasterList(masterListFd);
+    if (imported.has_value()) {
+        cscaState = *imported;
+        cscaOutcome = CscaImportOutcome::Installed;
+    } else {
+        // A refusal installed nothing and gave up nothing already held, so
+        // whatever the summary said about the anchors is still exactly as
+        // true (or as unknown) as it was — it is left alone on purpose.
+        switch (imported.error()) {
+        case LibreSCRS::AgentClient::SyncError::MasterListReplayed:
+            // "Strictly newer" admits no equality: the same file again lands
+            // here, and so does an older one. Both are answers a person can
+            // act on, which is why the agent names this refusal separately.
+            cscaOutcome = CscaImportOutcome::Replayed;
+            break;
+        case LibreSCRS::AgentClient::SyncError::NotAuthorized:
+            cscaOutcome = CscaImportOutcome::Unauthorized;
+            break;
+        default:
+            // Every "this file is not a usable master list" refusal the agent
+            // names is outside the closed error vocabulary and arrives here.
+            cscaOutcome = CscaImportOutcome::Refused;
+            break;
+        }
+    }
+    renderCscaState();
+}
+
+void SettingsDialog::importMasterListFile(const QString& path)
+{
+    if (path.isEmpty() || gateway == nullptr || gateway->presence() != PresenceState::Ready)
+        return;
+
+    // O_CLOEXEC: a descriptor handed to the agent must never survive into a
+    // child process. The handle closes it on the way out whatever the answer
+    // was — the call BORROWS it and duplicates what it puts on the wire.
+    LibreSCRS::AgentClient::FdHandle file{::open(QFile::encodeName(path).constData(), O_RDONLY | O_CLOEXEC)};
+    if (!file.valid()) {
+        cscaOutcome = CscaImportOutcome::Unreadable;
+        renderCscaState();
+        return;
+    }
+    importMasterList(file.get());
+}
+
+void SettingsDialog::onCscaImportRequested()
+{
+    const QString title =
+        qtTrId("lc-settings-csca-import-title"); // i18n-audit: ignore D2, transient file dialog — qtTrId evaluated
+                                                 // at click time, dialog discarded after exec()
+    const QString filter = qtTrId("lc-settings-csca-import-filter");
+    const QString path = QFileDialog::getOpenFileName(this, title, QString(), filter);
+    if (path.isEmpty())
+        return; // cancelled: nothing was chosen, so there is nothing to report
+    importMasterListFile(path);
+}
+
+void SettingsDialog::renderCscaState()
+{
+    if (cscaState.has_value()) {
+        const LibreSCRS::AgentClient::CscaAnchorState& state = *cscaState;
+        QStringList lines;
+        // ANCHORS, never "roots": the count includes CSCA link certificates,
+        // which are anchors like any other and are not self-signed roots.
+        lines << qtTrId("lc-settings-csca-state-anchors").arg(state.anchors).arg(state.issuers);
+        if (state.signedAt.isValid()) {
+            // Only when the list carried one. CMS permits an absent signing
+            // time, and an epoch-valued stand-in would read as a real date.
+            // Written as an ISO date in UTC: the stamp belongs to the
+            // publisher, and a local-time rendering can move it by a day.
+            lines << qtTrId("lc-settings-csca-state-signed").arg(state.signedAt.toUTC().date().toString(Qt::ISODate));
+        }
+        // The FALSE is the value worth surfacing: staying silent leaves a
+        // reader unable to tell "a later list that is not newer will be
+        // refused" from "that cannot be checked at all".
+        lines << (state.replayRefusalActive ? qtTrId("lc-settings-csca-rollback-on")
+                                            : qtTrId("lc-settings-csca-rollback-off"));
+        cscaSummaryLabel->setText(lines.join(QLatin1Char('\n')));
+    } else {
+        // NOT ASKED — see the member's own comment. Counts here would be a
+        // reading nobody took.
+        cscaSummaryLabel->setText(qtTrId("lc-settings-csca-state-unknown"));
+    }
+
+    QString status;
+    switch (cscaOutcome) {
+    case CscaImportOutcome::None:
+        break;
+    case CscaImportOutcome::Installed:
+        status = qtTrId("lc-settings-csca-installed");
+        break;
+    case CscaImportOutcome::Replayed:
+        status = qtTrId("lc-settings-csca-replayed");
+        break;
+    case CscaImportOutcome::Unauthorized:
+        status = qtTrId("lc-settings-config-unauthorized");
+        break;
+    case CscaImportOutcome::Refused:
+        status = qtTrId("lc-settings-csca-refused");
+        break;
+    case CscaImportOutcome::Unreadable:
+        status = qtTrId("lc-settings-csca-unreadable");
+        break;
+    }
+    cscaStatusLabel->setText(status);
+    cscaStatusLabel->setVisible(!status.isEmpty());
 }
 
 void SettingsDialog::loadSettings()
@@ -607,6 +756,8 @@ void SettingsDialog::retranslateUi()
     lastTsaLabel->setText(qtTrId("lc-settings-last-tsa"));
     tsaServersLabel->setText(qtTrId("lc-settings-tsa-servers"));
     tlServersLabel->setText(qtTrId("lc-settings-tl-servers"));
+    cscaAnchorsLabel->setText(qtTrId("lc-settings-csca-anchors"));
+    cscaImportButton->setText(qtTrId("lc-settings-csca-import"));
     signingRestoreDefaultsBtn->setText(qtTrId("lc-btn-restore-defaults"));
     trustRestoreDefaultsBtn->setText(qtTrId("lc-btn-restore-defaults"));
     needsAgentLabel->setText(qtTrId("lc-settings-needs-agent"));
@@ -620,6 +771,7 @@ void SettingsDialog::retranslateUi()
 
     populateTsaList();
     populateTlList();
+    renderCscaState();
     renderStatus();
 }
 

@@ -7,6 +7,8 @@
 #include <QObject>
 #include <QRectF>
 #include <QVariantMap>
+
+#include <expected>
 #include <optional>
 
 namespace librecelik::agent {
@@ -62,6 +64,21 @@ public:
                                                                                           const QVariant& value) = 0;
     /// Config1.Reset — the per-tab "restore defaults" path.
     [[nodiscard]] virtual std::optional<LibreSCRS::AgentClient::SyncError> resetConfigValue(const QString& key) = 0;
+
+    /// Install country-signing (CSCA) trust anchors from a signed ICAO master
+    /// list. Answers the accepted anchor state, or the NAMED refusal — in
+    /// particular `MasterListReplayed`, the one a person can act on ("the list
+    /// you chose is not newer than the one already installed").
+    ///
+    /// @param masterListFd An OPEN descriptor, BORROWED: the callee duplicates
+    ///        it for the wire and never closes yours. A descriptor and not a
+    ///        path because the agent is a separate, possibly sandboxed process
+    ///        — a name it would have to re-open is a name it may not be able
+    ///        to open. One consequence follows from what a descriptor IS: the
+    ///        agent's read shares this open file description, so it ADVANCES
+    ///        YOUR FILE POSITION. Rewind before reading it yourself afterwards.
+    [[nodiscard]] virtual std::expected<LibreSCRS::AgentClient::CscaAnchorState, LibreSCRS::AgentClient::SyncError>
+    importCscaMasterList(int masterListFd) = 0;
 
     // Raw DER fetch for the cert viewer's export path (Phase B).
     virtual void fetchCertificateDer(const QString& readerId, const QString& certId) = 0;

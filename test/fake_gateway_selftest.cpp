@@ -16,6 +16,8 @@
 #include "fake_gateway/fakeagentgateway.h"
 #include "fake_gateway/fakecardcontroller.h"
 #include "fake_gateway/fakesigncontroller.h"
+
+#include "anonymous_fd.h"
 #include "qstring_printto.h"
 
 #include <LibreSCRS/AgentClient/CredentialTypes.h>
@@ -23,10 +25,16 @@
 #include <LibreSCRS/AgentClient/SyncError.h>
 #include <LibreSCRS/AgentClient/Types.h>
 
+#include <QByteArray>
+#include <QList>
 #include <QSignalSpy>
 #include <QVariant>
 
 #include <gtest/gtest.h>
+
+#include <unistd.h>
+
+#include <cstddef>
 
 using librecelik::test::agent::FakeAgentGateway;
 using librecelik::test::agent::FakeCardController;
@@ -255,6 +263,39 @@ TEST(FakeGateway, ScriptedRefusalStopsTheWriteButStillRecordsTheAttempt)
     EXPECT_EQ(gw.configResets.size(), 1);
     EXPECT_FALSE(gw.configSnapshot().contains(QStringLiteral("TslUrls")));
     EXPECT_EQ(changedSpy.count(), 0);
+}
+
+TEST(FakeGateway, ImportConsumesTheDescriptorItWasHandedAndAnswersTheScript)
+{
+    // The fake models the ONE thing a value-carrying seam cannot: the receiver
+    // reads the descriptor from its CURRENT position, so the sender's own file
+    // position moves. A fake that read by path, or pread(2) at offset 0, would
+    // let a dialog that passed a name look identical to one that passed a
+    // descriptor -- which is the whole distinction the dialog suite asserts.
+    FakeAgentGateway gw;
+    gw.scriptedAnchorState.anchors = 5;
+    gw.scriptedAnchorState.issuers = 2;
+
+    const int fd = librecelik::test::makeAnonymousFd("fake-master-list");
+    ASSERT_GE(fd, 0);
+    const QByteArray bytes = QByteArrayLiteral("MASTER-LIST");
+    ASSERT_EQ(::write(fd, bytes.constData(), static_cast<std::size_t>(bytes.size())), bytes.size());
+    ASSERT_EQ(::lseek(fd, 0, SEEK_SET), 0);
+
+    const auto installed = gw.importCscaMasterList(fd);
+    ASSERT_TRUE(installed.has_value());
+    EXPECT_EQ(installed->anchors, 5u);
+    EXPECT_EQ(installed->issuers, 2u);
+    EXPECT_EQ(gw.importedFds, QList<int>{fd});
+    EXPECT_EQ(gw.importedBytes, QList<QByteArray>{bytes});
+    EXPECT_EQ(::lseek(fd, 0, SEEK_CUR), bytes.size()) << "the fake's read must move the sender's offset";
+
+    gw.nextImportRefusal = LibreSCRS::AgentClient::SyncError::MasterListReplayed;
+    const auto refused = gw.importCscaMasterList(fd);
+    ASSERT_FALSE(refused.has_value());
+    EXPECT_EQ(refused.error(), LibreSCRS::AgentClient::SyncError::MasterListReplayed);
+    EXPECT_EQ(gw.importedFds.size(), 2) << "a refusal is still an attempt, and the record needs it";
+    ::close(fd);
 }
 
 TEST(FakeGateway, PresenceRosterFeatureAndVersionAccessorsAnswerTheScript)

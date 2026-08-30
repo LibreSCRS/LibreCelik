@@ -1106,24 +1106,29 @@
         <translation>Detaljne provere</translation>
     </message>
     <message id="lc-emrtd-csca-not-configured">
-        <source>No country signing certificates have been imported. Import a master list, then read the document again.</source>
-        <translation>Nijedan sertifikat državnog izdavaoca nije uvezen. Uvezite master listu, pa ponovo pročitajte dokument.</translation>
+        <source>No country signing certificates have been imported. Import a master list in Settings → Trust, then read the document again.</source>
+        <oldsource>No country signing certificates have been imported. Import a master list, then read the document again.</oldsource>
+        <translation>Nijedan sertifikat državnog izdavaoca nije uvezen. Uvezite master listu u Podešavanja → Poverenje, pa ponovo pročitajte dokument.</translation>
     </message>
     <message id="lc-emrtd-csca-anchors-unreadable">
-        <source>The country signing certificate store could not be read. Check that its path exists and is readable, then read the document again.</source>
-        <translation>Skladište sertifikata državnih izdavalaca ne može da se pročita. Proverite da li njegova putanja postoji i da li je čitljiva, pa ponovo pročitajte dokument.</translation>
+        <source>The country signing certificate store could not be read. Check that its path exists and is readable, or import a master list again in Settings → Trust, then read the document again.</source>
+        <oldsource>The country signing certificate store could not be read. Check that its path exists and is readable, then read the document again.</oldsource>
+        <translation>Skladište sertifikata državnih izdavalaca ne može da se pročita. Proverite da li njegova putanja postoji i da li je čitljiva, ili ponovo uvezite master listu u Podešavanja → Poverenje, pa ponovo pročitajte dokument.</translation>
     </message>
     <message id="lc-emrtd-csca-anchors-undecodable">
-        <source>The country signing certificate store holds no usable certificate. Import the master list again.</source>
-        <translation>Skladište sertifikata državnih izdavalaca ne sadrži nijedan upotrebljiv sertifikat. Ponovo uvezite master listu.</translation>
+        <source>The country signing certificate store holds no usable certificate. Import the master list again in Settings → Trust.</source>
+        <oldsource>The country signing certificate store holds no usable certificate. Import the master list again.</oldsource>
+        <translation>Skladište sertifikata državnih izdavalaca ne sadrži nijedan upotrebljiv sertifikat. Ponovo uvezite master listu u Podešavanja → Poverenje.</translation>
     </message>
     <message id="lc-emrtd-csca-no-anchor-for-issuer">
-        <source>No country signing certificate is held for the country that issued this document. Import that country&apos;s master list.</source>
-        <translation>Nema sertifikata državnog izdavaoca za državu koja je izdala ovaj dokument. Uvezite master listu te države.</translation>
+        <source>No country signing certificate is held for the country that issued this document. Import that country&apos;s master list in Settings → Trust.</source>
+        <oldsource>No country signing certificate is held for the country that issued this document. Import that country&apos;s master list.</oldsource>
+        <translation>Nema sertifikata državnog izdavaoca za državu koja je izdala ovaj dokument. Uvezite master listu te države u Podešavanja → Poverenje.</translation>
     </message>
     <message id="lc-emrtd-csca-chain-failed">
-        <source>This document&apos;s signer does not lead to the country signing certificate held for its issuer. Do not rely on this document; have the issuing authority check it.</source>
-        <translation>Potpisnik ovog dokumenta ne vodi do sertifikata državnog izdavaoca koji se čuva za njegovog izdavaoca. Ne oslanjajte se na ovaj dokument; neka ga proveri organ koji ga je izdao.</translation>
+        <source>This document&apos;s signer does not lead to the country signing certificate held for its issuer. Do not rely on this document; have the issuing authority check it. If the certificates installed in Settings → Trust are out of date, import a current master list there.</source>
+        <oldsource>This document&apos;s signer does not lead to the country signing certificate held for its issuer. Do not rely on this document; have the issuing authority check it.</oldsource>
+        <translation>Potpisnik ovog dokumenta ne vodi do sertifikata državnog izdavaoca koji se čuva za njegovog izdavaoca. Ne oslanjajte se na ovaj dokument; neka ga proveri organ koji ga je izdao. Ako su sertifikati instalirani u Podešavanja → Poverenje zastareli, uvezite tamo aktuelnu master listu.</translation>
     </message>
     <message id="lc-emrtd-presence">
         <source>Authentication</source>
@@ -1480,6 +1485,58 @@
     <message id="lc-settings-tl-loading">
         <source>Loading:</source>
         <translation>Učitavanje:</translation>
+    </message>
+    <message id="lc-settings-csca-anchors">
+        <source>Country Signing Anchors:</source>
+        <translation>Sidra državnih izdavalaca:</translation>
+    </message>
+    <message id="lc-settings-csca-import">
+        <source>Import Master List…</source>
+        <translation>Uvezi master listu…</translation>
+    </message>
+    <message id="lc-settings-csca-import-title">
+        <source>Select an ICAO Master List</source>
+        <translation>Izaberite ICAO master listu</translation>
+    </message>
+    <message id="lc-settings-csca-import-filter">
+        <source>Master lists (*.ml *.mls);;All files (*)</source>
+        <translation>Master liste (*.ml *.mls);;Sve datoteke (*)</translation>
+    </message>
+    <message id="lc-settings-csca-state-unknown">
+        <source>What is installed now cannot be read from here. Import a master list to see what the agent holds afterwards.</source>
+        <translation>Šta je sada instalirano ne može da se pročita odavde. Uvezite master listu da biste videli šta agent nakon toga sadrži.</translation>
+    </message>
+    <message id="lc-settings-csca-state-anchors">
+        <source>Installed anchors: %1. Issuing countries: %2.</source>
+        <translation>Instalirana sidra: %1. Države izdavaoci: %2.</translation>
+    </message>
+    <message id="lc-settings-csca-state-signed">
+        <source>List signed: %1</source>
+        <translation>Lista potpisana: %1</translation>
+    </message>
+    <message id="lc-settings-csca-rollback-on">
+        <source>A later list that is not newer than this one will be refused.</source>
+        <translation>Kasnija lista koja nije novija od ove biće odbijena.</translation>
+    </message>
+    <message id="lc-settings-csca-rollback-off">
+        <source>This list carries no signing time, so a later list cannot be checked for rolling the anchors back.</source>
+        <translation>Ova lista ne nosi vreme potpisivanja, pa se za kasniju listu ne može proveriti da li vraća sidra unazad.</translation>
+    </message>
+    <message id="lc-settings-csca-installed">
+        <source>The master list was installed.</source>
+        <translation>Master lista je instalirana.</translation>
+    </message>
+    <message id="lc-settings-csca-replayed">
+        <source>Nothing was installed: this list is not newer than the one already in place. The same list is already installed, and an older one would roll the anchors back.</source>
+        <translation>Ništa nije instalirano: ova lista nije novija od one koja je već na snazi. Ista lista je već instalirana, a starija bi vratila sidra unazad.</translation>
+    </message>
+    <message id="lc-settings-csca-refused">
+        <source>This file could not be installed as a master list. Choose a different file.</source>
+        <translation>Ova datoteka ne može da se instalira kao master lista. Izaberite drugu datoteku.</translation>
+    </message>
+    <message id="lc-settings-csca-unreadable">
+        <source>That file could not be opened. Check that it exists and is readable.</source>
+        <translation>Ta datoteka ne može da se otvori. Proverite da li postoji i da li je čitljiva.</translation>
     </message>
     <message id="lc-settings-last-tsa">
         <source>Last used TSA server:</source>

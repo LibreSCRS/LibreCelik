@@ -1106,24 +1106,29 @@
         <translation>Detailed Checks</translation>
     </message>
     <message id="lc-emrtd-csca-not-configured">
-        <source>No country signing certificates have been imported. Import a master list, then read the document again.</source>
-        <translation>No country signing certificates have been imported. Import a master list, then read the document again.</translation>
+        <source>No country signing certificates have been imported. Import a master list in Settings → Trust, then read the document again.</source>
+        <oldsource>No country signing certificates have been imported. Import a master list, then read the document again.</oldsource>
+        <translation>No country signing certificates have been imported. Import a master list in Settings → Trust, then read the document again.</translation>
     </message>
     <message id="lc-emrtd-csca-anchors-unreadable">
-        <source>The country signing certificate store could not be read. Check that its path exists and is readable, then read the document again.</source>
-        <translation>The country signing certificate store could not be read. Check that its path exists and is readable, then read the document again.</translation>
+        <source>The country signing certificate store could not be read. Check that its path exists and is readable, or import a master list again in Settings → Trust, then read the document again.</source>
+        <oldsource>The country signing certificate store could not be read. Check that its path exists and is readable, then read the document again.</oldsource>
+        <translation>The country signing certificate store could not be read. Check that its path exists and is readable, or import a master list again in Settings → Trust, then read the document again.</translation>
     </message>
     <message id="lc-emrtd-csca-anchors-undecodable">
-        <source>The country signing certificate store holds no usable certificate. Import the master list again.</source>
-        <translation>The country signing certificate store holds no usable certificate. Import the master list again.</translation>
+        <source>The country signing certificate store holds no usable certificate. Import the master list again in Settings → Trust.</source>
+        <oldsource>The country signing certificate store holds no usable certificate. Import the master list again.</oldsource>
+        <translation>The country signing certificate store holds no usable certificate. Import the master list again in Settings → Trust.</translation>
     </message>
     <message id="lc-emrtd-csca-no-anchor-for-issuer">
-        <source>No country signing certificate is held for the country that issued this document. Import that country&apos;s master list.</source>
-        <translation>No country signing certificate is held for the country that issued this document. Import that country&apos;s master list.</translation>
+        <source>No country signing certificate is held for the country that issued this document. Import that country&apos;s master list in Settings → Trust.</source>
+        <oldsource>No country signing certificate is held for the country that issued this document. Import that country&apos;s master list.</oldsource>
+        <translation>No country signing certificate is held for the country that issued this document. Import that country&apos;s master list in Settings → Trust.</translation>
     </message>
     <message id="lc-emrtd-csca-chain-failed">
-        <source>This document&apos;s signer does not lead to the country signing certificate held for its issuer. Do not rely on this document; have the issuing authority check it.</source>
-        <translation>This document&apos;s signer does not lead to the country signing certificate held for its issuer. Do not rely on this document; have the issuing authority check it.</translation>
+        <source>This document&apos;s signer does not lead to the country signing certificate held for its issuer. Do not rely on this document; have the issuing authority check it. If the certificates installed in Settings → Trust are out of date, import a current master list there.</source>
+        <oldsource>This document&apos;s signer does not lead to the country signing certificate held for its issuer. Do not rely on this document; have the issuing authority check it.</oldsource>
+        <translation>This document&apos;s signer does not lead to the country signing certificate held for its issuer. Do not rely on this document; have the issuing authority check it. If the certificates installed in Settings → Trust are out of date, import a current master list there.</translation>
     </message>
     <message id="lc-emrtd-presence">
         <source>Authentication</source>
@@ -1480,6 +1485,58 @@
     <message id="lc-settings-tl-loading">
         <source>Loading:</source>
         <translation>Loading:</translation>
+    </message>
+    <message id="lc-settings-csca-anchors">
+        <source>Country Signing Anchors:</source>
+        <translation>Country Signing Anchors:</translation>
+    </message>
+    <message id="lc-settings-csca-import">
+        <source>Import Master List…</source>
+        <translation>Import Master List…</translation>
+    </message>
+    <message id="lc-settings-csca-import-title">
+        <source>Select an ICAO Master List</source>
+        <translation>Select an ICAO Master List</translation>
+    </message>
+    <message id="lc-settings-csca-import-filter">
+        <source>Master lists (*.ml *.mls);;All files (*)</source>
+        <translation>Master lists (*.ml *.mls);;All files (*)</translation>
+    </message>
+    <message id="lc-settings-csca-state-unknown">
+        <source>What is installed now cannot be read from here. Import a master list to see what the agent holds afterwards.</source>
+        <translation>What is installed now cannot be read from here. Import a master list to see what the agent holds afterwards.</translation>
+    </message>
+    <message id="lc-settings-csca-state-anchors">
+        <source>Installed anchors: %1. Issuing countries: %2.</source>
+        <translation>Installed anchors: %1. Issuing countries: %2.</translation>
+    </message>
+    <message id="lc-settings-csca-state-signed">
+        <source>List signed: %1</source>
+        <translation>List signed: %1</translation>
+    </message>
+    <message id="lc-settings-csca-rollback-on">
+        <source>A later list that is not newer than this one will be refused.</source>
+        <translation>A later list that is not newer than this one will be refused.</translation>
+    </message>
+    <message id="lc-settings-csca-rollback-off">
+        <source>This list carries no signing time, so a later list cannot be checked for rolling the anchors back.</source>
+        <translation>This list carries no signing time, so a later list cannot be checked for rolling the anchors back.</translation>
+    </message>
+    <message id="lc-settings-csca-installed">
+        <source>The master list was installed.</source>
+        <translation>The master list was installed.</translation>
+    </message>
+    <message id="lc-settings-csca-replayed">
+        <source>Nothing was installed: this list is not newer than the one already in place. The same list is already installed, and an older one would roll the anchors back.</source>
+        <translation>Nothing was installed: this list is not newer than the one already in place. The same list is already installed, and an older one would roll the anchors back.</translation>
+    </message>
+    <message id="lc-settings-csca-refused">
+        <source>This file could not be installed as a master list. Choose a different file.</source>
+        <translation>This file could not be installed as a master list. Choose a different file.</translation>
+    </message>
+    <message id="lc-settings-csca-unreadable">
+        <source>That file could not be opened. Check that it exists and is readable.</source>
+        <translation>That file could not be opened. Check that it exists and is readable.</translation>
     </message>
     <message id="lc-settings-last-tsa">
         <source>Last used TSA server:</source>

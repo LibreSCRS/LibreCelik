@@ -12,6 +12,11 @@
 
 #include <QMetaType>
 
+#include <unistd.h>
+
+#include <cerrno>
+#include <cstddef>
+
 namespace librecelik::test::agent {
 
 void registerFakeMetatypes()
@@ -137,6 +142,41 @@ std::optional<LibreSCRS::AgentClient::SyncError> FakeAgentGateway::resetConfigVa
     config.remove(key);
     Q_EMIT configChanged(key);
     return std::nullopt;
+}
+
+std::expected<LibreSCRS::AgentClient::CscaAnchorState, LibreSCRS::AgentClient::SyncError>
+FakeAgentGateway::importCscaMasterList(int masterListFd)
+{
+    importedFds.append(masterListFd);
+
+    // Read from the descriptor's CURRENT position, exactly as an agent on the
+    // far side of the wire does. That is what makes the sender's own offset
+    // move, and it is the only reason a caller that passed a NAME can be told
+    // apart from one that passed a descriptor: both deliver the same bytes.
+    QByteArray taken;
+    if (masterListFd >= 0) {
+        constexpr std::size_t kChunkBytes = 4096;
+        QByteArray chunk(kChunkBytes, '\0');
+        for (;;) {
+            const ssize_t got = ::read(masterListFd, chunk.data(), kChunkBytes);
+            if (got < 0) {
+                if (errno == EINTR) {
+                    continue; // a signal is not a failure
+                }
+                break;
+            }
+            if (got == 0) {
+                break;
+            }
+            taken.append(chunk.constData(), static_cast<qsizetype>(got));
+        }
+    }
+    importedBytes.append(taken);
+
+    if (nextImportRefusal.has_value()) {
+        return std::unexpected(*nextImportRefusal);
+    }
+    return scriptedAnchorState;
 }
 
 void FakeAgentGateway::fetchCertificateDer(const QString& readerId, const QString& certId)

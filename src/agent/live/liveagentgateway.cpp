@@ -154,6 +154,16 @@ std::optional<LibreSCRS::AgentClient::SyncError> LiveAgentGateway::resetConfigVa
     return client->resetConfigValue(key);
 }
 
+std::expected<LibreSCRS::AgentClient::CscaAnchorState, LibreSCRS::AgentClient::SyncError>
+LiveAgentGateway::importCscaMasterList(int masterListFd)
+{
+    // Straight through: the descriptor is the payload, and anything this layer
+    // did to it — a rewind, a re-open, a copy into a fresh descriptor — would
+    // hand the agent a different open file description than the one the caller
+    // opened, which is exactly the distinction the call exists to preserve.
+    return client->importCscaMasterList(masterListFd);
+}
+
 void LiveAgentGateway::fetchCertificateDer(const QString& readerId, const QString& certId)
 {
     AgentOperation* operation = client->certificateDer(readerId, certId);

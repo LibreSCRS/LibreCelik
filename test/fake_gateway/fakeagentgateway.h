@@ -24,6 +24,7 @@
 #include <QVariant>
 #include <QVariantMap>
 
+#include <expected>
 #include <optional>
 
 namespace librecelik::test::agent {
@@ -65,10 +66,23 @@ public:
     /// Per-certificate DER for `fetchCertificateDer()`; a missing id answers
     /// empty bytes (the export-unavailable shape a viewer tolerates).
     QHash<QString, QByteArray> scriptedDer;
+    /// The anchor state `importCscaMasterList()` answers on acceptance.
+    LibreSCRS::AgentClient::CscaAnchorState scriptedAnchorState;
+    /// Engaged => the next `importCscaMasterList` refuses with it (the call is
+    /// still recorded — a refusal is an attempt).
+    std::optional<LibreSCRS::AgentClient::SyncError> nextImportRefusal;
 
     // ---- recorders -----------------------------------------------------------
     QList<QPair<QString, QVariant>> configWrites;
     QStringList configResets;
+    /// Descriptors handed to `importCscaMasterList()`, in call order.
+    QList<int> importedFds;
+    /// What each of those descriptors yielded when READ FROM ITS CURRENT
+    /// POSITION — the same thing a real agent's read does, which is why the
+    /// sender's own offset moves and a passed name can be told from a passed
+    /// descriptor. Never pread(2): that would leave the offset untouched and
+    /// make the two indistinguishable.
+    QList<QByteArray> importedBytes;
     /// Records verb calls (`refresh`, `fetchCertificateDer:<certId>`, ...).
     QStringList callLog;
 
@@ -98,6 +112,8 @@ public:
     [[nodiscard]] std::optional<LibreSCRS::AgentClient::SyncError> setConfigValue(const QString& key,
                                                                                   const QVariant& value) override;
     [[nodiscard]] std::optional<LibreSCRS::AgentClient::SyncError> resetConfigValue(const QString& key) override;
+    [[nodiscard]] std::expected<LibreSCRS::AgentClient::CscaAnchorState, LibreSCRS::AgentClient::SyncError>
+    importCscaMasterList(int masterListFd) override;
 
     void fetchCertificateDer(const QString& readerId, const QString& certId) override;
 

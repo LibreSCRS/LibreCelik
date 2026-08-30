@@ -380,6 +380,14 @@ target_link_libraries(SettingsConfig1Tests PRIVATE
     LibreAgent::ClientQt
 )
 set_target_properties(SettingsConfig1Tests PROPERTIES AUTOMOC ON)
+# The anchor summary is a template filled with counts and a date; with no
+# catalogue loaded qtTrId() answers the bare id, arg() finds no %1 to replace,
+# and every "the summary says how many anchors" assertion would compare an id
+# against itself. Build-tree .qm directory baked in at compile time, as the
+# other catalogue-reading suites do.
+target_compile_definitions(SettingsConfig1Tests PRIVATE
+    LIBRECELIK_TRANSLATIONS_DIR_DEFAULT="${CMAKE_BINARY_DIR}/src")
+add_dependencies(SettingsConfig1Tests LibreCelik_lrelease)
 gtest_discover_tests(SettingsConfig1Tests PROPERTIES ENVIRONMENT
     "QT_QPA_PLATFORM=offscreen")
 

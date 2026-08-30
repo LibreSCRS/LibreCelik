@@ -909,17 +909,23 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     // arrive alongside NOT_PERFORMED: nothing was proven about the document,
     // so each names the fix rather than the document. Only the last arrives
     // alongside FAILED, and it is the only one allowed to sound like one.
+    //
+    // They name WHERE the fix is, and only now: until the Trust tab grew the
+    // import, sending a reader to a control that did not exist would have been
+    // worse than naming the action alone. The last one keeps its verdict
+    // first — stale anchors are a real cause of a broken chain, but they are
+    // the second reading, not the first.
     // lupdate //% markers must stay single-line; clang-format would wrap them.
     // clang-format off
-    //% "No country signing certificates have been imported. Import a master list, then read the document again."
+    //% "No country signing certificates have been imported. Import a master list in Settings → Trust, then read the document again."
     QT_TRID_NOOP("lc-emrtd-csca-not-configured");
-    //% "The country signing certificate store could not be read. Check that its path exists and is readable, then read the document again."
+    //% "The country signing certificate store could not be read. Check that its path exists and is readable, or import a master list again in Settings → Trust, then read the document again."
     QT_TRID_NOOP("lc-emrtd-csca-anchors-unreadable");
-    //% "The country signing certificate store holds no usable certificate. Import the master list again."
+    //% "The country signing certificate store holds no usable certificate. Import the master list again in Settings → Trust."
     QT_TRID_NOOP("lc-emrtd-csca-anchors-undecodable");
-    //% "No country signing certificate is held for the country that issued this document. Import that country's master list."
+    //% "No country signing certificate is held for the country that issued this document. Import that country's master list in Settings → Trust."
     QT_TRID_NOOP("lc-emrtd-csca-no-anchor-for-issuer");
-    //% "This document's signer does not lead to the country signing certificate held for its issuer. Do not rely on this document; have the issuing authority check it."
+    //% "This document's signer does not lead to the country signing certificate held for its issuer. Do not rely on this document; have the issuing authority check it. If the certificates installed in Settings → Trust are out of date, import a current master list there."
     QT_TRID_NOOP("lc-emrtd-csca-chain-failed");
     // clang-format on
 
@@ -1195,6 +1201,40 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-settings-tl-type");
     //% "Loading:"
     QT_TRID_NOOP("lc-settings-tl-loading");
+
+    // --- country-signing (CSCA) anchors, installed from an ICAO master list ---
+    //
+    // Import only, deliberately: a "sources" list nothing fetches from would
+    // leave a reader believing they had configured something.
+    // lupdate //% markers must stay single-line; clang-format would wrap them.
+    // clang-format off
+    //% "Country Signing Anchors:"
+    QT_TRID_NOOP("lc-settings-csca-anchors");
+    //% "Import Master List…"
+    QT_TRID_NOOP("lc-settings-csca-import");
+    //% "Select an ICAO Master List"
+    QT_TRID_NOOP("lc-settings-csca-import-title");
+    //% "Master lists (*.ml *.mls);;All files (*)"
+    QT_TRID_NOOP("lc-settings-csca-import-filter");
+    //% "What is installed now cannot be read from here. Import a master list to see what the agent holds afterwards."
+    QT_TRID_NOOP("lc-settings-csca-state-unknown");
+    //% "Installed anchors: %1. Issuing countries: %2."
+    QT_TRID_NOOP("lc-settings-csca-state-anchors");
+    //% "List signed: %1"
+    QT_TRID_NOOP("lc-settings-csca-state-signed");
+    //% "A later list that is not newer than this one will be refused."
+    QT_TRID_NOOP("lc-settings-csca-rollback-on");
+    //% "This list carries no signing time, so a later list cannot be checked for rolling the anchors back."
+    QT_TRID_NOOP("lc-settings-csca-rollback-off");
+    //% "The master list was installed."
+    QT_TRID_NOOP("lc-settings-csca-installed");
+    //% "Nothing was installed: this list is not newer than the one already in place. The same list is already installed, and an older one would roll the anchors back."
+    QT_TRID_NOOP("lc-settings-csca-replayed");
+    //% "This file could not be installed as a master list. Choose a different file."
+    QT_TRID_NOOP("lc-settings-csca-refused");
+    //% "That file could not be opened. Check that it exists and is readable."
+    QT_TRID_NOOP("lc-settings-csca-unreadable");
+    // clang-format on
     //% "Last used TSA server:"
     QT_TRID_NOOP("lc-settings-last-tsa");
     //% "The agent refused this change."

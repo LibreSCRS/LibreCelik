@@ -24,19 +24,34 @@
 #include <LibreSCRS/AgentClient/SyncError.h>
 
 #include <QApplication>
+#include <QByteArray>
 #include <QComboBox>
+#include <QDate>
+#include <QDateTime>
+#include <QFile>
+#include <QIODevice>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QStandardPaths>
 #include <QString>
 #include <QStringList>
 #include <QTabWidget>
+#include <QTemporaryDir>
+#include <QTime>
+#include <QTimeZone>
+#include <QTranslator>
 #include <QVariant>
 
 #include <gtest/gtest.h>
+
+#include <fcntl.h>
+#include <unistd.h>
+
+#include <cerrno>
 
 namespace {
 
@@ -78,6 +93,35 @@ void setTrustTabTslList(SettingsDialog& dlg, const QStringList& urls)
     }
 }
 
+/// The Trust tab's account of what country-signing anchors are installed.
+QString cscaSummaryText(SettingsDialog& dlg)
+{
+    auto* label = dlg.findChild<QLabel*>(QStringLiteral("cscaSummaryLabel"));
+    return label != nullptr ? label->text() : QString();
+}
+
+/// The Trust tab's account of what the LAST import attempt did.
+QString cscaStatusText(SettingsDialog& dlg)
+{
+    auto* label = dlg.findChild<QLabel*>(QStringLiteral("cscaStatusLabel"));
+    return label != nullptr ? label->text() : QString();
+}
+
+/// Write @p bytes into @p dir under @p name and answer the path.
+QString writeMasterList(const QTemporaryDir& dir, const QString& name, const QByteArray& bytes)
+{
+    const QString path = dir.filePath(name);
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly)) {
+        return {};
+    }
+    if (file.write(bytes) != bytes.size()) {
+        return {};
+    }
+    file.close();
+    return path;
+}
+
 void clickSigningTabRestoreDefaults(SettingsDialog& dlg)
 {
     auto* button = dlg.findChild<QPushButton*>(QStringLiteral("signingRestoreDefaultsButton"));
@@ -104,12 +148,36 @@ protected:
         // The dialog still keeps the language and the default output folder in
         // QSettings; keep that half off the developer's real configuration.
         QStandardPaths::setTestModeEnabled(true);
+
+        if (translator != nullptr) {
+            return;
+        }
+        // The anchor summary is a TEMPLATE filled with counts and a date, and
+        // with no catalogue loaded qtTrId() answers the bare id -- a string
+        // with no %1 in it, which arg() leaves untouched. Every "the summary
+        // says 412 anchors" assertion would then compare an id against itself
+        // and pass on a build that shows a reader nothing. The catalogue is
+        // therefore load-bearing here, not decoration.
+        translator = new QTranslator();
+        const QString qmDir = QStringLiteral(LIBRECELIK_TRANSLATIONS_DIR_DEFAULT);
+        ASSERT_TRUE(translator->load(QStringLiteral("LibreCelik_en"), qmDir))
+            << "failed to load LibreCelik_en.qm from " << qmDir.toStdString();
+        QCoreApplication::installTranslator(translator);
+    }
+
+    static void TearDownTestSuite()
+    {
+        QCoreApplication::removeTranslator(translator);
+        delete translator;
+        translator = nullptr;
     }
 
     static QApplication* app;
+    static QTranslator* translator;
 };
 
 QApplication* SettingsConfig1Test::app = nullptr;
+QTranslator* SettingsConfig1Test::translator = nullptr;
 
 TEST_F(SettingsConfig1Test, LevelComboWritesWireToken)
 {
@@ -166,4 +234,261 @@ TEST_F(SettingsConfig1Test, NotAuthorizedRefusalRendersOnceAndNeverReprompts)
     invokeSave(dlg);
     EXPECT_EQ(gw.configWrites.size(), 1); // exactly one attempt — no retry loop
     EXPECT_TRUE(statusLabelText(dlg).contains(qtTrId("lc-settings-config-unauthorized")));
+}
+
+// --- installing country-signing anchors from a master list -------------------
+//
+// Everything under this application already works: the middleware reads and
+// verifies an ICAO master list, the agent installs it behind an authorization
+// gate and refuses a rollback. What was missing is the only step a PERSON can
+// take, so these cases are about the handover and about what the reader is
+// told afterwards -- never about the list's contents, which are none of this
+// dialog's business.
+
+// The assertion that separates "hands over a descriptor" from "hands over a
+// name". A descriptor is a SECOND REFERENCE TO ONE OPEN FILE DESCRIPTION, not
+// a copy of the file, so the receiver's sequential read advances the SENDER's
+// file position. A path cannot do that; neither could a dialog that re-opened
+// the file by name (or copied its bytes into a fresh descriptor) before handing
+// it over -- both would deliver identical bytes while leaving this offset at 0,
+// which is why the byte comparison alone proves nothing here.
+TEST_F(SettingsConfig1Test, MasterListImportHandsOverADescriptorNotAPath)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+
+    QTemporaryDir dir(QStringLiteral("/var/tmp/lc-csca-XXXXXX"));
+    ASSERT_TRUE(dir.isValid());
+    const QByteArray listBytes = QByteArrayLiteral("LC-ICAO-MASTER-LIST-BYTES");
+    const QString path = writeMasterList(dir, QStringLiteral("master-list.ml"), listBytes);
+    ASSERT_FALSE(path.isEmpty());
+
+    const int fd = ::open(path.toLocal8Bit().constData(), O_RDONLY | O_CLOEXEC);
+    ASSERT_GE(fd, 0);
+    ASSERT_EQ(::lseek(fd, 0, SEEK_CUR), 0) << "the sender starts at the beginning of the file";
+
+    SettingsDialog dlg(&gw);
+    dlg.importMasterList(fd);
+
+    ASSERT_EQ(gw.importedBytes.size(), 1);
+    EXPECT_EQ(gw.importedBytes.constFirst(), listBytes) << "the agent must receive the list's bytes verbatim";
+    EXPECT_EQ(::lseek(fd, 0, SEEK_CUR), listBytes.size())
+        << "the receiver's read must have moved THIS descriptor's offset -- it shares one open file "
+           "description with the one handed over. An offset still at 0 means a name (or a freshly "
+           "opened descriptor) was passed, which is the failure this assertion exists to catch.";
+    ::close(fd);
+}
+
+// The other half: the dialog opens what the human chose, and the descriptor it
+// opened does not outlive the call. A leaked descriptor pins the file for the
+// process's lifetime and is invisible until a long session runs out of them.
+TEST_F(SettingsConfig1Test, MasterListImportOpensTheChosenFileAndClosesItsDescriptor)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+
+    QTemporaryDir dir(QStringLiteral("/var/tmp/lc-csca-XXXXXX"));
+    ASSERT_TRUE(dir.isValid());
+    const QByteArray listBytes = QByteArrayLiteral("CHOSEN-BY-THE-READER");
+    const QString path = writeMasterList(dir, QStringLiteral("chosen.ml"), listBytes);
+    ASSERT_FALSE(path.isEmpty());
+
+    SettingsDialog dlg(&gw);
+    dlg.importMasterListFile(path);
+
+    ASSERT_EQ(gw.importedBytes.size(), 1);
+    EXPECT_EQ(gw.importedBytes.constFirst(), listBytes);
+    ASSERT_EQ(gw.importedFds.size(), 1);
+    errno = 0;
+    EXPECT_EQ(::fcntl(gw.importedFds.constFirst(), F_GETFD), -1)
+        << "the descriptor the dialog opened must not outlive the call";
+    EXPECT_EQ(errno, EBADF);
+}
+
+// A file this process cannot open never becomes an agent round-trip: there is
+// nothing to hand over, and dialling anyway would spend an authorization
+// ceremony on a file that was never read.
+TEST_F(SettingsConfig1Test, AnUnopenableFileIsSaidWithoutDiallingTheAgent)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+
+    QTemporaryDir dir(QStringLiteral("/var/tmp/lc-csca-XXXXXX"));
+    ASSERT_TRUE(dir.isValid());
+
+    SettingsDialog dlg(&gw);
+    dlg.importMasterListFile(dir.filePath(QStringLiteral("no-such-list.ml")));
+
+    EXPECT_TRUE(gw.importedFds.isEmpty());
+    EXPECT_EQ(cscaStatusText(dlg), qtTrId("lc-settings-csca-unreadable"));
+}
+
+// The limitation this dialog must not paper over: `Config1.CscaAnchorState` is
+// not demarshaled by the client library, so a dialog that has just opened
+// CANNOT ask what is already installed. Rendering "0 anchors" there would be a
+// reading nobody took, and a reader would act on it.
+TEST_F(SettingsConfig1Test, AnchorSummaryDoesNotInventAReadingItNeverTook)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    // Even with the agent serving the property, the client library hands it
+    // over undemarshaled -- so a snapshot carrying the key changes nothing.
+    gw.config[QStringLiteral("CscaAnchorState")] = QVariant();
+
+    SettingsDialog dlg(&gw);
+    const QString summary = cscaSummaryText(dlg);
+    EXPECT_EQ(summary, qtTrId("lc-settings-csca-state-unknown"));
+    EXPECT_FALSE(summary.contains(QRegularExpression(QStringLiteral("[0-9]"))))
+        << "a count nobody asked for is not a reading: " << qPrintable(summary);
+    EXPECT_TRUE(cscaStatusText(dlg).isEmpty()) << "no import has happened, so there is no outcome to report";
+}
+
+// What an accepted list is worth saying: how many ANCHORS -- never "roots",
+// because the count includes CSCA link certificates -- how many distinct
+// issuers, the list's own date when it carried one, and that rollback refusal
+// is operating.
+TEST_F(SettingsConfig1Test, AnchorSummaryCountsAnchorsAndIssuersAndNeverSaysRoots)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    gw.scriptedAnchorState.anchors = 412;
+    gw.scriptedAnchorState.issuers = 78;
+    gw.scriptedAnchorState.replayRefusalActive = true;
+    gw.scriptedAnchorState.signedAt = QDateTime(QDate(2026, 3, 14), QTime(10, 22), QTimeZone::UTC);
+
+    const int fd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
+    ASSERT_GE(fd, 0);
+    SettingsDialog dlg(&gw);
+    dlg.importMasterList(fd);
+    ::close(fd);
+
+    const QString summary = cscaSummaryText(dlg);
+    EXPECT_TRUE(summary.contains(QStringLiteral("412"))) << qPrintable(summary);
+    EXPECT_TRUE(summary.contains(QStringLiteral("78"))) << qPrintable(summary);
+    EXPECT_TRUE(summary.contains(QStringLiteral("2026"))) << "the list's own date: " << qPrintable(summary);
+    EXPECT_TRUE(summary.contains(qtTrId("lc-settings-csca-rollback-on")));
+    EXPECT_FALSE(summary.contains(QStringLiteral("root"), Qt::CaseInsensitive))
+        << "the count includes CSCA link certificates, which are not roots: " << qPrintable(summary);
+    EXPECT_EQ(cscaStatusText(dlg), qtTrId("lc-settings-csca-installed"));
+}
+
+// The FALSE of replayRefusalActive is the value worth surfacing: an accepted
+// list with no signing time means a later list cannot be checked for rolling
+// the anchors back at all, and silence leaves a reader unable to tell that
+// from "this is safe".
+TEST_F(SettingsConfig1Test, AnUndatedListSaysRollbackCannotBeChecked)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    gw.scriptedAnchorState.anchors = 9;
+    gw.scriptedAnchorState.issuers = 3;
+    gw.scriptedAnchorState.replayRefusalActive = false; // and signedAt stays invalid
+
+    const int fd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
+    ASSERT_GE(fd, 0);
+    SettingsDialog dlg(&gw);
+    dlg.importMasterList(fd);
+    ::close(fd);
+
+    const QString summary = cscaSummaryText(dlg);
+    EXPECT_TRUE(summary.contains(qtTrId("lc-settings-csca-rollback-off"))) << qPrintable(summary);
+    EXPECT_FALSE(summary.contains(qtTrId("lc-settings-csca-rollback-on")));
+    // An undated list contributes no date line -- never an epoch-valued
+    // stand-in, which would read as a real signing time.
+    EXPECT_EQ(summary.count(QLatin1Char('\n')), 1)
+        << "an undated list must not grow a date line: " << qPrintable(summary);
+}
+
+// "Strictly newer" admits no equality, so handing over the same file again is
+// refused -- with a NAMED error, which is the whole reason a person can be told
+// something they can act on instead of a wire spelling.
+TEST_F(SettingsConfig1Test, ReimportingTheSameListSaysItIsAlreadyInstalled)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    gw.nextImportRefusal = LibreSCRS::AgentClient::SyncError::MasterListReplayed;
+
+    const int fd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
+    ASSERT_GE(fd, 0);
+    SettingsDialog dlg(&gw);
+    dlg.importMasterList(fd);
+    ::close(fd);
+
+    const QString status = cscaStatusText(dlg);
+    EXPECT_EQ(status, qtTrId("lc-settings-csca-replayed"));
+    EXPECT_FALSE(status.contains(QStringLiteral("MasterListReplayed")))
+        << "a wire name is not something a reader can act on";
+    // Nothing was installed and nothing already held was given up, so the
+    // summary must not start claiming a state this dialog never read.
+    EXPECT_EQ(cscaSummaryText(dlg), qtTrId("lc-settings-csca-state-unknown"));
+}
+
+TEST_F(SettingsConfig1Test, ARefusedAuthorizationForAnImportIsSaidInWords)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    gw.nextImportRefusal = LibreSCRS::AgentClient::SyncError::NotAuthorized;
+
+    const int fd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
+    ASSERT_GE(fd, 0);
+    SettingsDialog dlg(&gw);
+    dlg.importMasterList(fd);
+    ::close(fd);
+
+    EXPECT_EQ(cscaStatusText(dlg), qtTrId("lc-settings-config-unauthorized"));
+}
+
+// Every "this file is not a usable master list" refusal the agent names is
+// outside the closed error vocabulary and arrives generically. One sentence
+// covers them, and it offers the only move that helps: a different file.
+TEST_F(SettingsConfig1Test, AFileTheAgentWillNotInstallOffersADifferentFile)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    gw.nextImportRefusal = LibreSCRS::AgentClient::SyncError::CommunicationError;
+
+    const int fd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
+    ASSERT_GE(fd, 0);
+    SettingsDialog dlg(&gw);
+    dlg.importMasterList(fd);
+    ::close(fd);
+
+    EXPECT_EQ(cscaStatusText(dlg), qtTrId("lc-settings-csca-refused"));
+    EXPECT_EQ(cscaSummaryText(dlg), qtTrId("lc-settings-csca-state-unknown"));
+}
+
+// The Trust tab goes dark with no agent, and the import must observe the same
+// rule the rest of the tab does rather than opening a file for nobody.
+TEST_F(SettingsConfig1Test, ImportDoesNothingWhileTheAgentIsAway)
+{
+    FakeAgentGateway gw; // presence defaults to AgentMissing
+
+    QTemporaryDir dir(QStringLiteral("/var/tmp/lc-csca-XXXXXX"));
+    ASSERT_TRUE(dir.isValid());
+    const QString path = writeMasterList(dir, QStringLiteral("unused.ml"), QByteArrayLiteral("BYTES"));
+    ASSERT_FALSE(path.isEmpty());
+
+    SettingsDialog dlg(&gw);
+    dlg.importMasterListFile(path);
+
+    EXPECT_TRUE(gw.importedFds.isEmpty());
+    EXPECT_EQ(cscaSummaryText(dlg), qtTrId("lc-settings-csca-state-unknown"));
+}
+
+// The import affordance is on the Trust tab, where the anchors it installs are
+// accounted for -- and it is what the five eMRTD signer-reason sentences now
+// name. A reason that sends a reader to a control that is not there is worse
+// than one that names only the action.
+TEST_F(SettingsConfig1Test, TheTrustTabCarriesTheImportAffordanceTheReasonsNameNow)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    SettingsDialog dlg(&gw);
+
+    auto* button = dlg.findChild<QPushButton*>(QStringLiteral("cscaImportButton"));
+    ASSERT_NE(button, nullptr);
+    EXPECT_EQ(button->text(), qtTrId("lc-settings-csca-import"));
+    // No sources list: nothing fetches from one, and a control that silently
+    // does nothing is worse than an absent one.
+    EXPECT_EQ(dlg.findChild<QListWidget*>(QStringLiteral("cscaList")), nullptr);
 }

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <LibreSCRS/AgentClient/SyncError.h>
+#include <LibreSCRS/AgentClient/Types.h>
 
 #include <QDialog>
 #include <QString>
@@ -46,6 +47,14 @@ class AgentGateway;
 ///       on a user-clicked Save, in context — never at startup. A refusal is
 ///       rendered once on the status label and the Save stops there; the dialog
 ///       never re-issues the write on its own.
+///
+/// @note Installing country-signing anchors is the same tier and the same
+///       posture, only stronger: an import does not name a place anchors may
+///       come from, it INSTALLS the anchors travel documents are accepted or
+///       refused against. It happens on a click, its refusal is rendered once,
+///       and it is never retried. What is already installed cannot be read
+///       back — see `cscaState` for why the Trust tab says so rather than
+///       showing a count it never took.
 class SettingsDialog : public QDialog
 {
     Q_OBJECT
@@ -54,6 +63,29 @@ public:
     ///                 A null gateway (or any presence other than Ready)
     ///                 renders the operation-backed tabs disabled.
     explicit SettingsDialog(librecelik::agent::AgentGateway* gateway, QWidget* parent = nullptr);
+
+    /// Install country-signing (CSCA) trust anchors from an OPEN master-list
+    /// descriptor, then say what came back.
+    ///
+    /// @param masterListFd BORROWED: the agent duplicates it for the wire and
+    ///        this call never closes yours. Its read shares one open file
+    ///        description with yours, so YOUR OFFSET MOVES — rewind before
+    ///        reading the same descriptor again.
+    ///
+    /// Does nothing at all without a Ready agent, which is the same rule the
+    /// rest of the operation-backed tabs follow.
+    void importMasterList(int masterListFd);
+
+    /// Open @p path and hand the resulting DESCRIPTOR to `importMasterList()`
+    /// — never the name. The agent is a separate, possibly sandboxed process:
+    /// a name it would have to re-open is a name it may not be able to open,
+    /// and it would resolve a second time what this process already resolved
+    /// once. The descriptor is closed on the way out, whatever the answer was.
+    ///
+    /// A file this process cannot open never becomes a round-trip: there is
+    /// nothing to hand over, and dialling anyway would spend an authorization
+    /// ceremony on a file that was never read.
+    void importMasterListFile(const QString& path);
 
 signals:
     void languageChanged(const QString& locale);
@@ -82,6 +114,11 @@ private:
     void onTsaAddRequested();
     void populateTlList();
     void onTlAddRequested();
+    /// Choose a master list, then hand its descriptor over.
+    void onCscaImportRequested();
+    /// Redraw the anchor account and the last import's outcome. Called from
+    /// retranslateUi() so both follow a language switch instead of freezing.
+    void renderCscaState();
 
     /// NOT owned — the window that opened this dialog owns it.
     librecelik::agent::AgentGateway* gateway = nullptr;
@@ -96,6 +133,21 @@ private:
     QVariantMap trustPrefill;
     /// The refusal the last Save (or restore) collected, if any.
     std::optional<LibreSCRS::AgentClient::SyncError> lastRefusal;
+
+    /// What the last master-list import in this dialog's lifetime did. `None`
+    /// means there has not been one, and nothing is said about it.
+    enum class CscaImportOutcome { None, Installed, Replayed, Unauthorized, Refused, Unreadable };
+    CscaImportOutcome cscaOutcome = CscaImportOutcome::None;
+    /// The anchor state an ACCEPTED import answered with — the only way this
+    /// dialog ever learns one.
+    ///
+    /// Disengaged means NOT ASKED, never "nothing installed". The client
+    /// library does not demarshal `Config1.CscaAnchorState`, so a dialog that
+    /// has just opened cannot read what the agent already holds; rendering
+    /// zeros there would be a reading nobody took, and a reader would act on
+    /// it. A refusal leaves this exactly as it was: nothing was installed and
+    /// nothing already held was given up.
+    std::optional<LibreSCRS::AgentClient::CscaAnchorState> cscaState;
     /// True while a Save/restore is writing: the `configChanged` each write
     /// announces must not re-read the snapshot into the controls mid-run.
     bool writeInFlight = false;
@@ -129,4 +181,8 @@ private:
     QLabel* tlServersLabel = nullptr;
     QPushButton* trustRestoreDefaultsBtn = nullptr;
     QListWidget* tlList = nullptr;
+    QLabel* cscaAnchorsLabel = nullptr;
+    QLabel* cscaSummaryLabel = nullptr;
+    QLabel* cscaStatusLabel = nullptr;
+    QPushButton* cscaImportButton = nullptr;
 };

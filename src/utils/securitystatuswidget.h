@@ -53,6 +53,15 @@ struct SecurityCheck
     QString label;                                       ///< Short human-readable label.
     QString detail;                                      ///< Supplemental detail rendered next to the outcome.
     QString errorDetail;                                 ///< Populated when @ref status is @ref Status::Failed.
+    /// @brief Why the check ended the way it did, as a stable key.
+    ///
+    /// Empty for every check that simply ran. The reader that judges a travel
+    /// document's signer against this installation's trust anchors names its
+    /// outcome with a token ("csca.not-configured") rather than a sentence,
+    /// because the same outcome has to reach a Serbian and an English holder
+    /// and only the host knows which. @ref localizedReasonText turns it into
+    /// words; nothing else may render it raw.
+    QString reason;
 };
 
 /// @brief Aggregate security evaluation over a set of @ref SecurityCheck entries.
@@ -147,6 +156,20 @@ struct SecurityStatusModel
 /// NotPerformed is deliberately GREY, not red: a check nobody ran is neither a
 /// failure nor a pass, and painting it red would accuse the card of something.
 [[nodiscard]] QString statusColorHex(SecurityCheck::Status status);
+
+/// @brief Localized sentence for a @ref SecurityCheck::reason key.
+///
+/// Resolution, first match wins: an empty key stays empty (the ordinary case —
+/// a check that simply ran carries no reason); a key this build names renders
+/// its catalogue string; anything else renders the key VERBATIM.
+///
+/// That last arm is the whole point. A reader newer than this build can name a
+/// reason nobody here has heard of, and the two tempting answers are both
+/// worse than the key: dropping the line costs the holder the only record that
+/// their document's signer went unchecked, and substituting "unknown" trades a
+/// token a support report can act on for a word that says nothing. Same rule
+/// the field grid already applies to a label key it does not recognise.
+[[nodiscard]] QString localizedReasonText(const QString& reasonKey);
 
 /// @brief One compact "label: status" row with a coloured dot.
 ///

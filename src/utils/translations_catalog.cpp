@@ -903,6 +903,26 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Detailed Checks"
     QT_TRID_NOOP("lc-emrtd-security-details");
 
+    // --- why the travel document's signer was or was not trusted ---
+    //
+    // Four of these five describe THIS installation's trust configuration and
+    // arrive alongside NOT_PERFORMED: nothing was proven about the document,
+    // so each names the fix rather than the document. Only the last arrives
+    // alongside FAILED, and it is the only one allowed to sound like one.
+    // lupdate //% markers must stay single-line; clang-format would wrap them.
+    // clang-format off
+    //% "No country signing certificates have been imported. Import a master list, then read the document again."
+    QT_TRID_NOOP("lc-emrtd-csca-not-configured");
+    //% "The country signing certificate store could not be read. Check that its path exists and is readable, then read the document again."
+    QT_TRID_NOOP("lc-emrtd-csca-anchors-unreadable");
+    //% "The country signing certificate store holds no usable certificate. Import the master list again."
+    QT_TRID_NOOP("lc-emrtd-csca-anchors-undecodable");
+    //% "No country signing certificate is held for the country that issued this document. Import that country's master list."
+    QT_TRID_NOOP("lc-emrtd-csca-no-anchor-for-issuer");
+    //% "This document's signer does not lead to the country signing certificate held for its issuer. Do not rely on this document; have the issuing authority check it."
+    QT_TRID_NOOP("lc-emrtd-csca-chain-failed");
+    // clang-format on
+
     // --- eMRTD new DG sections ---
     //% "Authentication"
     QT_TRID_NOOP("lc-emrtd-presence");

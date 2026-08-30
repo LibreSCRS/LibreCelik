@@ -29,6 +29,29 @@ QString localizedStatusText(SecurityCheck::Status status)
     return qtTrId("lc-emrtd-security-not-performed");
 }
 
+QString localizedReasonText(const QString& reasonKey)
+{
+    // A named key first, so a build that knows the reason always speaks the
+    // holder's language. Four of the five below are states of THIS
+    // installation's own configuration and arrive as NOT_PERFORMED, not as
+    // FAILED: nothing was proven about the document, so each says what to fix
+    // rather than what the document is. Only the last one is about the
+    // document.
+    if (reasonKey == QLatin1StringView("csca.not-configured"))
+        return qtTrId("lc-emrtd-csca-not-configured");
+    if (reasonKey == QLatin1StringView("csca.anchors-unreadable"))
+        return qtTrId("lc-emrtd-csca-anchors-unreadable");
+    if (reasonKey == QLatin1StringView("csca.anchors-undecodable"))
+        return qtTrId("lc-emrtd-csca-anchors-undecodable");
+    if (reasonKey == QLatin1StringView("csca.no-anchor-for-issuer"))
+        return qtTrId("lc-emrtd-csca-no-anchor-for-issuer");
+    if (reasonKey == QLatin1StringView("csca.chain-failed"))
+        return qtTrId("lc-emrtd-csca-chain-failed");
+    // Append-only vocabulary: an unnamed key declines every arm above and
+    // falls through as itself. Nothing asserts, and the row keeps its line.
+    return reasonKey;
+}
+
 QString statusColorHex(SecurityCheck::Status status)
 {
     switch (status) {
@@ -219,6 +242,22 @@ void SecurityStatusWidget::rebuildDetailRows()
         checkRow->addWidget(checkLabel, 1);
         detailLayout->addLayout(checkRow);
 
+        // Above the read's own detail line, and in the ordinary text colour
+        // rather than the placeholder grey: this is the line that tells the
+        // holder what to DO, and it is the only line on the pane that does.
+        const QString reason = librecelik::utils::localizedReasonText(check.reason);
+        if (!reason.isEmpty()) {
+            auto* reasonText = new QLabel(reason);
+            reasonText->setObjectName(QStringLiteral("reasonText"));
+            // An unnamed key reaches the holder verbatim, so a reason shaped
+            // like markup must render as the token it is.
+            reasonText->setTextFormat(Qt::PlainText);
+            reasonText->setStyleSheet(
+                QString("font-size: 11px; color: %1; margin-left: 16px;").arg(palette().color(QPalette::Text).name()));
+            reasonText->setWordWrap(true);
+            detailLayout->addWidget(reasonText);
+        }
+
         if (!check.detail.isEmpty()) {
             auto* detailText = new QLabel(check.detail);
             detailText->setObjectName(QStringLiteral("detailText"));
@@ -245,6 +284,8 @@ void SecurityStatusWidget::changeEvent(QEvent* event)
                 label->setStyleSheet(QString("font-size: 11px; font-weight: bold; color: %1;").arg(textColor));
             for (auto* label : detailWidget->findChildren<QLabel*>(QStringLiteral("checkLabel")))
                 label->setStyleSheet(QString("font-size: 11px; color: %1;").arg(textColor));
+            for (auto* label : detailWidget->findChildren<QLabel*>(QStringLiteral("reasonText")))
+                label->setStyleSheet(QString("font-size: 11px; color: %1; margin-left: 16px;").arg(textColor));
             for (auto* label : detailWidget->findChildren<QLabel*>(QStringLiteral("detailText")))
                 label->setStyleSheet(QString("font-size: 10px; color: %1; margin-left: 16px;").arg(placeholderColor));
         }

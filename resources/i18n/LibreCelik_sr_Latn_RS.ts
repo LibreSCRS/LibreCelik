@@ -1105,6 +1105,26 @@
         <source>Detailed Checks</source>
         <translation>Detaljne provere</translation>
     </message>
+    <message id="lc-emrtd-csca-not-configured">
+        <source>No country signing certificates have been imported. Import a master list, then read the document again.</source>
+        <translation>Nijedan sertifikat državnog izdavaoca nije uvezen. Uvezite master listu, pa ponovo pročitajte dokument.</translation>
+    </message>
+    <message id="lc-emrtd-csca-anchors-unreadable">
+        <source>The country signing certificate store could not be read. Check that its path exists and is readable, then read the document again.</source>
+        <translation>Skladište sertifikata državnih izdavalaca ne može da se pročita. Proverite da li njegova putanja postoji i da li je čitljiva, pa ponovo pročitajte dokument.</translation>
+    </message>
+    <message id="lc-emrtd-csca-anchors-undecodable">
+        <source>The country signing certificate store holds no usable certificate. Import the master list again.</source>
+        <translation>Skladište sertifikata državnih izdavalaca ne sadrži nijedan upotrebljiv sertifikat. Ponovo uvezite master listu.</translation>
+    </message>
+    <message id="lc-emrtd-csca-no-anchor-for-issuer">
+        <source>No country signing certificate is held for the country that issued this document. Import that country&apos;s master list.</source>
+        <translation>Nema sertifikata državnog izdavaoca za državu koja je izdala ovaj dokument. Uvezite master listu te države.</translation>
+    </message>
+    <message id="lc-emrtd-csca-chain-failed">
+        <source>This document&apos;s signer does not lead to the country signing certificate held for its issuer. Do not rely on this document; have the issuing authority check it.</source>
+        <translation>Potpisnik ovog dokumenta ne vodi do sertifikata državnog izdavaoca koji se čuva za njegovog izdavaoca. Ne oslanjajte se na ovaj dokument; neka ga proveri organ koji ga je izdao.</translation>
+    </message>
     <message id="lc-emrtd-presence">
         <source>Authentication</source>
         <translation>Autentifikacija</translation>

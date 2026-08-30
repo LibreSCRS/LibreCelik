@@ -1105,6 +1105,26 @@
         <source>Detailed Checks</source>
         <translation>Detailed Checks</translation>
     </message>
+    <message id="lc-emrtd-csca-not-configured">
+        <source>No country signing certificates have been imported. Import a master list, then read the document again.</source>
+        <translation>No country signing certificates have been imported. Import a master list, then read the document again.</translation>
+    </message>
+    <message id="lc-emrtd-csca-anchors-unreadable">
+        <source>The country signing certificate store could not be read. Check that its path exists and is readable, then read the document again.</source>
+        <translation>The country signing certificate store could not be read. Check that its path exists and is readable, then read the document again.</translation>
+    </message>
+    <message id="lc-emrtd-csca-anchors-undecodable">
+        <source>The country signing certificate store holds no usable certificate. Import the master list again.</source>
+        <translation>The country signing certificate store holds no usable certificate. Import the master list again.</translation>
+    </message>
+    <message id="lc-emrtd-csca-no-anchor-for-issuer">
+        <source>No country signing certificate is held for the country that issued this document. Import that country&apos;s master list.</source>
+        <translation>No country signing certificate is held for the country that issued this document. Import that country&apos;s master list.</translation>
+    </message>
+    <message id="lc-emrtd-csca-chain-failed">
+        <source>This document&apos;s signer does not lead to the country signing certificate held for its issuer. Do not rely on this document; have the issuing authority check it.</source>
+        <translation>This document&apos;s signer does not lead to the country signing certificate held for its issuer. Do not rely on this document; have the issuing authority check it.</translation>
+    </message>
     <message id="lc-emrtd-presence">
         <source>Authentication</source>
         <translation>Authentication</translation>

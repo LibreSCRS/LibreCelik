@@ -480,6 +480,8 @@ void EMRTDWidget::addGroup(const FieldGroup& group)
                     check.detail = text;
                 else if (suffix == QLatin1String("error"))
                     check.errorDetail = text;
+                else if (suffix == QLatin1String("reason"))
+                    check.reason = text;
             }
         }
         if (!securityStatusWidget) {

@@ -39,6 +39,8 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <utility>
+#include <vector>
 
 using LibreSCRS::AgentClient::Field;
 using LibreSCRS::AgentClient::FieldGroup;
@@ -517,4 +519,136 @@ TEST_F(EmrtdAnnexTest, EverySectionOnOnePageHasItsOwnTitle)
     QStringList unique = titles;
     unique.removeDuplicates();
     EXPECT_EQ(titles.size(), unique.size()) << "two sections share a title: " << qPrintable(titles.join(u" | "));
+}
+
+// --- the signer verdict says WHY, and the pane has to say it in words --------
+
+namespace {
+
+/// The travel document's security group carrying one check whose verdict
+/// arrived with a machine-readable reason.
+///
+/// The reason is a key, not a sentence: the reader that judges the signer emits
+/// the same token in every language, and turning it into text is this host's
+/// job. Anything the host does not translate is text the holder reads as a
+/// token.
+FieldGroup signerCheck(const QString& status, const QString& reasonKey)
+{
+    QList<Field> fields{
+        textField(QStringLiteral("overall_authenticity"), QStringLiteral("Data Authenticity"), status),
+        textField(QStringLiteral("check_0_id"), QStringLiteral("id"), QStringLiteral("passive_auth")),
+        textField(QStringLiteral("check_0_category"), QStringLiteral("category"), QStringLiteral("data_authenticity")),
+        textField(QStringLiteral("check_0_status"), QStringLiteral("status"), status),
+        textField(QStringLiteral("check_0_label"), QStringLiteral("label"), QStringLiteral("Passive Authentication")),
+    };
+    if (!reasonKey.isEmpty()) {
+        fields.append(textField(QStringLiteral("check_0_reason"), QStringLiteral("reason"), reasonKey));
+    }
+    return group(QStringLiteral("security_status"), fields);
+}
+
+/// Every string the security pane renders, for a read whose signer verdict
+/// carried @p reasonKey.
+QStringList paneTextFor(const EMRTDWidget& widget)
+{
+    const CollapsibleSection* pane = sectionTitled(widget, qtTrId("lc-emrtd-security-status-travel-doc"));
+    return pane != nullptr ? labelsUnder(*pane) : QStringList{};
+}
+
+} // namespace
+
+// Each of the five keys the signer check can carry has to reach the pane as a
+// sentence. A key with no arm renders as itself, which is the bug this covers:
+// "csca.not-configured" is not something a holder can act on.
+TEST_F(EmrtdAnnexTest, EverySignerReasonKeyRendersAsText)
+{
+    const std::vector<std::pair<QString, QString>> cases{
+        {QStringLiteral("csca.not-configured"), QStringLiteral("lc-emrtd-csca-not-configured")},
+        {QStringLiteral("csca.anchors-unreadable"), QStringLiteral("lc-emrtd-csca-anchors-unreadable")},
+        {QStringLiteral("csca.anchors-undecodable"), QStringLiteral("lc-emrtd-csca-anchors-undecodable")},
+        {QStringLiteral("csca.no-anchor-for-issuer"), QStringLiteral("lc-emrtd-csca-no-anchor-for-issuer")},
+        {QStringLiteral("csca.chain-failed"), QStringLiteral("lc-emrtd-csca-chain-failed")},
+    };
+
+    for (const auto& [reasonKey, catalogId] : cases) {
+        // Only the last is an accusation; the other four are states of this
+        // installation's own configuration, and the read never got far enough
+        // to judge the document.
+        const QString status = reasonKey == QStringLiteral("csca.chain-failed") ? QStringLiteral("FAILED")
+                                                                                : QStringLiteral("NOT_PERFORMED");
+        EMRTDWidget widget(nullptr);
+        widget.addGroup(signerCheck(status, reasonKey));
+
+        const QStringList text = paneTextFor(widget);
+        const QString expected = qtTrId(catalogId.toUtf8().constData());
+        EXPECT_TRUE(text.contains(expected))
+            << "reason " << qPrintable(reasonKey)
+            << " did not reach the pane as text; rendered: " << qPrintable(text.join(u" | "));
+        EXPECT_FALSE(text.contains(reasonKey))
+            << "reason " << qPrintable(reasonKey) << " reached the holder as a raw key";
+        // Load-bearing, and the trap every catalogue test here can walk into:
+        // qtTrId() answers with the BARE ID when no <message> carries it, and
+        // this pane renders whatever qtTrId() returned. So the EXPECT_TRUE
+        // above compares the id against itself the moment the entry is
+        // deleted, and passes on a build that shows the holder
+        // "lc-emrtd-csca-not-configured". Naming the id as something that must
+        // NOT reach the screen is the half that fails. Measured: deleting one
+        // <message> from LibreCelik_en.ts leaves the EXPECT_TRUE green.
+        EXPECT_FALSE(text.contains(catalogId))
+            << "no catalogue entry for " << qPrintable(catalogId) << "; the id itself reached the holder";
+    }
+}
+
+// The two configuration faults need DIFFERENT instructions -- an empty store is
+// fixed by importing one, an unreadable one by fixing its permissions. One
+// shared sentence for both is what having a reason key at all was meant to end.
+TEST_F(EmrtdAnnexTest, ConfigurationFaultsGiveDifferentInstructions)
+{
+    const QString notConfigured = qtTrId("lc-emrtd-csca-not-configured");
+    const QString unreadable = qtTrId("lc-emrtd-csca-anchors-unreadable");
+    const QString undecodable = qtTrId("lc-emrtd-csca-anchors-undecodable");
+    const QString noAnchor = qtTrId("lc-emrtd-csca-no-anchor-for-issuer");
+    const QString chainFailed = qtTrId("lc-emrtd-csca-chain-failed");
+
+    QStringList all{notConfigured, unreadable, undecodable, noAnchor, chainFailed};
+    for (const QString& s : all) {
+        EXPECT_FALSE(s.isEmpty());
+        EXPECT_FALSE(s.startsWith(QStringLiteral("lc-emrtd-csca-"))) << "no catalogue entry for " << qPrintable(s);
+    }
+    QStringList unique = all;
+    unique.removeDuplicates();
+    EXPECT_EQ(all.size(), unique.size()) << "two reasons share one sentence: " << qPrintable(all.join(u" | "));
+}
+
+// A newer reader may name a reason this build has never heard of. The row it
+// belongs to is a security verdict; dropping it, or replacing it with the word
+// "unknown", both cost the holder the only record that something was wrong.
+TEST_F(EmrtdAnnexTest, UnknownSignerReasonDegradesInsteadOfErasingTheRow)
+{
+    EMRTDWidget widget(nullptr);
+    const QString future = QStringLiteral("csca.a-reason-from-a-later-build");
+    widget.addGroup(signerCheck(QStringLiteral("NOT_PERFORMED"), future));
+
+    const QStringList text = paneTextFor(widget);
+    // The check itself still renders...
+    EXPECT_TRUE(text.contains(QStringLiteral("Passive Authentication")))
+        << "an unknown reason took the whole check row with it: " << qPrintable(text.join(u" | "));
+    // ...and the unrecognised reason survives verbatim rather than vanishing or
+    // being flattened to a word that says nothing.
+    EXPECT_TRUE(text.contains(future)) << "unknown reason erased; rendered: " << qPrintable(text.join(u" | "));
+    EXPECT_FALSE(text.contains(QStringLiteral("unknown"), Qt::CaseInsensitive));
+}
+
+// A check with no reason at all is the common case -- every check that passed.
+// It must not grow an empty line under it.
+TEST_F(EmrtdAnnexTest, CheckWithoutAReasonRendersNoReasonLine)
+{
+    EMRTDWidget widget(nullptr);
+    widget.addGroup(signerCheck(QStringLiteral("PASSED"), QString()));
+
+    const QStringList text = paneTextFor(widget);
+    EXPECT_TRUE(text.contains(QStringLiteral("Passive Authentication")));
+    for (const QString& s : text) {
+        EXPECT_FALSE(s.trimmed().isEmpty());
+    }
 }

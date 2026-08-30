@@ -1105,6 +1105,26 @@
         <source>Detailed Checks</source>
         <translation>Детаљне провере</translation>
     </message>
+    <message id="lc-emrtd-csca-not-configured">
+        <source>No country signing certificates have been imported. Import a master list, then read the document again.</source>
+        <translation>Ниједан сертификат државног издаваоца није увезен. Увезите мастер листу, па поново прочитајте документ.</translation>
+    </message>
+    <message id="lc-emrtd-csca-anchors-unreadable">
+        <source>The country signing certificate store could not be read. Check that its path exists and is readable, then read the document again.</source>
+        <translation>Складиште сертификата државних издавалаца не може да се прочита. Проверите да ли његова путања постоји и да ли је читљива, па поново прочитајте документ.</translation>
+    </message>
+    <message id="lc-emrtd-csca-anchors-undecodable">
+        <source>The country signing certificate store holds no usable certificate. Import the master list again.</source>
+        <translation>Складиште сертификата државних издавалаца не садржи ниједан употребљив сертификат. Поново увезите мастер листу.</translation>
+    </message>
+    <message id="lc-emrtd-csca-no-anchor-for-issuer">
+        <source>No country signing certificate is held for the country that issued this document. Import that country&apos;s master list.</source>
+        <translation>Нема сертификата државног издаваоца за државу која је издала овај документ. Увезите мастер листу те државе.</translation>
+    </message>
+    <message id="lc-emrtd-csca-chain-failed">
+        <source>This document&apos;s signer does not lead to the country signing certificate held for its issuer. Do not rely on this document; have the issuing authority check it.</source>
+        <translation>Потписник овог документа не води до сертификата државног издаваоца који се чува за његовог издаваоца. Не ослањајте се на овај документ; нека га провери орган који га је издао.</translation>
+    </message>
     <message id="lc-emrtd-presence">
         <source>Authentication</source>
         <translation>Аутентификација</translation>

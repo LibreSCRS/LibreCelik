@@ -713,8 +713,8 @@ TEST_F(SettingsConfig1Test, TheTrustTabSaysWhatAMasterListIsAndWhereItComesFrom)
 
     // The address, both as something to click and as something to read off the
     // screen and type into a browser.
-    EXPECT_TRUE(text.contains(QStringLiteral("href=\"https://download.pkd.icao.int/\""))) << qPrintable(text);
-    EXPECT_TRUE(text.contains(QStringLiteral(">https://download.pkd.icao.int/<"))) << qPrintable(text);
+    EXPECT_TRUE(text.contains(QStringLiteral("href=\"https://pkddownload.icao.int/\""))) << qPrintable(text);
+    EXPECT_TRUE(text.contains(QStringLiteral(">https://pkddownload.icao.int/<"))) << qPrintable(text);
     EXPECT_TRUE(help->openExternalLinks());
     EXPECT_FALSE(text.contains(QStringLiteral("%1")))
         << "an unfilled placeholder reached the screen: " << qPrintable(text);
@@ -895,7 +895,7 @@ TEST_F(SettingsConfig1Test, TheDownloadAddressStandsWhetherOrNotAnchorsAreInstal
         auto* help = dlg->findChild<QLabel*>(QStringLiteral("cscaHelpLabel"));
         ASSERT_NE(help, nullptr);
         EXPECT_FALSE(help->isHidden());
-        EXPECT_TRUE(help->text().contains(QStringLiteral("download.pkd.icao.int"))) << qPrintable(help->text());
+        EXPECT_TRUE(help->text().contains(QStringLiteral("pkddownload.icao.int"))) << qPrintable(help->text());
     }
     // And the two summaries still say different things -- the standing advice
     // did not flatten the state it sits under.

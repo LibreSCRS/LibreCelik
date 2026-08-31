@@ -77,7 +77,7 @@ constexpr QLatin1String kCscaSignedAt{"signedAt"};
 // to accept those terms. It is the ONLY address this screen names. Other
 // issuers publish lists of their own, but a wrong address in a dialog spends a
 // reader's time and their trust in everything else the dialog says.
-constexpr QLatin1String kIcaoPkdUrl{"https://download.pkd.icao.int/"};
+constexpr QLatin1String kIcaoPkdUrl{"https://pkddownload.icao.int/"};
 
 // The tabs whose content the agent owns; the General tab is this process's own
 // and stays usable with no agent at all.

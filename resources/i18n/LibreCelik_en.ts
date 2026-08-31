@@ -1471,8 +1471,8 @@
         <translation>TSA servers:</translation>
     </message>
     <message id="lc-settings-tl-servers">
-        <source>Trusted Lists:</source>
-        <translation>Trusted Lists:</translation>
+        <source>Trusted Lists</source>
+        <translation>Trusted Lists</translation>
     </message>
     <message id="lc-settings-tl-add-item">
         <source>+ Add Trusted List...</source>
@@ -1491,8 +1491,8 @@
         <translation>Loading:</translation>
     </message>
     <message id="lc-settings-csca-anchors">
-        <source>Country Signing Anchors:</source>
-        <translation>Country Signing Anchors:</translation>
+        <source>Country Signing Anchors</source>
+        <translation>Country Signing Anchors</translation>
     </message>
     <message id="lc-settings-csca-import">
         <source>Import Master List…</source>
@@ -1537,6 +1537,18 @@
     <message id="lc-settings-csca-unreadable">
         <source>That file could not be opened. Check that it exists and is readable.</source>
         <translation>That file could not be opened. Check that it exists and is readable.</translation>
+    </message>
+    <message id="lc-settings-csca-what">
+        <source>A master list is a signed collection of the country signing certificates that passports are checked against.</source>
+        <translation>A master list is a signed collection of the country signing certificates that passports are checked against.</translation>
+    </message>
+    <message id="lc-settings-csca-where">
+        <source>Download one from the ICAO Public Key Directory at %1 — take the latest collection of eMRTD CSCA master lists. The download is public: no PKD membership is needed.</source>
+        <translation>Download one from the ICAO Public Key Directory at %1 — take the latest collection of eMRTD CSCA master lists. The download is public: no PKD membership is needed.</translation>
+    </message>
+    <message id="lc-settings-csca-manual">
+        <source>Downloading it means accepting ICAO&apos;s terms and conditions, so LibreCelik never fetches a master list by itself. Download the file, then import it here.</source>
+        <translation>Downloading it means accepting ICAO&apos;s terms and conditions, so LibreCelik never fetches a master list by itself. Download the file, then import it here.</translation>
     </message>
     <message id="lc-settings-last-tsa">
         <source>Last used TSA server:</source>

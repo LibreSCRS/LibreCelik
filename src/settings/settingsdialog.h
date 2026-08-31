@@ -15,6 +15,8 @@
 #include <optional>
 
 class QComboBox;
+class QFrame;
+class QGroupBox;
 class QLabel;
 class QLineEdit;
 class QListWidget;
@@ -55,6 +57,15 @@ class AgentGateway;
 ///       and it is never retried. What is already installed IS readable — the
 ///       agent serves it as a read-only property — so the Trust tab accounts
 ///       for it on open, without an import having happened. See `cscaState`.
+///
+/// @note The Trust tab NAMES where a master list is downloaded from, and says
+///       that this application never downloads one itself. Both halves are
+///       needed: the import is unusable without a file, and the download is
+///       gated behind terms a person has to accept, so the absence of an
+///       automatic fetch is a decision rather than a missing feature. Exactly
+///       ONE address is named — the publisher's own public portal. Other
+///       issuers publish lists too, but an address that turns out to be wrong
+///       costs a reader more than saying nothing would.
 class SettingsDialog : public QDialog
 {
     Q_OBJECT
@@ -186,12 +197,31 @@ private:
     QPushButton* signingRestoreDefaultsBtn = nullptr;
     QListWidget* tsaList = nullptr;
 
-    // Trust tab
-    QLabel* tlServersLabel = nullptr;
+    // Trust tab. Two framed sections, one per setting the tab owns: the lists
+    // signatures are validated against, and the anchors travel documents are
+    // checked against. The heading of each is the group's own title, so neither
+    // half can read as a footnote under the other.
+    QGroupBox* tlGroup = nullptr;
     QPushButton* trustRestoreDefaultsBtn = nullptr;
     QListWidget* tlList = nullptr;
-    QLabel* cscaAnchorsLabel = nullptr;
+    QGroupBox* cscaGroup = nullptr;
+    /// The anchor frame's upper half: what the agent HOLDS. A reading of the
+    /// system, and the rule below it is what keeps it from being read as the
+    /// first line of the advice underneath.
     QLabel* cscaSummaryLabel = nullptr;
     QLabel* cscaStatusLabel = nullptr;
+    /// The anchor frame's lower half: three sentences carrying three different
+    /// kinds of thing, and rendered as three, not as a wall.
+    ///
+    /// `cscaHelpLabel` is the INSTRUCTION — where a master list is downloaded
+    /// from — and it is the one a reader came for, so it keeps the body voice
+    /// and carries the live link. The DEFINITION above it and the RATIONALE
+    /// below are context: both are set in the application's quiet voice (one
+    /// point down, placeholder colour) so the eye can skip them and land on
+    /// the address. Reading order still runs definition, instruction,
+    /// rationale, because "download one" needs the noun named ahead of it.
+    QLabel* cscaWhatLabel = nullptr;
+    QLabel* cscaHelpLabel = nullptr;
+    QLabel* cscaManualLabel = nullptr;
     QPushButton* cscaImportButton = nullptr;
 };

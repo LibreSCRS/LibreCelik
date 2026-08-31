@@ -29,11 +29,14 @@
 #include <QDate>
 #include <QDateTime>
 #include <QFile>
+#include <QFrame>
+#include <QGroupBox>
 #include <QIODevice>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QPalette>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QStandardPaths>
@@ -44,7 +47,9 @@
 #include <QTime>
 #include <QTimeZone>
 #include <QTranslator>
+#include <QVBoxLayout>
 #include <QVariant>
+#include <QVariantList>
 
 #include <gtest/gtest.h>
 
@@ -560,4 +565,340 @@ TEST_F(SettingsConfig1Test, TheTrustTabCarriesTheImportAffordanceTheReasonsNameN
     // No sources list: nothing fetches from one, and a control that silently
     // does nothing is worse than an absent one.
     EXPECT_EQ(dlg.findChild<QListWidget*>(QStringLiteral("cscaList")), nullptr);
+}
+
+// Two settings live on this tab and each has to read as one: the trusted lists
+// a signature is validated against, and the country-signing anchors a travel
+// document is checked against. The anchor half used to be a heading and three
+// loose lines under the list widget, which read as a footnote to the list
+// rather than as the other half of the tab. The framing is the assertion:
+// each is a titled box, and the widgets that belong to it live inside it.
+TEST_F(SettingsConfig1Test, TheTrustTabReadsAsTwoTitledSections)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    SettingsDialog dlg(&gw);
+
+    auto* tlGroup = dlg.findChild<QGroupBox*>(QStringLiteral("tlGroup"));
+    auto* cscaGroup = dlg.findChild<QGroupBox*>(QStringLiteral("cscaGroup"));
+    ASSERT_NE(tlGroup, nullptr);
+    ASSERT_NE(cscaGroup, nullptr);
+    EXPECT_EQ(tlGroup->title(), qtTrId("lc-settings-tl-servers"));
+    EXPECT_EQ(cscaGroup->title(), qtTrId("lc-settings-csca-anchors"));
+    // A section title is a heading, not the left half of a "label: value"
+    // pair -- and there is no value coming after it.
+    EXPECT_FALSE(tlGroup->title().endsWith(QLatin1Char(':'))) << qPrintable(tlGroup->title());
+    EXPECT_FALSE(cscaGroup->title().endsWith(QLatin1Char(':'))) << qPrintable(cscaGroup->title());
+
+    // Each section OWNS its widgets. That is what makes a frame mean anything:
+    // findChild() on the dialog would find them wherever they happened to sit,
+    // so the search has to start at the box that claims them.
+    EXPECT_NE(tlGroup->findChild<QListWidget*>(QStringLiteral("tlList")), nullptr);
+    EXPECT_NE(cscaGroup->findChild<QLabel*>(QStringLiteral("cscaSummaryLabel")), nullptr);
+    EXPECT_NE(cscaGroup->findChild<QLabel*>(QStringLiteral("cscaStatusLabel")), nullptr);
+    EXPECT_NE(cscaGroup->findChild<QLabel*>(QStringLiteral("cscaHelpLabel")), nullptr);
+    // Neither section may swallow the other's material.
+    EXPECT_EQ(tlGroup->findChild<QLabel*>(QStringLiteral("cscaSummaryLabel")), nullptr);
+    EXPECT_EQ(cscaGroup->findChild<QListWidget*>(QStringLiteral("tlList")), nullptr);
+}
+
+// The import installs the anchors, so it belongs inside the anchors' own
+// frame, under the sentence that says what to import. The restore hands the
+// whole tab's keys back to the agent, so it stays outside both sections. They
+// used to be two right-aligned buttons stacked in a column with nothing on
+// screen to say which of them acted on what.
+TEST_F(SettingsConfig1Test, EachTrustTabButtonSitsWithTheThingItActsOn)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    SettingsDialog dlg(&gw);
+
+    auto* cscaGroup = dlg.findChild<QGroupBox*>(QStringLiteral("cscaGroup"));
+    auto* tlGroup = dlg.findChild<QGroupBox*>(QStringLiteral("tlGroup"));
+    ASSERT_NE(cscaGroup, nullptr);
+    ASSERT_NE(tlGroup, nullptr);
+
+    auto* importButton = dlg.findChild<QPushButton*>(QStringLiteral("cscaImportButton"));
+    auto* restoreButton = dlg.findChild<QPushButton*>(QStringLiteral("trustRestoreDefaultsButton"));
+    ASSERT_NE(importButton, nullptr);
+    ASSERT_NE(restoreButton, nullptr);
+
+    EXPECT_EQ(cscaGroup->findChild<QPushButton*>(QStringLiteral("cscaImportButton")), importButton);
+    EXPECT_EQ(cscaGroup->findChild<QPushButton*>(QStringLiteral("trustRestoreDefaultsButton")), nullptr);
+    EXPECT_EQ(tlGroup->findChild<QPushButton*>(QStringLiteral("trustRestoreDefaultsButton")), nullptr);
+    EXPECT_EQ(tlGroup->findChild<QPushButton*>(QStringLiteral("cscaImportButton")), nullptr);
+}
+
+// The two agent-backed tabs each end with a restore that hands back every key
+// the TAB owns -- not the box it happens to sit under. Standing loose under the
+// last setting it read as a third control of that setting on one tab and as
+// belonging to nothing at all on the other. The same rule now closes both tabs
+// above the same right-aligned row, so the two answer "what does this reach"
+// the same way.
+TEST_F(SettingsConfig1Test, BothTabsCloseTheirRestoreRowTheSameWay)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    SettingsDialog dlg(&gw);
+
+    auto* tabs = dlg.findChild<QTabWidget*>();
+    ASSERT_NE(tabs, nullptr);
+
+    for (const auto& tab : {qMakePair(1, QStringLiteral("signingRestoreDefaultsButton")),
+                            qMakePair(2, QStringLiteral("trustRestoreDefaultsButton"))}) {
+        QWidget* page = tabs->widget(tab.first);
+        ASSERT_NE(page, nullptr);
+        auto* button = page->findChild<QPushButton*>(tab.second);
+        ASSERT_NE(button, nullptr) << qPrintable(tab.second);
+        // On the PAGE, not inside one of its framed settings: what it resets is
+        // the tab.
+        EXPECT_EQ(button->parentWidget(), page) << qPrintable(tab.second) << " moved inside a setting's own frame";
+
+        auto* layout = qobject_cast<QVBoxLayout*>(page->layout());
+        ASSERT_NE(layout, nullptr);
+        int ruleAt = -1;
+        const QList<QFrame*> frames = page->findChildren<QFrame*>(QString(), Qt::FindDirectChildrenOnly);
+        for (QFrame* frame : frames) {
+            if (frame->frameShape() == QFrame::HLine)
+                ruleAt = layout->indexOf(frame);
+        }
+        ASSERT_GE(ruleAt, 0) << qPrintable(tab.second) << " stands with nothing between it and the settings above";
+
+        int rowAt = -1;
+        for (int i = 0; i < layout->count(); ++i) {
+            QLayout* row = layout->itemAt(i)->layout();
+            if (row != nullptr && row->indexOf(button) >= 0)
+                rowAt = i;
+        }
+        ASSERT_GE(rowAt, 0) << qPrintable(tab.second) << " is not in a row of its own";
+        EXPECT_EQ(rowAt, ruleAt + 1) << qPrintable(tab.second) << " is not the row directly under the rule";
+    }
+}
+
+// Nobody can use the import without a master list, and nothing on this screen
+// used to say what one is or where to get it -- which made the whole feature
+// unreachable for a reader who had never heard the term. Exactly ONE address
+// is named: the publisher's own public download portal, the one this project
+// has actually checked. Other issuers publish lists too, but an address that
+// turns out to be wrong spends a reader's time and their trust in everything
+// else the dialog says.
+TEST_F(SettingsConfig1Test, TheTrustTabSaysWhatAMasterListIsAndWhereItComesFrom)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    SettingsDialog dlg(&gw);
+
+    // Three kinds of thing, three labels: what it IS, WHERE it comes from, and
+    // WHY nothing here downloads it.
+    auto* what = dlg.findChild<QLabel*>(QStringLiteral("cscaWhatLabel"));
+    auto* help = dlg.findChild<QLabel*>(QStringLiteral("cscaHelpLabel"));
+    auto* manual = dlg.findChild<QLabel*>(QStringLiteral("cscaManualLabel"));
+    ASSERT_NE(what, nullptr);
+    ASSERT_NE(help, nullptr);
+    ASSERT_NE(manual, nullptr);
+    const QString text = help->text();
+
+    // What the thing IS -- the name on its own means nothing the first time.
+    EXPECT_EQ(what->text(), qtTrId("lc-settings-csca-what"));
+    // WHERE it comes from. The sentence carries the address as a placeholder,
+    // so what must be on screen is both halves of it around a filled-in %1.
+    const QStringList whereParts = qtTrId("lc-settings-csca-where").split(QStringLiteral("%1"));
+    ASSERT_EQ(whereParts.size(), 2) << "the where-sentence lost its address placeholder";
+    for (const QString& part : whereParts) {
+        EXPECT_TRUE(text.contains(part)) << qPrintable(part);
+    }
+    // WHY nothing downloads it here: the portal asks a person to accept terms.
+    // Said out loud so the absent automatic fetch reads as a decision.
+    EXPECT_EQ(manual->text(), qtTrId("lc-settings-csca-manual"));
+
+    // The address, both as something to click and as something to read off the
+    // screen and type into a browser.
+    EXPECT_TRUE(text.contains(QStringLiteral("href=\"https://download.pkd.icao.int/\""))) << qPrintable(text);
+    EXPECT_TRUE(text.contains(QStringLiteral(">https://download.pkd.icao.int/<"))) << qPrintable(text);
+    EXPECT_TRUE(help->openExternalLinks());
+    EXPECT_FALSE(text.contains(QStringLiteral("%1")))
+        << "an unfilled placeholder reached the screen: " << qPrintable(text);
+
+    // Still exactly ONE address, counted across all three now that they are
+    // three widgets: splitting the block must not have been a chance to name a
+    // second place a master list might come from.
+    const QString whole = what->text() + help->text() + manual->text();
+    EXPECT_EQ(whole.count(QStringLiteral("http")), 2)
+        << "one address, named twice in one anchor tag: " << qPrintable(whole);
+}
+
+// The three sentences carry three different kinds of information, and the one
+// a reader opened this frame for is the INSTRUCTION. It keeps the body voice;
+// the definition and the reason are set in the application's quiet treatment --
+// one point down, placeholder colour -- so an eye scanning for the address is
+// not made to read a wall of identical text to find it.
+TEST_F(SettingsConfig1Test, TheDownloadInstructionIsLouderThanTheContextAroundIt)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    SettingsDialog dlg(&gw);
+
+    auto* what = dlg.findChild<QLabel*>(QStringLiteral("cscaWhatLabel"));
+    auto* help = dlg.findChild<QLabel*>(QStringLiteral("cscaHelpLabel"));
+    auto* manual = dlg.findChild<QLabel*>(QStringLiteral("cscaManualLabel"));
+    ASSERT_NE(what, nullptr);
+    ASSERT_NE(help, nullptr);
+    ASSERT_NE(manual, nullptr);
+
+    for (QLabel* quiet : {what, manual}) {
+        EXPECT_LT(quiet->font().pointSizeF(), help->font().pointSizeF())
+            << qPrintable(quiet->objectName()) << " is set at the instruction's own size";
+        // A palette ROLE, not a colour literal: it has to follow a theme change.
+        EXPECT_EQ(quiet->foregroundRole(), QPalette::PlaceholderText) << qPrintable(quiet->objectName());
+    }
+    EXPECT_NE(help->foregroundRole(), QPalette::PlaceholderText) << "the instruction went quiet with the context";
+
+    // And every one of them still wraps: a hierarchy that clips is not one.
+    EXPECT_TRUE(what->wordWrap());
+    EXPECT_TRUE(help->wordWrap());
+    EXPECT_TRUE(manual->wordWrap());
+}
+
+// The count is a READING of what the agent holds; the paragraph under it is
+// ADVICE about changing that. They ran together as one block of identical text,
+// so the count read as the first sentence of the instructions. A rule between
+// them is what says they are two different things.
+TEST_F(SettingsConfig1Test, ARuleSeparatesWhatIsHeldFromWhatToDoAboutIt)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    SettingsDialog dlg(&gw);
+
+    auto* group = dlg.findChild<QGroupBox*>(QStringLiteral("cscaGroup"));
+    ASSERT_NE(group, nullptr);
+    auto* layout = qobject_cast<QVBoxLayout*>(group->layout());
+    ASSERT_NE(layout, nullptr);
+
+    const auto indexOf = [layout](QWidget* widget) { return layout->indexOf(widget); };
+    const int summaryAt = indexOf(dlg.findChild<QLabel*>(QStringLiteral("cscaSummaryLabel")));
+    const int whatAt = indexOf(dlg.findChild<QLabel*>(QStringLiteral("cscaWhatLabel")));
+    ASSERT_GE(summaryAt, 0);
+    ASSERT_GE(whatAt, 0);
+
+    int ruleAt = -1;
+    const QList<QFrame*> frames = group->findChildren<QFrame*>(QString(), Qt::FindDirectChildrenOnly);
+    for (QFrame* frame : frames) {
+        if (frame->frameShape() == QFrame::HLine)
+            ruleAt = indexOf(frame);
+    }
+    ASSERT_GE(ruleAt, 0) << "nothing separates the anchor account from the advice under it";
+    EXPECT_GT(ruleAt, summaryAt) << "the rule landed above the reading it is meant to close";
+    EXPECT_LT(ruleAt, whatAt) << "the rule landed below the advice it is meant to open";
+}
+
+// Both list boxes size to the rows they hold. A box that expands into whatever
+// vertical space is going spare shows one entry stranded at the top of a frame
+// five times its height, which reads as a list that failed to load rather than
+// as a list with one thing in it.
+TEST_F(SettingsConfig1Test, ListBoxesSizeToTheirRowsRatherThanToTheTab)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    QVariantList sources;
+    sources.append(QVariant(QVariantList{QStringLiteral("https://example.test/lotl.xml"), false, true}));
+    gw.config[QStringLiteral("TslSources")] = sources;
+    gw.config[QStringLiteral("TsaUrls")] = QStringList{QStringLiteral("https://tsa.example.test/")};
+
+    SettingsDialog dlg(&gw);
+    auto* tabs = dlg.findChild<QTabWidget*>();
+    ASSERT_NE(tabs, nullptr);
+    dlg.show();
+
+    for (const QString& name : {QStringLiteral("tlList"), QStringLiteral("tsaList")}) {
+        // The box has to be on the VISIBLE page for the tab widget to have laid
+        // it out at all; a page that was never current keeps its widgets at
+        // whatever size they were constructed with, and a height nobody
+        // computed cannot be evidence about how tall this box grows.
+        tabs->setCurrentIndex(name == QStringLiteral("tsaList") ? 1 : 2);
+        dlg.resize(680, 900); // far more height than either list has rows for
+        QCoreApplication::processEvents();
+
+        auto* list = dlg.findChild<QListWidget*>(name);
+        ASSERT_NE(list, nullptr) << qPrintable(name);
+        ASSERT_EQ(list->count(), 2) << "one entry and the add sentinel"; // NOLINT
+
+        int rows = 2 * list->frameWidth();
+        int tallest = 0;
+        for (int row = 0; row < list->count(); ++row) {
+            rows += list->sizeHintForRow(row);
+            tallest = qMax(tallest, list->sizeHintForRow(row));
+        }
+        // Never SHORTER than its rows: a box that clips its own entries is the
+        // failure this sizing exists to avoid.
+        EXPECT_GE(list->height(), rows) << qPrintable(name) << " clips the rows it holds";
+        // And never taller than the ceiling, however much room the tab has.
+        EXPECT_LE(list->height(), 2 * list->frameWidth() + 6 * tallest)
+            << qPrintable(name) << " grew past its ceiling into the spare height";
+    }
+}
+
+// The minimum size is a size the dialog must actually be able to DRAW at. The
+// one shipped before this test could not: at it, a third of the download
+// paragraph was cut off in every anchor state and every catalogue. A word-
+// wrapped label laid out shorter than the height its own text needs at its own
+// width IS clipped, and that is measurable without looking at a screenshot.
+TEST_F(SettingsConfig1Test, TheTrustTabRendersWholeAtTheDialogMinimumSize)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    QVariantMap state;
+    state[QStringLiteral("anchors")] = QVariant::fromValue<quint32>(412);
+    state[QStringLiteral("issuers")] = QVariant::fromValue<quint32>(78);
+    state[QStringLiteral("replayRefusalActive")] = true;
+    state[QStringLiteral("signedAt")] =
+        QVariant::fromValue<qint64>(QDateTime(QDate(2026, 3, 14), QTime(10, 22), QTimeZone::UTC).toSecsSinceEpoch());
+    gw.config[QStringLiteral("CscaAnchorState")] = state;
+
+    SettingsDialog dlg(&gw);
+    auto* tabs = dlg.findChild<QTabWidget*>();
+    ASSERT_NE(tabs, nullptr);
+    dlg.show();
+    tabs->setCurrentIndex(2);
+    dlg.resize(dlg.minimumSize());
+    QCoreApplication::processEvents();
+
+    const QList<QLabel*> labels = tabs->currentWidget()->findChildren<QLabel*>();
+    ASSERT_FALSE(labels.isEmpty());
+    for (QLabel* label : labels) {
+        if (!label->isVisible() || label->text().isEmpty() || !label->wordWrap())
+            continue;
+        EXPECT_GE(label->height(), label->heightForWidth(label->width()))
+            << qPrintable(label->objectName()) << " is cut off at the dialog's own minimum size";
+    }
+}
+
+// Where the next list comes from is not news that stops being useful once a
+// first one is installed: anchors are replaced by importing a newer list, so
+// the address has to stand in every state the summary can be in.
+TEST_F(SettingsConfig1Test, TheDownloadAddressStandsWhetherOrNotAnchorsAreInstalled)
+{
+    FakeAgentGateway empty;
+    empty.setPresence(librecelik::agent::PresenceState::Ready);
+    empty.config[QStringLiteral("CscaAnchorState")] = QVariantMap();
+    SettingsDialog emptyDlg(&empty);
+
+    FakeAgentGateway held;
+    held.setPresence(librecelik::agent::PresenceState::Ready);
+    QVariantMap state;
+    state[QStringLiteral("anchors")] = QVariant::fromValue<quint32>(412);
+    state[QStringLiteral("issuers")] = QVariant::fromValue<quint32>(78);
+    state[QStringLiteral("replayRefusalActive")] = true;
+    held.config[QStringLiteral("CscaAnchorState")] = state;
+    SettingsDialog heldDlg(&held);
+
+    for (SettingsDialog* dlg : {&emptyDlg, &heldDlg}) {
+        auto* help = dlg->findChild<QLabel*>(QStringLiteral("cscaHelpLabel"));
+        ASSERT_NE(help, nullptr);
+        EXPECT_FALSE(help->isHidden());
+        EXPECT_TRUE(help->text().contains(QStringLiteral("download.pkd.icao.int"))) << qPrintable(help->text());
+    }
+    // And the two summaries still say different things -- the standing advice
+    // did not flatten the state it sits under.
+    EXPECT_EQ(cscaSummaryText(emptyDlg), qtTrId("lc-settings-csca-state-none"));
+    EXPECT_TRUE(cscaSummaryText(heldDlg).contains(QStringLiteral("412")));
 }

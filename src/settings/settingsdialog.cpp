@@ -21,7 +21,10 @@
 #include <QDialogButtonBox>
 #include <QFile>
 #include <QFileDialog>
+#include <QFont>
 #include <QFormLayout>
+#include <QFrame>
+#include <QGroupBox>
 #include <QInputDialog>
 #include <QLocale>
 #include <QLabel>
@@ -29,9 +32,11 @@
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QMessageBox>
+#include <QPalette>
 #include <QPair>
 #include <QPushButton>
 #include <QSettings>
+#include <QSizePolicy>
 #include <QTabWidget>
 #include <QTimeZone>
 #include <QUrl>
@@ -65,10 +70,73 @@ constexpr QLatin1String kCscaIssuers{"issuers"};
 constexpr QLatin1String kCscaReplayRefusalActive{"replayRefusalActive"};
 constexpr QLatin1String kCscaSignedAt{"signedAt"};
 
+// The public download portal for eMRTD country-signing master lists. Verified
+// to serve "the latest collection of eMRTD CSCA ML" behind a terms-and-
+// conditions page, with no login and no directory membership — which is why it
+// can be named here, and why nothing downloads it automatically: a person has
+// to accept those terms. It is the ONLY address this screen names. Other
+// issuers publish lists of their own, but a wrong address in a dialog spends a
+// reader's time and their trust in everything else the dialog says.
+constexpr QLatin1String kIcaoPkdUrl{"https://download.pkd.icao.int/"};
+
 // The tabs whose content the agent owns; the General tab is this process's own
 // and stays usable with no agent at all.
 constexpr int kSigningTabIndex = 1;
 constexpr int kTrustTabIndex = 2;
+
+// How tall a settings list box is allowed to be, in rows. Both of them size to
+// what they hold rather than swallowing their tab: a box five times taller than
+// its one entry reads as a list that failed to load. The FLOOR keeps an empty
+// one looking like somewhere entries go; past the CEILING it scrolls, which is
+// the only honest thing a box can do with more rows than fit.
+constexpr int kListMinRows = 3;
+constexpr int kListMaxRows = 6;
+
+/// Fix @p list to the height of the rows it actually holds, within those
+/// bounds.
+///
+/// The delegate decides how tall a row is, so ASK it rather than multiplying a
+/// font height: the "add" sentinel is shorter than a configured entry, which
+/// carries badges, and a floor measured off the sentinel clips the entries. The
+/// TALLEST row is what a row-count bound has to be counted in.
+void sizeListToContents(QListWidget* list)
+{
+    const int rows = list->count();
+    const int chrome = 2 * list->frameWidth();
+    int rowHeight = list->fontMetrics().height() + 8;
+    int content = chrome;
+    for (int row = 0; row < rows; ++row) {
+        const int height = list->sizeHintForRow(row);
+        content += height;
+        rowHeight = qMax(rowHeight, height);
+    }
+    list->setFixedHeight(qBound(chrome + kListMinRows * rowHeight, content, chrome + kListMaxRows * rowHeight));
+}
+
+/// The application's own voice for text that is there to be scanned past: one
+/// point down, and the palette's placeholder colour. The same two moves the
+/// signing wizard makes on its file-size line, so a reader meets ONE quiet
+/// treatment across the application rather than a fresh invention per screen.
+/// A palette ROLE rather than a colour literal, so it follows a theme change
+/// without this dialog having to hear about it.
+void makeSecondary(QLabel* label)
+{
+    QFont font = label->font();
+    const qreal points = font.pointSizeF();
+    if (points > 1.0)
+        font.setPointSizeF(points - 1.0);
+    label->setFont(font);
+    label->setForegroundRole(QPalette::PlaceholderText);
+}
+
+/// A horizontal rule, in the shape the about dialog already draws one.
+QFrame* makeSeparator(QWidget* parent)
+{
+    auto* line = new QFrame(parent);
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Sunken);
+    return line;
+}
 
 /// The signing tab's keys, in write order: the settings-tier ones first, so a
 /// refused trust-tier write cannot cost the human the edits that needed no
@@ -146,8 +214,23 @@ QVariantMap anchorStateAsMap(const LibreSCRS::AgentClient::CscaAnchorState& stat
 SettingsDialog::SettingsDialog(librecelik::agent::AgentGateway* agentGateway, QWidget* parent)
     : QDialog(parent), gateway(agentGateway)
 {
-    setMinimumSize(500, 400);
-    resize(600, 450);
+    // The floor is set by the tallest tab, which is Trust: two framed sections,
+    // and an anchor section that has to fit its account of what is installed
+    // AND the sentences telling a reader where a master list comes from.
+    //
+    // 560 is MEASURED, not chosen: below it the anchor summary and the download
+    // sentence lose their last lines, and they do so in every catalogue — the
+    // Serbian text is the longest and reaches the same floor at any width this
+    // dialog can be narrowed to. The minimum shipped before this was 520x520,
+    // which no catalogue could render: at that size a third of the download
+    // paragraph was cut off in all three anchor states. A minimum a dialog
+    // cannot draw at is not a minimum.
+    //
+    // The default is wider than the floor rather than taller, because width is
+    // what this tab's prose actually wants: past 680 the paragraphs fall into
+    // fewer lines and the tab needs 30px less height than it does at 640.
+    setMinimumSize(520, 560);
+    resize(680, 560);
 
     auto* layout = new QVBoxLayout(this);
 
@@ -229,7 +312,11 @@ SettingsDialog::SettingsDialog(librecelik::agent::AgentGateway* agentGateway, QW
     signingLayout->addWidget(tsaServersLabel);
     tsaList = new QListWidget(signingTab);
     tsaList->setObjectName(QStringLiteral("tsaList"));
-    tsaList->setMinimumHeight(100);
+    // Sized to its rows, by the same rule the trust tab's box follows (see
+    // sizeListToContents). Two list boxes on two tabs of one dialog, one
+    // ballooning to fill its tab and the other hugging its entries, would read
+    // as two different kinds of control.
+    tsaList->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     signingLayout->addWidget(tsaList);
     // populateTsaList() seeds the list and adds the translated "Add"
     // sentinel row; called from retranslateUi() at end of ctor.
@@ -241,9 +328,16 @@ SettingsDialog::SettingsDialog(librecelik::agent::AgentGateway* agentGateway, QW
         if (row >= 0 && row < tsaList->count() &&
             tsaList->item(row)->data(Qt::UserRole).toString() == QStringLiteral("custom")) {
             delete tsaList->takeItem(row);
+            sizeListToContents(tsaList);
         }
     });
 
+    // The tab-wide restore. It hands back EVERY key this tab owns, not the
+    // list it happens to sit under, so a rule separates it from the last
+    // setting above: without one it reads as a third control of the TSA box.
+    // The trust tab draws the same rule in the same place, so the two tabs
+    // answer the question "what does this button reach" the same way.
+    signingLayout->addWidget(makeSeparator(signingTab));
     signingRestoreDefaultsBtn = new QPushButton(signingTab);
     signingRestoreDefaultsBtn->setObjectName(QStringLiteral("signingRestoreDefaultsButton"));
     auto* signingButtonRow = new QHBoxLayout;
@@ -267,15 +361,27 @@ SettingsDialog::SettingsDialog(librecelik::agent::AgentGateway* agentGateway, QW
     });
 
     // --- Trust tab ---
+    //
+    // Two settings, each inside its own frame with its own title: the trusted
+    // lists a signature is validated against, and the country-signing anchors a
+    // travel document is checked against. The anchor half used to be loose text
+    // under the list, which read as a footnote to the list rather than as the
+    // second setting the tab carries.
     auto* trustTab = new QWidget(this);
     auto* trustLayout = new QVBoxLayout(trustTab);
 
-    tlServersLabel = new QLabel(trustTab);
-    trustLayout->addWidget(tlServersLabel);
-    tlList = new QListWidget(trustTab);
+    tlGroup = new QGroupBox(trustTab);
+    tlGroup->setObjectName(QStringLiteral("tlGroup"));
+    auto* tlGroupLayout = new QVBoxLayout(tlGroup);
+    tlList = new QListWidget(tlGroup);
     tlList->setObjectName(QStringLiteral("tlList"));
-    tlList->setMinimumHeight(120);
-    trustLayout->addWidget(tlList);
+    // Sized to the rows it holds (see sizeListToContents), not to whatever
+    // vertical space is going spare. A list widget defaults to Expanding, and
+    // with one entry in it that turned this frame into two hundred pixels of
+    // white with a line of text at the top.
+    tlList->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    tlGroupLayout->addWidget(tlList);
+    trustLayout->addWidget(tlGroup);
     // populateTlList() seeds the list and adds the translated "Add"
     // sentinel row; called from retranslateUi() at end of ctor.
 
@@ -286,6 +392,7 @@ SettingsDialog::SettingsDialog(librecelik::agent::AgentGateway* agentGateway, QW
         if (row >= 0 && row < tlList->count() &&
             tlList->item(row)->data(TlItemDelegate::TypeRole).toString() == QStringLiteral("custom")) {
             delete tlList->takeItem(row);
+            sizeListToContents(tlList);
         }
     });
 
@@ -295,30 +402,78 @@ SettingsDialog::SettingsDialog(librecelik::agent::AgentGateway* agentGateway, QW
     // something. What there is instead is the one step a person can actually
     // take — hand the agent a signed master list — and an honest account of
     // what came back.
-    cscaAnchorsLabel = new QLabel(trustTab);
-    trustLayout->addWidget(cscaAnchorsLabel);
+    cscaGroup = new QGroupBox(trustTab);
+    cscaGroup->setObjectName(QStringLiteral("cscaGroup"));
+    auto* cscaGroupLayout = new QVBoxLayout(cscaGroup);
 
-    cscaSummaryLabel = new QLabel(trustTab);
+    cscaSummaryLabel = new QLabel(cscaGroup);
     cscaSummaryLabel->setObjectName(QStringLiteral("cscaSummaryLabel"));
     cscaSummaryLabel->setWordWrap(true);
     cscaSummaryLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    trustLayout->addWidget(cscaSummaryLabel);
+    cscaGroupLayout->addWidget(cscaSummaryLabel);
 
-    cscaStatusLabel = new QLabel(trustTab);
+    cscaStatusLabel = new QLabel(cscaGroup);
     cscaStatusLabel->setObjectName(QStringLiteral("cscaStatusLabel"));
     cscaStatusLabel->setWordWrap(true);
     cscaStatusLabel->setVisible(false);
-    trustLayout->addWidget(cscaStatusLabel);
+    cscaGroupLayout->addWidget(cscaStatusLabel);
 
-    cscaImportButton = new QPushButton(trustTab);
+    // Everything above this rule is a READING of what the agent holds;
+    // everything below it is ADVICE about how to change that. They were two
+    // paragraphs of identical text in one frame, and the count ran straight on
+    // into the instructions as though it were the first sentence of them.
+    cscaGroupLayout->addWidget(makeSeparator(cscaGroup));
+
+    // What a master list is, where the public one is downloaded from, and why
+    // this application will not go and get it. Without all three the import
+    // button is a control nobody can reach: the feature needs a file that only
+    // exists somewhere else, and the name of the thing says nothing about where
+    // that is.
+    //
+    // Three sentences, three kinds of thing, so three labels rather than one
+    // block. The middle one — WHERE — is what a reader opened this frame to
+    // find, so it keeps the body voice and carries the address as a live link,
+    // to be clicked or copied rather than transcribed by eye. The definition
+    // above and the reason below are context a second reader already has, and
+    // they are set quiet so that reader's eye can pass over them.
+    cscaWhatLabel = new QLabel(cscaGroup);
+    cscaWhatLabel->setObjectName(QStringLiteral("cscaWhatLabel"));
+    cscaWhatLabel->setWordWrap(true);
+    makeSecondary(cscaWhatLabel);
+    cscaGroupLayout->addWidget(cscaWhatLabel);
+
+    cscaHelpLabel = new QLabel(cscaGroup);
+    cscaHelpLabel->setObjectName(QStringLiteral("cscaHelpLabel"));
+    cscaHelpLabel->setWordWrap(true);
+    cscaHelpLabel->setTextFormat(Qt::RichText);
+    cscaHelpLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    cscaHelpLabel->setOpenExternalLinks(true);
+    cscaGroupLayout->addWidget(cscaHelpLabel);
+
+    cscaManualLabel = new QLabel(cscaGroup);
+    cscaManualLabel->setObjectName(QStringLiteral("cscaManualLabel"));
+    cscaManualLabel->setWordWrap(true);
+    makeSecondary(cscaManualLabel);
+    cscaGroupLayout->addWidget(cscaManualLabel);
+
+    // The import belongs to the anchors, so it sits inside their frame, under
+    // the sentence that tells a reader what to import. The tab-wide restore
+    // stays outside it, in the same place the signing tab keeps its own.
+    cscaImportButton = new QPushButton(cscaGroup);
     cscaImportButton->setObjectName(QStringLiteral("cscaImportButton"));
     auto* cscaButtonRow = new QHBoxLayout;
     cscaButtonRow->addStretch();
     cscaButtonRow->addWidget(cscaImportButton);
-    trustLayout->addLayout(cscaButtonRow);
+    cscaGroupLayout->addLayout(cscaButtonRow);
+
+    trustLayout->addWidget(cscaGroup);
 
     connect(cscaImportButton, &QPushButton::clicked, this, &SettingsDialog::onCscaImportRequested);
 
+    // Outside both frames, under the same rule the signing tab draws: this one
+    // hands back every key the TAB owns, and standing loose under two titled
+    // boxes it read as belonging to neither.
+    trustLayout->addWidget(makeSeparator(trustTab));
     trustRestoreDefaultsBtn = new QPushButton(trustTab);
     trustRestoreDefaultsBtn->setObjectName(QStringLiteral("trustRestoreDefaultsButton"));
     auto* trustButtonRow = new QHBoxLayout;
@@ -727,6 +882,8 @@ void SettingsDialog::populateTsaList()
     // Add row
     auto* addItem = new QListWidgetItem(qtTrId("lc-sign-tsa-add-item"), tsaList);
     addItem->setData(Qt::UserRole, QStringLiteral("add"));
+
+    sizeListToContents(tsaList);
 }
 
 void SettingsDialog::onTsaAddRequested()
@@ -753,6 +910,7 @@ void SettingsDialog::onTsaAddRequested()
     auto* item = new QListWidgetItem(url);
     item->setData(Qt::UserRole, QStringLiteral("custom"));
     tsaList->insertItem(addRow, item);
+    sizeListToContents(tsaList);
 }
 
 void SettingsDialog::populateTlList()
@@ -781,6 +939,8 @@ void SettingsDialog::populateTlList()
 
     auto* addItem = new QListWidgetItem(qtTrId("lc-settings-tl-add-item"), tlList);
     addItem->setData(TlItemDelegate::TypeRole, QStringLiteral("add"));
+
+    sizeListToContents(tlList);
 }
 
 void SettingsDialog::changeEvent(QEvent* event)
@@ -808,8 +968,15 @@ void SettingsDialog::retranslateUi()
     defaultLocationEdit->setPlaceholderText(qtTrId("lc-sign-visual-location-placeholder"));
     lastTsaLabel->setText(qtTrId("lc-settings-last-tsa"));
     tsaServersLabel->setText(qtTrId("lc-settings-tsa-servers"));
-    tlServersLabel->setText(qtTrId("lc-settings-tl-servers"));
-    cscaAnchorsLabel->setText(qtTrId("lc-settings-csca-anchors"));
+    tlGroup->setTitle(qtTrId("lc-settings-tl-servers"));
+    cscaGroup->setTitle(qtTrId("lc-settings-csca-anchors"));
+    // The one address named on this screen, and the only one this project has
+    // checked. Locale-stable, so it is composed here rather than carried inside
+    // a translatable sentence where three catalogues could drift apart on it.
+    const QString icaoPkdLink = QStringLiteral("<a href=\"%1\">%1</a>").arg(kIcaoPkdUrl);
+    cscaWhatLabel->setText(qtTrId("lc-settings-csca-what"));
+    cscaHelpLabel->setText(qtTrId("lc-settings-csca-where").arg(icaoPkdLink));
+    cscaManualLabel->setText(qtTrId("lc-settings-csca-manual"));
     cscaImportButton->setText(qtTrId("lc-settings-csca-import"));
     signingRestoreDefaultsBtn->setText(qtTrId("lc-btn-restore-defaults"));
     trustRestoreDefaultsBtn->setText(qtTrId("lc-btn-restore-defaults"));
@@ -877,4 +1044,5 @@ void SettingsDialog::onTlAddRequested()
     item->setData(TlItemDelegate::IsLotlRole, typeCombo->currentData().toBool());
     item->setData(TlItemDelegate::EagerRole, loadCombo->currentData().toBool());
     tlList->insertItem(addRow, item);
+    sizeListToContents(tlList);
 }

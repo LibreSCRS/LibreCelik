@@ -1191,7 +1191,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-settings-output-placeholder");
     //% "TSA servers:"
     QT_TRID_NOOP("lc-settings-tsa-servers");
-    //% "Trusted Lists:"
+    //% "Trusted Lists"
     QT_TRID_NOOP("lc-settings-tl-servers");
     //% "+ Add Trusted List..."
     QT_TRID_NOOP("lc-settings-tl-add-item");
@@ -1208,7 +1208,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     // leave a reader believing they had configured something.
     // lupdate //% markers must stay single-line; clang-format would wrap them.
     // clang-format off
-    //% "Country Signing Anchors:"
+    //% "Country Signing Anchors"
     QT_TRID_NOOP("lc-settings-csca-anchors");
     //% "Import Master List…"
     QT_TRID_NOOP("lc-settings-csca-import");
@@ -1234,6 +1234,16 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-settings-csca-refused");
     //% "That file could not be opened. Check that it exists and is readable."
     QT_TRID_NOOP("lc-settings-csca-unreadable");
+    // Where a master list comes from. Named because the import is unusable
+    // without one and the term alone tells a first-time reader nothing; the %1
+    // is the address, filled in at render time so the three catalogues cannot
+    // drift apart on it.
+    //% "A master list is a signed collection of the country signing certificates that passports are checked against."
+    QT_TRID_NOOP("lc-settings-csca-what");
+    //% "Download one from the ICAO Public Key Directory at %1 — take the latest collection of eMRTD CSCA master lists. The download is public: no PKD membership is needed."
+    QT_TRID_NOOP("lc-settings-csca-where");
+    //% "Downloading it means accepting ICAO's terms and conditions, so LibreCelik never fetches a master list by itself. Download the file, then import it here."
+    QT_TRID_NOOP("lc-settings-csca-manual");
     // clang-format on
     //% "Last used TSA server:"
     QT_TRID_NOOP("lc-settings-last-tsa");

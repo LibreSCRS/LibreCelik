@@ -1471,8 +1471,8 @@
         <translation>TSA serveri:</translation>
     </message>
     <message id="lc-settings-tl-servers">
-        <source>Trusted Lists:</source>
-        <translation>Liste poverenja:</translation>
+        <source>Trusted Lists</source>
+        <translation>Liste poverenja</translation>
     </message>
     <message id="lc-settings-tl-add-item">
         <source>+ Add Trusted List...</source>
@@ -1491,8 +1491,8 @@
         <translation>Učitavanje:</translation>
     </message>
     <message id="lc-settings-csca-anchors">
-        <source>Country Signing Anchors:</source>
-        <translation>Sidra državnih izdavalaca:</translation>
+        <source>Country Signing Anchors</source>
+        <translation>Sidra državnih izdavalaca</translation>
     </message>
     <message id="lc-settings-csca-import">
         <source>Import Master List…</source>
@@ -1537,6 +1537,18 @@
     <message id="lc-settings-csca-unreadable">
         <source>That file could not be opened. Check that it exists and is readable.</source>
         <translation>Ta datoteka ne može da se otvori. Proverite da li postoji i da li je čitljiva.</translation>
+    </message>
+    <message id="lc-settings-csca-what">
+        <source>A master list is a signed collection of the country signing certificates that passports are checked against.</source>
+        <translation>Master lista je potpisana zbirka sertifikata državnih izdavalaca prema kojima se pasoši proveravaju.</translation>
+    </message>
+    <message id="lc-settings-csca-where">
+        <source>Download one from the ICAO Public Key Directory at %1 — take the latest collection of eMRTD CSCA master lists. The download is public: no PKD membership is needed.</source>
+        <translation>Preuzmite je iz ICAO direktorijuma javnih ključeva na %1 — uzmite najnoviju zbirku eMRTD CSCA master lista. Preuzimanje je javno: članstvo u PKD-u nije potrebno.</translation>
+    </message>
+    <message id="lc-settings-csca-manual">
+        <source>Downloading it means accepting ICAO&apos;s terms and conditions, so LibreCelik never fetches a master list by itself. Download the file, then import it here.</source>
+        <translation>Preuzimanje podrazumeva prihvatanje ICAO uslova korišćenja, pa LibreCelik nikada sam ne preuzima master listu. Preuzmite datoteku, pa je ovde uvezite.</translation>
     </message>
     <message id="lc-settings-last-tsa">
         <source>Last used TSA server:</source>

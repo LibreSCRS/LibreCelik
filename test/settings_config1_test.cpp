@@ -29,6 +29,7 @@
 #include <QDate>
 #include <QDateTime>
 #include <QFile>
+#include <QFont>
 #include <QFrame>
 #include <QGroupBox>
 #include <QIODevice>
@@ -39,6 +40,7 @@
 #include <QPalette>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QScopeGuard>
 #include <QStandardPaths>
 #include <QString>
 #include <QStringList>
@@ -529,6 +531,106 @@ TEST_F(SettingsConfig1Test, AFileTheAgentWillNotInstallOffersADifferentFile)
 
     EXPECT_EQ(cscaStatusText(dlg), qtTrId("lc-settings-csca-refused"));
     EXPECT_EQ(cscaSummaryText(dlg), qtTrId("lc-settings-csca-state-none"));
+}
+
+// --- the sentences have to be all the way there on the first show ------------
+//
+// A word-wrapped QLabel answers a layout with ONE LINE when asked for its
+// minimum height. So the moment a tab is shorter than the sum of what its
+// children would like, the layout squeezes the sentences to one line each and
+// cuts the rest off mid-glyph -- honouring every constraint it was given, and
+// telling nobody. It then "corrects itself" the next time any content changes,
+// which is how the defect was reported: cut on arrival, right after an error
+// message appeared.
+
+/// Let the layout reach its fixed point, the way a running event loop does
+/// before the first paint.
+void settleLayout()
+{
+    for (int round = 0; round < 8; ++round) {
+        QCoreApplication::processEvents();
+    }
+}
+
+TEST_F(SettingsConfig1Test, NoWrappedSentenceOpensCutOff)
+{
+    // The pressure is the precondition, not decoration: at the offscreen
+    // default font the Trust tab fits inside the dialog's opening size and
+    // nothing is squeezed, so the assertion below would pass over the very bug
+    // it exists to catch. Four points up is what puts the tab under pressure.
+    const QFont original = QApplication::font();
+    QFont larger = original;
+    larger.setPointSizeF(original.pointSizeF() + 4.0);
+    QApplication::setFont(larger);
+    const auto restoreFont = qScopeGuard([&original]() { QApplication::setFont(original); });
+
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    SettingsDialog dlg(&gw);
+    auto* tabs = dlg.findChild<QTabWidget*>();
+    ASSERT_NE(tabs, nullptr);
+
+    // The path a reader takes: the dialog opens on General, they click across.
+    dlg.show();
+    settleLayout();
+    tabs->setCurrentIndex(2); // Trust
+    settleLayout();
+
+    int measured = 0;
+    for (QLabel* label : dlg.findChildren<QLabel*>()) {
+        if (!label->isVisible() || !label->wordWrap()) {
+            continue;
+        }
+        ++measured;
+        // The PROPERTY, not a pixel count: whatever the font and the catalogue,
+        // a label must be at least as tall as its own wrapping needs at the
+        // width it was actually given.
+        EXPECT_GE(label->height(), label->heightForWidth(label->width()))
+            << "cut off on the first show: " << qPrintable(label->objectName()) << " was given " << label->height()
+            << "px for text that wraps to " << label->heightForWidth(label->width()) << "px at " << label->width()
+            << "px wide";
+    }
+    EXPECT_GE(measured, 4) << "the Trust tab carries four wrapped sentences; measuring none would make this "
+                              "test pass on a dialog that renders nothing";
+}
+
+// The second half of the report: it "lays out correctly" only once a message
+// appears. Whatever is true after that message must already be true before it,
+// or the first show is a different (worse) dialog than the one a reader ends up
+// looking at.
+TEST_F(SettingsConfig1Test, AMessageAppearingChangesNoSentenceThatWasAlreadyRight)
+{
+    const QFont original = QApplication::font();
+    QFont larger = original;
+    larger.setPointSizeF(original.pointSizeF() + 4.0);
+    QApplication::setFont(larger);
+    const auto restoreFont = qScopeGuard([&original]() { QApplication::setFont(original); });
+
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    gw.nextImportRefusal = LibreSCRS::AgentClient::SyncError::CommunicationError;
+
+    SettingsDialog dlg(&gw);
+    auto* tabs = dlg.findChild<QTabWidget*>();
+    ASSERT_NE(tabs, nullptr);
+    dlg.show();
+    settleLayout();
+    tabs->setCurrentIndex(2);
+    settleLayout();
+
+    const int fd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
+    ASSERT_GE(fd, 0);
+    dlg.importMasterList(fd);
+    ::close(fd);
+    settleLayout();
+
+    for (QLabel* label : dlg.findChildren<QLabel*>()) {
+        if (!label->isVisible() || !label->wordWrap()) {
+            continue;
+        }
+        EXPECT_GE(label->height(), label->heightForWidth(label->width()))
+            << "still cut off after the message: " << qPrintable(label->objectName());
+    }
 }
 
 // The Trust tab goes dark with no agent, and the import must observe the same

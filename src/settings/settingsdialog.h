@@ -21,6 +21,7 @@ class QLabel;
 class QLineEdit;
 class QListWidget;
 class QPushButton;
+class QShowEvent;
 class QTabWidget;
 
 namespace librecelik::agent {
@@ -103,8 +104,25 @@ signals:
 
 protected:
     void changeEvent(QEvent* event) override;
+    void showEvent(QShowEvent* event) override;
+    /// Watches every label in the dialog for a width change, because a width
+    /// change is what makes a wrapped label's required height wrong.
+    bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
+    /// Re-measure every wrapped label that is currently on screen. Called at
+    /// the two moments a page first has a real width: the dialog's own first
+    /// show, and a switch to a tab that has never been current.
+    void refitWrappedLabels();
+    /// Give @p label a minimum height equal to the height its own wrapping
+    /// needs at the width it currently has.
+    ///
+    /// Without this a word-wrapped QLabel tells the layout its minimum is one
+    /// line, so the layout is free to hand it one line and cut the rest off —
+    /// and it does exactly that whenever a tab is shorter than the sum of what
+    /// its children would like to be. No constant is involved: the figure is
+    /// the label's own `heightForWidth()`, re-taken whenever the width moves.
+    static void fitWrappedLabelHeight(QLabel* label);
     void retranslateUi();
     void loadSettings();
     /// Re-read the agent's snapshot into every operation-backed control.

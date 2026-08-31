@@ -214,22 +214,20 @@ QVariantMap anchorStateAsMap(const LibreSCRS::AgentClient::CscaAnchorState& stat
 SettingsDialog::SettingsDialog(librecelik::agent::AgentGateway* agentGateway, QWidget* parent)
     : QDialog(parent), gateway(agentGateway)
 {
-    // The floor is set by the tallest tab, which is Trust: two framed sections,
-    // and an anchor section that has to fit its account of what is installed
-    // AND the sentences telling a reader where a master list comes from.
+    // WIDTH is a design floor and is set here: below 520 this tab's prose falls
+    // into columns too narrow to scan, whatever it says. HEIGHT is NOT set here
+    // and must not be — it is a MEASUREMENT of the text, and the only thing
+    // that can take it is the text itself, at the width and in the font it is
+    // actually drawn with. A height pinned in this constructor is a number
+    // calibrated against one catalogue at one font size, and it silently cuts
+    // the last line off every sentence on a desktop whose font is a point
+    // larger. Leaving the vertical minimum unset is also what lets Qt's own
+    // default layout constraint publish the layout's minimum as the window's,
+    // which is the mechanism `fitWrappedLabelHeight()` below feeds.
     //
-    // 560 is MEASURED, not chosen: below it the anchor summary and the download
-    // sentence lose their last lines, and they do so in every catalogue — the
-    // Serbian text is the longest and reaches the same floor at any width this
-    // dialog can be narrowed to. The minimum shipped before this was 520x520,
-    // which no catalogue could render: at that size a third of the download
-    // paragraph was cut off in all three anchor states. A minimum a dialog
-    // cannot draw at is not a minimum.
-    //
-    // The default is wider than the floor rather than taller, because width is
-    // what this tab's prose actually wants: past 680 the paragraphs fall into
-    // fewer lines and the tab needs 30px less height than it does at 640.
-    setMinimumSize(520, 560);
+    // The default is wider than tall on purpose: width is what this tab's prose
+    // wants, since past 680 the paragraphs fall into fewer lines.
+    setMinimumWidth(520);
     resize(680, 560);
 
     auto* layout = new QVBoxLayout(this);
@@ -558,6 +556,77 @@ SettingsDialog::SettingsDialog(librecelik::agent::AgentGateway* agentGateway, QW
     loadSettings();
     loadConfig();
     applyPresence();
+
+    // Every label in the dialog, not a hand-kept list: a wrapped label added
+    // later must not have to remember to sign up, because the failure mode when
+    // it forgets is a sentence that is silently one line short.
+    for (QLabel* label : findChildren<QLabel*>())
+        label->installEventFilter(this);
+
+    // A page that has just become current has only now been given a width, and
+    // its labels' resize events are the first honest measurement anybody can
+    // take of them. Taking it on the switch rather than waiting for the next
+    // thing to happen is the difference between a tab that opens right and one
+    // that opens cut and corrects itself later.
+    connect(tabs, &QTabWidget::currentChanged, this, [this](int) { refitWrappedLabels(); });
+}
+
+void SettingsDialog::showEvent(QShowEvent* event)
+{
+    QDialog::showEvent(event);
+    refitWrappedLabels();
+}
+
+void SettingsDialog::refitWrappedLabels()
+{
+    for (QLabel* label : findChildren<QLabel*>()) {
+        if (label->wordWrap())
+            fitWrappedLabelHeight(label);
+    }
+}
+
+bool SettingsDialog::eventFilter(QObject* watched, QEvent* event)
+{
+    if (event->type() == QEvent::Resize) {
+        auto* label = qobject_cast<QLabel*>(watched);
+        if (label != nullptr && label->wordWrap())
+            fitWrappedLabelHeight(label);
+    }
+    return QDialog::eventFilter(watched, event);
+}
+
+void SettingsDialog::fitWrappedLabelHeight(QLabel* label)
+{
+    // A word-wrapped QLabel answers a layout with ONE LINE when it is asked for
+    // its minimum height, whatever it is about to draw. That is the whole
+    // defect: a QVBoxLayout under any pressure at all — a tab shorter than the
+    // sum of what its children would like — is entitled to squeeze the label to
+    // that one line, and it does, cutting the remaining lines off mid-glyph.
+    // Nothing complains, because from the layout's point of view it honoured
+    // every constraint it was given.
+    //
+    // The height a wrapped label needs is not knowable until its WIDTH is,
+    // which is why Qt cannot publish it as a minimum size and why it has to be
+    // re-taken here on every width change rather than computed once.
+    //
+    // VISIBLE, and this guard is load-bearing rather than defensive. A tab page
+    // that has never been current has never been given the stack's width, so
+    // its labels still carry whatever geometry they were constructed with —
+    // about sixty pixels. Measuring there answers "this sentence needs nine
+    // lines", and because a stacked layout's minimum is the MAXIMUM over every
+    // page, one unmeasured tab would publish that as the whole dialog's minimum
+    // height and open a settings window two thousand pixels tall. Each page is
+    // measured when it becomes real, and not before.
+    if (!label->isVisible())
+        return;
+    const int width = label->width();
+    if (width <= 0)
+        return; // not laid out yet: a height taken at width 0 is not a measurement
+    const int needed = label->heightForWidth(width);
+    if (needed <= 0)
+        return;
+    if (label->minimumHeight() != needed)
+        label->setMinimumHeight(needed); // updateGeometry() rides along, so the layout re-runs
 }
 
 void SettingsDialog::importMasterList(int masterListFd)

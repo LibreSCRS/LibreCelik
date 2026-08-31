@@ -1228,7 +1228,12 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-settings-csca-rollback-on");
     //% "This list carries no signing time, so a later list cannot be checked for rolling the anchors back."
     QT_TRID_NOOP("lc-settings-csca-rollback-off");
-    //% "The master list was installed."
+    // Says what to do next, because nothing else does: anchors are consulted
+    // when a document is read, so a list imported while a passport sits on the
+    // reader changes nothing until it is read again. The owner hit exactly
+    // this -- the import succeeded and the screen gave no hint that the next
+    // step was his.
+    //% "The master list was installed. Read the document again for the new anchors to take effect."
     QT_TRID_NOOP("lc-settings-csca-installed");
     //% "Nothing was installed: this list is not newer than the one already in place. The same list is already installed, and an older one would roll the anchors back."
     QT_TRID_NOOP("lc-settings-csca-replayed");

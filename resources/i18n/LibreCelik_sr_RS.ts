@@ -1527,8 +1527,8 @@
         <translation>Ова листа не носи време потписивања, па се за каснију листу не може проверити да ли враћа сидра уназад.</translation>
     </message>
     <message id="lc-settings-csca-installed">
-        <source>The master list was installed.</source>
-        <translation>Мастер листа је инсталирана.</translation>
+        <source>The master list was installed. Read the document again for the new anchors to take effect.</source>
+        <translation>Мастер листа је инсталирана. Поново прочитајте документ да би нова сидра ступила на снагу.</translation>
     </message>
     <message id="lc-settings-csca-replayed">
         <source>Nothing was installed: this list is not newer than the one already in place. The same list is already installed, and an older one would roll the anchors back.</source>

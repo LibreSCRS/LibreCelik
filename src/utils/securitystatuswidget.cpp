@@ -121,21 +121,6 @@ Q_GLOBAL_STATIC(std::optional<bool>, g_detailChecksChoice)
 
 } // namespace
 
-bool detailChecksExpandedFor(const SecurityStatusModel& status)
-{
-    // Two outcomes open the block, and they are named rather than derived from
-    // "not Passed": NOT_SUPPORTED and SKIPPED say something about the card or
-    // about this read, not about something the holder can fix, and treating
-    // them as trouble would leave the block open on ordinary documents until it
-    // stopped meaning anything.
-    for (const SecurityCheck& check : status.checks) {
-        if (check.status == SecurityCheck::Status::Failed || check.status == SecurityCheck::Status::NotPerformed) {
-            return true;
-        }
-    }
-    return false;
-}
-
 std::optional<bool> rememberedDetailChecksChoice()
 {
     // Q_GLOBAL_STATIC hands back a null pointer once the destructor has run at
@@ -376,11 +361,20 @@ void SecurityStatusWidget::rebuildDetailRows()
 
 void SecurityStatusWidget::applyDetailChecksState()
 {
-    // The reader's own choice outranks the derived default, and outranks it for
-    // the rest of the session: re-deciding on the next card is the behaviour
-    // this guard exists to prevent.
-    const bool expand = librecelik::utils::rememberedDetailChecksChoice().value_or(
-        librecelik::utils::detailChecksExpandedFor(cachedStatus));
+    // Closed unless the reader opened it, and their choice holds for the rest
+    // of the session: re-deciding on the next card is the behaviour this guard
+    // exists to prevent.
+    //
+    // There is no derived default any more. The block used to open itself on a
+    // Failed or NotPerformed check, which on a passport means always: DG3
+    // carries fingerprints and an ordinary read never has the authorization to
+    // fetch them, so every document arrived with a NotPerformed row and the
+    // block was open on all of them. The rule already refused to treat
+    // NOT_SUPPORTED and SKIPPED as trouble for that exact reason; NotPerformed
+    // belonged in that group and was the common case. The three summary
+    // verdicts sit ABOVE this block and carry the outcome, so nothing is
+    // hidden by keeping the per-check breakdown behind one click.
+    const bool expand = librecelik::utils::rememberedDetailChecksChoice().value_or(false);
     detailSection->setExpanded(expand);
     // setExpanded() returns early when the flag already matches, and the rows
     // above are NEW children the layout has just made visible. Without this the

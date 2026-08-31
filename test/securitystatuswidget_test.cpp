@@ -217,17 +217,28 @@ TEST_F(SecurityStatusWidgetTest, EveryCheckPassedLeavesTheDetailBlockClosed)
     EXPECT_FALSE(block->isExpanded()) << "nothing to act on, yet the block still buries the holder's data";
 }
 
-TEST_F(SecurityStatusWidgetTest, ACheckNobodyRanOpensTheDetailBlock)
+// The block never opens itself, whatever the verdict. It used to open on
+// Failed or NotPerformed, and on a real document that meant ALWAYS: DG3 holds
+// fingerprints, which an ordinary read never has the authorization to fetch,
+// so every passport arrived with a NotPerformed row and the block stood open
+// on all of them. The rule already excluded NOT_SUPPORTED and SKIPPED for
+// exactly that reason -- "a block left open on ordinary documents stops
+// meaning anything" -- and NotPerformed was the case that reason described
+// best. Rather than trim the trigger list again, the automatic trigger is
+// gone: the three summary verdicts above the block carry the outcome, and a
+// reader who wants the per-check breakdown opens it.
+TEST_F(SecurityStatusWidgetTest, ACheckNobodyRanStillLeavesTheDetailBlockClosed)
 {
     SecurityStatusWidget widget;
     widget.setSecurityStatus(signerCheckNeverRan());
 
     CollapsibleSection* block = detailBlockOf(widget);
     ASSERT_NE(block, nullptr) << "the per-check block is not a section a reader can close";
-    EXPECT_TRUE(block->isExpanded()) << "a check nobody ran, and the line saying what to do about it is behind a click";
+    EXPECT_FALSE(block->isExpanded()) << "an unrun check popped the block open; on a passport DG3 is always unrun, "
+                                         "so this is every document, every read";
 }
 
-TEST_F(SecurityStatusWidgetTest, AFailedCheckOpensTheDetailBlock)
+TEST_F(SecurityStatusWidgetTest, AFailedCheckStillLeavesTheDetailBlockClosed)
 {
     SecurityStatusModel status = everyCheckPassed();
     status.overallIntegrity = SecurityCheck::Status::Failed;
@@ -238,7 +249,10 @@ TEST_F(SecurityStatusWidgetTest, AFailedCheckOpensTheDetailBlock)
 
     CollapsibleSection* block = detailBlockOf(widget);
     ASSERT_NE(block, nullptr);
-    EXPECT_TRUE(block->isExpanded()) << "a check failed and the pane hid which one";
+    // The failure is NOT hidden by this: overallIntegrity above the block says
+    // so in its own row, which TheThreeSummaryVerdictsStayOutsideTheBlock pins.
+    EXPECT_FALSE(block->isExpanded()) << "the block opened itself on a failure; the summary row already carries that "
+                                         "verdict, and a block that opens on its own is the behaviour being removed";
 }
 
 // Closed, the block still has to say what is inside it — otherwise the reader
@@ -314,9 +328,14 @@ void clickHeaderOf(CollapsibleSection& section)
 
 } // namespace
 
-// The read wants attention, so the block opened itself — and the reader closed
-// it anyway. The next card must not open it again: re-deciding after being
-// told is exactly the behaviour that makes a section feel broken.
+// A reader who opens the block and then closes it again is back to closed, and
+// stays there on the next card. The remembered choice has to be UPDATED by the
+// second press, not merely set by the first — a memory that only ever records
+// "opened" would pass the sibling test below while quietly ignoring this one.
+//
+// The block must be opened by hand first: nothing opens it on its own any more,
+// so a close that starts from closed would prove nothing, which is what the
+// assertion this test used to carry was guarding against.
 TEST_F(SecurityStatusWidgetTest, AReaderWhoClosesTheBlockKeepsItClosedOnTheNextRead)
 {
     {
@@ -324,10 +343,18 @@ TEST_F(SecurityStatusWidgetTest, AReaderWhoClosesTheBlockKeepsItClosedOnTheNextR
         firstRead.setSecurityStatus(signerCheckNeverRan());
         CollapsibleSection* block = detailBlockOf(firstRead);
         ASSERT_NE(block, nullptr);
-        ASSERT_TRUE(block->isExpanded()) << "the derived default never opened it, so closing it proves nothing";
+        ASSERT_FALSE(block->isExpanded()) << "the block opened itself; this test can no longer measure a close";
         clickHeaderOf(*block);
-        ASSERT_FALSE(block->isExpanded()) << "the header press did not close the block";
+        ASSERT_TRUE(block->isExpanded()) << "the header press did not open the block";
+        clickHeaderOf(*block);
+        ASSERT_FALSE(block->isExpanded()) << "the second header press did not close the block again";
     }
+
+    ASSERT_TRUE(librecelik::utils::rememberedDetailChecksChoice().has_value())
+        << "two presses by a person left no recorded choice at all";
+    EXPECT_FALSE(*librecelik::utils::rememberedDetailChecksChoice())
+        << "the close was not recorded over the open: the memory keeps the FIRST press, so a reader can open the "
+           "block once and never be able to put it back";
 
     // The next card: a whole new pane, because every read builds one.
     SecurityStatusWidget nextRead;
@@ -372,29 +399,6 @@ TEST_F(SecurityStatusWidgetTest, TheProgramsOwnToggleIsNotMistakenForTheReadersC
     block->setExpanded(true);
     EXPECT_FALSE(librecelik::utils::rememberedDetailChecksChoice().has_value())
         << "a programmatic toggle was filed as the reader's own decision";
-}
-
-// The rule itself, stated once where it can be read: NOT_SUPPORTED and SKIPPED
-// are not trouble. A card that does not implement a check, or a read that
-// bypassed one, leaves the holder nothing to act on — and a block left open on
-// ordinary documents stops meaning anything.
-TEST_F(SecurityStatusWidgetTest, OnlyFailedAndNotPerformedOpenTheBlock)
-{
-    using librecelik::utils::detailChecksExpandedFor;
-
-    SecurityStatusModel quiet;
-    quiet.checks.push_back(checkWith(SecurityCheck::Status::Passed, QStringLiteral("DG1 Hash")));
-    quiet.checks.push_back(checkWith(SecurityCheck::Status::NotSupported, QStringLiteral("Active Authentication")));
-    quiet.checks.push_back(checkWith(SecurityCheck::Status::Skipped, QStringLiteral("Terminal Authentication")));
-    EXPECT_FALSE(detailChecksExpandedFor(quiet));
-
-    SecurityStatusModel failed = quiet;
-    failed.checks.push_back(checkWith(SecurityCheck::Status::Failed, QStringLiteral("Passive Authentication")));
-    EXPECT_TRUE(detailChecksExpandedFor(failed));
-
-    SecurityStatusModel notRun = quiet;
-    notRun.checks.push_back(checkWith(SecurityCheck::Status::NotPerformed, QStringLiteral("Passive Authentication")));
-    EXPECT_TRUE(detailChecksExpandedFor(notRun));
 }
 
 // The rows are rebuilt whenever a verdict re-arrives or the language changes.

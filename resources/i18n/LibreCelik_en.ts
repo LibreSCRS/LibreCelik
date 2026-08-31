@@ -1527,8 +1527,8 @@
         <translation>This list carries no signing time, so a later list cannot be checked for rolling the anchors back.</translation>
     </message>
     <message id="lc-settings-csca-installed">
-        <source>The master list was installed.</source>
-        <translation>The master list was installed.</translation>
+        <source>The master list was installed. Read the document again for the new anchors to take effect.</source>
+        <translation>The master list was installed. Read the document again for the new anchors to take effect.</translation>
     </message>
     <message id="lc-settings-csca-replayed">
         <source>Nothing was installed: this list is not newer than the one already in place. The same list is already installed, and an older one would roll the anchors back.</source>

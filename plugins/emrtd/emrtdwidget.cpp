@@ -6,6 +6,7 @@
 #include "utils/collapsiblesection.h"
 #include "utils/fieldsectionbuilder.h"
 #include "utils/iconutils.h"
+#include "utils/securitystatusfields.h"
 #include "utils/securitystatuswidget.h"
 
 #include <QDate>
@@ -437,53 +438,10 @@ void EMRTDWidget::addGroup(const FieldGroup& group)
         bioSection->setLayout(bioLayout);
         sectionLayout->addWidget(bioSection);
     } else if (key == QLatin1String("security_status")) {
-        // Parse fields back into the security model the pane renders
-        using librecelik::utils::SecurityCategory;
-        using librecelik::utils::SecurityCheck;
-        librecelik::utils::SecurityStatusModel secStatus;
-        for (const auto& field : group.fields) {
-            const QString& text = field.value;
-            if (field.key == QLatin1String("overall_integrity")) {
-                secStatus.overallIntegrity =
-                    librecelik::utils::statusFromString(text).value_or(SecurityCheck::Status::NotPerformed);
-            } else if (field.key == QLatin1String("overall_authenticity")) {
-                secStatus.overallAuthenticity =
-                    librecelik::utils::statusFromString(text).value_or(SecurityCheck::Status::NotPerformed);
-            } else if (field.key == QLatin1String("overall_genuineness")) {
-                secStatus.overallGenuineness =
-                    librecelik::utils::statusFromString(text).value_or(SecurityCheck::Status::NotPerformed);
-            } else if (field.key.startsWith(QLatin1String("check_"))) {
-                // Individual check fields: check_N_id, check_N_category, etc.
-                // Parse grouped by index
-                const qsizetype separator = field.key.indexOf(u'_', 6);
-                if (separator < 0)
-                    continue;
-                const QString suffix = field.key.mid(separator + 1);
-                const QString idxStr = field.key.mid(6, separator - 6);
-                bool parsed = false;
-                const uint idx = idxStr.toUInt(&parsed);
-                if (!parsed)
-                    continue;
-                while (secStatus.checks.size() <= static_cast<qsizetype>(idx))
-                    secStatus.checks.emplaceBack();
-                auto& check = secStatus.checks[static_cast<qsizetype>(idx)];
-                if (suffix == QLatin1String("id"))
-                    check.checkId = text;
-                else if (suffix == QLatin1String("category"))
-                    check.category = librecelik::utils::categoryFromString(text).value_or(SecurityCategory::Other);
-                else if (suffix == QLatin1String("status"))
-                    check.status =
-                        librecelik::utils::statusFromString(text).value_or(SecurityCheck::Status::NotPerformed);
-                else if (suffix == QLatin1String("label"))
-                    check.label = text;
-                else if (suffix == QLatin1String("detail"))
-                    check.detail = text;
-                else if (suffix == QLatin1String("error"))
-                    check.errorDetail = text;
-                else if (suffix == QLatin1String("reason"))
-                    check.reason = text;
-            }
-        }
+        // The wire shape is read in ONE place — the printed record renders the
+        // same group, and a private copy of this loop here is how the two
+        // would drift into disagreeing about it.
+        const librecelik::utils::SecurityStatusModel secStatus = librecelik::utils::securityStatusFromGroup(group);
         if (!securityStatusWidget) {
             securityStatusWidget = new SecurityStatusWidget(outerSection);
         }

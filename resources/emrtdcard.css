@@ -33,3 +33,20 @@ span.security-dot {
   font-size: 12px;
   margin-right: 4px;
 }
+table.security-checks {
+  width: 100%;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+td.security-check-name {
+  font-size: small;
+  padding: 1px 0;
+}
+td.security-check-verdict {
+  font-size: small;
+  padding: 1px 0;
+}
+td.security-check-reason {
+  font-size: small;
+  padding: 0 0 3px 0;
+}

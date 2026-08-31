@@ -273,6 +273,48 @@ target_link_libraries(PIVTextDocumentTests
 set_target_properties(PIVTextDocumentTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(PIVTextDocumentTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# The travel-document PRINT formatter. It renders the same security read the
+# on-screen pane does, so it compiles the shared pane sources too: the reason
+# a check did not run is a wire KEY, and the catalogue lookup that turns it
+# into a sentence lives with the pane. A second copy of that lookup here is
+# exactly the drift these cases exist to prevent.
+add_executable(EMRTDTextDocumentTests
+    emrtdtextdocument_test.cpp
+    ../plugins/emrtd/emrtdtextdocument.h
+    ../plugins/emrtd/emrtdtextdocument.cpp
+    ../src/utils/securitystatusfields.h
+    ../src/utils/securitystatuswidget.h
+    ../src/utils/securitystatuswidget.cpp
+    ../src/utils/collapsiblesection.h
+    ../src/utils/collapsiblesection.cpp
+    ../src/utils/cardheadercard.h
+    ../src/utils/cardheadercard.cpp
+    ../src/utils/libreceliklog.h
+    ../src/utils/libreceliklog.cpp
+    ${CMAKE_SOURCE_DIR}/resources/librecelik.qrc
+)
+target_include_directories(EMRTDTextDocumentTests PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/document/printing
+    ${CMAKE_SOURCE_DIR}/plugins/emrtd
+    ${PROJECT_BINARY_DIR}/../src
+)
+target_link_libraries(EMRTDTextDocumentTests
+    GTest::gtest_main
+    LibreAgent::ClientQt
+    LibreCelikPrinting
+    Qt6::Widgets
+    Qt6::PrintSupport
+)
+set_target_properties(EMRTDTextDocumentTests PROPERTIES AUTOMOC ON)
+# The reason a check did not run reaches the page as a SENTENCE; with no
+# catalogue loaded qtTrId() returns the bare id and every case comparing one
+# would be comparing an id against itself.
+target_compile_definitions(EMRTDTextDocumentTests PRIVATE
+    LIBRECELIK_TRANSLATIONS_DIR_DEFAULT="${CMAKE_BINARY_DIR}/src")
+add_dependencies(EMRTDTextDocumentTests LibreCelik_lrelease)
+gtest_discover_tests(EMRTDTextDocumentTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
 if(LIBRECELIK_SIGNING_ENABLED)
     # certformat.cpp joins this target for the KeyUsage-bitmask cases; it is
     # LM-free from the certificate-viewer re-type onward, so it adds no

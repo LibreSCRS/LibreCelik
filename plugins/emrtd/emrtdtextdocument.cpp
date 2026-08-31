@@ -3,12 +3,17 @@
 
 #include <QCoreApplication>
 #include <QDate>
+#include <QStringList>
 #include "emrtdtextdocument.h"
 #include <plugin/fieldvalue.h>
+#include <utils/securitystatusfields.h>
+#include <utils/securitystatuswidget.h>
 
 using librecelik::plugin::fieldDetailBytes;
 using librecelik::plugin::fieldValue;
 using librecelik::plugin::findGroup;
+using librecelik::utils::SecurityCheck;
+using librecelik::utils::SecurityStatusModel;
 using LibreSCRS::AgentClient::Field;
 using LibreSCRS::AgentClient::FieldGroup;
 
@@ -42,6 +47,59 @@ QByteArray firstFieldBytes(const FieldGroup& group)
         return {};
     }
     return group.fields.first().detail.toByteArray();
+}
+
+/// The per-check rows of the printed record, as table markup.
+///
+/// A printout is the artefact somebody attaches as evidence that a passport
+/// was checked, so it has to carry the same admission the window makes: a bare
+/// "Data Authenticity: Not Performed" cannot be told apart from a document
+/// nobody could vouch for. The three aggregate verdicts alone overstate the
+/// read by omission.
+///
+/// Terse where a check passed — one line, no paragraph under it — and
+/// explanatory only where it did not. The reason is the one line that says
+/// what to DO, and a page of them for checks that all succeeded would bury it.
+///
+/// Empty when the read named no check, so the block above can be dropped
+/// whole rather than printing a heading over nothing.
+QString securityCheckRows(const QList<SecurityCheck>& checks)
+{
+    QStringList rows;
+    for (const SecurityCheck& check : checks) {
+        // An index the read never filled arrives as a default-constructed
+        // entry. On screen it is an empty line; on an evidence document it
+        // would read as a check somebody skipped, so it is not a row.
+        const QString name = check.label.isEmpty() ? check.checkId : check.label;
+        if (name.isEmpty()) {
+            continue;
+        }
+        rows << QStringLiteral("        <tr>\n"
+                               "            <td width=\"0\"><img src=\":/images/transparent_1x20.png\" "
+                               "width=\"1\" height=\"20\"></td>\n"
+                               "            <td class=\"security-check-name\" width=\"45%\">"
+                               "<span class=\"security-dot\" style=\"background:%1;\">&#x25CF;</span> %2</td>\n"
+                               "            <td class=\"security-check-verdict\">%3</td>\n"
+                               "        </tr>")
+                    .arg(librecelik::utils::statusColorHex(check.status), name.toHtmlEscaped(),
+                         librecelik::utils::localizedStatusText(check.status).toHtmlEscaped());
+
+        if (check.status == SecurityCheck::Status::Passed) {
+            continue;
+        }
+        // A key this build does not name reaches the page as itself — the same
+        // rule the pane applies — so it is escaped, never pasted as markup.
+        const QString reason = librecelik::utils::localizedReasonText(check.reason);
+        if (reason.isEmpty()) {
+            continue;
+        }
+        rows << QStringLiteral("        <tr>\n"
+                               "            <td width=\"0\"></td>\n"
+                               "            <td class=\"security-check-reason\" colspan=\"2\">%1</td>\n"
+                               "        </tr>")
+                    .arg(reason.toHtmlEscaped());
+    }
+    return rows.join(u'\n');
 }
 
 } // namespace
@@ -103,6 +161,7 @@ void EMRTDTextDocument::translateDocumentData(QString& data) const
     data.replace("${signature_label}", qtTrId("lc-emrtd-signature"));
 
     // Security status header
+    data.replace("${security_checks_label}", qtTrId("lc-emrtd-security-details"));
     data.replace("${security_integrity_label}", qtTrId("lc-emrtd-security-integrity"));
     data.replace("${security_authenticity_label}", qtTrId("lc-emrtd-security-authenticity"));
     data.replace("${security_genuineness_label}", qtTrId("lc-emrtd-security-genuineness"));
@@ -119,40 +178,32 @@ void EMRTDTextDocument::translateDocumentData(QString& data) const
 
 void EMRTDTextDocument::prepareDocumentData(QString& html, const QList<FieldGroup>& groups) const
 {
-    // Security status — parse from security_status group
+    // Security status — the SAME reader the on-screen pane uses. The verdict
+    // colours and words come from the shared helpers for the same reason: two
+    // copies is how the window and the page would end up calling one outcome
+    // by two names.
     if (const FieldGroup* secGroup = findGroup(groups, u"security_status")) {
-        auto statusColor = [](const QString& statusStr) -> QString {
-            if (statusStr == "PASSED")
-                return QStringLiteral("#4CAF50");
-            if (statusStr == "FAILED")
-                return QStringLiteral("#F44336");
-            if (statusStr == "NOT_SUPPORTED" || statusStr == "SKIPPED")
-                return QStringLiteral("#FFC107");
-            return QStringLiteral("#9E9E9E");
-        };
-        auto statusLabel = [](const QString& statusStr) -> QString {
-            if (statusStr == "PASSED")
-                return qtTrId("lc-emrtd-security-passed");
-            if (statusStr == "FAILED")
-                return qtTrId("lc-emrtd-security-failed");
-            if (statusStr == "NOT_SUPPORTED")
-                return qtTrId("lc-emrtd-security-not-supported");
-            if (statusStr == "SKIPPED")
-                return qtTrId("lc-emrtd-security-skipped");
-            return qtTrId("lc-emrtd-security-not-performed");
-        };
+        const SecurityStatusModel security = librecelik::utils::securityStatusFromGroup(*secGroup);
 
-        auto integrityStr = fieldValue(*secGroup, u"overall_integrity");
-        auto authenticityStr = fieldValue(*secGroup, u"overall_authenticity");
-        auto genuinenessStr = fieldValue(*secGroup, u"overall_genuineness");
+        html.replace("${security_integrity_color}", librecelik::utils::statusColorHex(security.overallIntegrity));
+        html.replace("${security_integrity_value}", librecelik::utils::localizedStatusText(security.overallIntegrity));
+        html.replace("${security_authenticity_color}", librecelik::utils::statusColorHex(security.overallAuthenticity));
+        html.replace("${security_authenticity_value}",
+                     librecelik::utils::localizedStatusText(security.overallAuthenticity));
+        html.replace("${security_genuineness_color}", librecelik::utils::statusColorHex(security.overallGenuineness));
+        html.replace("${security_genuineness_value}",
+                     librecelik::utils::localizedStatusText(security.overallGenuineness));
 
-        html.replace("${security_integrity_color}", statusColor(integrityStr));
-        html.replace("${security_integrity_value}", statusLabel(integrityStr));
-        html.replace("${security_authenticity_color}", statusColor(authenticityStr));
-        html.replace("${security_authenticity_value}", statusLabel(authenticityStr));
-        html.replace("${security_genuineness_color}", statusColor(genuinenessStr));
-        html.replace("${security_genuineness_value}", statusLabel(genuinenessStr));
+        // The per-check rows, and the heading over them, only when the read
+        // actually named a check.
+        if (const QString rows = securityCheckRows(security.checks); rows.isEmpty()) {
+            removeConditionalBlock(html, "SECURITY_CHECKS");
+        } else {
+            html.replace("${security_check_rows}", rows);
+        }
     } else {
+        // Nested inside the security block, so this takes the per-check rows
+        // with it.
         removeConditionalBlock(html, "SECURITY");
     }
 

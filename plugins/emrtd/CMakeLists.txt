@@ -16,6 +16,7 @@ add_library(emrtd-gui-plugin MODULE
     ${CMAKE_SOURCE_DIR}/src/utils/cardheadercard.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.h
     ${CMAKE_SOURCE_DIR}/src/utils/fieldsectionbuilder.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/securitystatusfields.h
     ${CMAKE_SOURCE_DIR}/src/utils/securitystatuswidget.h
     ${CMAKE_SOURCE_DIR}/src/utils/securitystatuswidget.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/pluginwidgetbase.h

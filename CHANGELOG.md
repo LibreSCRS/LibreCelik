@@ -12,6 +12,23 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Trust settings: country-signing anchors.** A new section under
+  Settings → Trust installs the CSCA certificates an electronic
+  passport's signature is checked against. It says where to obtain the
+  file — the ICAO Public Key Directory at <https://pkddownload.icao.int/>,
+  whose master-list download is public and needs no membership — and
+  names the file to look for. The directory export carries a separately
+  signed master list for every publishing country and installs in **one
+  import**, with one authorization prompt. The section also shows what
+  the agent currently holds: how many anchors, how many issuing
+  countries, and whether a later list can be refused as a rollback.
+  Where a collection has no single answer — which publisher, signed
+  when — it says so instead of leaving a blank.
+
+  The file is never read here: it is handed to the agent as an open
+  descriptor and the agent decides what counts as a master list. There
+  is deliberately no automatic download; fetching the file means
+  accepting ICAO's terms, so a person does that themselves.
 - New translation strings `lc-pin-label-auth`, `lc-pin-label-qscd`,
   and `lc-pin-label-sign` (English + Serbian Cyrillic) used by the
   signing wizard's PKCS#11 multi-slot dropdown.
@@ -22,6 +39,12 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Travel-document verification says why, not just whether.** Each
+  security check is now carried and rendered on its own, so a check that
+  could not be performed explains what is missing and what to do about
+  it — a trust store nobody has set up yet no longer reads like an
+  accusation against the document. The reasons appear in the printed and
+  exported PDF report as well, not only on screen.
 - Signing wizard slot dropdown now lists each PKCS#11 slot
   separately. Multi-PIN cards (e.g. some eID cards) show two
   entries: `<token> — Authentication` and

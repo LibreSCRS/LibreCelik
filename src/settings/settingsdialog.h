@@ -165,8 +165,26 @@ private:
 
     /// What the last master-list import in this dialog's lifetime did. `None`
     /// means there has not been one, and nothing is said about it.
-    enum class CscaImportOutcome { None, Installed, Replayed, Unauthorized, Refused, Unreadable };
+    enum class CscaImportOutcome {
+        None,
+        Installed,
+        Replayed,
+        Unauthorized,
+        Refused,
+        Unreadable,
+        /// The file is the directory export the ICAO portal serves: many
+        /// separately signed master lists in one LDIF, which is not the single
+        /// signed list an import installs.
+        LdifCollection,
+        /// An LDIF carrying no signed object at all.
+        LdifWithoutList,
+    };
     CscaImportOutcome cscaOutcome = CscaImportOutcome::None;
+    /// How many separately signed master lists the last chosen file held, when
+    /// it was a directory export. The number is the whole point of that
+    /// sentence: it is what tells a reader the file is a COLLECTION and that
+    /// they downloaded the right thing.
+    int cscaLdifObjects = 0;
     /// What the agent holds in country-signing anchors, in the shape
     /// `configSnapshot()["CscaAnchorState"]` carries it. Read on open and
     /// refreshed with every snapshot; an accepted import replaces it with the

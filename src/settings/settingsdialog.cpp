@@ -5,6 +5,7 @@
 
 #include "agent/agentgateway.h"
 #include "agent/settingsimport.h"
+#include "settings/masterlistprobe.h"
 #include "settings/settingskeys.h"
 #include "settings/tlitemdelegate.h"
 #include "signing/tsaitemdelegate.h"
@@ -78,6 +79,12 @@ constexpr QLatin1String kCscaSignedAt{"signedAt"};
 // issuers publish lists of their own, but a wrong address in a dialog spends a
 // reader's time and their trust in everything else the dialog says.
 constexpr QLatin1String kIcaoPkdUrl{"https://pkddownload.icao.int/"};
+
+// How much of a chosen file is read in order to recognise its shape. The same
+// figure the agent caps an import at, so nothing is skipped that could have
+// been installed: past this the agent answers "too large" whatever the bytes
+// are, and the reader is told that by the agent rather than guessed at here.
+constexpr qint64 kMaxImportProbeBytes = 32LL * 1024 * 1024;
 
 // The tabs whose content the agent owns; the General tab is this process's own
 // and stays usable with no agent at all.
@@ -667,9 +674,49 @@ void SettingsDialog::importMasterListFile(const QString& path)
     if (path.isEmpty() || gateway == nullptr || gateway->presence() != PresenceState::Ready)
         return;
 
+    // What the file IS, decided from its bytes. The extension decides nothing:
+    // the portal this dialog sends a reader to serves `.ldif`, and a file named
+    // `.ml` may be anything at all.
+    //
+    // The one shape recognised here is the directory export, and it is
+    // recognised in order to be REFUSED IN WORDS rather than handed on. The
+    // agent's answer to it would be a correct but unhelpful "not a master
+    // list", and getting that answer costs an authorization ceremony and one of
+    // the agent's per-caller import allowances — both spent on a file this
+    // process could already see was not a single signed list.
+    //
+    // Nothing else is judged here. The agent's verb is the trust boundary, and
+    // whatever this dialog does hand over is judged there in full.
+    QFile chosen(path);
+    if (!chosen.open(QIODevice::ReadOnly)) {
+        cscaOutcome = CscaImportOutcome::Unreadable;
+        renderCscaState();
+        return;
+    }
+    // Bounded by what the agent would accept anyway: past this the answer is a
+    // size refusal whatever the bytes say, so there is nothing to learn by
+    // reading further, and a settings dialog must not be talked into loading an
+    // arbitrarily large file into memory.
+    const QByteArray head = chosen.read(kMaxImportProbeBytes);
+    chosen.close();
+
+    const auto probe = librecelik::settings::probeMasterListFile(head);
+    if (probe.kind != librecelik::settings::MasterListFileKind::NotLdif) {
+        cscaLdifObjects = probe.signedObjects;
+        cscaOutcome = probe.kind == librecelik::settings::MasterListFileKind::LdifCollection
+                          ? CscaImportOutcome::LdifCollection
+                          : CscaImportOutcome::LdifWithoutList;
+        renderCscaState();
+        return;
+    }
+
     // O_CLOEXEC: a descriptor handed to the agent must never survive into a
     // child process. The handle closes it on the way out whatever the answer
     // was — the call BORROWS it and duplicates what it puts on the wire.
+    //
+    // Opened FRESH, after the probe and never from it: the agent reads from the
+    // descriptor's own position, so a handle this dialog had already read
+    // through would deliver a truncated list.
     LibreSCRS::AgentClient::FdHandle file{::open(QFile::encodeName(path).constData(), O_RDONLY | O_CLOEXEC)};
     if (!file.valid()) {
         cscaOutcome = CscaImportOutcome::Unreadable;
@@ -749,6 +796,15 @@ void SettingsDialog::renderCscaState()
         break;
     case CscaImportOutcome::Unreadable:
         status = qtTrId("lc-settings-csca-unreadable");
+        break;
+    case CscaImportOutcome::LdifCollection:
+        // The count is what makes this sentence worth reading: it is the
+        // evidence that the file is a collection and that the reader followed
+        // the instruction correctly.
+        status = qtTrId("lc-settings-csca-ldif-collection").arg(cscaLdifObjects);
+        break;
+    case CscaImportOutcome::LdifWithoutList:
+        status = qtTrId("lc-settings-csca-ldif-empty");
         break;
     }
     cscaStatusLabel->setText(status);

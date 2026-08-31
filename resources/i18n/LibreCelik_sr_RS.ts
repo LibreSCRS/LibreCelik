@@ -1531,8 +1531,16 @@
         <translation>Ништа није инсталирано: ова листа није новија од оне која је већ на снази. Иста листа је већ инсталирана, а старија би вратила сидра уназад.</translation>
     </message>
     <message id="lc-settings-csca-refused">
-        <source>This file could not be installed as a master list. Choose a different file.</source>
-        <translation>Ова датотека не може да се инсталира као мастер листа. Изаберите другу датотеку.</translation>
+        <source>Nothing was installed: this file is not a signed ICAO master list, or the signature over it did not verify. Check that you chose the master list itself and not another file from the download.</source>
+        <translation>Ништа није инсталирано: ова датотека није потписана ICAO мастер листа, или се потпис над њом не проверава. Проверите да ли сте изабрали саму мастер листу, а не неку другу датотеку из преузимања.</translation>
+    </message>
+    <message id="lc-settings-csca-ldif-collection">
+        <source>Nothing was installed: this is the ICAO Public Key Directory collection, a directory export (LDIF) holding %1 separately signed master lists rather than one. Installing a whole collection is not supported yet — the file you downloaded is the right one.</source>
+        <translation>Ништа није инсталирано: ово је збирка ICAO директоријума јавних кључева, извоз директоријума (LDIF) који садржи %1 засебно потписаних мастер листа уместо једне. Увоз целе збирке још није подржан — датотека коју сте преузели је права.</translation>
+    </message>
+    <message id="lc-settings-csca-ldif-empty">
+        <source>Nothing was installed: this file is a directory export (LDIF) and it carries no signed master list. Check that the download finished and that this is the file the portal served.</source>
+        <translation>Ништа није инсталирано: ова датотека је извоз директоријума (LDIF) и не носи ниједну потписану мастер листу. Проверите да ли је преузимање завршено и да ли је ово датотека коју је портал послао.</translation>
     </message>
     <message id="lc-settings-csca-unreadable">
         <source>That file could not be opened. Check that it exists and is readable.</source>

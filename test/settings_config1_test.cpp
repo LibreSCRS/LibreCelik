@@ -19,6 +19,7 @@
 #include "settings/settingsdialog.h"
 
 #include "fake_gateway/fakeagentgateway.h"
+#include "settings/masterlistprobe.h"
 #include "settings/tlitemdelegate.h"
 
 #include <LibreSCRS/AgentClient/SyncError.h>
@@ -631,6 +632,245 @@ TEST_F(SettingsConfig1Test, AMessageAppearingChangesNoSentenceThatWasAlreadyRigh
         EXPECT_GE(label->height(), label->heightForWidth(label->width()))
             << "still cut off after the message: " << qPrintable(label->objectName());
     }
+}
+
+// --- the shape a reader actually downloads -----------------------------------
+//
+// The dialog tells a reader to fetch the latest collection of eMRTD CSCA master
+// lists from the ICAO Public Key Directory. What that portal serves is an LDAP
+// interchange file (RFC 2849), and what is inside it is not one master list but
+// many, each signed by its own publisher. The importer installs ONE signed list
+// with ONE signer to pin, so a collection is not something it can accept -- and
+// the reader who followed the instruction exactly deserves to be told that in
+// those terms, not "choose a different file".
+
+namespace {
+
+/// One PKD-shaped record: a base64 binary attribute carrying @p der, folded
+/// across continuation lines the way a real export folds them.
+QByteArray ldifRecord(const QByteArray& attribute, const QByteArray& der)
+{
+    const QByteArray encoded = der.toBase64();
+    QByteArray folded;
+    constexpr int kLineWidth = 76;
+    for (int at = 0; at < encoded.size(); at += kLineWidth) {
+        folded += (at == 0 ? QByteArray() : QByteArrayLiteral("\n ")) + encoded.mid(at, kLineWidth);
+    }
+    return attribute + QByteArrayLiteral(":: ") + folded + QByteArrayLiteral("\n");
+}
+
+/// A minimal CMS ContentInfo carrying id-signedData: outer SEQUENCE, then the
+/// OID. Enough to be recognised as one signed object, which is all the probe
+/// claims to see -- it never verifies anything, and must not.
+QByteArray signedDataObject(int padding)
+{
+    QByteArray body = QByteArrayLiteral("\x06\x09\x2a\x86\x48\x86\xf7\x0d\x01\x07\x02");
+    body += QByteArray(padding, 'A');
+    QByteArray der;
+    der += char(0x30);
+    der += char(body.size()); // short form: the bodies here stay under 128 bytes
+    der += body;
+    return der;
+}
+
+QByteArray pkdCollection(int lists)
+{
+    QByteArray ldif = QByteArrayLiteral("version: 1\n\n");
+    ldif += QByteArrayLiteral("dn: dc=data,dc=download,dc=pkd,dc=icao,dc=int\ndc: data\nobjectclass: top\n\n");
+    for (int i = 0; i < lists; ++i) {
+        ldif += QByteArrayLiteral("dn: o=Master Lists,c=RS,dc=data,dc=download,dc=pkd,dc=icao,dc=int\n");
+        ldif += QByteArrayLiteral("objectclass: inetOrgPerson\n");
+        ldif += ldifRecord(QByteArrayLiteral("pkdMasterListContent;binary"), signedDataObject(i + 1));
+        ldif += QByteArrayLiteral("\n");
+    }
+    return ldif;
+}
+
+} // namespace
+
+// The whole point: the reader downloaded the right file, and the sentence they
+// get back has to say so -- with the count, which is the evidence that it is a
+// COLLECTION rather than a list. And it must never reach the agent: the agent's
+// answer would be a correct but useless "not a master list", bought with an
+// authorization ceremony and one of its per-caller import allowances.
+TEST_F(SettingsConfig1Test, ThePkdCollectionIsNamedAsACollectionAndNeverDialledOut)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+
+    QTemporaryDir dir(QStringLiteral("/var/tmp/lc-csca-XXXXXX"));
+    ASSERT_TRUE(dir.isValid());
+    const QString path = writeMasterList(dir, QStringLiteral("icaopkd-002-complete.ldif"), pkdCollection(28));
+    ASSERT_FALSE(path.isEmpty());
+
+    SettingsDialog dlg(&gw);
+    dlg.importMasterListFile(path);
+
+    EXPECT_TRUE(gw.importedFds.isEmpty()) << "a collection the agent could only refuse must not cost an "
+                                             "authorization ceremony to be refused";
+    const QString status = cscaStatusText(dlg);
+    EXPECT_EQ(status, qtTrId("lc-settings-csca-ldif-collection").arg(28));
+    EXPECT_TRUE(status.contains(QStringLiteral("28"))) << qPrintable(status);
+    EXPECT_NE(status, qtTrId("lc-settings-csca-refused")) << "the collection is a different situation from a file "
+                                                             "that is not a master list, and reads differently";
+    EXPECT_EQ(cscaSummaryText(dlg), qtTrId("lc-settings-csca-state-none")) << "a refusal installs nothing";
+}
+
+// A `.ldif` extension is a hint and not a contract, in both directions: the
+// shape decides. A collection named `.ml` is still a collection.
+TEST_F(SettingsConfig1Test, TheShapeDecidesNotTheExtension)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+
+    QTemporaryDir dir(QStringLiteral("/var/tmp/lc-csca-XXXXXX"));
+    ASSERT_TRUE(dir.isValid());
+    const QString path = writeMasterList(dir, QStringLiteral("looks-like-a-list.ml"), pkdCollection(3));
+    ASSERT_FALSE(path.isEmpty());
+
+    SettingsDialog dlg(&gw);
+    dlg.importMasterListFile(path);
+
+    EXPECT_TRUE(gw.importedFds.isEmpty());
+    EXPECT_EQ(cscaStatusText(dlg), qtTrId("lc-settings-csca-ldif-collection").arg(3));
+}
+
+// The other half of the same rule: a file that does NOT parse as LDIF goes to
+// the agent exactly as before, whatever it is called. The trust boundary is the
+// agent's verb, and this dialog must not start deciding what a master list is.
+TEST_F(SettingsConfig1Test, AFileThatIsNotLdifStillReachesTheAgentWhateverItIsNamed)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+
+    QTemporaryDir dir(QStringLiteral("/var/tmp/lc-csca-XXXXXX"));
+    ASSERT_TRUE(dir.isValid());
+    const QByteArray listBytes = QByteArrayLiteral("\x30\x82\x01\x00NOT-LDIF-AT-ALL\x00\x01\x02");
+    const QString path = writeMasterList(dir, QStringLiteral("master.ldif"), listBytes);
+    ASSERT_FALSE(path.isEmpty());
+
+    SettingsDialog dlg(&gw);
+    dlg.importMasterListFile(path);
+
+    ASSERT_EQ(gw.importedBytes.size(), 1) << "the agent decides what a master list is, not this dialog";
+    EXPECT_EQ(gw.importedBytes.constFirst(), listBytes)
+        << "the probe must not consume the descriptor the agent then reads from";
+}
+
+// An LDIF with nothing signed in it is a third situation, and it reads as one:
+// neither "not a master list" nor "a collection we cannot install yet".
+TEST_F(SettingsConfig1Test, AnLdifCarryingNoSignedObjectIsSaidSeparately)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+
+    QTemporaryDir dir(QStringLiteral("/var/tmp/lc-csca-XXXXXX"));
+    ASSERT_TRUE(dir.isValid());
+    const QByteArray ldif = QByteArrayLiteral("version: 1\n\ndn: c=RS,dc=data\nc: RS\nobjectclass: country\n");
+    const QString path = writeMasterList(dir, QStringLiteral("countries.ldif"), ldif);
+    ASSERT_FALSE(path.isEmpty());
+
+    SettingsDialog dlg(&gw);
+    dlg.importMasterListFile(path);
+
+    EXPECT_TRUE(gw.importedFds.isEmpty());
+    const QString status = cscaStatusText(dlg);
+    EXPECT_EQ(status, qtTrId("lc-settings-csca-ldif-empty"));
+    EXPECT_NE(status, qtTrId("lc-settings-csca-ldif-collection").arg(0));
+    EXPECT_NE(status, qtTrId("lc-settings-csca-refused"));
+}
+
+// The three refusals a reader can meet are three different sentences. Asserting
+// they DIFFER is the check that survives a rewording of any one of them.
+TEST_F(SettingsConfig1Test, TheThreeRefusalsDoNotShareASentence)
+{
+    const QString refused = qtTrId("lc-settings-csca-refused");
+    const QString collection = qtTrId("lc-settings-csca-ldif-collection").arg(28);
+    const QString empty = qtTrId("lc-settings-csca-ldif-empty");
+
+    EXPECT_NE(refused, collection);
+    EXPECT_NE(refused, empty);
+    EXPECT_NE(collection, empty);
+    for (const QString& sentence : {refused, collection, empty}) {
+        EXPECT_FALSE(sentence.startsWith(QStringLiteral("lc-settings-")))
+            << "the catalogue did not load, so these are ids and not sentences";
+        // "Choose a different file" was the whole of the old answer, and it is
+        // what sent a reader who had downloaded exactly the right thing looking
+        // for a different one.
+        EXPECT_FALSE(sentence.contains(QStringLiteral("Choose a different file"))) << qPrintable(sentence);
+    }
+}
+
+// --- the probe itself, at the edges RFC 2849 actually has ---------------------
+
+TEST_F(SettingsConfig1Test, ProbeUnfoldsContinuationLinesBeforeDecoding)
+{
+    using namespace librecelik::settings;
+    // The base64 of a real list spans hundreds of folded lines; a probe that
+    // decoded them one at a time would see hundreds of unrecognisable
+    // fragments and count nothing.
+    const auto probe = probeMasterListFile(pkdCollection(2));
+    EXPECT_EQ(probe.kind, MasterListFileKind::LdifCollection);
+    EXPECT_EQ(probe.signedObjects, 2);
+}
+
+TEST_F(SettingsConfig1Test, ProbeReadsCrlfAndCommentsAndAMissingFinalNewline)
+{
+    using namespace librecelik::settings;
+    QByteArray ldif = QByteArrayLiteral("# exported by the portal\r\nversion: 1\r\n\r\ndn: c=RS,dc=data\r\nc: RS");
+    const auto probe = probeMasterListFile(ldif);
+    EXPECT_EQ(probe.kind, MasterListFileKind::LdifWithoutLists);
+    EXPECT_EQ(probe.signedObjects, 0);
+}
+
+TEST_F(SettingsConfig1Test, ProbeCountsTheBerIndefiniteLengthEncodingToo)
+{
+    using namespace librecelik::settings;
+    // One of the lists in the real collection is BER, not DER: `30 80` with the
+    // end-of-contents octets closing it. Counting only the definite form would
+    // undercount the collection by one and put a wrong number on screen.
+    QByteArray ber;
+    ber += char(0x30);
+    ber += char(0x80);
+    ber += QByteArrayLiteral("\x06\x09\x2a\x86\x48\x86\xf7\x0d\x01\x07\x02");
+    ber += QByteArrayLiteral("\xa0\x80payload\x00\x00");
+    ber += QByteArrayLiteral("\x00\x00");
+
+    QByteArray ldif = QByteArrayLiteral("dn: o=Master Lists,c=RS\n");
+    ldif += ldifRecord(QByteArrayLiteral("pkdMasterListContent;binary"), ber);
+    const auto probe = probeMasterListFile(ldif);
+    EXPECT_EQ(probe.kind, MasterListFileKind::LdifCollection);
+    EXPECT_EQ(probe.signedObjects, 1);
+}
+
+TEST_F(SettingsConfig1Test, ProbeCountsSignedObjectsStructurallyNotByAttributeName)
+{
+    using namespace librecelik::settings;
+    // The real collection carries a base64 `cn` beside its 28 lists. Counting
+    // every base64 value would answer 29 and print a number nobody can check;
+    // counting by attribute name would break the day the publisher renames it.
+    QByteArray ldif = QByteArrayLiteral("dn: o=Master Lists,c=RS\n");
+    ldif += ldifRecord(QByteArrayLiteral("cn"), QByteArrayLiteral("  a name needing base64  "));
+    ldif += ldifRecord(QByteArrayLiteral("someFutureAttributeName;binary"), signedDataObject(4));
+    const auto probe = probeMasterListFile(ldif);
+    EXPECT_EQ(probe.kind, MasterListFileKind::LdifCollection);
+    EXPECT_EQ(probe.signedObjects, 1) << "the base64 cn is not a signed object and must not be counted";
+}
+
+TEST_F(SettingsConfig1Test, ProbeRefusesToCallBinaryOrDnLessTextLdif)
+{
+    using namespace librecelik::settings;
+    // A master list is binary and full of zero octets.
+    EXPECT_EQ(probeMasterListFile(QByteArrayLiteral("\x30\x82\x04\x00\x06\x09\x2a\x86")).kind,
+              MasterListFileKind::NotLdif);
+    // Text with colons in it is not a directory export.
+    EXPECT_EQ(probeMasterListFile(QByteArrayLiteral("Subject: hello\nFrom: nobody\n")).kind,
+              MasterListFileKind::NotLdif)
+        << "no dn, so this is some other colon-separated text";
+    // PEM is text, has no colon-separated attributes at all.
+    EXPECT_EQ(probeMasterListFile(QByteArrayLiteral("-----BEGIN CMS-----\nMIIB\n-----END CMS-----\n")).kind,
+              MasterListFileKind::NotLdif);
+    EXPECT_EQ(probeMasterListFile(QByteArray()).kind, MasterListFileKind::NotLdif);
 }
 
 // The Trust tab goes dark with no agent, and the import must observe the same

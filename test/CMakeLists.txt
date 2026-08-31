@@ -399,6 +399,7 @@ add_executable(SettingsConfig1Tests
     # The dialog prefills its trust-tier controls through buildConfig1Import,
     # so the import TU is part of what this suite exercises.
     ${CMAKE_SOURCE_DIR}/src/agent/settingsimport.cpp
+    ${CMAKE_SOURCE_DIR}/src/settings/masterlistprobe.cpp
     ${CMAKE_SOURCE_DIR}/src/settings/settingsdialog.cpp
     ${CMAKE_SOURCE_DIR}/src/settings/tlitemdelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/signing/tsaitemdelegate.cpp
@@ -454,6 +455,7 @@ add_executable(i18n_settings_state_test
     # Same reason as SettingsConfig1Tests: settingsdialog.cpp's trust-tier
     # prefill calls buildConfig1Import.
     ${CMAKE_SOURCE_DIR}/src/agent/settingsimport.cpp
+    ${CMAKE_SOURCE_DIR}/src/settings/masterlistprobe.cpp
     ${CMAKE_SOURCE_DIR}/src/settings/settingsdialog.cpp
     ${CMAKE_SOURCE_DIR}/src/settings/tlitemdelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/signing/tsaitemdelegate.cpp
@@ -1042,3 +1044,4 @@ target_link_libraries(MainWindowTests PRIVATE
     librecelik_app)
 set_target_properties(MainWindowTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(MainWindowTests)
+

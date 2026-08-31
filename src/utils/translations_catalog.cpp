@@ -1230,8 +1230,12 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-settings-csca-installed");
     //% "Nothing was installed: this list is not newer than the one already in place. The same list is already installed, and an older one would roll the anchors back."
     QT_TRID_NOOP("lc-settings-csca-replayed");
-    //% "This file could not be installed as a master list. Choose a different file."
+    //% "Nothing was installed: this file is not a signed ICAO master list, or the signature over it did not verify. Check that you chose the master list itself and not another file from the download."
     QT_TRID_NOOP("lc-settings-csca-refused");
+    //% "Nothing was installed: this is the ICAO Public Key Directory collection, a directory export (LDIF) holding %1 separately signed master lists rather than one. Installing a whole collection is not supported yet — the file you downloaded is the right one."
+    QT_TRID_NOOP("lc-settings-csca-ldif-collection");
+    //% "Nothing was installed: this file is a directory export (LDIF) and it carries no signed master list. Check that the download finished and that this is the file the portal served."
+    QT_TRID_NOOP("lc-settings-csca-ldif-empty");
     //% "That file could not be opened. Check that it exists and is readable."
     QT_TRID_NOOP("lc-settings-csca-unreadable");
     // Where a master list comes from. Named because the import is unusable

@@ -1531,8 +1531,16 @@
         <translation>Nothing was installed: this list is not newer than the one already in place. The same list is already installed, and an older one would roll the anchors back.</translation>
     </message>
     <message id="lc-settings-csca-refused">
-        <source>This file could not be installed as a master list. Choose a different file.</source>
-        <translation>This file could not be installed as a master list. Choose a different file.</translation>
+        <source>Nothing was installed: this file is not a signed ICAO master list, or the signature over it did not verify. Check that you chose the master list itself and not another file from the download.</source>
+        <translation>Nothing was installed: this file is not a signed ICAO master list, or the signature over it did not verify. Check that you chose the master list itself and not another file from the download.</translation>
+    </message>
+    <message id="lc-settings-csca-ldif-collection">
+        <source>Nothing was installed: this is the ICAO Public Key Directory collection, a directory export (LDIF) holding %1 separately signed master lists rather than one. Installing a whole collection is not supported yet — the file you downloaded is the right one.</source>
+        <translation>Nothing was installed: this is the ICAO Public Key Directory collection, a directory export (LDIF) holding %1 separately signed master lists rather than one. Installing a whole collection is not supported yet — the file you downloaded is the right one.</translation>
+    </message>
+    <message id="lc-settings-csca-ldif-empty">
+        <source>Nothing was installed: this file is a directory export (LDIF) and it carries no signed master list. Check that the download finished and that this is the file the portal served.</source>
+        <translation>Nothing was installed: this file is a directory export (LDIF) and it carries no signed master list. Check that the download finished and that this is the file the portal served.</translation>
     </message>
     <message id="lc-settings-csca-unreadable">
         <source>That file could not be opened. Check that it exists and is readable.</source>

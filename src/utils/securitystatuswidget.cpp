@@ -6,6 +6,7 @@
 #include "utils/collapsiblesection.h"
 
 #include <QEvent>
+#include <QGlobalStatic>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLatin1StringView>
@@ -111,6 +112,55 @@ SecurityStatusModel securityModelFrom(const LibreSCRS::AgentClient::SecurityVerd
     return model;
 }
 
+namespace {
+
+/// The reader's own choice for the per-check block, for the life of the process
+/// and no longer. Application-scope state in a Qt host, per this project's
+/// singleton policy.
+Q_GLOBAL_STATIC(std::optional<bool>, g_detailChecksChoice)
+
+} // namespace
+
+bool detailChecksExpandedFor(const SecurityStatusModel& status)
+{
+    // Two outcomes open the block, and they are named rather than derived from
+    // "not Passed": NOT_SUPPORTED and SKIPPED say something about the card or
+    // about this read, not about something the holder can fix, and treating
+    // them as trouble would leave the block open on ordinary documents until it
+    // stopped meaning anything.
+    for (const SecurityCheck& check : status.checks) {
+        if (check.status == SecurityCheck::Status::Failed || check.status == SecurityCheck::Status::NotPerformed) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::optional<bool> rememberedDetailChecksChoice()
+{
+    // Q_GLOBAL_STATIC hands back a null pointer once the destructor has run at
+    // shutdown; a pane torn down that late gets the derived default rather than
+    // a dereferenced corpse.
+    return g_detailChecksChoice.exists() ? *g_detailChecksChoice : std::nullopt;
+}
+
+void rememberDetailChecksChoice(bool expanded)
+{
+    // exists() would be wrong here: it is false BEFORE the first write as well
+    // as after teardown, and the first write is the one that matters.
+    if (g_detailChecksChoice.isDestroyed()) {
+        return;
+    }
+    *g_detailChecksChoice = expanded;
+}
+
+void forgetDetailChecksChoice()
+{
+    if (g_detailChecksChoice.exists()) {
+        g_detailChecksChoice->reset();
+    }
+}
+
 QWidget* makeStatusRow(const QString& label, SecurityCheck::Status status, QWidget* parent)
 {
     auto* row = new QWidget(parent);
@@ -177,10 +227,19 @@ void SecurityStatusWidget::buildLayout()
     genuinenessLabel = genuinenessRow->findChildren<QLabel*>("text").value(0);
     contentLayout->addWidget(genuinenessRow);
 
-    // Detail widget — populated when setSecurityStatus is called
-    detailWidget = new QWidget(section);
-    detailWidget->setVisible(false);
-    contentLayout->addWidget(detailWidget);
+    // The per-check block — a section of its own, built with the same component
+    // every neighbouring block in this pane uses, so there is exactly one thing
+    // on the pane that knows how to collapse. It sits BELOW the three roll-ups
+    // and contains none of them: closing it must never take a verdict with it.
+    // Title comes from retranslateUi(), like the section around it.
+    detailSection = new CollapsibleSection(QString(), section);
+    // Nested two deep inside the pane; the animation only buys a bounce here,
+    // and an instant toggle is what the neighbouring nested sections do.
+    detailSection->setAnimated(false);
+    detailSection->setVisible(false);
+    contentLayout->addWidget(detailSection);
+    connect(detailSection, &CollapsibleSection::toggledByUser, this,
+            [](bool expanded) { librecelik::utils::rememberDetailChecksChoice(expanded); });
 
     section->setLayout(contentLayout);
     mainLayout->addWidget(section);
@@ -244,29 +303,29 @@ void SecurityStatusWidget::rebuildDetailRows()
     // retranslateUi() (so the "Details" header re-renders in the new
     // language). check.label / check.detail are strings the read itself
     // supplied and are not retranslated here.
-    if (detailWidget->layout()) {
-        QLayoutItem* item;
-        while ((item = detailWidget->layout()->takeAt(0)) != nullptr) {
-            delete item->widget();
-            delete item;
-        }
-        delete detailWidget->layout();
-    }
+    // Clearing the block has to clear the ROWS, not just the layout arranging
+    // them. Deleting a QLayout never deletes the widgets it managed, and each
+    // check row is a NESTED layout — so takeAt()'s item->widget() is null for
+    // it and a loop over the items walked straight past that row's icon and
+    // label. They stayed behind as orphaned children, one full set per rebuild,
+    // drawn at whatever geometry they last had. Deleting the direct children
+    // deletes the rows themselves, whatever layout was arranging them.
+    qDeleteAll(detailSection->findChildren<QWidget*>(Qt::FindDirectChildrenOnly));
+    delete detailSection->layout();
 
     if (!hasStatus || cachedStatus.checks.isEmpty()) {
-        detailWidget->setVisible(false);
+        detailSection->setVisible(false);
         return;
     }
 
-    auto* detailLayout = new QVBoxLayout(detailWidget);
+    auto* detailLayout = new QVBoxLayout(detailSection);
     detailLayout->setContentsMargins(8, 4, 4, 4);
     detailLayout->setSpacing(2);
 
-    auto* detailTitle = new QLabel(qtTrId("lc-emrtd-security-details"));
-    detailTitle->setObjectName(QStringLiteral("detailTitle"));
-    detailTitle->setStyleSheet(
-        QString("font-size: 11px; font-weight: bold; color: %1;").arg(palette().color(QPalette::Text).name()));
-    detailLayout->addWidget(detailTitle);
+    // No heading label inside: the section paints its own title in the header
+    // bar, which is the half that stays on screen when the block is closed. A
+    // second copy in the content would say the same thing twice while open and
+    // nothing at all while closed.
 
     for (const auto& check : cachedStatus.checks) {
         auto* checkRow = new QHBoxLayout();
@@ -311,7 +370,22 @@ void SecurityStatusWidget::rebuildDetailRows()
         }
     }
 
-    detailWidget->setVisible(true);
+    detailSection->setVisible(true);
+    applyDetailChecksState();
+}
+
+void SecurityStatusWidget::applyDetailChecksState()
+{
+    // The reader's own choice outranks the derived default, and outranks it for
+    // the rest of the session: re-deciding on the next card is the behaviour
+    // this guard exists to prevent.
+    const bool expand = librecelik::utils::rememberedDetailChecksChoice().value_or(
+        librecelik::utils::detailChecksExpandedFor(cachedStatus));
+    detailSection->setExpanded(expand);
+    // setExpanded() returns early when the flag already matches, and the rows
+    // above are NEW children the layout has just made visible. Without this the
+    // second verdict of a streamed read fills a block the reader had closed.
+    detailSection->refreshContentVisibility();
 }
 
 void SecurityStatusWidget::changeEvent(QEvent* event)
@@ -319,17 +393,18 @@ void SecurityStatusWidget::changeEvent(QEvent* event)
     if (event->type() == QEvent::LanguageChange) {
         retranslateUi();
     } else if (event->type() == QEvent::PaletteChange) {
-        if (detailWidget && detailWidget->isVisible()) {
+        // Deliberately not gated on isVisible(): the rows of a CLOSED block are
+        // hidden, and a palette that changed while it was closed has to have
+        // reached them by the time the reader opens it again.
+        if (detailSection) {
             const QString textColor = palette().color(QPalette::Text).name();
             const QString placeholderColor = palette().color(QPalette::PlaceholderText).name();
 
-            for (auto* label : detailWidget->findChildren<QLabel*>(QStringLiteral("detailTitle")))
-                label->setStyleSheet(QString("font-size: 11px; font-weight: bold; color: %1;").arg(textColor));
-            for (auto* label : detailWidget->findChildren<QLabel*>(QStringLiteral("checkLabel")))
+            for (auto* label : detailSection->findChildren<QLabel*>(QStringLiteral("checkLabel")))
                 label->setStyleSheet(QString("font-size: 11px; color: %1;").arg(textColor));
-            for (auto* label : detailWidget->findChildren<QLabel*>(QStringLiteral("reasonText")))
+            for (auto* label : detailSection->findChildren<QLabel*>(QStringLiteral("reasonText")))
                 label->setStyleSheet(QString("font-size: 11px; color: %1; margin-left: 16px;").arg(textColor));
-            for (auto* label : detailWidget->findChildren<QLabel*>(QStringLiteral("detailText")))
+            for (auto* label : detailSection->findChildren<QLabel*>(QStringLiteral("detailText")))
                 label->setStyleSheet(QString("font-size: 10px; color: %1; margin-left: 16px;").arg(placeholderColor));
         }
     }
@@ -339,6 +414,7 @@ void SecurityStatusWidget::changeEvent(QEvent* event)
 void SecurityStatusWidget::retranslateUi()
 {
     section->setTitle(qtTrId("lc-emrtd-security-status-travel-doc"));
+    detailSection->setTitle(qtTrId("lc-emrtd-security-details"));
     refreshSummaryRows();
     rebuildDetailRows();
 }

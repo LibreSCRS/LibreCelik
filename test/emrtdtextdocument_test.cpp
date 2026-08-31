@@ -24,7 +24,11 @@
 
 #include "emrtdtextdocument.h"
 
+#include <LibreSCRS/AgentClient/SecurityChecks.h>
 #include <LibreSCRS/AgentClient/Types.h>
+
+#include "utils/collapsiblesection.h"
+#include "utils/securitystatuswidget.h"
 
 #include <QApplication>
 #include <QList>
@@ -308,4 +312,48 @@ TEST_F(EmrtdTextDocumentTest, EmptyReadDoesNotCrash)
 {
     QList<FieldGroup> empty;
     EXPECT_NO_THROW({ TestableEMRTDTextDocument doc(empty); });
+}
+
+// --- the paper does not follow the screen -----------------------------------
+
+// The pane learned to CLOSE its per-check block when a read has nothing to act
+// on, so the holder's own data is not pushed off the bottom of the window. The
+// page must not learn the same thing. A printout is what somebody attaches as
+// evidence that a passport was checked, and it carries its detail regardless of
+// what the screen happened to be showing when it was made.
+//
+// One read, both renderings, in one case: separating them is how the two would
+// come to disagree without either suite noticing.
+TEST_F(EmrtdTextDocumentTest, TheClosedScreenBlockStillPrintsEveryCheck)
+{
+    const QList<FieldGroup> groups =
+        readWith(QList<Field>{textField(QStringLiteral("overall_integrity"), QStringLiteral("PASSED")),
+                              textField(QStringLiteral("overall_authenticity"), QStringLiteral("PASSED")),
+                              textField(QStringLiteral("overall_genuineness"), QStringLiteral("PASSED"))} +
+                 check(0, QStringLiteral("passive_auth"), QStringLiteral("data_authenticity"), QStringLiteral("PASSED"),
+                       QStringLiteral("Passive Authentication")) +
+                 check(1, QStringLiteral("chip_auth"), QStringLiteral("chip_genuineness"), QStringLiteral("PASSED"),
+                       QStringLiteral("Chip Authentication")));
+
+    // The screen: nothing to act on, so the block starts closed.
+    SecurityStatusWidget pane;
+    pane.setSecurityStatus(
+        librecelik::utils::securityModelFrom(LibreSCRS::AgentClient::separateSecurityChecks(groups.at(1))));
+    const CollapsibleSection* block = nullptr;
+    for (const CollapsibleSection* section : pane.findChildren<CollapsibleSection*>()) {
+        if (section->title() == qtTrId("lc-emrtd-security-details")) {
+            block = section;
+        }
+    }
+    ASSERT_NE(block, nullptr);
+    ASSERT_FALSE(block->isExpanded()) << "the premise is gone: the screen no longer closes an all-passed block";
+
+    // The paper: every check, by name, plus the heading over them.
+    const QString printed = TestableEMRTDTextDocument(groups).text();
+    EXPECT_TRUE(printed.contains(qtTrId("lc-emrtd-security-details")))
+        << "the per-check heading followed the screen off the page";
+    EXPECT_TRUE(printed.contains(QStringLiteral("Passive Authentication")))
+        << "a check the screen collapsed stopped printing";
+    EXPECT_TRUE(printed.contains(QStringLiteral("Chip Authentication")))
+        << "a check the screen collapsed stopped printing";
 }

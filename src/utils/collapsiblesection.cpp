@@ -3,6 +3,7 @@
 
 #include "collapsiblesection.h"
 
+#include <QAbstractAnimation>
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
@@ -138,7 +139,12 @@ void CollapsibleSection::setChildrenVisible(bool visible)
 void CollapsibleSection::applyCollapsed()
 {
     setChildrenVisible(false);
-    setMaximumHeight(headerHeight);
+    // Through setSectionHeight(), not setMaximumHeight(): this is the path an
+    // UNANIMATED section takes, and the parent-chain invalidation the animated
+    // path gets for free has to happen here too. Without it a nested section
+    // shrinks while the section around it keeps the height it had, and the rows
+    // left behind spread across the gap for a frame.
+    setSectionHeight(headerHeight);
 }
 
 void CollapsibleSection::setAnimated(bool value)
@@ -164,7 +170,7 @@ void CollapsibleSection::setExpanded(bool exp)
             applyCollapsed();
         else {
             setChildrenVisible(true);
-            setMaximumHeight(QWIDGETSIZE_MAX);
+            setSectionHeight(QWIDGETSIZE_MAX);
             emit sectionExpanded();
         }
         return;
@@ -220,10 +226,27 @@ void CollapsibleSection::paintEvent(QPaintEvent*)
     p.drawRect(0, headerHeight, width() - 1, height() - headerHeight - 1);
 }
 
+void CollapsibleSection::refreshContentVisibility()
+{
+    // An animation already running is on its way to the settled state and owns
+    // the child visibility until it finishes; overruling it mid-flight would
+    // leave the content showing through a header that is still closing.
+    if (animation != nullptr && animation->state() == QAbstractAnimation::Running)
+        return;
+
+    if (expanded) {
+        setChildrenVisible(true);
+        setSectionHeight(QWIDGETSIZE_MAX);
+    } else {
+        applyCollapsed();
+    }
+}
+
 void CollapsibleSection::keyPressEvent(QKeyEvent* event)
 {
     if (collapsible && (event->key() == Qt::Key_Return || event->key() == Qt::Key_Space)) {
         setExpanded(!expanded);
+        emit toggledByUser(expanded);
         event->accept();
         return;
     }
@@ -236,10 +259,12 @@ void CollapsibleSection::mousePressEvent(QMouseEvent* event)
         QGroupBox::mousePressEvent(event);
         return;
     }
-    if (event->position().y() <= headerHeight)
+    if (event->position().y() <= headerHeight) {
         setExpanded(!expanded);
-    else
+        emit toggledByUser(expanded);
+    } else {
         QGroupBox::mousePressEvent(event);
+    }
 }
 
 // QGroupBox::setTitle() and QGroupBox::changeEvent() both call calculateFrame()

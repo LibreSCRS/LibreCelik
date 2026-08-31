@@ -178,6 +178,47 @@ struct SecurityStatusModel
 /// Ownership passes to the caller's layout.
 [[nodiscard]] QWidget* makeStatusRow(const QString& label, SecurityCheck::Status status, QWidget* parent = nullptr);
 
+/// @brief Whether the per-check block should START open for @p status.
+///
+/// The three roll-ups are three words; the block under them is one row per
+/// check with a wrapped paragraph under any that did not pass, and it is long
+/// enough to push the holder's own data off the pane. So the block collapses —
+/// but the default state is the whole decision, because that paragraph is the
+/// only line on the pane that says what a person can DO about a check that did
+/// not run, and a plain "closed by default" would put the reader back to three
+/// summary words.
+///
+/// Open when any check FAILED or was NOT PERFORMED: there is something to read
+/// and something to do, and an open block is itself the signal that this read
+/// wants attention. Closed otherwise — which is every check passing, and also a
+/// read whose only unusual outcomes are NOT_SUPPORTED or SKIPPED. Those two say
+/// the card does not implement a check, or that this read bypassed one; neither
+/// leaves the holder anything to act on, so neither earns the holder's data
+/// being pushed down the page.
+[[nodiscard]] bool detailChecksExpandedFor(const SecurityStatusModel& status);
+
+/// @brief The reader's OWN last choice for the per-check block, or
+///        @c std::nullopt while they have not made one.
+///
+/// Application-scope and deliberately not per-widget: every card read builds a
+/// new pane, so a choice kept on the widget would die with the read that heard
+/// it and the block would re-decide on the next card. Software that argues with
+/// a person about a section they just closed is worse than software that never
+/// moves it.
+///
+/// Not written to settings either. This is a choice about the document in front
+/// of the reader, not a preference about the application, so it lasts exactly
+/// as long as the session does.
+[[nodiscard]] std::optional<bool> rememberedDetailChecksChoice();
+
+/// @brief Record that the reader opened (@p expanded) or closed the block.
+void rememberDetailChecksChoice(bool expanded);
+
+/// @brief Drop the remembered choice, returning the block to its derived
+///        default. The state is process-wide, so a test that toggles it has to
+///        put it back or it reaches the next test.
+void forgetDetailChecksChoice();
+
 /// @brief Put this host's VOCABULARY on a verdict the client library already
 ///        separated.
 ///
@@ -218,6 +259,7 @@ private:
     void retranslateUi();
     void refreshSummaryRows();
     void rebuildDetailRows();
+    void applyDetailChecksState();
     QWidget* createStatusRow(const QString& label, librecelik::utils::SecurityCheck::Status status);
     QString statusColor(librecelik::utils::SecurityCheck::Status status) const;
     QString statusText(librecelik::utils::SecurityCheck::Status status) const;
@@ -230,7 +272,7 @@ private:
     QLabel* authenticityLabel = nullptr;
     QLabel* genuinenessIcon = nullptr;
     QLabel* genuinenessLabel = nullptr;
-    QWidget* detailWidget = nullptr;
+    CollapsibleSection* detailSection = nullptr;
     // Cached for retranslate-on-language-change. hasStatus distinguishes
     // "never set" (initial NotPerformed display) from "real status applied".
     librecelik::utils::SecurityStatusModel cachedStatus;

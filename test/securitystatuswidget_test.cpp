@@ -3,6 +3,11 @@
 
 #include <gtest/gtest.h>
 #include <QApplication>
+#include <QLabel>
+#include <QList>
+#include <QMouseEvent>
+#include <QPointF>
+#include "utils/collapsiblesection.h"
 #include "utils/securitystatuswidget.h"
 
 class SecurityStatusWidgetTest : public ::testing::Test
@@ -15,6 +20,19 @@ protected:
             app = new QApplication(argc, nullptr);
         }
     }
+
+    // The reader's choice for the per-check block is process-wide by design —
+    // it has to outlive the pane that heard it. That makes it a thing one test
+    // can hand to the next, so every case starts and ends without one.
+    void SetUp() override
+    {
+        librecelik::utils::forgetDetailChecksChoice();
+    }
+    void TearDown() override
+    {
+        librecelik::utils::forgetDetailChecksChoice();
+    }
+
     static QApplication* app;
 };
 QApplication* SecurityStatusWidgetTest::app = nullptr;
@@ -121,4 +139,285 @@ TEST_F(SecurityStatusWidgetTest, UnnamedReasonKeyFallsBackToTheKeyItself)
 TEST_F(SecurityStatusWidgetTest, AbsentReasonStaysAbsent)
 {
     EXPECT_TRUE(librecelik::utils::localizedReasonText(QString()).isEmpty());
+}
+
+// --- the per-check block is a section, and its default says what to expect ---
+//
+// The three roll-up verdicts are three words. The per-check block under them is
+// eight rows with a wrapped paragraph under any that did not pass, and it
+// pushed the holder's own data off the bottom of the pane. Every other block at
+// that level already collapses, so this one does too — but a plain "closed by
+// default" would undo the work the block exists for, because the paragraph
+// under a check that did not run is the only line telling the reader what they
+// can DO about it.
+//
+// So the default is DERIVED: nothing to act on closes it, something to act on
+// opens it, and an open block is itself the signal that this read wants
+// attention.
+
+namespace {
+
+/// The per-check block, found the way a reader finds it: by the heading it
+/// carries. Null while the block is not a section at all.
+CollapsibleSection* detailBlockOf(QWidget& widget)
+{
+    for (CollapsibleSection* section : widget.findChildren<CollapsibleSection*>()) {
+        if (section->title() == qtTrId("lc-emrtd-security-details")) {
+            return section;
+        }
+    }
+    return nullptr;
+}
+
+SecurityCheck checkWith(SecurityCheck::Status status, const QString& label, const QString& reason = QString())
+{
+    SecurityCheck check;
+    check.checkId = label.toLower();
+    check.category = SecurityCategory::Authenticity;
+    check.status = status;
+    check.label = label;
+    check.reason = reason;
+    return check;
+}
+
+/// A read whose checks all succeeded — the ordinary passport on a machine whose
+/// trust anchors are in place.
+SecurityStatusModel everyCheckPassed()
+{
+    SecurityStatusModel status;
+    status.overallIntegrity = SecurityCheck::Status::Passed;
+    status.overallAuthenticity = SecurityCheck::Status::Passed;
+    status.overallGenuineness = SecurityCheck::Status::Passed;
+    status.checks.push_back(checkWith(SecurityCheck::Status::Passed, QStringLiteral("DG1 Hash")));
+    status.checks.push_back(checkWith(SecurityCheck::Status::Passed, QStringLiteral("Passive Authentication")));
+    status.checks.push_back(checkWith(SecurityCheck::Status::Passed, QStringLiteral("Chip Authentication")));
+    return status;
+}
+
+/// The same read on a machine with no country signing certificates: the signer
+/// check did not run, and its reason is the only actionable line on the pane.
+SecurityStatusModel signerCheckNeverRan()
+{
+    SecurityStatusModel status = everyCheckPassed();
+    status.overallAuthenticity = SecurityCheck::Status::NotPerformed;
+    status.checks[1] = checkWith(SecurityCheck::Status::NotPerformed, QStringLiteral("Passive Authentication"),
+                                 QStringLiteral("csca.not-configured"));
+    return status;
+}
+
+} // namespace
+
+TEST_F(SecurityStatusWidgetTest, EveryCheckPassedLeavesTheDetailBlockClosed)
+{
+    SecurityStatusWidget widget;
+    widget.setSecurityStatus(everyCheckPassed());
+
+    CollapsibleSection* block = detailBlockOf(widget);
+    ASSERT_NE(block, nullptr) << "the per-check block is not a section a reader can close";
+    EXPECT_FALSE(block->isExpanded()) << "nothing to act on, yet the block still buries the holder's data";
+}
+
+TEST_F(SecurityStatusWidgetTest, ACheckNobodyRanOpensTheDetailBlock)
+{
+    SecurityStatusWidget widget;
+    widget.setSecurityStatus(signerCheckNeverRan());
+
+    CollapsibleSection* block = detailBlockOf(widget);
+    ASSERT_NE(block, nullptr) << "the per-check block is not a section a reader can close";
+    EXPECT_TRUE(block->isExpanded()) << "a check nobody ran, and the line saying what to do about it is behind a click";
+}
+
+TEST_F(SecurityStatusWidgetTest, AFailedCheckOpensTheDetailBlock)
+{
+    SecurityStatusModel status = everyCheckPassed();
+    status.overallIntegrity = SecurityCheck::Status::Failed;
+    status.checks[0] = checkWith(SecurityCheck::Status::Failed, QStringLiteral("DG1 Hash"));
+
+    SecurityStatusWidget widget;
+    widget.setSecurityStatus(status);
+
+    CollapsibleSection* block = detailBlockOf(widget);
+    ASSERT_NE(block, nullptr);
+    EXPECT_TRUE(block->isExpanded()) << "a check failed and the pane hid which one";
+}
+
+// Closed, the block still has to say what is inside it — otherwise the reader
+// is asked to click something unnamed to find out whether it matters.
+TEST_F(SecurityStatusWidgetTest, TheClosedDetailBlockStillNamesItself)
+{
+    SecurityStatusWidget widget;
+    widget.setSecurityStatus(everyCheckPassed());
+
+    CollapsibleSection* block = detailBlockOf(widget);
+    ASSERT_NE(block, nullptr);
+    ASSERT_FALSE(block->isExpanded());
+    EXPECT_EQ(block->title(), qtTrId("lc-emrtd-security-details"));
+}
+
+// A closed block has to be EMPTY on screen, not merely short. The rows are
+// rebuilt on every arriving verdict, and a row added to the layout of a section
+// the reader has closed is a new child the layout will happily show — drawn
+// straight over the heading it was supposed to be behind.
+TEST_F(SecurityStatusWidgetTest, RowsRebuiltUnderAClosedHeadingStayHidden)
+{
+    SecurityStatusWidget widget;
+    widget.setSecurityStatus(signerCheckNeverRan()); // opens
+    widget.setSecurityStatus(everyCheckPassed());    // ...and closes again, rebuilding the rows
+
+    CollapsibleSection* block = detailBlockOf(widget);
+    ASSERT_NE(block, nullptr);
+    ASSERT_FALSE(block->isExpanded());
+
+    const QList<QLabel*> rows = block->findChildren<QLabel*>(QStringLiteral("checkLabel"));
+    ASSERT_FALSE(rows.isEmpty()) << "no per-check rows were built at all";
+    for (const QLabel* row : rows) {
+        EXPECT_TRUE(row->isHidden()) << "row \"" << qPrintable(row->text()) << "\" is drawn under a closed heading";
+    }
+}
+
+// The three roll-up verdicts are the answer the reader came for. They stay
+// outside the block that collapses, or closing it would hide the verdict too.
+TEST_F(SecurityStatusWidgetTest, TheThreeSummaryVerdictsStayOutsideTheBlock)
+{
+    SecurityStatusWidget widget;
+    widget.setSecurityStatus(everyCheckPassed());
+
+    CollapsibleSection* block = detailBlockOf(widget);
+    ASSERT_NE(block, nullptr);
+
+    const QList<QLabel*> summary = widget.findChildren<QLabel*>(QStringLiteral("text"));
+    ASSERT_EQ(summary.size(), 3) << "the pane no longer carries exactly the three roll-up rows";
+    for (const QLabel* label : summary) {
+        for (const QObject* parent = label->parent(); parent != nullptr; parent = parent->parent()) {
+            EXPECT_NE(parent, block) << "summary verdict \"" << qPrintable(label->text())
+                                     << "\" was moved inside the collapsing block";
+        }
+    }
+}
+
+// --- the reader's own choice outranks the derived default -------------------
+
+namespace {
+
+/// Toggle the section the way a reader does: a press inside the header bar.
+///
+/// Deliberately the input path rather than setExpanded(). The whole point of
+/// the memory is to tell a person's choice from the program's, and a test that
+/// set the state directly would prove nothing about that distinction.
+void clickHeaderOf(CollapsibleSection& section)
+{
+    const QPointF inHeader(40.0, 8.0);
+    QMouseEvent press(QEvent::MouseButtonPress, inHeader, section.mapToGlobal(inHeader), Qt::LeftButton, Qt::LeftButton,
+                      Qt::NoModifier);
+    QApplication::sendEvent(&section, &press);
+}
+
+} // namespace
+
+// The read wants attention, so the block opened itself — and the reader closed
+// it anyway. The next card must not open it again: re-deciding after being
+// told is exactly the behaviour that makes a section feel broken.
+TEST_F(SecurityStatusWidgetTest, AReaderWhoClosesTheBlockKeepsItClosedOnTheNextRead)
+{
+    {
+        SecurityStatusWidget firstRead;
+        firstRead.setSecurityStatus(signerCheckNeverRan());
+        CollapsibleSection* block = detailBlockOf(firstRead);
+        ASSERT_NE(block, nullptr);
+        ASSERT_TRUE(block->isExpanded()) << "the derived default never opened it, so closing it proves nothing";
+        clickHeaderOf(*block);
+        ASSERT_FALSE(block->isExpanded()) << "the header press did not close the block";
+    }
+
+    // The next card: a whole new pane, because every read builds one.
+    SecurityStatusWidget nextRead;
+    nextRead.setSecurityStatus(signerCheckNeverRan());
+    CollapsibleSection* block = detailBlockOf(nextRead);
+    ASSERT_NE(block, nullptr);
+    EXPECT_FALSE(block->isExpanded()) << "the block re-opened itself over a section the reader had closed";
+}
+
+// And the same in the other direction: a reader who opens a quiet read's block
+// keeps it open, rather than having it shut on them at the next card.
+TEST_F(SecurityStatusWidgetTest, AReaderWhoOpensTheBlockKeepsItOpenOnTheNextRead)
+{
+    {
+        SecurityStatusWidget firstRead;
+        firstRead.setSecurityStatus(everyCheckPassed());
+        CollapsibleSection* block = detailBlockOf(firstRead);
+        ASSERT_NE(block, nullptr);
+        ASSERT_FALSE(block->isExpanded());
+        clickHeaderOf(*block);
+        ASSERT_TRUE(block->isExpanded()) << "the header press did not open the block";
+    }
+
+    SecurityStatusWidget nextRead;
+    nextRead.setSecurityStatus(everyCheckPassed());
+    CollapsibleSection* block = detailBlockOf(nextRead);
+    ASSERT_NE(block, nullptr);
+    EXPECT_TRUE(block->isExpanded()) << "the block closed itself over a section the reader had opened";
+}
+
+// The memory has to be of a PERSON's choice. A section this code opened or
+// closed on the reader's behalf must not be recorded as something they asked
+// for, or the very first derived default would freeze and no read after it
+// would ever be judged on its own outcome.
+TEST_F(SecurityStatusWidgetTest, TheProgramsOwnToggleIsNotMistakenForTheReadersChoice)
+{
+    SecurityStatusWidget widget;
+    widget.setSecurityStatus(everyCheckPassed());
+    CollapsibleSection* block = detailBlockOf(widget);
+    ASSERT_NE(block, nullptr);
+
+    block->setExpanded(true);
+    EXPECT_FALSE(librecelik::utils::rememberedDetailChecksChoice().has_value())
+        << "a programmatic toggle was filed as the reader's own decision";
+}
+
+// The rule itself, stated once where it can be read: NOT_SUPPORTED and SKIPPED
+// are not trouble. A card that does not implement a check, or a read that
+// bypassed one, leaves the holder nothing to act on — and a block left open on
+// ordinary documents stops meaning anything.
+TEST_F(SecurityStatusWidgetTest, OnlyFailedAndNotPerformedOpenTheBlock)
+{
+    using librecelik::utils::detailChecksExpandedFor;
+
+    SecurityStatusModel quiet;
+    quiet.checks.push_back(checkWith(SecurityCheck::Status::Passed, QStringLiteral("DG1 Hash")));
+    quiet.checks.push_back(checkWith(SecurityCheck::Status::NotSupported, QStringLiteral("Active Authentication")));
+    quiet.checks.push_back(checkWith(SecurityCheck::Status::Skipped, QStringLiteral("Terminal Authentication")));
+    EXPECT_FALSE(detailChecksExpandedFor(quiet));
+
+    SecurityStatusModel failed = quiet;
+    failed.checks.push_back(checkWith(SecurityCheck::Status::Failed, QStringLiteral("Passive Authentication")));
+    EXPECT_TRUE(detailChecksExpandedFor(failed));
+
+    SecurityStatusModel notRun = quiet;
+    notRun.checks.push_back(checkWith(SecurityCheck::Status::NotPerformed, QStringLiteral("Passive Authentication")));
+    EXPECT_TRUE(detailChecksExpandedFor(notRun));
+}
+
+// The rows are rebuilt whenever a verdict re-arrives or the language changes.
+// Each check row is a NESTED layout, and deleting a layout does not delete the
+// widgets it arranged — so the rows used to stay behind as orphaned children of
+// the block, one full set per rebuild, drawn at whatever geometry they last
+// had. Making the block collapsible put those orphans inside something a reader
+// opens, which is where they would finally be seen.
+TEST_F(SecurityStatusWidgetTest, RebuildingTheRowsReplacesThemRatherThanStackingThem)
+{
+    SecurityStatusWidget widget;
+    widget.setSecurityStatus(everyCheckPassed());
+
+    CollapsibleSection* block = detailBlockOf(widget);
+    ASSERT_NE(block, nullptr);
+    const qsizetype first = block->findChildren<QLabel*>(QStringLiteral("checkLabel")).size();
+    ASSERT_EQ(first, 3);
+
+    widget.setSecurityStatus(everyCheckPassed());
+    EXPECT_EQ(block->findChildren<QLabel*>(QStringLiteral("checkLabel")).size(), first)
+        << "the rows from the previous build stayed behind";
+
+    widget.setSecurityStatus(signerCheckNeverRan());
+    EXPECT_EQ(block->findChildren<QLabel*>(QStringLiteral("checkLabel")).size(), first)
+        << "the rows from the previous build stayed behind";
 }

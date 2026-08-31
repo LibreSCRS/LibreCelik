@@ -61,8 +61,25 @@ public:
     // When false, the section is always expanded — no arrow, no toggle on click.
     void setCollapsible(bool enabled);
 
+    // Re-apply the settled expanded/collapsed state to the content.
+    //
+    // setExpanded() is a no-op when the flag already matches, which is not the
+    // same as "the content matches the flag": a caller that rebuilds the
+    // section's content adds NEW child widgets, and a layout shows those even
+    // when the section around them is closed. Call this after such a rebuild.
+    // No-op while an animation is in flight — that animation is already on its
+    // way to the settled state.
+    void refreshContentVisibility();
+
 signals:
     void sectionExpanded();
+
+    /// Emitted only when the READER toggles the section — a click on the header
+    /// or Space/Return on the focused one — and never for a programmatic
+    /// setExpanded(). That is the whole distinction: it lets a caller whose
+    /// default state is derived tell "the person chose this" from "we chose it
+    /// for them", and stop arguing with them about a section they just closed.
+    void toggledByUser(bool expanded);
 
 protected:
     void paintEvent(QPaintEvent* event) override;

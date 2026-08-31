@@ -96,6 +96,17 @@ QList<Field> check(int index, const QString& id, const QString& category, const 
     return fields;
 }
 
+/// One check in the JOINED shape — a plugin that has not moved to the
+/// structured fields spells the same check as ONE field whose KEY is the check
+/// id and whose value is `"STATUS (detail)"`. A client still renders those, so
+/// a page that drops them blanks a display that works.
+Field joinedCheck(const QString& id, const QString& label, const QString& value)
+{
+    Field field = textField(id, value);
+    field.extra.insert(QStringLiteral("labelFallback"), label);
+    return field;
+}
+
 /// A minimal read: the personal group a printout always carries, plus a
 /// security group built from @p securityFields.
 QList<FieldGroup> readWith(QList<Field> securityFields)
@@ -252,6 +263,30 @@ TEST_F(EmrtdTextDocumentTest, UnknownReasonPrintsAsTextNotMarkup)
     EXPECT_TRUE(printed.contains(future))
         << "an unrecognised reason was dropped, or its angle brackets were eaten as markup; printed: "
         << qPrintable(printed);
+}
+
+// --- the shape has one reader now -------------------------------------------
+
+// A plugin that has not moved to the structured fields spells a check as one
+// field whose key IS the check id and whose value is "STATUS (detail)". The
+// screen renders those today; the page never did, because the reader this
+// repository kept knew only `check_<N>_<suffix>` and dropped everything else
+// in the group on the floor. Reading the shape in the client library — the one
+// place that owns it — is what makes the two surfaces agree.
+TEST_F(EmrtdTextDocumentTest, AJoinedShapeCheckStillReachesThePage)
+{
+    TestableEMRTDTextDocument doc(
+        readWith({textField(QStringLiteral("overall_authenticity"), QStringLiteral("NOT_PERFORMED")),
+                  joinedCheck(QStringLiteral("passive_auth"), QStringLiteral("Passive Authentication"),
+                              QStringLiteral("NOT_PERFORMED (no country signing certificates)"))}));
+
+    const QString printed = doc.text();
+    EXPECT_TRUE(printed.contains(qtTrId("lc-emrtd-security-details")))
+        << "the per-check block never appeared; printed: " << qPrintable(printed);
+    EXPECT_TRUE(printed.contains(QStringLiteral("Passive Authentication")))
+        << "a check spelled in the joined shape never reached the page; printed: " << qPrintable(printed);
+    EXPECT_FALSE(printed.contains(QStringLiteral("passive_auth")))
+        << "the check id reached the page where its label belongs";
 }
 
 // A read with no security group at all still prints; the whole security block

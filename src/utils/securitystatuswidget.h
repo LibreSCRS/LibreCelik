@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 #pragma once
 
+#include <LibreSCRS/AgentClient/SecurityChecks.h>
+
 #include <QEvent>
 #include <QList>
 #include <QString>
@@ -175,6 +177,29 @@ struct SecurityStatusModel
 ///
 /// Ownership passes to the caller's layout.
 [[nodiscard]] QWidget* makeStatusRow(const QString& label, SecurityCheck::Status status, QWidget* parent = nullptr);
+
+/// @brief Put this host's VOCABULARY on a verdict the client library already
+///        separated.
+///
+/// The wire's SHAPE — which flat fields make up which check — is owned by
+/// `LibreSCRS::AgentClient::separateSecurityChecks()`, and nothing here reads a
+/// field key. What is left is the part that could never live in a Qt-free
+/// client library: turning the producer's open-string tokens into the closed
+/// enumerations this pane paints and the printed record colours. Both surfaces
+/// call this, so a token cannot come to mean two things depending on where the
+/// read is rendered.
+///
+/// Every token is FOREIGN INPUT. One this build has not learned is not an
+/// error: it is a verdict a newer agent is reporting correctly, and collapsing
+/// it to the safest-LOOKING value would claim a check ran. An unrecognised
+/// status therefore becomes @ref SecurityCheck::Status::NotPerformed — "nobody
+/// here can say" — and an unrecognised category @ref SecurityCategory::Other.
+///
+/// @param verdict Any group piped through `separateSecurityChecks()`. A group
+///        outside the verdict scope comes back with no checks and every field
+///        in its aggregates, so this answers an empty model rather than
+///        inventing one.
+[[nodiscard]] SecurityStatusModel securityModelFrom(const LibreSCRS::AgentClient::SecurityVerdict& verdict);
 
 } // namespace librecelik::utils
 

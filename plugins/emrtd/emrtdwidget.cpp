@@ -6,8 +6,9 @@
 #include "utils/collapsiblesection.h"
 #include "utils/fieldsectionbuilder.h"
 #include "utils/iconutils.h"
-#include "utils/securitystatusfields.h"
 #include "utils/securitystatuswidget.h"
+
+#include <LibreSCRS/AgentClient/SecurityChecks.h>
 
 #include <QDate>
 #include <QFont>
@@ -437,11 +438,15 @@ void EMRTDWidget::addGroup(const FieldGroup& group)
         bioLayout->addWidget(bioLabel);
         bioSection->setLayout(bioLayout);
         sectionLayout->addWidget(bioSection);
-    } else if (key == QLatin1String("security_status")) {
-        // The wire shape is read in ONE place — the printed record renders the
-        // same group, and a private copy of this loop here is how the two
-        // would drift into disagreeing about it.
-        const librecelik::utils::SecurityStatusModel secStatus = librecelik::utils::securityStatusFromGroup(group);
+    } else if (LibreSCRS::AgentClient::isSecurityVerdictGroup(key)) {
+        // Neither the scope nor the shape is spelled here. Both belong to the
+        // client library both desktop clients build: which groups carry
+        // verdicts rather than card data, and which flat fields make up which
+        // check. A private copy of either is how this pane and the printed
+        // record would drift into disagreeing about the same read — and how
+        // the scope rule came to be written two different ways to begin with.
+        const librecelik::utils::SecurityStatusModel secStatus =
+            librecelik::utils::securityModelFrom(LibreSCRS::AgentClient::separateSecurityChecks(group));
         if (!securityStatusWidget) {
             securityStatusWidget = new SecurityStatusWidget(outerSection);
         }
@@ -533,34 +538,50 @@ void EMRTDWidget::addAnnexSecurity(const QString& id, const FieldGroup& group)
     verdictHeading->setContentsMargins(0, 8, 0, 0);
     grid->addWidget(verdictHeading, row++, 0, 1, 2);
 
-    const auto renderRow = [&](const Field& field) {
-        const auto status = librecelik::utils::statusFromString(field.value)
+    const auto renderRow = [&](const QString& key, const QString& fallback, const QString& statusToken) {
+        const auto status = librecelik::utils::statusFromString(statusToken)
                                 .value_or(librecelik::utils::SecurityCheck::Status::NotPerformed);
-        const QString fallback = field.extra.value(QStringLiteral("labelFallback")).toString();
-        const auto label = labels.find(field.key);
-        const QString text = label != labels.end() ? label->second : (fallback.isEmpty() ? field.key : fallback);
+        const auto label = labels.find(key);
+        const QString text = label != labels.end() ? label->second : (fallback.isEmpty() ? key : fallback);
         grid->addWidget(librecelik::utils::makeStatusRow(text, status, section), row++, 0, 1, 2);
     };
+
+    // `annex.<id>.security` is a verdict group by the SAME rule
+    // `security_status` is — the client library names both, which is why this
+    // widget does not name either. Separating here is what stops an annex
+    // reader's individual checks arriving as one row per wire key: without it
+    // "check_0_id" is a label and the check's own id is its verdict, which is
+    // producer text on screen with nothing deciding whether it is fit to show.
+    const LibreSCRS::AgentClient::SecurityVerdict verdict = LibreSCRS::AgentClient::separateSecurityChecks(group);
 
     // Fixed order — integrity then authenticity — matching the travel
     // document's pane. The wire delivers the verdict as a key-sorted map, so
     // "annex_authenticity" would otherwise sort ahead of "annex_integrity" and
     // the two panes would disagree on order.
     const QStringList pinned{QStringLiteral("annex_integrity"), QStringLiteral("annex_authenticity")};
+    const auto aggregateRow = [&](const Field& field) {
+        renderRow(field.key, field.extra.value(QStringLiteral("labelFallback")).toString(), field.value);
+    };
     for (const QString& key : pinned) {
-        const auto it =
-            std::find_if(group.fields.begin(), group.fields.end(), [&key](const Field& f) { return f.key == key; });
-        if (it != group.fields.end()) {
-            renderRow(*it);
+        const auto it = std::find_if(verdict.aggregates.begin(), verdict.aggregates.end(),
+                                     [&key](const Field& f) { return f.key == key; });
+        if (it != verdict.aggregates.end()) {
+            aggregateRow(*it);
         }
     }
     // Every other field the wire ships in this group still renders — in
     // delivery order, through the same labelFallback path — so the shared
     // vocabulary can grow without this widget silently dropping rows.
-    for (const Field& field : group.fields) {
+    for (const Field& field : verdict.aggregates) {
         if (!pinned.contains(field.key)) {
-            renderRow(field);
+            aggregateRow(field);
         }
+    }
+    // A check the annex reader reported gets one row too, under the label its
+    // producer gave it (or under this host's own, when the id is one the
+    // translation map names). Its id — never a wire key — is the last resort.
+    for (const LibreSCRS::AgentClient::SecurityCheckEntry& check : verdict.checks) {
+        renderRow(check.id, check.label, check.status);
     }
 }
 

@@ -6,8 +6,9 @@
 #include <QStringList>
 #include "emrtdtextdocument.h"
 #include <plugin/fieldvalue.h>
-#include <utils/securitystatusfields.h>
 #include <utils/securitystatuswidget.h>
+
+#include <LibreSCRS/AgentClient/SecurityChecks.h>
 
 using librecelik::plugin::fieldDetailBytes;
 using librecelik::plugin::fieldValue;
@@ -67,9 +68,9 @@ QString securityCheckRows(const QList<SecurityCheck>& checks)
 {
     QStringList rows;
     for (const SecurityCheck& check : checks) {
-        // An index the read never filled arrives as a default-constructed
-        // entry. On screen it is an empty line; on an evidence document it
-        // would read as a check somebody skipped, so it is not a row.
+        // A check the producer named by nothing this build could store has no
+        // name to print. On an evidence document a nameless row reads as a
+        // check somebody skipped, so it is not a row at all.
         const QString name = check.label.isEmpty() ? check.checkId : check.label;
         if (name.isEmpty()) {
             continue;
@@ -178,12 +179,18 @@ void EMRTDTextDocument::translateDocumentData(QString& data) const
 
 void EMRTDTextDocument::prepareDocumentData(QString& html, const QList<FieldGroup>& groups) const
 {
-    // Security status — the SAME reader the on-screen pane uses. The verdict
-    // colours and words come from the shared helpers for the same reason: two
-    // copies is how the window and the page would end up calling one outcome
-    // by two names.
+    // Security status — the travel document's OWN verdict group, read through
+    // the client library that owns the wire shape. The pane on screen goes
+    // through the same call, and the verdict colours and words come from the
+    // shared helpers for the same reason: two copies is how the window and the
+    // page would end up calling one outcome by two names.
+    //
+    // Named rather than scope-tested: an annex verdict is a verdict group by
+    // the library's rule as well, and printing one here would put a weaker
+    // guarantee under the passport's own heading.
     if (const FieldGroup* secGroup = findGroup(groups, u"security_status")) {
-        const SecurityStatusModel security = librecelik::utils::securityStatusFromGroup(*secGroup);
+        const SecurityStatusModel security =
+            librecelik::utils::securityModelFrom(LibreSCRS::AgentClient::separateSecurityChecks(*secGroup));
 
         html.replace("${security_integrity_color}", librecelik::utils::statusColorHex(security.overallIntegrity));
         html.replace("${security_integrity_value}", librecelik::utils::localizedStatusText(security.overallIntegrity));

@@ -282,7 +282,6 @@ add_executable(EMRTDTextDocumentTests
     emrtdtextdocument_test.cpp
     ../plugins/emrtd/emrtdtextdocument.h
     ../plugins/emrtd/emrtdtextdocument.cpp
-    ../src/utils/securitystatusfields.h
     ../src/utils/securitystatuswidget.h
     ../src/utils/securitystatuswidget.cpp
     ../src/utils/collapsiblesection.h

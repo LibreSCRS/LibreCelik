@@ -116,6 +116,32 @@ QStringList valuesUnder(const QWidget& root)
     return values;
 }
 
+/// Every per-check row the security pane rendered, INCLUDING the ones whose
+/// text is empty.
+///
+/// Deliberately not @ref labelsUnder: that one drops empty strings, and an
+/// empty check row is exactly the thing a reader sees as a check nobody
+/// named. A test that cannot see the blank row cannot fail on it.
+QStringList checkLabelsUnder(const QWidget& root)
+{
+    QStringList labels;
+    for (const QLabel* label : root.findChildren<QLabel*>(QStringLiteral("checkLabel"))) {
+        labels << label->text();
+    }
+    return labels;
+}
+
+/// One check in the wire's structured `check_<N>_<suffix>` shape.
+QList<Field> structuredCheck(int ordinal, const QString& id, const QString& category, const QString& status,
+                             const QString& label)
+{
+    const auto name = [ordinal](const char* suffix) {
+        return QStringLiteral("check_%1_%2").arg(ordinal).arg(QLatin1StringView(suffix));
+    };
+    return {textField(name("id"), name("id"), id), textField(name("category"), name("category"), category),
+            textField(name("status"), name("status"), status), textField(name("label"), name("label"), label)};
+}
+
 /// Every label string rendered under @p root.
 QStringList labelsUnder(const QWidget& root)
 {
@@ -651,4 +677,86 @@ TEST_F(EmrtdAnnexTest, CheckWithoutAReasonRendersNoReasonLine)
     for (const QString& s : text) {
         EXPECT_FALSE(s.trimmed().isEmpty());
     }
+}
+
+// --- the wire shape belongs to the client library ----------------------------
+
+// The checks arrive indexed and the producer promises no contiguity. The
+// reader this repository kept grew its list until the index fit, so a gap left
+// a default-constructed entry in place -- and the pane renders every entry it
+// is handed, so the hole reached the screen as a row with no name and the
+// verdict "Not Performed". A reader counts that as a check somebody skipped.
+TEST_F(EmrtdAnnexTest, AnIndexTheReadNeverFilledIsNotACheckOnScreen)
+{
+    EMRTDWidget widget(nullptr);
+    QList<Field> fields{textField(QStringLiteral("overall_authenticity"), QStringLiteral("Data Authenticity"),
+                                  QStringLiteral("NOT_PERFORMED"))};
+    fields += structuredCheck(0, QStringLiteral("passive_auth"), QStringLiteral("data_authenticity"),
+                              QStringLiteral("NOT_PERFORMED"), QStringLiteral("Passive Authentication"));
+    // Index 1 deliberately absent.
+    fields += structuredCheck(2, QStringLiteral("chip_auth"), QStringLiteral("chip_genuineness"),
+                              QStringLiteral("PASSED"), QStringLiteral("Chip Authentication"));
+    widget.addGroup(group(QStringLiteral("security_status"), fields));
+
+    const CollapsibleSection* pane = sectionTitled(widget, qtTrId("lc-emrtd-security-status-travel-doc"));
+    ASSERT_NE(pane, nullptr) << "sections built: " << qPrintable(sectionTitles(widget).join(u", "));
+    const QStringList rendered = checkLabelsUnder(*pane);
+    EXPECT_EQ(rendered, QStringList({QStringLiteral("Passive Authentication"), QStringLiteral("Chip Authentication")}))
+        << "a row for the index nobody filled reached the screen; rendered: " << qPrintable(rendered.join(u" | "));
+}
+
+// The order the fields arrive in is not a contract either: identity crosses
+// the wire as a map, so a recovered read delivers them key-sorted and
+// "check_10_*" arrives before "check_2_*". The checks are ordered by their
+// NUMBER, not by their spelling.
+TEST_F(EmrtdAnnexTest, ChecksRenderInOrdinalOrderNotArrivalOrder)
+{
+    EMRTDWidget widget(nullptr);
+    QList<Field> fields;
+    fields += structuredCheck(10, QStringLiteral("chip_auth"), QStringLiteral("chip_genuineness"),
+                              QStringLiteral("PASSED"), QStringLiteral("Chip Authentication"));
+    fields += structuredCheck(2, QStringLiteral("passive_auth"), QStringLiteral("data_authenticity"),
+                              QStringLiteral("PASSED"), QStringLiteral("Passive Authentication"));
+    widget.addGroup(group(QStringLiteral("security_status"), fields));
+
+    const CollapsibleSection* pane = sectionTitled(widget, qtTrId("lc-emrtd-security-status-travel-doc"));
+    ASSERT_NE(pane, nullptr);
+    EXPECT_EQ(checkLabelsUnder(*pane),
+              QStringList({QStringLiteral("Passive Authentication"), QStringLiteral("Chip Authentication")}));
+}
+
+// The annex verdict is a verdict group too -- the client library's scope rule
+// names both `security_status` and `annex.<id>.security`, which is the whole
+// reason the rule is not spelled here. An annex reader that starts reporting
+// individual checks in the structured shape used to have every one of its wire
+// keys rendered as a row of its own: "check_0_id: Not Performed", with the
+// check id itself as the verdict. Producer text on screen with nothing
+// deciding whether it was fit to show.
+TEST_F(EmrtdAnnexTest, AnnexVerdictSeparatesItsChecksFromTheWireKeys)
+{
+    EMRTDWidget widget(nullptr);
+    widget.addGroup(annexPersonal(QStringLiteral("rs")));
+    QList<Field> fields{
+        textField(QStringLiteral("annex_integrity"), QStringLiteral("Data Integrity"), QStringLiteral("PASSED"))};
+    fields += structuredCheck(0, QStringLiteral("annex_signature"), QStringLiteral("data_authenticity"),
+                              QStringLiteral("PASSED"), QStringLiteral("Annex Signature"));
+    widget.addGroup(group(QStringLiteral("annex.rs.security"), fields));
+
+    const CollapsibleSection* section = sectionTitled(widget, qtTrId("lc-annex-additional-data"));
+    ASSERT_NE(section, nullptr) << "sections built: " << qPrintable(sectionTitles(widget).join(u", "));
+    const QStringList rendered = labelsUnder(*section);
+
+    // The check reaches the screen under the label the producer gave it.
+    EXPECT_TRUE(std::any_of(rendered.cbegin(), rendered.cend(),
+                            [](const QString& s) { return s.startsWith(QStringLiteral("Annex Signature")); }))
+        << "the check never rendered; rendered: " << qPrintable(rendered.join(u" | "));
+    // And no wire key does.
+    for (const QString& s : rendered) {
+        EXPECT_FALSE(s.startsWith(QStringLiteral("check_")))
+            << "a wire key reached the screen as a verdict row: " << qPrintable(s);
+    }
+    // The aggregate the annex reader actually emits is still a row of its own.
+    EXPECT_TRUE(std::any_of(rendered.cbegin(), rendered.cend(),
+                            [](const QString& s) { return s.startsWith(QStringLiteral("Data Integrity")); }))
+        << "the annex aggregate verdict was consumed as a check; rendered: " << qPrintable(rendered.join(u" | "));
 }

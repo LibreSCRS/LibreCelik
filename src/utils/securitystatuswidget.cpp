@@ -8,7 +8,10 @@
 #include <QEvent>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLatin1StringView>
 #include <QVBoxLayout>
+
+#include <utility>
 
 namespace librecelik::utils {
 
@@ -66,6 +69,46 @@ QString statusColorHex(SecurityCheck::Status status)
         return QStringLiteral("#9E9E9E");
     }
     return QStringLiteral("#9E9E9E");
+}
+
+SecurityStatusModel securityModelFrom(const LibreSCRS::AgentClient::SecurityVerdict& verdict)
+{
+    SecurityStatusModel model;
+
+    // The three roll-ups arrive already aggregated and travel through the
+    // library untouched, as ordinary carried-over fields. Nothing here
+    // recomputes one from the checks: a pane that derived "authenticity" from
+    // the checks it happened to recognise would disagree with the agent about
+    // the document the moment a newer check appeared.
+    for (const LibreSCRS::AgentClient::Field& field : verdict.aggregates) {
+        if (field.key == QLatin1StringView("overall_integrity")) {
+            model.overallIntegrity = statusFromString(field.value).value_or(SecurityCheck::Status::NotPerformed);
+        } else if (field.key == QLatin1StringView("overall_authenticity")) {
+            model.overallAuthenticity = statusFromString(field.value).value_or(SecurityCheck::Status::NotPerformed);
+        } else if (field.key == QLatin1StringView("overall_genuineness")) {
+            model.overallGenuineness = statusFromString(field.value).value_or(SecurityCheck::Status::NotPerformed);
+        }
+        // Anything else the group carried is not this pane's to render. It is
+        // dropped rather than guessed at -- an annex verdict's own two fields
+        // reach a different surface, and a key from a later agent has no row
+        // here that would mean anything.
+    }
+
+    model.checks.reserve(verdict.checks.size());
+    for (const LibreSCRS::AgentClient::SecurityCheckEntry& entry : verdict.checks) {
+        SecurityCheck check;
+        check.checkId = entry.id;
+        check.category = categoryFromString(entry.category).value_or(SecurityCategory::Other);
+        check.status = statusFromString(entry.status).value_or(SecurityCheck::Status::NotPerformed);
+        check.label = entry.label;
+        check.detail = entry.detail;
+        check.errorDetail = entry.error;
+        // A KEY, carried as it arrived. localizedReasonText() is the only
+        // thing that may turn it into words.
+        check.reason = entry.reason;
+        model.checks.append(std::move(check));
+    }
+    return model;
 }
 
 QWidget* makeStatusRow(const QString& label, SecurityCheck::Status status, QWidget* parent)

@@ -1503,12 +1503,16 @@
         <translation>Select an ICAO Master List</translation>
     </message>
     <message id="lc-settings-csca-import-filter">
-        <source>Master lists (*.ml *.mls);;All files (*)</source>
-        <translation>Master lists (*.ml *.mls);;All files (*)</translation>
+        <source>Master lists (*.ml *.mls *.ldif);;All files (*)</source>
+        <translation>Master lists (*.ml *.mls *.ldif);;All files (*)</translation>
     </message>
     <message id="lc-settings-csca-state-anchors">
         <source>Installed anchors: %1. Issuing countries: %2.</source>
         <translation>Installed anchors: %1. Issuing countries: %2.</translation>
+    </message>
+    <message id="lc-settings-csca-state-publishers">
+        <source>These anchors come from more than one publisher, so no single publisher or signing date is shown.</source>
+        <translation>These anchors come from more than one publisher, so no single publisher or signing date is shown.</translation>
     </message>
     <message id="lc-settings-csca-state-signed">
         <source>List signed: %1</source>
@@ -1534,14 +1538,6 @@
         <source>Nothing was installed: this file is not a signed ICAO master list, or the signature over it did not verify. Check that you chose the master list itself and not another file from the download.</source>
         <translation>Nothing was installed: this file is not a signed ICAO master list, or the signature over it did not verify. Check that you chose the master list itself and not another file from the download.</translation>
     </message>
-    <message id="lc-settings-csca-ldif-collection">
-        <source>Nothing was installed: this is the ICAO Public Key Directory collection, a directory export (LDIF) holding %1 separately signed master lists rather than one. Installing a whole collection is not supported yet — the file you downloaded is the right one.</source>
-        <translation>Nothing was installed: this is the ICAO Public Key Directory collection, a directory export (LDIF) holding %1 separately signed master lists rather than one. Installing a whole collection is not supported yet — the file you downloaded is the right one.</translation>
-    </message>
-    <message id="lc-settings-csca-ldif-empty">
-        <source>Nothing was installed: this file is a directory export (LDIF) and it carries no signed master list. Check that the download finished and that this is the file the portal served.</source>
-        <translation>Nothing was installed: this file is a directory export (LDIF) and it carries no signed master list. Check that the download finished and that this is the file the portal served.</translation>
-    </message>
     <message id="lc-settings-csca-unreadable">
         <source>That file could not be opened. Check that it exists and is readable.</source>
         <translation>That file could not be opened. Check that it exists and is readable.</translation>
@@ -1551,8 +1547,8 @@
         <translation>A master list is a signed collection of the country signing certificates that passports are checked against.</translation>
     </message>
     <message id="lc-settings-csca-where">
-        <source>Download one from the ICAO Public Key Directory at %1 — take the latest collection of eMRTD CSCA master lists. The download is public: no PKD membership is needed.</source>
-        <translation>Download one from the ICAO Public Key Directory at %1 — take the latest collection of eMRTD CSCA master lists. The download is public: no PKD membership is needed.</translation>
+        <source>Download it from the ICAO Public Key Directory at %1 — take the master list download, the file named icaopkd-002-complete-NNN.ldif. It carries every publishing country&apos;s master list, and they are installed in one import. The download is public: no PKD membership is needed.</source>
+        <translation>Download it from the ICAO Public Key Directory at %1 — take the master list download, the file named icaopkd-002-complete-NNN.ldif. It carries every publishing country&apos;s master list, and they are installed in one import. The download is public: no PKD membership is needed.</translation>
     </message>
     <message id="lc-settings-csca-manual">
         <source>Downloading it means accepting ICAO&apos;s terms and conditions, so LibreCelik never fetches a master list by itself. Download the file, then import it here.</source>

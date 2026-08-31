@@ -5,7 +5,6 @@
 
 #include "agent/agentgateway.h"
 #include "agent/settingsimport.h"
-#include "settings/masterlistprobe.h"
 #include "settings/settingskeys.h"
 #include "settings/tlitemdelegate.h"
 #include "signing/tsaitemdelegate.h"
@@ -69,6 +68,16 @@ constexpr QLatin1String kCscaAnchorState{"CscaAnchorState"};
 constexpr QLatin1String kCscaAnchors{"anchors"};
 constexpr QLatin1String kCscaIssuers{"issuers"};
 constexpr QLatin1String kCscaReplayRefusalActive{"replayRefusalActive"};
+// Present only while the agent follows exactly ONE publisher. A file from the
+// directory export carries a list per country, each with its own publisher and
+// its own signing time, so there is no such thing as THE publisher of what is
+// installed and the agent names none rather than picking one. Its absence
+// beside a non-zero anchor count is therefore a statement in itself: more than
+// one publisher stands behind these anchors. HOW MANY is not on the wire and
+// must not be guessed at -- least of all from the issuer count, which counts
+// the countries whose certificates are held and not the countries whose lists
+// carried them.
+constexpr QLatin1String kCscaSigner{"signer"};
 constexpr QLatin1String kCscaSignedAt{"signedAt"};
 
 // The public download portal for eMRTD country-signing master lists. Verified
@@ -79,12 +88,6 @@ constexpr QLatin1String kCscaSignedAt{"signedAt"};
 // issuers publish lists of their own, but a wrong address in a dialog spends a
 // reader's time and their trust in everything else the dialog says.
 constexpr QLatin1String kIcaoPkdUrl{"https://pkddownload.icao.int/"};
-
-// How much of a chosen file is read in order to recognise its shape. The same
-// figure the agent caps an import at, so nothing is skipped that could have
-// been installed: past this the agent answers "too large" whatever the bytes
-// are, and the reader is told that by the agent rather than guessed at here.
-constexpr qint64 kMaxImportProbeBytes = 32LL * 1024 * 1024;
 
 // The tabs whose content the agent owns; the General tab is this process's own
 // and stays usable with no agent at all.
@@ -210,6 +213,13 @@ QVariantMap anchorStateAsMap(const LibreSCRS::AgentClient::CscaAnchorState& stat
     map.insert(kCscaAnchors, state.anchors);
     map.insert(kCscaIssuers, state.issuers);
     map.insert(kCscaReplayRefusalActive, state.replayRefusalActive);
+    // The client's value struct flattens an absent signer to an EMPTY string,
+    // and an empty string inserted here would read back as a publisher the
+    // agent named -- turning "several publishers" into "one, unnamed" at the
+    // one place the two must not be confused.
+    if (!state.signer.isEmpty()) {
+        map.insert(kCscaSigner, state.signer);
+    }
     if (state.signedAt.isValid()) {
         map.insert(kCscaSignedAt, state.signedAt.toSecsSinceEpoch());
     }
@@ -674,47 +684,29 @@ void SettingsDialog::importMasterListFile(const QString& path)
     if (path.isEmpty() || gateway == nullptr || gateway->presence() != PresenceState::Ready)
         return;
 
-    // What the file IS, decided from its bytes. The extension decides nothing:
-    // the portal this dialog sends a reader to serves `.ldif`, and a file named
-    // `.ml` may be anything at all.
+    // The bytes go over UNREAD and UNJUDGED. What counts as a master list is
+    // the agent's answer to give: it is the trust boundary, it is what has to
+    // verify every signature in the file anyway, and it now takes both shapes a
+    // reader can arrive with — one published list, or the directory export the
+    // ICAO portal serves, which carries a list per country, each signed by its
+    // own publisher. A copy of that judgement here would be a second, weaker
+    // parser to keep in step with the real one, and on the day it fell behind
+    // it would refuse, in this dialog's own voice, a file that installs.
     //
-    // The one shape recognised here is the directory export, and it is
-    // recognised in order to be REFUSED IN WORDS rather than handed on. The
-    // agent's answer to it would be a correct but unhelpful "not a master
-    // list", and getting that answer costs an authorization ceremony and one of
-    // the agent's per-caller import allowances — both spent on a file this
-    // process could already see was not a single signed list.
+    // The extension decides nothing either, in both directions: the portal
+    // serves `.ldif`, and a file named `.ml` may be anything at all.
     //
-    // Nothing else is judged here. The agent's verb is the trust boundary, and
-    // whatever this dialog does hand over is judged there in full.
-    QFile chosen(path);
-    if (!chosen.open(QIODevice::ReadOnly)) {
-        cscaOutcome = CscaImportOutcome::Unreadable;
-        renderCscaState();
-        return;
-    }
-    // Bounded by what the agent would accept anyway: past this the answer is a
-    // size refusal whatever the bytes say, so there is nothing to learn by
-    // reading further, and a settings dialog must not be talked into loading an
-    // arbitrarily large file into memory.
-    const QByteArray head = chosen.read(kMaxImportProbeBytes);
-    chosen.close();
-
-    const auto probe = librecelik::settings::probeMasterListFile(head);
-    if (probe.kind != librecelik::settings::MasterListFileKind::NotLdif) {
-        cscaLdifObjects = probe.signedObjects;
-        cscaOutcome = probe.kind == librecelik::settings::MasterListFileKind::LdifCollection
-                          ? CscaImportOutcome::LdifCollection
-                          : CscaImportOutcome::LdifWithoutList;
-        renderCscaState();
-        return;
-    }
-
+    // The cost of this is one authorization ceremony for a file that turns out
+    // to hold nothing installable. That is the honest price: an import which
+    // admits no list is a refusal like any other, it leaves the anchors exactly
+    // as they were, and what the reader then reads is the agent's own reason
+    // rather than a guess at it made here.
+    //
     // O_CLOEXEC: a descriptor handed to the agent must never survive into a
     // child process. The handle closes it on the way out whatever the answer
     // was — the call BORROWS it and duplicates what it puts on the wire.
     //
-    // Opened FRESH, after the probe and never from it: the agent reads from the
+    // Opened here and read from nowhere else: the agent reads from the
     // descriptor's own position, so a handle this dialog had already read
     // through would deliver a truncated list.
     LibreSCRS::AgentClient::FdHandle file{::open(QFile::encodeName(path).constData(), O_RDONLY | O_CLOEXEC)};
@@ -758,6 +750,16 @@ void SettingsDialog::renderCscaState()
                          .arg(cscaState.value(kCscaAnchors).toUInt())
                          .arg(cscaState.value(kCscaIssuers).toUInt());
         }
+        // More than one publisher, said out loud. The agent fills `signer` only
+        // while it follows exactly one of them, so its absence beside anchors
+        // that exist is how a collection reports itself — and a blank line
+        // where a publisher would have stood says nothing a reader can act on.
+        // NO NUMBER: how many publishers were taken in is deliberately not on
+        // the wire, and the issuer count above is a different quantity that
+        // would read as one if it were borrowed for this sentence.
+        if (cscaState.value(kCscaAnchors).toUInt() > 0 && !cscaState.contains(kCscaSigner)) {
+            lines << qtTrId("lc-settings-csca-state-publishers");
+        }
         if (cscaState.contains(kCscaSignedAt)) {
             // Only when the accepted list carried one. CMS permits an absent
             // signing time, the agent sends no epoch sentinel for it, and a
@@ -796,15 +798,6 @@ void SettingsDialog::renderCscaState()
         break;
     case CscaImportOutcome::Unreadable:
         status = qtTrId("lc-settings-csca-unreadable");
-        break;
-    case CscaImportOutcome::LdifCollection:
-        // The count is what makes this sentence worth reading: it is the
-        // evidence that the file is a collection and that the reader followed
-        // the instruction correctly.
-        status = qtTrId("lc-settings-csca-ldif-collection").arg(cscaLdifObjects);
-        break;
-    case CscaImportOutcome::LdifWithoutList:
-        status = qtTrId("lc-settings-csca-ldif-empty");
         break;
     }
     cscaStatusLabel->setText(status);

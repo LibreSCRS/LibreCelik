@@ -1214,12 +1214,14 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-settings-csca-import");
     //% "Select an ICAO Master List"
     QT_TRID_NOOP("lc-settings-csca-import-title");
-    //% "Master lists (*.ml *.mls);;All files (*)"
+    //% "Master lists (*.ml *.mls *.ldif);;All files (*)"
     QT_TRID_NOOP("lc-settings-csca-import-filter");
     //% "Nothing is installed: there are no country signing anchors. Import a master list to install them."
     QT_TRID_NOOP("lc-settings-csca-state-none");
     //% "Installed anchors: %1. Issuing countries: %2."
     QT_TRID_NOOP("lc-settings-csca-state-anchors");
+    //% "These anchors come from more than one publisher, so no single publisher or signing date is shown."
+    QT_TRID_NOOP("lc-settings-csca-state-publishers");
     //% "List signed: %1"
     QT_TRID_NOOP("lc-settings-csca-state-signed");
     //% "A later list that is not newer than this one will be refused."
@@ -1232,10 +1234,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-settings-csca-replayed");
     //% "Nothing was installed: this file is not a signed ICAO master list, or the signature over it did not verify. Check that you chose the master list itself and not another file from the download."
     QT_TRID_NOOP("lc-settings-csca-refused");
-    //% "Nothing was installed: this is the ICAO Public Key Directory collection, a directory export (LDIF) holding %1 separately signed master lists rather than one. Installing a whole collection is not supported yet — the file you downloaded is the right one."
-    QT_TRID_NOOP("lc-settings-csca-ldif-collection");
-    //% "Nothing was installed: this file is a directory export (LDIF) and it carries no signed master list. Check that the download finished and that this is the file the portal served."
-    QT_TRID_NOOP("lc-settings-csca-ldif-empty");
     //% "That file could not be opened. Check that it exists and is readable."
     QT_TRID_NOOP("lc-settings-csca-unreadable");
     // Where a master list comes from. Named because the import is unusable
@@ -1244,7 +1242,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     // drift apart on it.
     //% "A master list is a signed collection of the country signing certificates that passports are checked against."
     QT_TRID_NOOP("lc-settings-csca-what");
-    //% "Download one from the ICAO Public Key Directory at %1 — take the latest collection of eMRTD CSCA master lists. The download is public: no PKD membership is needed."
+    //% "Download it from the ICAO Public Key Directory at %1 — take the master list download, the file named icaopkd-002-complete-NNN.ldif. It carries every publishing country's master list, and they are installed in one import. The download is public: no PKD membership is needed."
     QT_TRID_NOOP("lc-settings-csca-where");
     //% "Downloading it means accepting ICAO's terms and conditions, so LibreCelik never fetches a master list by itself. Download the file, then import it here."
     QT_TRID_NOOP("lc-settings-csca-manual");

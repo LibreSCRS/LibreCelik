@@ -172,19 +172,8 @@ private:
         Unauthorized,
         Refused,
         Unreadable,
-        /// The file is the directory export the ICAO portal serves: many
-        /// separately signed master lists in one LDIF, which is not the single
-        /// signed list an import installs.
-        LdifCollection,
-        /// An LDIF carrying no signed object at all.
-        LdifWithoutList,
     };
     CscaImportOutcome cscaOutcome = CscaImportOutcome::None;
-    /// How many separately signed master lists the last chosen file held, when
-    /// it was a directory export. The number is the whole point of that
-    /// sentence: it is what tells a reader the file is a COLLECTION and that
-    /// they downloaded the right thing.
-    int cscaLdifObjects = 0;
     /// What the agent holds in country-signing anchors, in the shape
     /// `configSnapshot()["CscaAnchorState"]` carries it. Read on open and
     /// refreshed with every snapshot; an accepted import replaces it with the
@@ -193,7 +182,9 @@ private:
     /// A MAP rather than the client's `CscaAnchorState` value struct, and that
     /// is the whole point: an optional member the agent did not send is an
     /// ABSENT KEY, while the struct would zero it. Only the map can tell "the
-    /// accepted list carried no signing time" from "signed on 1970-01-01".
+    /// accepted list carried no signing time" from "signed on 1970-01-01", and
+    /// only the map can tell "several publishers, so none is named" from "one
+    /// publisher, whose fingerprint happens to be the empty string".
     ///
     /// EMPTY means nothing has been imported — and it is equally what a client
     /// sees when the agent discarded a stale record because its anchor cache

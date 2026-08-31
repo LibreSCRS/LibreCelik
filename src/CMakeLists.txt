@@ -112,8 +112,6 @@ set(PROJECT_SOURCES
         aboutdialog.h
         aboutdialog.cpp
         settings/settingsdialog.h
-        settings/masterlistprobe.h
-        settings/masterlistprobe.cpp
         settings/settingsdialog.cpp
         settings/tlitemdelegate.h
         settings/tlitemdelegate.cpp

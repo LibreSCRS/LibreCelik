@@ -1503,12 +1503,16 @@
         <translation>Изаберите ICAO мастер листу</translation>
     </message>
     <message id="lc-settings-csca-import-filter">
-        <source>Master lists (*.ml *.mls);;All files (*)</source>
-        <translation>Мастер листе (*.ml *.mls);;Све датотеке (*)</translation>
+        <source>Master lists (*.ml *.mls *.ldif);;All files (*)</source>
+        <translation>Мастер листе (*.ml *.mls *.ldif);;Све датотеке (*)</translation>
     </message>
     <message id="lc-settings-csca-state-anchors">
         <source>Installed anchors: %1. Issuing countries: %2.</source>
         <translation>Инсталирана сидра: %1. Државе издаваоци: %2.</translation>
+    </message>
+    <message id="lc-settings-csca-state-publishers">
+        <source>These anchors come from more than one publisher, so no single publisher or signing date is shown.</source>
+        <translation>Ова сидра потичу од више објављивача, па се не приказују ни појединачни објављивач ни датум потписа.</translation>
     </message>
     <message id="lc-settings-csca-state-signed">
         <source>List signed: %1</source>
@@ -1534,14 +1538,6 @@
         <source>Nothing was installed: this file is not a signed ICAO master list, or the signature over it did not verify. Check that you chose the master list itself and not another file from the download.</source>
         <translation>Ништа није инсталирано: ова датотека није потписана ICAO мастер листа, или се потпис над њом не проверава. Проверите да ли сте изабрали саму мастер листу, а не неку другу датотеку из преузимања.</translation>
     </message>
-    <message id="lc-settings-csca-ldif-collection">
-        <source>Nothing was installed: this is the ICAO Public Key Directory collection, a directory export (LDIF) holding %1 separately signed master lists rather than one. Installing a whole collection is not supported yet — the file you downloaded is the right one.</source>
-        <translation>Ништа није инсталирано: ово је збирка ICAO директоријума јавних кључева, извоз директоријума (LDIF) који садржи %1 засебно потписаних мастер листа уместо једне. Увоз целе збирке још није подржан — датотека коју сте преузели је права.</translation>
-    </message>
-    <message id="lc-settings-csca-ldif-empty">
-        <source>Nothing was installed: this file is a directory export (LDIF) and it carries no signed master list. Check that the download finished and that this is the file the portal served.</source>
-        <translation>Ништа није инсталирано: ова датотека је извоз директоријума (LDIF) и не носи ниједну потписану мастер листу. Проверите да ли је преузимање завршено и да ли је ово датотека коју је портал послао.</translation>
-    </message>
     <message id="lc-settings-csca-unreadable">
         <source>That file could not be opened. Check that it exists and is readable.</source>
         <translation>Та датотека не може да се отвори. Проверите да ли постоји и да ли је читљива.</translation>
@@ -1551,8 +1547,8 @@
         <translation>Мастер листа је потписана збирка сертификата државних издавалаца према којима се пасоши проверавају.</translation>
     </message>
     <message id="lc-settings-csca-where">
-        <source>Download one from the ICAO Public Key Directory at %1 — take the latest collection of eMRTD CSCA master lists. The download is public: no PKD membership is needed.</source>
-        <translation>Преузмите је из ICAO директоријума јавних кључева на %1 — узмите најновију збирку eMRTD CSCA мастер листа. Преузимање је јавно: чланство у PKD-у није потребно.</translation>
+        <source>Download it from the ICAO Public Key Directory at %1 — take the master list download, the file named icaopkd-002-complete-NNN.ldif. It carries every publishing country&apos;s master list, and they are installed in one import. The download is public: no PKD membership is needed.</source>
+        <translation>Преузмите је из ICAO директоријума јавних кључева на %1 — изаберите преузимање мастер листа, датотеку под називом icaopkd-002-complete-NNN.ldif. Она садржи мастер листу сваке државе која их објављује, а све се инсталирају једним увозом. Преузимање је јавно: чланство у PKD-у није потребно.</translation>
     </message>
     <message id="lc-settings-csca-manual">
         <source>Downloading it means accepting ICAO&apos;s terms and conditions, so LibreCelik never fetches a master list by itself. Download the file, then import it here.</source>

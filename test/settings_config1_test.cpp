@@ -19,7 +19,6 @@
 #include "settings/settingsdialog.h"
 
 #include "fake_gateway/fakeagentgateway.h"
-#include "settings/masterlistprobe.h"
 #include "settings/tlitemdelegate.h"
 
 #include <LibreSCRS/AgentClient/SyncError.h>
@@ -378,6 +377,11 @@ TEST_F(SettingsConfig1Test, TheDialogSaysWhatTheAgentAlreadyHoldsBeforeAnyImport
     state[QStringLiteral("anchors")] = QVariant::fromValue<quint32>(412);
     state[QStringLiteral("issuers")] = QVariant::fromValue<quint32>(78);
     state[QStringLiteral("replayRefusalActive")] = true;
+    // ONE publisher is being followed, which is what lets the agent name it --
+    // and a single publisher is the only state in which there is such a thing
+    // as THE list's signing date to print.
+    state[QStringLiteral("signer")] =
+        QStringLiteral("9f2c4a1b6d8e0f3a5c7b9d1e2f4a6b8c0d2e4f6a8b0c2d4e6f8a0b2c4d6e8f01");
     state[QStringLiteral("signedAt")] =
         QVariant::fromValue<qint64>(QDateTime(QDate(2026, 3, 14), QTime(10, 22), QTimeZone::UTC).toSecsSinceEpoch());
     gw.config[QStringLiteral("CscaAnchorState")] = state;
@@ -406,6 +410,11 @@ TEST_F(SettingsConfig1Test, AnAbsentSignedAtPrintsNoDateLineAndSaysWhyRollbackCa
     state[QStringLiteral("anchors")] = QVariant::fromValue<quint32>(9);
     state[QStringLiteral("issuers")] = QVariant::fromValue<quint32>(3);
     state[QStringLiteral("replayRefusalActive")] = false; // and no signedAt key at all
+    // Named publisher, so the one absence under test is the DATE. Without it
+    // the same state would also be saying "more than one publisher", and the
+    // line count below would be measuring two things at once.
+    state[QStringLiteral("signer")] =
+        QStringLiteral("11223344556677889900aabbccddeeff00112233445566778899aabbccddeeff");
     gw.config[QStringLiteral("CscaAnchorState")] = state;
 
     SettingsDialog dlg(&gw);
@@ -430,6 +439,7 @@ TEST_F(SettingsConfig1Test, AnchorSummaryCountsAnchorsAndIssuersAndNeverSaysRoot
     gw.scriptedAnchorState.anchors = 412;
     gw.scriptedAnchorState.issuers = 78;
     gw.scriptedAnchorState.replayRefusalActive = true;
+    gw.scriptedAnchorState.signer = QStringLiteral("a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90");
     gw.scriptedAnchorState.signedAt = QDateTime(QDate(2026, 3, 14), QTime(10, 22), QTimeZone::UTC);
 
     const int fd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
@@ -445,6 +455,8 @@ TEST_F(SettingsConfig1Test, AnchorSummaryCountsAnchorsAndIssuersAndNeverSaysRoot
     EXPECT_TRUE(summary.contains(qtTrId("lc-settings-csca-rollback-on")));
     EXPECT_FALSE(summary.contains(QStringLiteral("root"), Qt::CaseInsensitive))
         << "the count includes CSCA link certificates, which are not roots: " << qPrintable(summary);
+    // Exactly one publisher was followed, so nothing is said about several.
+    EXPECT_FALSE(summary.contains(qtTrId("lc-settings-csca-state-publishers"))) << qPrintable(summary);
     EXPECT_EQ(cscaStatusText(dlg), qtTrId("lc-settings-csca-installed"));
 }
 
@@ -459,6 +471,7 @@ TEST_F(SettingsConfig1Test, AnUndatedListSaysRollbackCannotBeChecked)
     gw.scriptedAnchorState.anchors = 9;
     gw.scriptedAnchorState.issuers = 3;
     gw.scriptedAnchorState.replayRefusalActive = false; // and signedAt stays invalid
+    gw.scriptedAnchorState.signer = QStringLiteral("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
 
     const int fd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
     ASSERT_GE(fd, 0);
@@ -473,6 +486,109 @@ TEST_F(SettingsConfig1Test, AnUndatedListSaysRollbackCannotBeChecked)
     // stand-in, which would read as a real signing time.
     EXPECT_EQ(summary.count(QLatin1Char('\n')), 1)
         << "an undated list must not grow a date line: " << qPrintable(summary);
+}
+
+// The file the portal serves carries many lists, each with its own publisher.
+// When the agent has taken in more than one, there is no such thing as THE
+// publisher or THE date, and the agent says so by leaving both keys out rather
+// than picking one of them -- a specific false statement being worse than a
+// vague one. An empty line where a fingerprint used to stand says nothing at
+// all, so the summary has to say the true thing out loud.
+//
+// HOW MANY publishers is deliberately not on the wire: the record the property
+// is served from has no member able to carry a count, so a number here could
+// only be invented. `issuers` is not that number either -- it counts the
+// countries whose certificates are held, not the countries whose lists carried
+// them, and a real collection has far more of the first than of the second.
+TEST_F(SettingsConfig1Test, AnchorsFromSeveralPublishersSayThatInWords)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    QVariantMap state;
+    // The figures one real ICAO directory export actually leaves behind.
+    state[QStringLiteral("anchors")] = QVariant::fromValue<quint32>(903);
+    state[QStringLiteral("issuers")] = QVariant::fromValue<quint32>(146);
+    state[QStringLiteral("replayRefusalActive")] = true;
+    // No signer and no signedAt: more than one publisher was taken in.
+    gw.config[QStringLiteral("CscaAnchorState")] = state;
+
+    SettingsDialog dlg(&gw);
+    const QString summary = cscaSummaryText(dlg);
+    const QString several = qtTrId("lc-settings-csca-state-publishers");
+    ASSERT_NE(several, QStringLiteral("lc-settings-csca-state-publishers")) << "the catalogue did not load";
+    EXPECT_TRUE(summary.contains(several)) << qPrintable(summary);
+    // The counts that WERE sent still stand.
+    EXPECT_TRUE(summary.contains(QStringLiteral("903"))) << qPrintable(summary);
+    EXPECT_TRUE(summary.contains(QStringLiteral("146"))) << qPrintable(summary);
+    // A number nobody sent must not appear in the sentence about publishers --
+    // not the issuer count wearing a second hat, and not any other figure.
+    EXPECT_FALSE(several.contains(QRegularExpression(QStringLiteral("[0-9]"))))
+        << "a publisher count was invented: " << qPrintable(several);
+    // No date, and no blank line standing in for one.
+    EXPECT_FALSE(summary.contains(QStringLiteral("1970"))) << qPrintable(summary);
+    EXPECT_FALSE(summary.contains(QStringLiteral("\n\n"))) << "an empty line is not a sentence";
+    // Three lines: the counts, the publishers, and the rollback rule.
+    EXPECT_EQ(summary.count(QLatin1Char('\n')), 2) << qPrintable(summary);
+}
+
+// The mirror image, and the case that is every single published list: one
+// publisher, named, so nothing is said about several of them. The sentence is
+// a report of a state and not a permanent notice.
+TEST_F(SettingsConfig1Test, OnePublisherIsNotDescribedAsSeveral)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    QVariantMap state;
+    state[QStringLiteral("anchors")] = QVariant::fromValue<quint32>(94);
+    state[QStringLiteral("issuers")] = QVariant::fromValue<quint32>(94);
+    state[QStringLiteral("replayRefusalActive")] = true;
+    state[QStringLiteral("signer")] =
+        QStringLiteral("deadbeef00112233445566778899aabbccddeeff00112233445566778899aabb");
+    gw.config[QStringLiteral("CscaAnchorState")] = state;
+
+    SettingsDialog dlg(&gw);
+    const QString summary = cscaSummaryText(dlg);
+    EXPECT_FALSE(summary.contains(qtTrId("lc-settings-csca-state-publishers"))) << qPrintable(summary);
+}
+
+// Nothing is installed, so there is no publisher to be silent about either: the
+// "nothing installed" sentence stands alone, exactly as before.
+TEST_F(SettingsConfig1Test, NothingInstalledIsNotManyPublishers)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    gw.config[QStringLiteral("CscaAnchorState")] = QVariantMap();
+
+    SettingsDialog dlg(&gw);
+    EXPECT_EQ(cscaSummaryText(dlg), qtTrId("lc-settings-csca-state-none"));
+}
+
+// An accepted import answers with the same state the property carries, and the
+// summary has exactly one input either way -- so a collection just installed
+// must read the way the same collection reads after a restart. The absence that
+// carries the meaning has to survive the crossing: a signer the agent did not
+// send may not become an empty string that reads as one publisher.
+TEST_F(SettingsConfig1Test, AnAcceptedCollectionReadsTheWayTheStoredStateDoes)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    gw.scriptedAnchorState.anchors = 903;
+    gw.scriptedAnchorState.issuers = 146;
+    gw.scriptedAnchorState.replayRefusalActive = true;
+    // signer stays empty and signedAt invalid: the agent followed no single
+    // publisher, so it named none.
+
+    const int fd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
+    ASSERT_GE(fd, 0);
+    SettingsDialog dlg(&gw);
+    dlg.importMasterList(fd);
+    ::close(fd);
+
+    const QString summary = cscaSummaryText(dlg);
+    EXPECT_EQ(cscaStatusText(dlg), qtTrId("lc-settings-csca-installed"));
+    EXPECT_TRUE(summary.contains(qtTrId("lc-settings-csca-state-publishers"))) << qPrintable(summary);
+    EXPECT_TRUE(summary.contains(QStringLiteral("903"))) << qPrintable(summary);
+    EXPECT_FALSE(summary.contains(QStringLiteral("1970"))) << qPrintable(summary);
 }
 
 // "Strictly newer" admits no equality, so handing over the same file again is
@@ -636,13 +752,15 @@ TEST_F(SettingsConfig1Test, AMessageAppearingChangesNoSentenceThatWasAlreadyRigh
 
 // --- the shape a reader actually downloads -----------------------------------
 //
-// The dialog tells a reader to fetch the latest collection of eMRTD CSCA master
-// lists from the ICAO Public Key Directory. What that portal serves is an LDAP
-// interchange file (RFC 2849), and what is inside it is not one master list but
-// many, each signed by its own publisher. The importer installs ONE signed list
-// with ONE signer to pin, so a collection is not something it can accept -- and
-// the reader who followed the instruction exactly deserves to be told that in
-// those terms, not "choose a different file".
+// The dialog tells a reader to fetch the master-list download from the ICAO
+// Public Key Directory. What that portal serves is an LDAP interchange file
+// (RFC 2849), and what is inside it is not one master list but many, each
+// signed by its own publisher -- and that whole file is what the agent's import
+// now takes, in one action. So the collection is handed over like any other
+// choice. Deciding what counts as a master list is the agent's answer to give:
+// a copy of that judgement here would be a second parser to keep in step with
+// the real one, and the moment it fell behind it would refuse a file that
+// installs.
 
 namespace {
 
@@ -660,8 +778,8 @@ QByteArray ldifRecord(const QByteArray& attribute, const QByteArray& der)
 }
 
 /// A minimal CMS ContentInfo carrying id-signedData: outer SEQUENCE, then the
-/// OID. Enough to be recognised as one signed object, which is all the probe
-/// claims to see -- it never verifies anything, and must not.
+/// OID. Nothing here verifies it and nothing here may -- it stands in for the
+/// bytes a real record carries, and its only job is to be handed over intact.
 QByteArray signedDataObject(int padding)
 {
     QByteArray body = QByteArrayLiteral("\x06\x09\x2a\x86\x48\x86\xf7\x0d\x01\x07\x02");
@@ -688,56 +806,56 @@ QByteArray pkdCollection(int lists)
 
 } // namespace
 
-// The whole point: the reader downloaded the right file, and the sentence they
-// get back has to say so -- with the count, which is the evidence that it is a
-// COLLECTION rather than a list. And it must never reach the agent: the agent's
-// answer would be a correct but useless "not a master list", bought with an
-// authorization ceremony and one of its per-caller import allowances.
-TEST_F(SettingsConfig1Test, ThePkdCollectionIsNamedAsACollectionAndNeverDialledOut)
+// The reader downloads the collection because this dialog told them to, and the
+// agent installs it. Between those two facts there is nothing left for this
+// process to say: the file has to arrive, whole and unread, at the verb that
+// judges it. A refusal composed here would be this application arguing with
+// itself in front of a person who did exactly what it asked.
+TEST_F(SettingsConfig1Test, ThePkdCollectionReachesTheAgentRatherThanBeingRefusedHere)
 {
     FakeAgentGateway gw;
     gw.setPresence(librecelik::agent::PresenceState::Ready);
 
     QTemporaryDir dir(QStringLiteral("/var/tmp/lc-csca-XXXXXX"));
     ASSERT_TRUE(dir.isValid());
-    const QString path = writeMasterList(dir, QStringLiteral("icaopkd-002-complete.ldif"), pkdCollection(28));
+    const QByteArray collection = pkdCollection(28);
+    const QString path = writeMasterList(dir, QStringLiteral("icaopkd-002-complete-000284.ldif"), collection);
     ASSERT_FALSE(path.isEmpty());
 
     SettingsDialog dlg(&gw);
     dlg.importMasterListFile(path);
 
-    EXPECT_TRUE(gw.importedFds.isEmpty()) << "a collection the agent could only refuse must not cost an "
-                                             "authorization ceremony to be refused";
-    const QString status = cscaStatusText(dlg);
-    EXPECT_EQ(status, qtTrId("lc-settings-csca-ldif-collection").arg(28));
-    EXPECT_TRUE(status.contains(QStringLiteral("28"))) << qPrintable(status);
-    EXPECT_NE(status, qtTrId("lc-settings-csca-refused")) << "the collection is a different situation from a file "
-                                                             "that is not a master list, and reads differently";
-    EXPECT_EQ(cscaSummaryText(dlg), qtTrId("lc-settings-csca-state-none")) << "a refusal installs nothing";
+    ASSERT_EQ(gw.importedBytes.size(), 1) << "the collection was refused without the agent ever seeing it";
+    EXPECT_EQ(gw.importedBytes.constFirst(), collection)
+        << "the agent reads from the descriptor's own position, so nothing here may consume it first";
+    EXPECT_EQ(cscaStatusText(dlg), qtTrId("lc-settings-csca-installed"));
 }
 
-// A `.ldif` extension is a hint and not a contract, in both directions: the
-// shape decides. A collection named `.ml` is still a collection.
-TEST_F(SettingsConfig1Test, TheShapeDecidesNotTheExtension)
+// A `.ldif` extension is a hint and not a contract, and neither is `.ml`. The
+// dialog reads neither, which is the same rule as before with the exception
+// taken out of it.
+TEST_F(SettingsConfig1Test, TheExtensionDecidesNothingInEitherDirection)
 {
     FakeAgentGateway gw;
     gw.setPresence(librecelik::agent::PresenceState::Ready);
 
     QTemporaryDir dir(QStringLiteral("/var/tmp/lc-csca-XXXXXX"));
     ASSERT_TRUE(dir.isValid());
-    const QString path = writeMasterList(dir, QStringLiteral("looks-like-a-list.ml"), pkdCollection(3));
+    const QByteArray collection = pkdCollection(3);
+    const QString path = writeMasterList(dir, QStringLiteral("looks-like-a-list.ml"), collection);
     ASSERT_FALSE(path.isEmpty());
 
     SettingsDialog dlg(&gw);
     dlg.importMasterListFile(path);
 
-    EXPECT_TRUE(gw.importedFds.isEmpty());
-    EXPECT_EQ(cscaStatusText(dlg), qtTrId("lc-settings-csca-ldif-collection").arg(3));
+    ASSERT_EQ(gw.importedBytes.size(), 1);
+    EXPECT_EQ(gw.importedBytes.constFirst(), collection);
 }
 
-// The other half of the same rule: a file that does NOT parse as LDIF goes to
-// the agent exactly as before, whatever it is called. The trust boundary is the
-// agent's verb, and this dialog must not start deciding what a master list is.
+// The other half, and the one that always held: a file that does not parse as
+// LDIF goes to the agent exactly as before, whatever it is called. The trust
+// boundary is the agent's verb, and this dialog does not decide what a master
+// list is.
 TEST_F(SettingsConfig1Test, AFileThatIsNotLdifStillReachesTheAgentWhateverItIsNamed)
 {
     FakeAgentGateway gw;
@@ -753,16 +871,19 @@ TEST_F(SettingsConfig1Test, AFileThatIsNotLdifStillReachesTheAgentWhateverItIsNa
     dlg.importMasterListFile(path);
 
     ASSERT_EQ(gw.importedBytes.size(), 1) << "the agent decides what a master list is, not this dialog";
-    EXPECT_EQ(gw.importedBytes.constFirst(), listBytes)
-        << "the probe must not consume the descriptor the agent then reads from";
+    EXPECT_EQ(gw.importedBytes.constFirst(), listBytes);
 }
 
-// An LDIF with nothing signed in it is a third situation, and it reads as one:
-// neither "not a master list" nor "a collection we cannot install yet".
-TEST_F(SettingsConfig1Test, AnLdifCarryingNoSignedObjectIsSaidSeparately)
+// An LDIF that carries nothing installable is a refusal like any other, and the
+// agent makes it: it takes what verifies, and an import that admits no list at
+// all leaves the store untouched. Answering it here would cost the reader a
+// weaker reason than the one the agent already has for them -- and one more
+// authorization prompt is a fair price for the agent's own words.
+TEST_F(SettingsConfig1Test, AnLdifCarryingNoSignedObjectIsTheAgentsRefusalToMake)
 {
     FakeAgentGateway gw;
     gw.setPresence(librecelik::agent::PresenceState::Ready);
+    gw.nextImportRefusal = LibreSCRS::AgentClient::SyncError::CommunicationError;
 
     QTemporaryDir dir(QStringLiteral("/var/tmp/lc-csca-XXXXXX"));
     ASSERT_TRUE(dir.isValid());
@@ -773,104 +894,39 @@ TEST_F(SettingsConfig1Test, AnLdifCarryingNoSignedObjectIsSaidSeparately)
     SettingsDialog dlg(&gw);
     dlg.importMasterListFile(path);
 
-    EXPECT_TRUE(gw.importedFds.isEmpty());
-    const QString status = cscaStatusText(dlg);
-    EXPECT_EQ(status, qtTrId("lc-settings-csca-ldif-empty"));
-    EXPECT_NE(status, qtTrId("lc-settings-csca-ldif-collection").arg(0));
-    EXPECT_NE(status, qtTrId("lc-settings-csca-refused"));
+    ASSERT_EQ(gw.importedBytes.size(), 1) << "the agent refuses an empty collection itself, and says why";
+    EXPECT_EQ(cscaStatusText(dlg), qtTrId("lc-settings-csca-refused"));
+    EXPECT_EQ(cscaSummaryText(dlg), qtTrId("lc-settings-csca-state-none")) << "a refusal installs nothing";
 }
 
-// The three refusals a reader can meet are three different sentences. Asserting
-// they DIFFER is the check that survives a rewording of any one of them.
-TEST_F(SettingsConfig1Test, TheThreeRefusalsDoNotShareASentence)
+// Nothing in this dialog may still describe a collection as something that
+// cannot be installed. A sentence that outlives the rule it explained is worse
+// than no sentence: it is read as current.
+TEST_F(SettingsConfig1Test, NoSentenceStillCallsACollectionUninstallable)
 {
-    const QString refused = qtTrId("lc-settings-csca-refused");
-    const QString collection = qtTrId("lc-settings-csca-ldif-collection").arg(28);
-    const QString empty = qtTrId("lc-settings-csca-ldif-empty");
-
-    EXPECT_NE(refused, collection);
-    EXPECT_NE(refused, empty);
-    EXPECT_NE(collection, empty);
-    for (const QString& sentence : {refused, collection, empty}) {
-        EXPECT_FALSE(sentence.startsWith(QStringLiteral("lc-settings-")))
-            << "the catalogue did not load, so these are ids and not sentences";
-        // "Choose a different file" was the whole of the old answer, and it is
-        // what sent a reader who had downloaded exactly the right thing looking
-        // for a different one.
-        EXPECT_FALSE(sentence.contains(QStringLiteral("Choose a different file"))) << qPrintable(sentence);
+    for (const QString& id :
+         {QStringLiteral("lc-settings-csca-ldif-collection"), QStringLiteral("lc-settings-csca-ldif-empty")}) {
+        // qtTrId() answers with the bare id when no <message> carries it, which
+        // is exactly what a removed catalogue entry looks like.
+        EXPECT_EQ(qtTrId(id.toUtf8().constData()), id) << "the retired sentence is still in the catalogue";
     }
 }
 
-// --- the probe itself, at the edges RFC 2849 actually has ---------------------
-
-TEST_F(SettingsConfig1Test, ProbeUnfoldsContinuationLinesBeforeDecoding)
+// The refusals a reader can meet are separate sentences. Asserting they DIFFER
+// is the check that survives a rewording of any one of them.
+TEST_F(SettingsConfig1Test, TheRefusalsDoNotShareASentence)
 {
-    using namespace librecelik::settings;
-    // The base64 of a real list spans hundreds of folded lines; a probe that
-    // decoded them one at a time would see hundreds of unrecognisable
-    // fragments and count nothing.
-    const auto probe = probeMasterListFile(pkdCollection(2));
-    EXPECT_EQ(probe.kind, MasterListFileKind::LdifCollection);
-    EXPECT_EQ(probe.signedObjects, 2);
-}
+    const QString refused = qtTrId("lc-settings-csca-refused");
+    const QString replayed = qtTrId("lc-settings-csca-replayed");
+    const QString unreadable = qtTrId("lc-settings-csca-unreadable");
 
-TEST_F(SettingsConfig1Test, ProbeReadsCrlfAndCommentsAndAMissingFinalNewline)
-{
-    using namespace librecelik::settings;
-    QByteArray ldif = QByteArrayLiteral("# exported by the portal\r\nversion: 1\r\n\r\ndn: c=RS,dc=data\r\nc: RS");
-    const auto probe = probeMasterListFile(ldif);
-    EXPECT_EQ(probe.kind, MasterListFileKind::LdifWithoutLists);
-    EXPECT_EQ(probe.signedObjects, 0);
-}
-
-TEST_F(SettingsConfig1Test, ProbeCountsTheBerIndefiniteLengthEncodingToo)
-{
-    using namespace librecelik::settings;
-    // One of the lists in the real collection is BER, not DER: `30 80` with the
-    // end-of-contents octets closing it. Counting only the definite form would
-    // undercount the collection by one and put a wrong number on screen.
-    QByteArray ber;
-    ber += char(0x30);
-    ber += char(0x80);
-    ber += QByteArrayLiteral("\x06\x09\x2a\x86\x48\x86\xf7\x0d\x01\x07\x02");
-    ber += QByteArrayLiteral("\xa0\x80payload\x00\x00");
-    ber += QByteArrayLiteral("\x00\x00");
-
-    QByteArray ldif = QByteArrayLiteral("dn: o=Master Lists,c=RS\n");
-    ldif += ldifRecord(QByteArrayLiteral("pkdMasterListContent;binary"), ber);
-    const auto probe = probeMasterListFile(ldif);
-    EXPECT_EQ(probe.kind, MasterListFileKind::LdifCollection);
-    EXPECT_EQ(probe.signedObjects, 1);
-}
-
-TEST_F(SettingsConfig1Test, ProbeCountsSignedObjectsStructurallyNotByAttributeName)
-{
-    using namespace librecelik::settings;
-    // The real collection carries a base64 `cn` beside its 28 lists. Counting
-    // every base64 value would answer 29 and print a number nobody can check;
-    // counting by attribute name would break the day the publisher renames it.
-    QByteArray ldif = QByteArrayLiteral("dn: o=Master Lists,c=RS\n");
-    ldif += ldifRecord(QByteArrayLiteral("cn"), QByteArrayLiteral("  a name needing base64  "));
-    ldif += ldifRecord(QByteArrayLiteral("someFutureAttributeName;binary"), signedDataObject(4));
-    const auto probe = probeMasterListFile(ldif);
-    EXPECT_EQ(probe.kind, MasterListFileKind::LdifCollection);
-    EXPECT_EQ(probe.signedObjects, 1) << "the base64 cn is not a signed object and must not be counted";
-}
-
-TEST_F(SettingsConfig1Test, ProbeRefusesToCallBinaryOrDnLessTextLdif)
-{
-    using namespace librecelik::settings;
-    // A master list is binary and full of zero octets.
-    EXPECT_EQ(probeMasterListFile(QByteArrayLiteral("\x30\x82\x04\x00\x06\x09\x2a\x86")).kind,
-              MasterListFileKind::NotLdif);
-    // Text with colons in it is not a directory export.
-    EXPECT_EQ(probeMasterListFile(QByteArrayLiteral("Subject: hello\nFrom: nobody\n")).kind,
-              MasterListFileKind::NotLdif)
-        << "no dn, so this is some other colon-separated text";
-    // PEM is text, has no colon-separated attributes at all.
-    EXPECT_EQ(probeMasterListFile(QByteArrayLiteral("-----BEGIN CMS-----\nMIIB\n-----END CMS-----\n")).kind,
-              MasterListFileKind::NotLdif);
-    EXPECT_EQ(probeMasterListFile(QByteArray()).kind, MasterListFileKind::NotLdif);
+    EXPECT_NE(refused, replayed);
+    EXPECT_NE(refused, unreadable);
+    EXPECT_NE(replayed, unreadable);
+    for (const QString& sentence : {refused, replayed, unreadable}) {
+        EXPECT_FALSE(sentence.startsWith(QStringLiteral("lc-settings-")))
+            << "the catalogue did not load, so these are ids and not sentences";
+    }
 }
 
 // The Trust tab goes dark with no agent, and the import must observe the same
@@ -1057,6 +1113,11 @@ TEST_F(SettingsConfig1Test, TheTrustTabSaysWhatAMasterListIsAndWhereItComesFrom)
     // screen and type into a browser.
     EXPECT_TRUE(text.contains(QStringLiteral("href=\"https://pkddownload.icao.int/\""))) << qPrintable(text);
     EXPECT_TRUE(text.contains(QStringLiteral(">https://pkddownload.icao.int/<"))) << qPrintable(text);
+    // WHICH file, by the name it arrives under. The portal offers several
+    // downloads and only one of them is the master-list collection this import
+    // takes; naming the address without naming the file leaves the last and
+    // easiest step to guesswork.
+    EXPECT_TRUE(text.contains(QStringLiteral("icaopkd-002-complete"))) << qPrintable(text);
     EXPECT_TRUE(help->openExternalLinks());
     EXPECT_FALSE(text.contains(QStringLiteral("%1")))
         << "an unfilled placeholder reached the screen: " << qPrintable(text);
@@ -1067,6 +1128,20 @@ TEST_F(SettingsConfig1Test, TheTrustTabSaysWhatAMasterListIsAndWhereItComesFrom)
     const QString whole = what->text() + help->text() + manual->text();
     EXPECT_EQ(whole.count(QStringLiteral("http")), 2)
         << "one address, named twice in one anchor tag: " << qPrintable(whole);
+}
+
+// The instruction names a `.ldif` file, so the chooser that opens on the next
+// click has to offer one. A filter that hides the file the sentence above just
+// told a reader to fetch is the same refusal as before, moved into the file
+// dialog.
+TEST_F(SettingsConfig1Test, TheFileChooserOffersTheExtensionThePortalServes)
+{
+    const QString filter = qtTrId("lc-settings-csca-import-filter");
+    ASSERT_NE(filter, QStringLiteral("lc-settings-csca-import-filter")) << "the catalogue did not load";
+    EXPECT_TRUE(filter.contains(QStringLiteral("*.ldif"))) << qPrintable(filter);
+    // And the single-list extensions stay: a list published on its own is still
+    // a list this import takes.
+    EXPECT_TRUE(filter.contains(QStringLiteral("*.ml"))) << qPrintable(filter);
 }
 
 // The three sentences carry three different kinds of information, and the one
@@ -1192,6 +1267,8 @@ TEST_F(SettingsConfig1Test, TheTrustTabRendersWholeAtTheDialogMinimumSize)
     state[QStringLiteral("anchors")] = QVariant::fromValue<quint32>(412);
     state[QStringLiteral("issuers")] = QVariant::fromValue<quint32>(78);
     state[QStringLiteral("replayRefusalActive")] = true;
+    state[QStringLiteral("signer")] =
+        QStringLiteral("c0ffee11223344556677889900aabbccddeeff00112233445566778899aabbcc");
     state[QStringLiteral("signedAt")] =
         QVariant::fromValue<qint64>(QDateTime(QDate(2026, 3, 14), QTime(10, 22), QTimeZone::UTC).toSecsSinceEpoch());
     gw.config[QStringLiteral("CscaAnchorState")] = state;

@@ -1216,8 +1216,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-settings-csca-import-title");
     //% "Master lists (*.ml *.mls);;All files (*)"
     QT_TRID_NOOP("lc-settings-csca-import-filter");
-    //% "What is installed now cannot be read from here. Import a master list to see what the agent holds afterwards."
-    QT_TRID_NOOP("lc-settings-csca-state-unknown");
+    //% "Nothing is installed: there are no country signing anchors. Import a master list to install them."
+    QT_TRID_NOOP("lc-settings-csca-state-none");
     //% "Installed anchors: %1. Issuing countries: %2."
     QT_TRID_NOOP("lc-settings-csca-state-anchors");
     //% "List signed: %1"

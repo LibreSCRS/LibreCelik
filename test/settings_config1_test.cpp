@@ -323,24 +323,92 @@ TEST_F(SettingsConfig1Test, AnUnopenableFileIsSaidWithoutDiallingTheAgent)
     EXPECT_EQ(cscaStatusText(dlg), qtTrId("lc-settings-csca-unreadable"));
 }
 
-// The limitation this dialog must not paper over: `Config1.CscaAnchorState` is
-// not demarshaled by the client library, so a dialog that has just opened
-// CANNOT ask what is already installed. Rendering "0 anchors" there would be a
-// reading nobody took, and a reader would act on it.
-TEST_F(SettingsConfig1Test, AnchorSummaryDoesNotInventAReadingItNeverTook)
+// An EMPTY state map is the agent saying nothing has been imported -- and it
+// is also what a client sees when the agent discarded a stale record because
+// its anchor cache had been wiped. The two cannot be told apart from here, and
+// both are honestly "nothing installed"; inventing a third state would be a
+// claim nobody measured.
+TEST_F(SettingsConfig1Test, AnEmptyAnchorStateSaysNothingIsInstalled)
 {
     FakeAgentGateway gw;
     gw.setPresence(librecelik::agent::PresenceState::Ready);
-    // Even with the agent serving the property, the client library hands it
-    // over undemarshaled -- so a snapshot carrying the key changes nothing.
-    gw.config[QStringLiteral("CscaAnchorState")] = QVariant();
+    gw.config[QStringLiteral("CscaAnchorState")] = QVariantMap();
 
     SettingsDialog dlg(&gw);
     const QString summary = cscaSummaryText(dlg);
-    EXPECT_EQ(summary, qtTrId("lc-settings-csca-state-unknown"));
+    EXPECT_EQ(summary, qtTrId("lc-settings-csca-state-none"));
     EXPECT_FALSE(summary.contains(QRegularExpression(QStringLiteral("[0-9]"))))
-        << "a count nobody asked for is not a reading: " << qPrintable(summary);
+        << "a count nobody was given is not a reading: " << qPrintable(summary);
     EXPECT_TRUE(cscaStatusText(dlg).isEmpty()) << "no import has happened, so there is no outcome to report";
+}
+
+// The sentence this replaces said what is installed CANNOT be read from here.
+// It can now, so nothing may still say otherwise -- an application that keeps
+// pleading ignorance after it has been told is worse than one that never
+// asked.
+TEST_F(SettingsConfig1Test, TheDialogNoLongerSaysTheStateCannotBeRead)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    SettingsDialog dlg(&gw);
+
+    // qtTrId() answers with the bare id when no <message> carries it, which is
+    // exactly what a removed catalogue entry looks like -- so the id itself is
+    // what must not be on screen either.
+    EXPECT_FALSE(cscaSummaryText(dlg).contains(QStringLiteral("cannot be read"), Qt::CaseInsensitive));
+    EXPECT_FALSE(cscaSummaryText(dlg).contains(QStringLiteral("lc-settings-csca-state-unknown")));
+}
+
+// What the agent already holds, before this dialog has imported anything. The
+// property is read-only and served without an import, which is the whole
+// reason the sentence above could be replaced.
+TEST_F(SettingsConfig1Test, TheDialogSaysWhatTheAgentAlreadyHoldsBeforeAnyImport)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    QVariantMap state;
+    state[QStringLiteral("anchors")] = QVariant::fromValue<quint32>(412);
+    state[QStringLiteral("issuers")] = QVariant::fromValue<quint32>(78);
+    state[QStringLiteral("replayRefusalActive")] = true;
+    state[QStringLiteral("signedAt")] =
+        QVariant::fromValue<qint64>(QDateTime(QDate(2026, 3, 14), QTime(10, 22), QTimeZone::UTC).toSecsSinceEpoch());
+    gw.config[QStringLiteral("CscaAnchorState")] = state;
+
+    SettingsDialog dlg(&gw);
+    const QString summary = cscaSummaryText(dlg);
+    EXPECT_TRUE(summary.contains(QStringLiteral("412"))) << qPrintable(summary);
+    EXPECT_TRUE(summary.contains(QStringLiteral("78"))) << qPrintable(summary);
+    EXPECT_TRUE(summary.contains(QStringLiteral("2026-03-14"))) << "the list's own date: " << qPrintable(summary);
+    EXPECT_TRUE(summary.contains(qtTrId("lc-settings-csca-rollback-on")));
+    // ANCHORS, never roots: the count includes CSCA link certificates.
+    EXPECT_FALSE(summary.contains(QStringLiteral("root"), Qt::CaseInsensitive)) << qPrintable(summary);
+    EXPECT_TRUE(cscaStatusText(dlg).isEmpty()) << "reading a state is not an import outcome";
+}
+
+// An optional key the agent did not send is ABSENT, never zero. `signedAt`
+// absent means the accepted list carried no CMS signing time -- so there is no
+// date to print, and no later list can be checked for rolling the anchors
+// back. Printing an epoch-valued stand-in would read as a list signed in 1970;
+// printing an empty line would read as a date nobody could be bothered with.
+TEST_F(SettingsConfig1Test, AnAbsentSignedAtPrintsNoDateLineAndSaysWhyRollbackCannotBeChecked)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    QVariantMap state;
+    state[QStringLiteral("anchors")] = QVariant::fromValue<quint32>(9);
+    state[QStringLiteral("issuers")] = QVariant::fromValue<quint32>(3);
+    state[QStringLiteral("replayRefusalActive")] = false; // and no signedAt key at all
+    gw.config[QStringLiteral("CscaAnchorState")] = state;
+
+    SettingsDialog dlg(&gw);
+    const QString summary = cscaSummaryText(dlg);
+    EXPECT_TRUE(summary.contains(qtTrId("lc-settings-csca-rollback-off"))) << qPrintable(summary);
+    EXPECT_FALSE(summary.contains(qtTrId("lc-settings-csca-rollback-on")));
+    EXPECT_FALSE(summary.contains(QStringLiteral("1970")))
+        << "an absent signing time printed as the epoch: " << qPrintable(summary);
+    // Two lines: the counts, and why rollback cannot be checked. A date line
+    // would be a third, and an empty one would still be a line.
+    EXPECT_EQ(summary.count(QLatin1Char('\n')), 1) << "an undated list grew a date line: " << qPrintable(summary);
 }
 
 // What an accepted list is worth saying: how many ANCHORS -- never "roots",
@@ -419,8 +487,9 @@ TEST_F(SettingsConfig1Test, ReimportingTheSameListSaysItIsAlreadyInstalled)
     EXPECT_FALSE(status.contains(QStringLiteral("MasterListReplayed")))
         << "a wire name is not something a reader can act on";
     // Nothing was installed and nothing already held was given up, so the
-    // summary must not start claiming a state this dialog never read.
-    EXPECT_EQ(cscaSummaryText(dlg), qtTrId("lc-settings-csca-state-unknown"));
+    // account of what the agent holds is exactly what it was before the
+    // attempt -- here, nothing.
+    EXPECT_EQ(cscaSummaryText(dlg), qtTrId("lc-settings-csca-state-none"));
 }
 
 TEST_F(SettingsConfig1Test, ARefusedAuthorizationForAnImportIsSaidInWords)
@@ -454,7 +523,7 @@ TEST_F(SettingsConfig1Test, AFileTheAgentWillNotInstallOffersADifferentFile)
     ::close(fd);
 
     EXPECT_EQ(cscaStatusText(dlg), qtTrId("lc-settings-csca-refused"));
-    EXPECT_EQ(cscaSummaryText(dlg), qtTrId("lc-settings-csca-state-unknown"));
+    EXPECT_EQ(cscaSummaryText(dlg), qtTrId("lc-settings-csca-state-none"));
 }
 
 // The Trust tab goes dark with no agent, and the import must observe the same
@@ -472,7 +541,7 @@ TEST_F(SettingsConfig1Test, ImportDoesNothingWhileTheAgentIsAway)
     dlg.importMasterListFile(path);
 
     EXPECT_TRUE(gw.importedFds.isEmpty());
-    EXPECT_EQ(cscaSummaryText(dlg), qtTrId("lc-settings-csca-state-unknown"));
+    EXPECT_EQ(cscaSummaryText(dlg), qtTrId("lc-settings-csca-state-none"));
 }
 
 // The import affordance is on the Trust tab, where the anchors it installs are

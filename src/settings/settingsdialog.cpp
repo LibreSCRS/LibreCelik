@@ -33,6 +33,7 @@
 #include <QPushButton>
 #include <QSettings>
 #include <QTabWidget>
+#include <QTimeZone>
 #include <QUrl>
 #include <QVBoxLayout>
 
@@ -52,6 +53,17 @@ constexpr QLatin1String kDefaultLocation{"DefaultLocation"};
 constexpr QLatin1String kTsaUrls{"TsaUrls"};
 constexpr QLatin1String kLastTsaUrl{"LastTsaUrl"};
 constexpr QLatin1String kTslSources{"TslSources"};
+constexpr QLatin1String kCscaAnchorState{"CscaAnchorState"};
+
+// The members of the `CscaAnchorState` dictionary, in the wire's own spelling.
+// This dialog reads the DICTIONARY rather than the client's value struct
+// because an optional member the agent did not send arrives as an ABSENT KEY,
+// and the struct would zero it — which is the difference between "the accepted
+// list carried no signing time" and "the list was signed on 1970-01-01".
+constexpr QLatin1String kCscaAnchors{"anchors"};
+constexpr QLatin1String kCscaIssuers{"issuers"};
+constexpr QLatin1String kCscaReplayRefusalActive{"replayRefusalActive"};
+constexpr QLatin1String kCscaSignedAt{"signedAt"};
 
 // The tabs whose content the agent owns; the General tab is this process's own
 // and stays usable with no agent at all.
@@ -106,6 +118,27 @@ QString uiLevelToken(const QString& wireToken)
     if (wireToken == QStringLiteral("b-lta"))
         return QStringLiteral("B_LTA");
     return QStringLiteral("B_B");
+}
+
+/// The reply an accepted import answered with, spelled into the same shape the
+/// agent's read-only property carries — so the summary has exactly ONE input
+/// to render and cannot come to say two different things depending on how the
+/// state was learned.
+///
+/// The absent-never-zero rule survives the crossing: an invalid QDateTime
+/// becomes a MISSING key, never an epoch-valued stand-in. The three members
+/// above it are always written, so an accepted import can never produce the
+/// empty map that means "nothing installed".
+QVariantMap anchorStateAsMap(const LibreSCRS::AgentClient::CscaAnchorState& state)
+{
+    QVariantMap map;
+    map.insert(kCscaAnchors, state.anchors);
+    map.insert(kCscaIssuers, state.issuers);
+    map.insert(kCscaReplayRefusalActive, state.replayRefusalActive);
+    if (state.signedAt.isValid()) {
+        map.insert(kCscaSignedAt, state.signedAt.toSecsSinceEpoch());
+    }
+    return map;
 }
 
 } // namespace
@@ -379,7 +412,7 @@ void SettingsDialog::importMasterList(int masterListFd)
 
     const auto imported = gateway->importCscaMasterList(masterListFd);
     if (imported.has_value()) {
-        cscaState = *imported;
+        cscaState = anchorStateAsMap(*imported);
         cscaOutcome = CscaImportOutcome::Installed;
     } else {
         // A refusal installed nothing and gave up nothing already held, so
@@ -436,29 +469,42 @@ void SettingsDialog::onCscaImportRequested()
 
 void SettingsDialog::renderCscaState()
 {
-    if (cscaState.has_value()) {
-        const LibreSCRS::AgentClient::CscaAnchorState& state = *cscaState;
+    if (cscaState.isEmpty()) {
+        // Nothing has been imported — or the agent threw away a record that no
+        // longer matched its anchor cache. Indistinguishable from here, and
+        // both are honestly nothing installed.
+        cscaSummaryLabel->setText(qtTrId("lc-settings-csca-state-none"));
+    } else {
         QStringList lines;
+        // A count is printed only where the agent SENT one. An absent member
+        // is absent, never zero, and "Installed anchors: 0" over a state that
+        // named no count is a reading nobody took.
+        //
         // ANCHORS, never "roots": the count includes CSCA link certificates,
         // which are anchors like any other and are not self-signed roots.
-        lines << qtTrId("lc-settings-csca-state-anchors").arg(state.anchors).arg(state.issuers);
-        if (state.signedAt.isValid()) {
-            // Only when the list carried one. CMS permits an absent signing
-            // time, and an epoch-valued stand-in would read as a real date.
-            // Written as an ISO date in UTC: the stamp belongs to the
+        if (cscaState.contains(kCscaAnchors)) {
+            lines << qtTrId("lc-settings-csca-state-anchors")
+                         .arg(cscaState.value(kCscaAnchors).toUInt())
+                         .arg(cscaState.value(kCscaIssuers).toUInt());
+        }
+        if (cscaState.contains(kCscaSignedAt)) {
+            // Only when the accepted list carried one. CMS permits an absent
+            // signing time, the agent sends no epoch sentinel for it, and a
+            // zero read back as a date would put 1970 on screen as a real
+            // stamp. Written as an ISO date in UTC: the stamp belongs to the
             // publisher, and a local-time rendering can move it by a day.
-            lines << qtTrId("lc-settings-csca-state-signed").arg(state.signedAt.toUTC().date().toString(Qt::ISODate));
+            const QDateTime signedAt =
+                QDateTime::fromSecsSinceEpoch(cscaState.value(kCscaSignedAt).toLongLong(), QTimeZone::UTC);
+            lines << qtTrId("lc-settings-csca-state-signed").arg(signedAt.date().toString(Qt::ISODate));
         }
         // The FALSE is the value worth surfacing: staying silent leaves a
         // reader unable to tell "a later list that is not newer will be
-        // refused" from "that cannot be checked at all".
-        lines << (state.replayRefusalActive ? qtTrId("lc-settings-csca-rollback-on")
-                                            : qtTrId("lc-settings-csca-rollback-off"));
+        // refused" from "that cannot be checked at all". An absent member
+        // reads as false here, which is the only direction a missing key may
+        // move this sentence — it can withhold a guarantee, never invent one.
+        lines << (cscaState.value(kCscaReplayRefusalActive).toBool() ? qtTrId("lc-settings-csca-rollback-on")
+                                                                     : qtTrId("lc-settings-csca-rollback-off"));
         cscaSummaryLabel->setText(lines.join(QLatin1Char('\n')));
-    } else {
-        // NOT ASKED — see the member's own comment. Counts here would be a
-        // reading nobody took.
-        cscaSummaryLabel->setText(qtTrId("lc-settings-csca-state-unknown"));
     }
 
     QString status;
@@ -518,8 +564,15 @@ void SettingsDialog::loadConfig()
     defaultLocationEdit->setText(config.value(kDefaultLocation).toString());
     lastTsaValue->setText(config.value(kLastTsaUrl).toString());
 
+    // What the agent HOLDS in country-signing anchors, read like any other
+    // setting. It is served read-only and without an import having happened,
+    // which is what lets the Trust tab account for the anchors on open instead
+    // of saying it cannot know.
+    cscaState = config.value(kCscaAnchorState).toMap();
+
     populateTsaList();
     populateTlList();
+    renderCscaState();
 }
 
 void SettingsDialog::applyPresence()

@@ -1065,6 +1065,10 @@
         <source>Travel Document Verification</source>
         <translation>Provera podataka putne isprave</translation>
     </message>
+    <message id="lc-settings-csca-state-none">
+        <source>Nothing is installed: there are no country signing anchors. Import a master list to install them.</source>
+        <translation>Ništa nije instalirano: nema sidara državnih izdavalaca. Uvezite master listu da biste ih instalirali.</translation>
+    </message>
     <message id="lc-annex-verification">
         <source>Additional Data Verification</source>
         <translation>Provera dodatnih podataka</translation>
@@ -1501,10 +1505,6 @@
     <message id="lc-settings-csca-import-filter">
         <source>Master lists (*.ml *.mls);;All files (*)</source>
         <translation>Master liste (*.ml *.mls);;Sve datoteke (*)</translation>
-    </message>
-    <message id="lc-settings-csca-state-unknown">
-        <source>What is installed now cannot be read from here. Import a master list to see what the agent holds afterwards.</source>
-        <translation>Šta je sada instalirano ne može da se pročita odavde. Uvezite master listu da biste videli šta agent nakon toga sadrži.</translation>
     </message>
     <message id="lc-settings-csca-state-anchors">
         <source>Installed anchors: %1. Issuing countries: %2.</source>

@@ -52,9 +52,9 @@ class AgentGateway;
 ///       posture, only stronger: an import does not name a place anchors may
 ///       come from, it INSTALLS the anchors travel documents are accepted or
 ///       refused against. It happens on a click, its refusal is rendered once,
-///       and it is never retried. What is already installed cannot be read
-///       back — see `cscaState` for why the Trust tab says so rather than
-///       showing a count it never took.
+///       and it is never retried. What is already installed IS readable — the
+///       agent serves it as a read-only property — so the Trust tab accounts
+///       for it on open, without an import having happened. See `cscaState`.
 class SettingsDialog : public QDialog
 {
     Q_OBJECT
@@ -138,16 +138,25 @@ private:
     /// means there has not been one, and nothing is said about it.
     enum class CscaImportOutcome { None, Installed, Replayed, Unauthorized, Refused, Unreadable };
     CscaImportOutcome cscaOutcome = CscaImportOutcome::None;
-    /// The anchor state an ACCEPTED import answered with — the only way this
-    /// dialog ever learns one.
+    /// What the agent holds in country-signing anchors, in the shape
+    /// `configSnapshot()["CscaAnchorState"]` carries it. Read on open and
+    /// refreshed with every snapshot; an accepted import replaces it with the
+    /// state that import answered with, spelled into the same shape.
     ///
-    /// Disengaged means NOT ASKED, never "nothing installed". The client
-    /// library does not demarshal `Config1.CscaAnchorState`, so a dialog that
-    /// has just opened cannot read what the agent already holds; rendering
-    /// zeros there would be a reading nobody took, and a reader would act on
-    /// it. A refusal leaves this exactly as it was: nothing was installed and
-    /// nothing already held was given up.
-    std::optional<LibreSCRS::AgentClient::CscaAnchorState> cscaState;
+    /// A MAP rather than the client's `CscaAnchorState` value struct, and that
+    /// is the whole point: an optional member the agent did not send is an
+    /// ABSENT KEY, while the struct would zero it. Only the map can tell "the
+    /// accepted list carried no signing time" from "signed on 1970-01-01".
+    ///
+    /// EMPTY means nothing has been imported — and it is equally what a client
+    /// sees when the agent discarded a stale record because its anchor cache
+    /// had been wiped. Those two cannot be told apart from here, and both are
+    /// honestly "nothing installed"; a third state this dialog cannot
+    /// distinguish would be a claim nobody measured.
+    ///
+    /// A refused import leaves this exactly as it was: nothing was installed
+    /// and nothing already held was given up.
+    QVariantMap cscaState;
     /// True while a Save/restore is writing: the `configChanged` each write
     /// announces must not re-read the snapshot into the controls mid-run.
     bool writeInFlight = false;

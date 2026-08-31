@@ -1065,6 +1065,10 @@
         <source>Travel Document Verification</source>
         <translation>Travel Document Verification</translation>
     </message>
+    <message id="lc-settings-csca-state-none">
+        <source>Nothing is installed: there are no country signing anchors. Import a master list to install them.</source>
+        <translation>Nothing is installed: there are no country signing anchors. Import a master list to install them.</translation>
+    </message>
     <message id="lc-annex-verification">
         <source>Additional Data Verification</source>
         <translation>Additional Data Verification</translation>
@@ -1501,10 +1505,6 @@
     <message id="lc-settings-csca-import-filter">
         <source>Master lists (*.ml *.mls);;All files (*)</source>
         <translation>Master lists (*.ml *.mls);;All files (*)</translation>
-    </message>
-    <message id="lc-settings-csca-state-unknown">
-        <source>What is installed now cannot be read from here. Import a master list to see what the agent holds afterwards.</source>
-        <translation>What is installed now cannot be read from here. Import a master list to see what the agent holds afterwards.</translation>
     </message>
     <message id="lc-settings-csca-state-anchors">
         <source>Installed anchors: %1. Issuing countries: %2.</source>

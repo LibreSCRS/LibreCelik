@@ -37,7 +37,7 @@ endif()
 
 if(LIBRECELIK_USE_INSTALLED_LIBREAGENT)
     message(STATUS "LibreAgent: using installed package (CONFIG)")
-    find_package(LibreAgent 4.2 REQUIRED CONFIG COMPONENTS ClientQt)
+    find_package(LibreAgent 5.0 REQUIRED CONFIG COMPONENTS ClientQt)
 else()
     message(STATUS "LibreAgent: building from source (FetchContent, pin ${LIBREAGENT_PIN})")
     include(FetchContent)

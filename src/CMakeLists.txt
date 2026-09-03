@@ -323,6 +323,7 @@ if(UNIX AND NOT APPLE)
         INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
 endif()
 
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(${PROJECT_NAME})
-endif()
+# Unconditional: this project's find_package asks for Qt6 by name and REQUIRED,
+# so QT_VERSION_MAJOR cannot be anything else here. The guard was a Qt5-era
+# branch that could only ever take the true arm.
+qt_finalize_executable(${PROJECT_NAME})

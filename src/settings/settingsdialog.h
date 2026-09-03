@@ -154,12 +154,6 @@ private:
     /// The agent's snapshot as last read. The comparison base a Save uses to
     /// decide which keys the human actually changed.
     QVariantMap config;
-    /// Legacy trust-tier values (TsaUrls/TslSources), read once from QSettings
-    /// at construction. DISPLAY ONLY: they seed the lists where the agent
-    /// carries nothing yet, and they are never part of the comparison base — a
-    /// Save writes them exactly as it would write anything the human typed, so
-    /// the polkit ceremony stays on the click and never on startup.
-    QVariantMap trustPrefill;
     /// The refusal the last Save (or restore) collected, if any.
     std::optional<LibreSCRS::AgentClient::SyncError> lastRefusal;
 
@@ -201,6 +195,9 @@ private:
     bool writeInFlight = false;
 
     QTabWidget* tabs = nullptr;
+    /// Shown once per profile, to a profile that still carries a 4.2
+    /// configuration: those settings are not imported any more.
+    QLabel* legacyImportNoticeLabel = nullptr;
     QLabel* needsAgentLabel = nullptr;
     QLabel* statusLabel = nullptr;
 

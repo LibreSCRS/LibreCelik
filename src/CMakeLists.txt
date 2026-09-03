@@ -55,8 +55,6 @@ set(PROJECT_SOURCES
         agent/cardstatuspage.cpp
         agent/signrequest.h
         agent/signrequest.cpp
-        agent/settingsimport.h
-        agent/settingsimport.cpp
         agent/live/liveagentgateway.h
         agent/live/liveagentgateway.cpp
         agent/live/livecardcontroller.h

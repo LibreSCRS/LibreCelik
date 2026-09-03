@@ -4,7 +4,6 @@
 #include "settingsdialog.h"
 
 #include "agent/agentgateway.h"
-#include "agent/settingsimport.h"
 #include "settings/settingskeys.h"
 #include "settings/tlitemdelegate.h"
 #include "signing/tsaitemdelegate.h"
@@ -502,6 +501,16 @@ SettingsDialog::SettingsDialog(librecelik::agent::AgentGateway* agentGateway, QW
 
     tabs->addTab(trustTab, QString());
 
+    // Said once per profile: a 4.2 configuration is no longer carried over.
+    // Passive, like the line below it — no dialog, no write to the agent, no
+    // authorisation prompt. Visibility is decided further down, once the legacy
+    // store has been looked at.
+    legacyImportNoticeLabel = new QLabel(this);
+    legacyImportNoticeLabel->setObjectName(QStringLiteral("legacyImportNoticeLabel"));
+    legacyImportNoticeLabel->setWordWrap(true);
+    legacyImportNoticeLabel->setVisible(false);
+    layout->addWidget(legacyImportNoticeLabel);
+
     // Why the operation-backed tabs are dark, said once, under the tabs.
     needsAgentLabel = new QLabel(this);
     needsAgentLabel->setObjectName(QStringLiteral("needsAgentLabel"));
@@ -554,15 +563,24 @@ SettingsDialog::SettingsDialog(librecelik::agent::AgentGateway* agentGateway, QW
     // rebuilds both lists, and they are a rendering of exactly this map.
     config = gateway != nullptr ? gateway->configSnapshot() : QVariantMap();
 
-    // Display-only prefill for the trust-tier lists, read once from the legacy
-    // store. These keys are polkit `auth_self` on every write, so the import
-    // never sends them by itself (see agent/settingsimport.h): the human sees
-    // the old values here, and they reach the agent only if a Save is clicked —
-    // which is exactly where the authorisation ceremony belongs.
+    // 4.2 kept the signing and trust preferences in QSettings, and an importer
+    // carried them onto the agent's configuration. The importer is gone: the
+    // previous major's values are the previous major's burden. A profile that
+    // still holds them is told so once, on the screen where it could act on it.
+    //
+    // The keys are only counted, never read: this decides whether there is
+    // anything to say, and a fresh 5.0 install — which has nothing to import —
+    // must not be told that importing is unsupported.
     {
         QSettings legacy(settings::kOrganization, settings::kApplication);
-        for (const auto& item : librecelik::agent::buildConfig1Import(legacy).trustTier)
-            trustPrefill.insert(item.wireKey, item.value);
+        const bool carriesLegacyConfig =
+            legacy.contains(settings::kSigningDefaultLevel) || legacy.contains(settings::kSigningReason) ||
+            legacy.contains(settings::kSigningLocation) || legacy.contains(settings::kSigningTsaUrls) ||
+            legacy.contains(settings::kTslEntries);
+        if (carriesLegacyConfig && !legacy.contains(settings::kLegacyImportDroppedNoticeShown)) {
+            legacyImportNoticeLabel->setVisible(true);
+            legacy.setValue(settings::kLegacyImportDroppedNoticeShown, 1);
+        }
     }
 
     // Apply translations and seed the dynamic lists. This is the single
@@ -988,11 +1006,7 @@ void SettingsDialog::populateTsaList()
 {
     tsaList->clear();
 
-    // The agent's own value wins; the legacy prefill is shown only while the
-    // agent still carries nothing under this key.
-    QStringList rawUrls = config.value(kTsaUrls).toStringList();
-    if (rawUrls.isEmpty())
-        rawUrls = trustPrefill.value(kTsaUrls).toStringList();
+    const QStringList rawUrls = config.value(kTsaUrls).toStringList();
 
     for (const QString& rawUrl : std::as_const(rawUrls)) {
         const QString url = rawUrl.trimmed();
@@ -1043,10 +1057,7 @@ void SettingsDialog::populateTlList()
 {
     tlList->clear();
 
-    // Same prefill rule as the TSA list: display-only, agent value first.
-    QVariantList entries = config.value(kTslSources).toList();
-    if (entries.isEmpty())
-        entries = trustPrefill.value(kTslSources).toList();
+    const QVariantList entries = config.value(kTslSources).toList();
 
     for (const QVariant& entry : std::as_const(entries)) {
         // [url, lotl, eager] — the shape both transports normalise to.
@@ -1107,6 +1118,7 @@ void SettingsDialog::retranslateUi()
     signingRestoreDefaultsBtn->setText(qtTrId("lc-btn-restore-defaults"));
     trustRestoreDefaultsBtn->setText(qtTrId("lc-btn-restore-defaults"));
     needsAgentLabel->setText(qtTrId("lc-settings-needs-agent"));
+    legacyImportNoticeLabel->setText(qtTrId("lc-settings-legacy-import-dropped"));
 
     int levelIdx = defaultLevelCombo->currentIndex();
     defaultLevelCombo->setItemText(0, qtTrId("lc-sign-level-bb"));

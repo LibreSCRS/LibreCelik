@@ -2,13 +2,13 @@
   "config": {
     "cmake_args": "-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=-O0 -g --coverage -fprofile-update=atomic",
     "compiler": "GNU-16",
-    "discovered_tests": 351,
+    "discovered_tests": 345,
     "gcovr": "8.6",
-    "test_manifest_sha256": "36b9486df80ac9efcd8a263e35ec522091e642f6c5c8749a7d6e4ad585f0696f"
+    "test_manifest_sha256": "8f26453a175c84507705fe37420c55d0f65e1d69647eb8d7b9270455fb3a255b"
   },
   "files": {
-    "plugins/emrtd/emrtdtextdocument.cpp": 79.2,
-    "plugins/emrtd/emrtdwidget.cpp": 76.0,
+    "plugins/emrtd/emrtdtextdocument.cpp": 83.3,
+    "plugins/emrtd/emrtdwidget.cpp": 78.6,
     "plugins/emrtd/emrtdwidgetplugin.cpp": 0.0,
     "plugins/eu-vrc/euvrctextdocument.cpp": 94.9,
     "plugins/eu-vrc/euvrctextdocument.h": 100.0,
@@ -18,8 +18,8 @@
     "plugins/piv/pivtextdocument.h": 100.0,
     "plugins/piv/pivwidget.cpp": 88.6,
     "plugins/piv/pivwidgetplugin.cpp": 0.0,
-    "plugins/rs-eid/eidtextdocument.cpp": 88.0,
-    "plugins/rs-eid/eidwidget.cpp": 83.7,
+    "plugins/rs-eid/eidtextdocument.cpp": 92.6,
+    "plugins/rs-eid/eidwidget.cpp": 85.3,
     "plugins/rs-eid/rseidwidgetplugin.cpp": 0.0,
     "plugins/rs-health/healthtextdocument.cpp": 100.0,
     "plugins/rs-health/healthtextdocument.h": 100.0,
@@ -40,14 +40,14 @@
     "src/agent/live/liveagentgateway.cpp": 26.2,
     "src/agent/live/livecardcontroller.cpp": 0.0,
     "src/agent/live/livesigncontroller.cpp": 0.0,
+    "src/agent/live/opwatch.h": 0.0,
     "src/agent/opstallwatchdog.cpp": 88.9,
     "src/agent/optionalsections.h": 100.0,
     "src/agent/plugintyperesolution.h": 100.0,
-    "src/agent/settingsimport.cpp": 90.8,
     "src/agent/signcontroller.cpp": 66.7,
     "src/agent/signrequest.cpp": 86.7,
     "src/certificate/certfields.h": 69.6,
-    "src/certificate/certformat.cpp": 52.6,
+    "src/certificate/certformat.cpp": 58.0,
     "src/certificate/certificatehierarchymodel.cpp": 0.0,
     "src/certificate/certificateinfoitem.cpp": 62.2,
     "src/certificate/certificatepropertiesmodel.cpp": 72.4,
@@ -57,14 +57,14 @@
     "src/certificate/certificateviewerwidget.cpp": 0.0,
     "src/document/printing/textdocument.cpp": 75.9,
     "src/document/rs-eid/changepindlg.cpp": 85.3,
-    "src/document/tokensection.cpp": 64.2,
-    "src/librecelik.cpp": 23.9,
+    "src/document/tokensection.cpp": 64.3,
+    "src/librecelik.cpp": 22.8,
     "src/main.cpp": 0.0,
     "src/plugin/cardwidgetplugin.h": 26.3,
     "src/plugin/cardwidgetpluginregistry.cpp": 80.0,
     "src/plugin/cardwidgetpluginregistry.h": 100.0,
-    "src/plugin/fieldvalue.h": 100.0,
-    "src/settings/settingsdialog.cpp": 81.8,
+    "src/plugin/fieldvalue.h": 85.5,
+    "src/settings/settingsdialog.cpp": 81.7,
     "src/settings/tlitemdelegate.cpp": 90.0,
     "src/signing/defaults.h": 85.7,
     "src/signing/filedropzone.cpp": 16.1,
@@ -94,7 +94,6 @@
     "src/utils/printmanager.h": 0.0,
     "src/utils/readerpages.cpp": 87.3,
     "src/utils/securitystatuswidget.cpp": 91.1,
-    "src/utils/securitystatuswidget.h": 77.3,
     "src/utils/spinnerpage.cpp": 100.0,
     "src/utils/stringutils.h": 100.0,
     "src/utils/translations_catalog.cpp": 0.0
@@ -107,9 +106,9 @@
     "total_percent_drop_pp": 0.3
   },
   "total": {
-    "branch_percent": 53.2,
-    "covered_lines": 4975,
+    "branch_percent": 53.1,
+    "covered_lines": 4845,
     "line_percent": 63.7,
-    "total_lines": 7809
+    "total_lines": 7603
   }
 }

@@ -12,6 +12,16 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Removed
 
+- **The 4.2 settings importer** (`src/agent/settingsimport.*`, 423 lines with
+  its six tests) — it copied a 4.2 installation's `QSettings` onto the agent's
+  configuration item by item and re-ran on every transition to Ready. Carrying
+  the previous major's configuration is the previous major's job, and this is
+  the release that ends it. Two consequences you can see, both deliberate: the
+  timestamp-server and trust-list lists in Settings no longer prefill from the
+  old store, and the old default signature level, reason and location are not
+  carried over. A profile that still holds those keys is told once, in
+  Settings, that they are no longer imported.
+
 - **`src/utils/utils.h`** — a header whose single macro (`DISABLE_COPY_MOVE`)
   already had no user at the 4.2.0 tag.
 - **Four helpers with no caller since 4.2.0**: `certformat::bytesToHex`,

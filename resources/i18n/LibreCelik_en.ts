@@ -1069,6 +1069,10 @@
         <source>Nothing is installed: there are no country signing anchors. Import a master list to install them.</source>
         <translation>Nothing is installed: there are no country signing anchors. Import a master list to install them.</translation>
     </message>
+    <message id="lc-settings-legacy-import-dropped">
+        <source>Settings from version 4.2 are no longer imported. The agent keeps them now; set them again here.</source>
+        <translation>Settings from version 4.2 are no longer imported. The agent keeps them now; set them again here.</translation>
+    </message>
     <message id="lc-annex-verification">
         <source>Additional Data Verification</source>
         <translation>Additional Data Verification</translation>
@@ -1573,10 +1577,6 @@
     <message id="lc-settings-needs-agent">
         <source>Signing and trust preferences are kept by the agent. Start it to change them.</source>
         <translation>Signing and trust preferences are kept by the agent. Start it to change them.</translation>
-    </message>
-    <message id="lc-settings-trust-import-notice">
-        <source>Your previous timestamp/trust-list settings can be applied under Settings.</source>
-        <translation>Your previous timestamp/trust-list settings can be applied under Settings.</translation>
     </message>
     <message id="lc-settings-invalid-url-title">
         <source>Invalid URL</source>

@@ -14,28 +14,23 @@ inline constexpr QLatin1String kApplication{"LibreCelik"};
 // General
 inline constexpr QLatin1String kLanguage{"language"};
 
-// Signing
-inline constexpr QLatin1String kSigningDefaultLevel{"signing/defaultLevel"};
+// Signing — this application's own preference, held locally.
 inline constexpr QLatin1String kSigningDefaultOutputFolder{"signing/defaultOutputFolder"};
+
+// The 4.2 signing and trust preferences. The agent owns these values now, and
+// nothing here reads their contents or writes them: they exist only so the
+// Settings dialog can tell whether this profile still carries a 4.2
+// configuration and should be told once that it is no longer imported.
+inline constexpr QLatin1String kSigningDefaultLevel{"signing/defaultLevel"};
 inline constexpr QLatin1String kSigningTsaUrls{"signing/tsaUrls"};
-inline constexpr QLatin1String kSigningTsaLastUrl{"signing/tsaLastUrl"};
 inline constexpr QLatin1String kSigningReason{"signing/reason"};
 inline constexpr QLatin1String kSigningLocation{"signing/location"};
-
-// Trust / TSL
 inline constexpr QLatin1String kTslEntries{"tsl/entries"};
-inline constexpr QLatin1String kTslCacheDir{"tsl/cacheDir"};
 
-// Migration markers for the legacy-QSettings → Config1 import. PER ITEM, not
-// per run: a single "done" flag would either re-run every key after one
-// transport failure or abandon them all after one refusal, and the agent's
-// configuration is shared — an item that landed must never be written twice.
-// The prefix is completed with the WIRE key ("…/DefaultLevel"); 1 = imported,
-// -1 = attempted and semantically refused (terminal, never retried).
-inline constexpr QLatin1String kConfig1ImportPrefix{"migration/config1Import/"};
-// One-time marker for the passive trust-tier notice. The trust keys are
-// polkit-guarded, so they are never auto-written — this records only that the
-// human has been told once where to apply them.
-inline constexpr QLatin1String kConfig1TrustNoticeShown{"migration/config1TrustNoticeShown"};
+// One-time marker for that notice. It is a NEW key rather than the import
+// marker it replaces: a profile that saw 4.2's "you can apply these under
+// Settings" line was told the opposite of what this one says, and reusing the
+// old marker would silence the correction for exactly the people who need it.
+inline constexpr QLatin1String kLegacyImportDroppedNoticeShown{"migration/legacyImportDroppedNoticeShown"};
 
 } // namespace settings

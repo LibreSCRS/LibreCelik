@@ -1069,6 +1069,10 @@
         <source>Nothing is installed: there are no country signing anchors. Import a master list to install them.</source>
         <translation>Ништа није инсталирано: нема сидара државних издавалаца. Увезите мастер листу да бисте их инсталирали.</translation>
     </message>
+    <message id="lc-settings-legacy-import-dropped">
+        <source>Settings from version 4.2 are no longer imported. The agent keeps them now; set them again here.</source>
+        <translation>Подешавања из верзије 4.2 се више не увозе. Сада их чува агент; подесите их поново овде.</translation>
+    </message>
     <message id="lc-annex-verification">
         <source>Additional Data Verification</source>
         <translation>Провера додатних података</translation>
@@ -1573,10 +1577,6 @@
     <message id="lc-settings-needs-agent">
         <source>Signing and trust preferences are kept by the agent. Start it to change them.</source>
         <translation>Подешавања потписивања и поверења чува агент. Покрените га да бисте их мењали.</translation>
-    </message>
-    <message id="lc-settings-trust-import-notice">
-        <source>Your previous timestamp/trust-list settings can be applied under Settings.</source>
-        <translation>Ваша ранија подешавања временског жига и листа поверења могу се применити у Подешавањима.</translation>
     </message>
     <message id="lc-settings-invalid-url-title">
         <source>Invalid URL</source>

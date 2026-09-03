@@ -396,9 +396,6 @@ add_executable(SettingsConfig1Tests
     ${CMAKE_SOURCE_DIR}/src/agent/agentgateway.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/cardcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/signcontroller.cpp
-    # The dialog prefills its trust-tier controls through buildConfig1Import,
-    # so the import TU is part of what this suite exercises.
-    ${CMAKE_SOURCE_DIR}/src/agent/settingsimport.cpp
     ${CMAKE_SOURCE_DIR}/src/settings/settingsdialog.cpp
     ${CMAKE_SOURCE_DIR}/src/settings/tlitemdelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/signing/tsaitemdelegate.cpp
@@ -451,9 +448,6 @@ add_executable(i18n_settings_state_test
     ${CMAKE_SOURCE_DIR}/src/agent/agentgateway.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/cardcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/signcontroller.cpp
-    # Same reason as SettingsConfig1Tests: settingsdialog.cpp's trust-tier
-    # prefill calls buildConfig1Import.
-    ${CMAKE_SOURCE_DIR}/src/agent/settingsimport.cpp
     ${CMAKE_SOURCE_DIR}/src/settings/settingsdialog.cpp
     ${CMAKE_SOURCE_DIR}/src/settings/tlitemdelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/signing/tsaitemdelegate.cpp
@@ -858,7 +852,6 @@ add_executable(AgentLayerTests
     agent_opstallwatchdog_test.cpp
     agent_signrequest_test.cpp
     agent_liveagentgateway_test.cpp
-    settings_import_test.cpp
     fake_gateway_selftest.cpp
     fake_gateway/fakeagentgateway.cpp
     fake_gateway/fakecardcontroller.cpp
@@ -870,7 +863,6 @@ add_executable(AgentLayerTests
     ${CMAKE_SOURCE_DIR}/src/agent/fieldmerge.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/opstallwatchdog.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/signrequest.cpp
-    ${CMAKE_SOURCE_DIR}/src/agent/settingsimport.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/live/liveagentgateway.cpp
     # The live gateway MINTS these two, so the suite that
     # compiles it links them: a test target that stubbed them out would prove

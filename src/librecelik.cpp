@@ -11,7 +11,6 @@
 #include "agent/live/liveagentgateway.h"
 #include "agent/optionalsections.h"
 #include "agent/plugintyperesolution.h"
-#include "agent/settingsimport.h"
 #include "certificate/certificateviewerdlg.h"
 #include "config.h"
 #include "document/rs-eid/changepindlg.h"
@@ -303,33 +302,7 @@ void LibreCelik::onPresenceChanged(PresenceState state)
         updateEmptyState();
         return;
     }
-    importLegacySettings();
     onReadersChanged();
-}
-
-void LibreCelik::importLegacySettings()
-{
-    QSettings settings(settings::kOrganization, settings::kApplication);
-
-    // Settings tier only: DefaultLevel / DefaultReason / DefaultLocation, which
-    // the agent's policy lets an active session write without ceremony. Each
-    // item carries its own completion marker, so this is idempotent — and it is
-    // called on EVERY transition to Ready rather than once per process, because
-    // that is what makes the per-item retry real: an item whose write never
-    // reached a vanishing agent stays unmarked and is attempted again the next
-    // time the agent is there.
-    librecelik::agent::runSettingsTierImport(*gateway, settings);
-
-    // The trust tier (TsaUrls / TslSources) is polkit `auth_self` on every row.
-    // Writing it here would raise an authorisation dialog at startup that the
-    // human never asked for — so it is not written here at all. What it gets is
-    // one passive line saying where the old values can be applied; the Settings
-    // dialog prefills them, and the ceremony happens on a Save or not at all.
-    if (librecelik::agent::shouldShowTrustImportNotice(settings)) {
-        ui->statusbar->show();
-        ui->statusbar->showMessage(qtTrId("lc-settings-trust-import-notice"));
-        settings.setValue(settings::kConfig1TrustNoticeShown, 1);
-    }
 }
 
 void LibreCelik::onReadersChanged()

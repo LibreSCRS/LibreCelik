@@ -350,11 +350,12 @@ def test_platforms_absent_matches_all():
     assert checker.match_component("libcurl.so", [cross], "macos") is cross
 
 
-def test_platforms_absent_matches_when_no_flag():
-    """Backward-compat: when no ``--platform`` arg is passed (current
-    platform is ``None``), every component matches regardless of its
-    ``platforms`` key. This preserves the legacy fail-closed behavior on
-    callers that haven't been updated yet (e.g. the test suite).
+def test_platform_scoped_components_never_match_without_a_platform():
+    """With no platform named, a platform-scoped component does NOT apply.
+
+    It used to: omitting ``--platform`` waved every component through, which
+    made a Linux-only entry cover a macOS bundle and vice versa. Only the
+    unscoped (cross-platform) entries survive a call that names no platform.
     """
     linux_only = {
         "match": "libavahi-client.so",
@@ -379,9 +380,9 @@ def test_platforms_absent_matches_when_no_flag():
         "text": "x",
         "sha256": "y",
     }
-    # No platform passed (None) — everything matches.
-    assert checker.match_component("libavahi-client.so", [linux_only], None) is linux_only
-    assert checker.match_component("libfoo.dylib", [macos_only], None) is macos_only
+    # No platform named — only the unscoped component applies.
+    assert checker.match_component("libavahi-client.so", [linux_only], None) is None
+    assert checker.match_component("libfoo.dylib", [macos_only], None) is None
     assert checker.match_component("libcurl.so", [cross], None) is cross
 
 

@@ -54,14 +54,12 @@ def _component_applies_to_platform(comp, current_platform) -> bool:
       on every platform.
     - A component WITH a ``platforms`` list applies only when
       ``current_platform`` is in that list.
-    - When ``current_platform`` is ``None`` (no ``--platform`` flag was
-      passed) every component applies. This preserves legacy behavior for
-      callers that have not yet been updated to pass an explicit platform.
+    - A component WITH a ``platforms`` list never applies when the caller
+      named no platform. ``--platform`` is required at the command line,
+      so ``None`` reaches here only from a direct helper call.
     """
     platforms = comp.get("platforms")
     if platforms is None:
-        return True
-    if current_platform is None:
         return True
     return current_platform in platforms
 
@@ -160,12 +158,13 @@ def main(argv=None):
     parser.add_argument(
         "--platform",
         choices=("linux", "macos"),
-        default=None,
+        required=True,
         help="Scope the rendered notice to a single platform. Components "
         "with a ``platforms`` list are emitted only when the current "
         "platform is in that list; components without the key are "
-        "cross-platform. Omit the flag to render every component (legacy "
-        "behavior, matches the checker's --platform semantics).",
+        "cross-platform. Required, matching the checker's --platform "
+        "semantics: a notice that lists libraries the artifact does not "
+        "ship is wrong output, not a safe default.",
     )
     args = parser.parse_args(argv)
 
@@ -176,8 +175,7 @@ def main(argv=None):
     components = _load_components(args.manifest, "lc")
 
     # Filter components by platform BEFORE rendering so the embedded notice
-    # lists only what actually ships in this artifact. When --platform is
-    # absent every component renders (legacy behavior).
+    # lists only what actually ships in this artifact.
     components = [
         c for c in components
         if _component_applies_to_platform(c, args.platform)

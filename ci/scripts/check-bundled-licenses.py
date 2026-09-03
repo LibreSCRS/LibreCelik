@@ -94,16 +94,12 @@ def _component_applies_to_platform(comp, current_platform) -> bool:
       applies on every platform (this is the default — keep most
       entries unscoped so a single record covers both Linux and macOS).
     - A component WITH a ``platforms`` list applies only when
-      ``current_platform`` is in that list.
-    - When ``current_platform`` is ``None`` (no ``--platform`` flag was
-      passed) every component applies regardless of its ``platforms``
-      key. This preserves the legacy fail-closed behavior for callers
-      that have not been updated to pass an explicit platform.
+      ``current_platform`` is in that list, and never when the caller
+      named no platform at all. ``--platform`` is required at the command
+      line, so ``None`` reaches here only from a direct helper call.
     """
     platforms = comp.get("platforms")
     if platforms is None:
-        return True
-    if current_platform is None:
         return True
     return current_platform in platforms
 
@@ -363,12 +359,13 @@ def main(argv=None):
     parser.add_argument(
         "--platform",
         choices=("linux", "macos"),
-        default=None,
+        required=True,
         help="Scope the check/candidate enumeration to a single platform. "
         "Components with a ``platforms`` list apply only when the current "
         "platform is in that list; components without the key are "
-        "cross-platform. Omit the flag to disable platform filtering "
-        "(legacy behavior: every component applies).",
+        "cross-platform. Required: applying every component regardless of "
+        "platform answered a question nobody asked, and every caller in "
+        "this tree already knows which artifact it is building.",
     )
     args = parser.parse_args(argv)
 

@@ -25,6 +25,15 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **`--platform` is now required** by the bundled-licence checker and the
+  third-party-notice generator. Omitting it applied every component's licence
+  rather than the ones the build ships — a Linux-only entry could cover a macOS
+  bundle and vice versa — and the docstring said outright that the default
+  existed for callers that had not been updated. Every caller in the tree
+  already passes it; a build on a system this project has no bundling story for
+  now fails at configure time instead of embedding a notice for an artifact
+  nobody built.
+
 - **The API boundary now forbids the four smart-card bridge headers** —
   `pcsc_connection.h`, `secure_buffer.h`, `monitor.h` and `monitor_event.h`.
   They were left reachable while this application still drove a Qt listener and

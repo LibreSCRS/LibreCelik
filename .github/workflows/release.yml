@@ -22,6 +22,7 @@ on:
 
 jobs:
   verify-signature:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +46,7 @@ jobs:
         run: git verify-tag "$TAG"
 
   build-linux:
+    timeout-minutes: 90
     needs: verify-signature
     runs-on: ubuntu-latest
     steps:
@@ -154,6 +156,7 @@ jobs:
           path: LibreCelik-*.AppImage
 
   build-macos:
+    timeout-minutes: 75
     needs: verify-signature
     runs-on: macos-latest
     steps:
@@ -208,6 +211,7 @@ jobs:
           path: LibreCelik-*.dmg
 
   release:
+    timeout-minutes: 20
     needs: [build-linux, build-macos]
     runs-on: ubuntu-latest
     permissions:

@@ -15,6 +15,7 @@ on:
 
 jobs:
   format-check:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,12 +57,20 @@ jobs:
         # the tag's version.
         run: ci/scripts/check-release-lockstep.sh "$(head -n1 VERSION | tr -d '[:space:]')"
 
+      - name: Every job carries a time bound
+        # An unbounded job that hangs holds a runner for six hours and will
+        # not serve its log until the run is cancelled, so the failing test
+        # cannot even be named. This fails when a new job arrives without a
+        # bound, which is the only moment the omission is cheap to fix.
+        run: ci/scripts/check-job-timeouts.sh
+
   i18n-audit:
     # Static retranslate audit (no build required). Runs the full
     # tools/i18n_audit.py over src+plugins, then runs its own pytest
     # self-test. Exit non-zero on any non-allowlisted finding (--strict).
     # JSON dump is uploaded as an artefact for PR review and historical
     # comparison. See tools/README-i18n-audit.md for the audit design.
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -96,6 +105,7 @@ jobs:
     # filter (both directions, checker + generator + end-to-end main()).
     # 27 cases. Catches drift in the manifest schema or filter logic
     # before the release-only AppImage / DMG fail-closed check fires.
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -112,6 +122,7 @@ jobs:
         run: python3 -m pytest ci/scripts/test_license_tools.py -v
 
   build-linux:
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -206,6 +217,7 @@ jobs:
         run: ./ci/scripts/skip-ledger.sh --check ctest.log linux
 
   build-macos:
+    timeout-minutes: 60
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -249,6 +261,7 @@ jobs:
         run: ctest --output-on-failure --no-tests=error --test-dir build
 
   changes:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     outputs:
       packaging: ${{ steps.filter.outputs.packaging }}
@@ -267,6 +280,7 @@ jobs:
               - '.github/workflows/ci.yml'
 
   license-drift-guard:
+    timeout-minutes: 45
     needs: changes
     if: ${{ needs.changes.outputs.packaging == 'true' }}
     runs-on: ubuntu-latest

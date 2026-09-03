@@ -669,6 +669,11 @@ void SettingsDialog::importMasterList(int masterListFd)
         case LibreSCRS::AgentClient::SyncError::NotAuthorized:
             cscaOutcome = CscaImportOutcome::Unauthorized;
             break;
+        case LibreSCRS::AgentClient::SyncError::CommunicationError:
+            // Nothing was decided and nothing changed -- a weaker "refused"
+            // reading would still be a verdict the agent never issued.
+            cscaOutcome = CscaImportOutcome::Undecided;
+            break;
         default:
             // Every "this file is not a usable master list" refusal the agent
             // names is outside the closed error vocabulary and arrives here.
@@ -792,6 +797,9 @@ void SettingsDialog::renderCscaState()
         break;
     case CscaImportOutcome::Unauthorized:
         status = qtTrId("lc-settings-config-unauthorized");
+        break;
+    case CscaImportOutcome::Undecided:
+        status = qtTrId("lc-settings-config-undecided");
         break;
     case CscaImportOutcome::Refused:
         status = qtTrId("lc-settings-csca-refused");

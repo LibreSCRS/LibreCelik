@@ -1566,6 +1566,10 @@
         <source>You are not authorized to change this setting.</source>
         <translation>You are not authorized to change this setting.</translation>
     </message>
+    <message id="lc-settings-config-undecided">
+        <source>The authorization service did not answer. Nothing was changed; try again.</source>
+        <translation>The authorization service did not answer. Nothing was changed; try again.</translation>
+    </message>
     <message id="lc-settings-needs-agent">
         <source>Signing and trust preferences are kept by the agent. Start it to change them.</source>
         <translation>Signing and trust preferences are kept by the agent. Start it to change them.</translation>

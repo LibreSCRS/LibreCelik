@@ -1258,6 +1258,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-settings-config-refused");
     //% "You are not authorized to change this setting."
     QT_TRID_NOOP("lc-settings-config-unauthorized");
+    //% "The authorization service did not answer. Nothing was changed; try again."
+    QT_TRID_NOOP("lc-settings-config-undecided");
     //% "Signing and trust preferences are kept by the agent. Start it to change them."
     QT_TRID_NOOP("lc-settings-needs-agent");
     //% "Your previous timestamp/trust-list settings can be applied under Settings."

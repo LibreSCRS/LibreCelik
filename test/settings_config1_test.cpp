@@ -631,6 +631,25 @@ TEST_F(SettingsConfig1Test, ARefusedAuthorizationForAnImportIsSaidInWords)
     EXPECT_EQ(cscaStatusText(dlg), qtTrId("lc-settings-config-unauthorized"));
 }
 
+// A communication failure during import is a weaker claim than a refusal --
+// and a DIFFERENT one. Rendering it as "refused" would still tell the user a
+// verdict nobody reached.
+TEST_F(SettingsConfig1Test, CommunicationFailureDuringImportIsNotSaidAsRefused)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    gw.nextImportRefusal = LibreSCRS::AgentClient::SyncError::CommunicationError;
+
+    const int fd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
+    ASSERT_GE(fd, 0);
+    SettingsDialog dlg(&gw);
+    dlg.importMasterList(fd);
+    ::close(fd);
+
+    EXPECT_EQ(cscaStatusText(dlg), qtTrId("lc-settings-config-undecided"));
+    EXPECT_NE(cscaStatusText(dlg), qtTrId("lc-settings-csca-refused"));
+}
+
 // Every "this file is not a usable master list" refusal the agent names is
 // outside the closed error vocabulary and arrives generically. One sentence
 // covers them, and it offers the only move that helps: a different file.
@@ -638,7 +657,7 @@ TEST_F(SettingsConfig1Test, AFileTheAgentWillNotInstallOffersADifferentFile)
 {
     FakeAgentGateway gw;
     gw.setPresence(librecelik::agent::PresenceState::Ready);
-    gw.nextImportRefusal = LibreSCRS::AgentClient::SyncError::CommunicationError;
+    gw.nextImportRefusal = LibreSCRS::AgentClient::SyncError::UnknownConfigKey;
 
     const int fd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
     ASSERT_GE(fd, 0);
@@ -883,7 +902,7 @@ TEST_F(SettingsConfig1Test, AnLdifCarryingNoSignedObjectIsTheAgentsRefusalToMake
 {
     FakeAgentGateway gw;
     gw.setPresence(librecelik::agent::PresenceState::Ready);
-    gw.nextImportRefusal = LibreSCRS::AgentClient::SyncError::CommunicationError;
+    gw.nextImportRefusal = LibreSCRS::AgentClient::SyncError::UnknownConfigKey;
 
     QTemporaryDir dir(QStringLiteral("/var/tmp/lc-csca-XXXXXX"));
     ASSERT_TRUE(dir.isValid());

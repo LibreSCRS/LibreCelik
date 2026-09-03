@@ -1566,6 +1566,10 @@
         <source>You are not authorized to change this setting.</source>
         <translation>Nemate ovlašćenje da izmenite ovo podešavanje.</translation>
     </message>
+    <message id="lc-settings-config-undecided">
+        <source>The authorization service did not answer. Nothing was changed; try again.</source>
+        <translation>Servis za autorizaciju nije odgovorio. Ništa nije promenjeno; pokušajte ponovo.</translation>
+    </message>
     <message id="lc-settings-needs-agent">
         <source>Signing and trust preferences are kept by the agent. Start it to change them.</source>
         <translation>Podešavanja potpisivanja i poverenja čuva agent. Pokrenite ga da biste ih menjali.</translation>

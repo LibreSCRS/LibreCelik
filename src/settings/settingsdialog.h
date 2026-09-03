@@ -170,6 +170,7 @@ private:
         Installed,
         Replayed,
         Unauthorized,
+        Undecided,
         Refused,
         Unreadable,
     };

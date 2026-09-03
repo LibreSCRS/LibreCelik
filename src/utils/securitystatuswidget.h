@@ -19,35 +19,21 @@ class CollapsibleSection;
 
 namespace librecelik::utils {
 
-/// @brief Category of a @ref SecurityCheck.
-///
-/// The security pane is fed by a card read whose checks arrive as wire fields
-/// — a closed vocabulary carried as strings. This is the host-side
-/// re-declaration of that vocabulary, so the widget owns the enumeration it
-/// renders instead of borrowing one from a card-model library it no longer
-/// speaks.
-enum class SecurityCategory : std::uint8_t {
-    DataIntegrity, ///< Hash/MAC integrity of data groups.
-    Authenticity,  ///< Signature / passive authentication over the data.
-    Genuineness,   ///< Chip genuineness (active authentication / chip auth).
-    Other,         ///< A check outside the canonical categories.
-};
+// MIRROR-OF: LibreAgent/client/qt/include/LibreSCRS/AgentClient/SecurityChecks.h
+// - the name is re-exported into this host's namespace so its own call sites
+// keep reading as they did. The enumeration itself has one definition, in the
+// client library that reads the wire shape; this host owns how it is drawn,
+// which is a different question and stays here.
+using SecurityCategory = LibreSCRS::AgentClient::SecurityCategory;
 
 /// @brief One security-verification check result (e.g. passive auth, chip auth).
 struct SecurityCheck
 {
     /// @brief Outcome of a single security check.
     ///
-    /// The string form preserved by @ref statusToString / @ref statusFromString
-    /// is the wire's UPPERCASE token ("PASSED", "FAILED", "NOT_PERFORMED",
-    /// "NOT_SUPPORTED", "SKIPPED").
-    enum class Status : std::uint8_t {
-        Passed,       ///< Check was performed and succeeded.
-        Failed,       ///< Check was performed and failed.
-        NotPerformed, ///< Check was not run (e.g. prerequisite missing).
-        NotSupported, ///< Card does not implement the check.
-        Skipped,      ///< The read chose to bypass the check.
-    };
+    /// Defined in the client library that decodes the wire token; named here
+    /// so this widget's call sites go on saying `SecurityCheck::Status`.
+    using Status = LibreSCRS::AgentClient::SecurityCheckStatus;
 
     QString checkId;                                     ///< Identifier for the check.
     SecurityCategory category = SecurityCategory::Other; ///< Category classification.
@@ -78,72 +64,14 @@ struct SecurityStatusModel
     SecurityCheck::Status overallGenuineness = SecurityCheck::Status::NotPerformed;  ///< Genuineness verdict.
 };
 
-/// @brief Canonical string form of a status.
-[[nodiscard]] inline QString statusToString(SecurityCheck::Status s)
-{
-    switch (s) {
-    case SecurityCheck::Status::Passed:
-        return QStringLiteral("PASSED");
-    case SecurityCheck::Status::Failed:
-        return QStringLiteral("FAILED");
-    case SecurityCheck::Status::NotPerformed:
-        return QStringLiteral("NOT_PERFORMED");
-    case SecurityCheck::Status::NotSupported:
-        return QStringLiteral("NOT_SUPPORTED");
-    case SecurityCheck::Status::Skipped:
-        return QStringLiteral("SKIPPED");
-    }
-    return QStringLiteral("UNKNOWN");
-}
+// The two decoders moved into the client library, which is the one reader of
+// this wire shape; this host names them so its call sites are unchanged.
+using LibreSCRS::AgentClient::categoryFromString;
+using LibreSCRS::AgentClient::statusFromString;
 
-/// @brief Parse a canonical status string; @c std::nullopt for unrecognized
-///        or empty input (the caller decides what an unknown security verdict
-///        means — collapsing it to NotPerformed is the safest-looking wrong
-///        answer).
-[[nodiscard]] inline std::optional<SecurityCheck::Status> statusFromString(QStringView s)
-{
-    if (s == u"PASSED")
-        return SecurityCheck::Status::Passed;
-    if (s == u"FAILED")
-        return SecurityCheck::Status::Failed;
-    if (s == u"NOT_PERFORMED")
-        return SecurityCheck::Status::NotPerformed;
-    if (s == u"NOT_SUPPORTED")
-        return SecurityCheck::Status::NotSupported;
-    if (s == u"SKIPPED")
-        return SecurityCheck::Status::Skipped;
-    return std::nullopt;
-}
-
-/// @brief Canonical string form of a category.
-[[nodiscard]] inline QString categoryToString(SecurityCategory c)
-{
-    switch (c) {
-    case SecurityCategory::DataIntegrity:
-        return QStringLiteral("data_integrity");
-    case SecurityCategory::Authenticity:
-        return QStringLiteral("data_authenticity");
-    case SecurityCategory::Genuineness:
-        return QStringLiteral("chip_genuineness");
-    case SecurityCategory::Other:
-        return QStringLiteral("other");
-    }
-    return QStringLiteral("unknown");
-}
-
-/// @brief Parse a category token; @c std::nullopt for unknown input.
-[[nodiscard]] inline std::optional<SecurityCategory> categoryFromString(QStringView s)
-{
-    if (s == u"data_integrity")
-        return SecurityCategory::DataIntegrity;
-    if (s == u"data_authenticity")
-        return SecurityCategory::Authenticity;
-    if (s == u"chip_genuineness")
-        return SecurityCategory::Genuineness;
-    if (s == u"other")
-        return SecurityCategory::Other;
-    return std::nullopt;
-}
+// statusToString() and categoryToString() are gone rather than moved. They
+// were declared here and called from nowhere: the wire is decoded on the way
+// in and never re-encoded on the way out of a viewer.
 
 /// @brief Localized display text for a status.
 ///

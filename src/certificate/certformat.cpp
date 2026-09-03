@@ -136,4 +136,23 @@ QString extendedKeyUsageLabel(const QString& dottedOid)
     return dottedOid;
 }
 
+QString securityStatusText(const QString& token)
+{
+    if (token == QLatin1StringView("trusted"))
+        return qtTrId("lc-cert-status-trusted");
+    if (token == QLatin1StringView("untrusted-root"))
+        return qtTrId("lc-cert-status-untrusted-root");
+    if (token == QLatin1StringView("broken-chain"))
+        return qtTrId("lc-cert-status-broken-chain");
+    if (token == QLatin1StringView("invalid"))
+        return qtTrId("lc-cert-status-invalid");
+    if (token == QLatin1StringView("expired"))
+        return qtTrId("lc-cert-status-expired");
+    if (token == QLatin1StringView("revoked"))
+        return qtTrId("lc-cert-status-revoked");
+    if (token == QLatin1StringView("offline-unverified"))
+        return qtTrId("lc-cert-status-offline-unverified");
+    return token;
+}
+
 } // namespace librecelik::certformat

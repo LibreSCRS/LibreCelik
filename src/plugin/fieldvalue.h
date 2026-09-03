@@ -98,6 +98,38 @@ using LibreSCRS::AgentClient::FieldGroup;
     return {};
 }
 
+/// @brief The portrait the gateway merged into the read.
+///
+/// It arrives as its own group, keyed with the field half of the wire's
+/// composite key. A group that carries the image under some other key still
+/// resolves: the first field with bytes wins.
+[[nodiscard]] inline QByteArray photoBytes(const QList<FieldGroup>& groups)
+{
+    QByteArray bytes = fieldDetailBytes(groups, u"photo", u"photo");
+    if (!bytes.isEmpty()) {
+        return bytes;
+    }
+    if (const FieldGroup* group = findGroup(groups, u"photo")) {
+        for (const Field& field : group->fields) {
+            bytes = field.detail.toByteArray();
+            if (!bytes.isEmpty()) {
+                return bytes;
+            }
+        }
+    }
+    return {};
+}
+
+/// @brief Bytes of a group's first field — the shape the single-image groups
+///        (DG5 portrait, DG7 signature) arrive in.
+[[nodiscard]] inline QByteArray firstFieldBytes(const FieldGroup& group)
+{
+    if (group.fields.isEmpty()) {
+        return {};
+    }
+    return group.fields.first().detail.toByteArray();
+}
+
 /// @brief The full wire model re-staged into a widget's own section order.
 ///
 /// The final model's group order is DELIVERY-DEPENDENT — a streamed read

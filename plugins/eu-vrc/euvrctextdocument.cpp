@@ -6,6 +6,7 @@
 #include "euvrctextdocument.h"
 #include "utils/stringutils.h"
 #include <plugin/fieldvalue.h>
+#include <plugin/labelledfield.h>
 
 using librecelik::plugin::fieldValue;
 using librecelik::plugin::findGroup;
@@ -75,12 +76,7 @@ QString EuVrcTextDocument::buildHtml(const FieldGroupList& groups) const
 
 QString EuVrcTextDocument::buildRegistrationSection(const FieldGroupList& groups) const
 {
-    struct Field
-    {
-        QStringView key;
-        QString label;
-    };
-    std::vector<Field> fields = {
+    std::vector<librecelik::plugin::LabelledField> fields = {
         {u"date_of_first_registration", qtTrId("lc-euvrc-doc-first-reg-date")},
         {u"registration_date", qtTrId("lc-euvrc-doc-reg-date")},
         {u"expiry_date", qtTrId("lc-euvrc-doc-expiry-date")},
@@ -113,12 +109,7 @@ QString EuVrcTextDocument::buildRegistrationSection(const FieldGroupList& groups
 
 QString EuVrcTextDocument::buildVehicleSection(const FieldGroupList& groups) const
 {
-    struct Field
-    {
-        QStringView key;
-        QString label;
-    };
-    std::vector<Field> fields = {
+    std::vector<librecelik::plugin::LabelledField> fields = {
         {u"vehicle_make", qtTrId("lc-euvrc-doc-make")},
         {u"vehicle_type", qtTrId("lc-euvrc-doc-type")},
         {u"commercial_description", qtTrId("lc-euvrc-doc-commercial-desc")},
@@ -140,12 +131,7 @@ QString EuVrcTextDocument::buildVehicleSection(const FieldGroupList& groups) con
 
 QString EuVrcTextDocument::buildEngineTechnicalSection(const FieldGroupList& groups) const
 {
-    struct Field
-    {
-        QStringView key;
-        QString label;
-    };
-    std::vector<Field> fields = {
+    std::vector<librecelik::plugin::LabelledField> fields = {
         {u"engine_capacity", qtTrId("lc-euvrc-doc-capacity")},
         {u"maximum_net_power", qtTrId("lc-euvrc-doc-power")},
         {u"type_of_fuel", qtTrId("lc-euvrc-doc-fuel-type")},

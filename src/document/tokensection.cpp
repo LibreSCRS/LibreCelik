@@ -69,32 +69,6 @@ constexpr int CredentialIndexRole = Qt::UserRole;
     return description;
 }
 
-/// LC copy for one security-status token.
-///
-/// Same known-token/verbatim rule the agent error line uses: a token this
-/// build names renders LC's own string, anything else is displayed exactly as
-/// it arrived. The vocabulary is the agent's and grows independently of this
-/// build, so an unknown token is forward-compatible display data — showing it
-/// raw beats swallowing a verdict a newer agent considers worth reporting.
-[[nodiscard]] QString securityStatusText(const QString& token)
-{
-    if (token == QLatin1StringView("trusted"))
-        return qtTrId("lc-cert-status-trusted");
-    if (token == QLatin1StringView("untrusted-root"))
-        return qtTrId("lc-cert-status-untrusted-root");
-    if (token == QLatin1StringView("broken-chain"))
-        return qtTrId("lc-cert-status-broken-chain");
-    if (token == QLatin1StringView("invalid"))
-        return qtTrId("lc-cert-status-invalid");
-    if (token == QLatin1StringView("expired"))
-        return qtTrId("lc-cert-status-expired");
-    if (token == QLatin1StringView("revoked"))
-        return qtTrId("lc-cert-status-revoked");
-    if (token == QLatin1StringView("offline-unverified"))
-        return qtTrId("lc-cert-status-offline-unverified");
-    return token;
-}
-
 /// The status column of a certificate row: every token the agent reported,
 /// in the order it reported them.
 [[nodiscard]] QString certificateStatusText(const CertificateInfo& cert)
@@ -102,7 +76,7 @@ constexpr int CredentialIndexRole = Qt::UserRole;
     QStringList parts;
     parts.reserve(cert.securityStatus.size());
     for (const QString& token : cert.securityStatus)
-        parts << securityStatusText(token);
+        parts << librecelik::certformat::securityStatusText(token);
     return parts.join(QStringLiteral(" · "));
 }
 

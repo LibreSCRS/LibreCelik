@@ -6,35 +6,11 @@
 #include "eidtextdocument.h"
 #include <plugin/fieldvalue.h>
 
-using librecelik::plugin::fieldDetailBytes;
 using librecelik::plugin::fieldValue;
-using librecelik::plugin::findGroup;
-using LibreSCRS::AgentClient::Field;
+using librecelik::plugin::photoBytes;
 using LibreSCRS::AgentClient::FieldGroup;
 
-namespace {
-
-/// The portrait the gateway merged into the read: its own group, keyed with
-/// the field half of the wire's composite key. A group that carries the image
-/// under some other key still prints — the first field with bytes wins.
-QByteArray photoBytes(const QList<FieldGroup>& groups)
-{
-    QByteArray bytes = fieldDetailBytes(groups, u"photo", u"photo");
-    if (!bytes.isEmpty()) {
-        return bytes;
-    }
-    if (const FieldGroup* group = findGroup(groups, u"photo")) {
-        for (const Field& field : group->fields) {
-            bytes = field.detail.toByteArray();
-            if (!bytes.isEmpty()) {
-                return bytes;
-            }
-        }
-    }
-    return {};
-}
-
-} // namespace
+namespace {} // namespace
 
 EIdTextDocument::EIdTextDocument(const QList<FieldGroup>& groups, QString documentPath, QString cssPath)
 {

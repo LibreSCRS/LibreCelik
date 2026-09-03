@@ -5,6 +5,7 @@
 
 #include "agent/artifactio.h"
 #include "agent/errortext.h"
+#include "agent/live/opwatch.h"
 #include "agent/opstallwatchdog.h"
 #include "agent/signrequest.h"
 
@@ -45,45 +46,6 @@ constexpr QLatin1StringView kVisualSignFeature{"visual-sign"};
 constexpr QLatin1StringView kLayoutPreviewFeature{"layout-preview"};
 constexpr QLatin1StringView kTsaUrlFeature{"tsa-url"};
 constexpr QLatin1StringView kBatchSignFeature{"batch-sign"};
-
-/// A watchdog armed on one operation, plus the flag its expiry sets.
-///
-/// Deliberately the same shape the card controller arms (`livecardcontroller.cpp`)
-/// rather than a shared helper: the two are the only arming sites, and the
-/// flag is shared rather than owned because it outlives the expiry it records —
-/// the operation's terminal arrives LATER (a cancel is fire-and-forget), and by
-/// then this flag is the only evidence the terminal was a stall.
-struct OpWatch
-{
-    OpStallWatchdog* dog = nullptr;
-    std::shared_ptr<bool> fired;
-};
-
-/// Arm a per-operation stall bound: parented to the operation (so it cannot
-/// outlive it), fed by the operation's own phase stream, cancelling on expiry.
-/// Phase-aware by construction — the consent and authentication phases, where
-/// the human is at the prompter, never time out; a timestamp leg is a long
-/// MACHINE phase and restarts the budget on every tick.
-[[nodiscard]] OpWatch armWatchdog(AgentOperation* operation)
-{
-    auto* dog = new OpStallWatchdog(LibreSCRS::AgentClient::kLongOperationTimeoutMs, operation);
-    auto fired = std::make_shared<bool>(false);
-    QObject::connect(operation, &AgentOperation::phaseChanged, dog, &OpStallWatchdog::onPhase);
-    QObject::connect(dog, &OpStallWatchdog::expired, operation, [operation, fired] {
-        *fired = true;
-        // Fire-and-forget by contract: the terminal still arrives via
-        // finished(), which is the only place an outcome is ever read.
-        operation->cancel();
-    });
-    dog->begin();
-    return OpWatch{dog, std::move(fired)};
-}
-
-/// The line for a verb issued against a card the client has already removed.
-[[nodiscard]] QString cardGoneText()
-{
-    return errorText(ErrorCode::CardRemoved, CallError::None, {}, {});
-}
 
 /// The line for an option this LC offered but the connected agent cannot
 /// honour — the same refusal the client itself makes locally, said in LC's

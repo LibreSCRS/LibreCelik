@@ -10,45 +10,15 @@
 
 #include <LibreSCRS/AgentClient/SecurityChecks.h>
 
-using librecelik::plugin::fieldDetailBytes;
 using librecelik::plugin::fieldValue;
 using librecelik::plugin::findGroup;
+using librecelik::plugin::firstFieldBytes;
+using librecelik::plugin::photoBytes;
 using librecelik::utils::SecurityCheck;
 using librecelik::utils::SecurityStatusModel;
-using LibreSCRS::AgentClient::Field;
 using LibreSCRS::AgentClient::FieldGroup;
 
 namespace {
-
-/// The portrait the gateway merged into the read: its own group, keyed with
-/// the field half of the wire's composite key. A group that carries the image
-/// under some other key still prints — the first field with bytes wins.
-QByteArray photoBytes(const QList<FieldGroup>& groups)
-{
-    QByteArray bytes = fieldDetailBytes(groups, u"photo", u"photo");
-    if (!bytes.isEmpty()) {
-        return bytes;
-    }
-    if (const FieldGroup* group = findGroup(groups, u"photo")) {
-        for (const Field& field : group->fields) {
-            bytes = field.detail.toByteArray();
-            if (!bytes.isEmpty()) {
-                return bytes;
-            }
-        }
-    }
-    return {};
-}
-
-/// Bytes of a group's first field — the shape the single-image groups (DG5
-/// portrait, DG7 signature) arrive in.
-QByteArray firstFieldBytes(const FieldGroup& group)
-{
-    if (group.fields.isEmpty()) {
-        return {};
-    }
-    return group.fields.first().detail.toByteArray();
-}
 
 /// The per-check rows of the printed record, as table markup.
 ///

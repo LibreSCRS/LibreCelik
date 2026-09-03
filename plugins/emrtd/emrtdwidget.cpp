@@ -8,6 +8,8 @@
 #include "utils/iconutils.h"
 #include "utils/securitystatuswidget.h"
 
+#include <LibreSCRS/AgentClient/FieldOrder.h>
+#include <LibreSCRS/AgentClient/IdentityRows.h>
 #include <LibreSCRS/AgentClient/SecurityChecks.h>
 
 #include <QDate>
@@ -28,42 +30,13 @@
 #include <QPixmap>
 #include <QVBoxLayout>
 
-using librecelik::plugin::fieldDetailBytes;
 using librecelik::plugin::findGroup;
+using librecelik::plugin::firstFieldBytes;
+using librecelik::plugin::photoBytes;
 using LibreSCRS::AgentClient::Field;
 using LibreSCRS::AgentClient::FieldGroup;
 
 namespace {
-
-/// The portrait the gateway merged into the read: its own group, keyed with
-/// the field half of the wire's composite key. A group that carries the image
-/// under some other key still renders — the first field with bytes wins.
-QByteArray photoBytes(const QList<FieldGroup>& groups)
-{
-    QByteArray bytes = fieldDetailBytes(groups, u"photo", u"photo");
-    if (!bytes.isEmpty()) {
-        return bytes;
-    }
-    if (const FieldGroup* group = findGroup(groups, u"photo")) {
-        for (const Field& field : group->fields) {
-            bytes = field.detail.toByteArray();
-            if (!bytes.isEmpty()) {
-                return bytes;
-            }
-        }
-    }
-    return {};
-}
-
-/// Bytes of a group's first field — the shape the single-image groups (DG5
-/// portrait, DG7 signature) arrive in.
-QByteArray firstFieldBytes(const FieldGroup& group)
-{
-    if (group.fields.isEmpty()) {
-        return {};
-    }
-    return group.fields.first().detail.toByteArray();
-}
 
 // Translation maps as functions — qtTrId() must be called at runtime (not static init)
 // to support runtime language switching.
@@ -190,46 +163,19 @@ bool looksLikeAnnexKey(const QString& key)
     return key.startsWith(kAnnexPrefix);
 }
 
-/// Reading order for the annex's fields.
-///
-/// Identity crosses the wire as map-of-maps, so fields arrive sorted by KEY.
-/// For a group whose substance is an address that means "Apartment" third and
-/// "Street" last. This is the order a person reads an address in.
-///
-/// Byte-identical twin in LibreKDE, shared/agentclient/IdentityRows.cpp
-/// (fieldOrderForGroup()); each repository pins its copy with a test —
-/// change both together.
-QStringList annexFieldOrder()
-{
-    return {
-        QStringLiteral("address_label"),     QStringLiteral("street"),
-        QStringLiteral("house_number"),      QStringLiteral("house_letter"),
-        QStringLiteral("entrance"),          QStringLiteral("floor"),
-        QStringLiteral("apartment_number"),  QStringLiteral("place"),
-        QStringLiteral("community"),         QStringLiteral("state"),
-        QStringLiteral("parent_given_name"), QStringLiteral("community_of_birth"),
-        QStringLiteral("state_of_birth"),    QStringLiteral("document_serial"),
-        QStringLiteral("address_date"),
-    };
-}
-
 // The annex reader ships the address-change date as the card's raw ddMMyyyy
 // digits (e.g. "06082016"); the middleware never reformats signed card bytes,
-// so the display normalises it to dd.MM.yyyy here. A value that is already
-// formatted, or that parses as neither shape (a placeholder), is left
-// untouched — presentation-only, no data is invented.
+// so the display normalises it. The two-shape rule lives in the client library
+// both desktop hosts link; what to do with a value that is NOT a date stays
+// here, because that is a presentation decision: this host leaves the card's
+// own text on screen rather than replacing it with a word of its own.
 LibreSCRS::AgentClient::FieldGroup normalizeAnnexDates(LibreSCRS::AgentClient::FieldGroup group)
 {
     for (LibreSCRS::AgentClient::Field& field : group.fields) {
-        if (field.key != QLatin1String("address_date") || field.value.isEmpty()) {
+        if (field.key != QLatin1String("address_date")) {
             continue;
         }
-        if (QDate::fromString(field.value, QStringLiteral("dd.MM.yyyy")).isValid()) {
-            continue; // already display-formatted
-        }
-        if (const QDate d = QDate::fromString(field.value, QStringLiteral("ddMMyyyy")); d.isValid()) {
-            field.value = d.toString(QStringLiteral("dd.MM.yyyy"));
-        }
+        field.value = LibreSCRS::AgentClient::normalizedCardDate(field.value).value_or(field.value);
     }
     return group;
 }
@@ -477,9 +423,9 @@ void EMRTDWidget::addAnnexPersonal(const QString& id, const FieldGroup& group)
         return;
     }
 
-    auto* section =
-        librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-annex-additional-data"), normalizeAnnexDates(group),
-                                                      annexTranslationMap(), {}, outerSection, annexFieldOrder());
+    auto* section = librecelik::utils::FieldSectionBuilder::build(
+        qtTrId("lc-annex-additional-data"), normalizeAnnexDates(group), annexTranslationMap(), {}, outerSection,
+        LibreSCRS::AgentClient::fieldOrderForGroup(group.key));
     annexSections.insert(id, section);
     sectionLayout->addWidget(section);
 

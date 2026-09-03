@@ -5,6 +5,7 @@
 #include <QDate>
 #include "pivtextdocument.h"
 #include <plugin/fieldvalue.h>
+#include <plugin/labelledfield.h>
 
 using librecelik::plugin::fieldValue;
 using LibreSCRS::AgentClient::FieldGroup;
@@ -92,12 +93,7 @@ QString PIVTextDocument::buildCccSection(const QList<FieldGroup>& groups) const
 
 QString PIVTextDocument::buildPrintedSection(const QList<FieldGroup>& groups) const
 {
-    struct Field
-    {
-        QStringView key;
-        QString label;
-    };
-    std::vector<Field> fields = {
+    std::vector<librecelik::plugin::LabelledField> fields = {
         {u"name", qtTrId("lc-piv-field-name")},         {u"employeeAffiliation", qtTrId("lc-piv-field-affiliation")},
         {u"org1", qtTrId("lc-piv-field-org1")},         {u"org2", qtTrId("lc-piv-field-org2")},
         {u"expiry", qtTrId("lc-piv-field-expiration")}, {u"serialNumber", qtTrId("lc-piv-field-serial")},

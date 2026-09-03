@@ -5,6 +5,7 @@
 
 #include "agent/errortext.h"
 #include "agent/fieldmerge.h"
+#include "agent/live/opwatch.h"
 #include "agent/opstallwatchdog.h"
 #include "agent/optionalsections.h" // the ONE spelling of the feature tokens
 
@@ -34,35 +35,6 @@ namespace Cap = LibreSCRS::AgentClient::Cap;
 
 namespace {
 
-/// A watchdog armed on one operation, plus the flag its expiry sets.
-///
-/// The flag is shared rather than owned by the watchdog because it outlives
-/// the expiry it records: the operation's terminal arrives LATER (a cancel is
-/// fire-and-forget), and by then the only evidence that the terminal was a
-/// stall and not a card error is this flag.
-struct OpWatch
-{
-    OpStallWatchdog* dog = nullptr;
-    std::shared_ptr<bool> fired;
-};
-
-/// Arm a per-operation stall bound: parented to the operation (so it cannot
-/// outlive it), fed by the operation's own phase stream, cancelling on expiry.
-[[nodiscard]] OpWatch armWatchdog(AgentOperation* operation)
-{
-    auto* dog = new OpStallWatchdog(LibreSCRS::AgentClient::kLongOperationTimeoutMs, operation);
-    auto fired = std::make_shared<bool>(false);
-    QObject::connect(operation, &AgentOperation::phaseChanged, dog, &OpStallWatchdog::onPhase);
-    QObject::connect(dog, &OpStallWatchdog::expired, operation, [operation, fired] {
-        *fired = true;
-        // Fire-and-forget by contract: the terminal still arrives via
-        // finished(), which is the only place an outcome is ever read.
-        operation->cancel();
-    });
-    dog->begin();
-    return OpWatch{dog, std::move(fired)};
-}
-
 /// The localized line for a failed terminal.
 ///
 /// A caller-enforced stall has no wire error of its own — the operation
@@ -76,12 +48,6 @@ struct OpWatch
     }
     return errorText(operation->errorCode(), operation->callError(), operation->messageKey(),
                      operation->messageFallback());
-}
-
-/// The line for a verb issued against a card the client has already removed.
-[[nodiscard]] QString cardGoneText()
-{
-    return errorText(ErrorCode::CardRemoved, CallError::None, {}, {});
 }
 
 /// How many fields the model's photo group carries — the before/after measure

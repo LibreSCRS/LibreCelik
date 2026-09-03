@@ -19,35 +19,13 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-using librecelik::plugin::fieldDetailBytes;
 using librecelik::plugin::fieldValue;
 using librecelik::plugin::findGroup;
+using librecelik::plugin::photoBytes;
 using LibreSCRS::AgentClient::Field;
 using LibreSCRS::AgentClient::FieldGroup;
 
-namespace {
-
-/// The portrait the gateway merged into the read: its own group, keyed with
-/// the field half of the wire's composite key. A group that carries the image
-/// under some other key still renders — the first field with bytes wins.
-QByteArray photoBytes(const QList<FieldGroup>& groups)
-{
-    QByteArray bytes = fieldDetailBytes(groups, u"photo", u"photo");
-    if (!bytes.isEmpty()) {
-        return bytes;
-    }
-    if (const FieldGroup* group = findGroup(groups, u"photo")) {
-        for (const Field& field : group->fields) {
-            bytes = field.detail.toByteArray();
-            if (!bytes.isEmpty()) {
-                return bytes;
-            }
-        }
-    }
-    return {};
-}
-
-} // namespace
+namespace {} // namespace
 
 EidWidget::EidWidget(const QList<FieldGroup>& cardGroups, QWidget* parent) : EidWidget(parent)
 {

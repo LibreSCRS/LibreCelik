@@ -57,4 +57,15 @@ namespace librecelik::certformat {
 /// Unknown input is returned unchanged.
 [[nodiscard]] QString extendedKeyUsageLabel(const QString& dottedOid);
 
+/// Localised text for one security-status token the agent reported on a
+/// certificate ("trusted", "expired", "revoked", ...).
+///
+/// Known-token/verbatim, the same rule the agent error line uses: a token this
+/// build names renders this application's own string, anything else is
+/// displayed exactly as it arrived. The vocabulary is the agent's and grows
+/// independently of this build, so an unknown token is forward-compatible
+/// display data — showing it raw beats swallowing a verdict a newer agent
+/// considers worth reporting.
+[[nodiscard]] QString securityStatusText(const QString& token);
+
 } // namespace librecelik::certformat

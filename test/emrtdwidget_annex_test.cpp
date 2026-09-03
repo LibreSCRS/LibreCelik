@@ -425,11 +425,12 @@ TEST_F(EmrtdAnnexTest, AnnexFieldsFollowAddressOrderNotAlphabet)
 }
 
 // The full 15-key reading order, pinned end to end: fields arrive in the wire
-// map's alphabetical order and must render in address-reading order. The list
-// is byte-identical to the KDE client's copy (LibreKDE,
-// shared/agentclient/IdentityRows.cpp, fieldOrderForGroup()); no shared
-// library links the two repositories, so each pins its own copy — change both
-// together.
+// map's alphabetical order and must render in address-reading order. The order
+// itself now lives in the agent client library both desktop hosts link, and
+// this test is aimed THROUGH the widget at that one definition — so reordering
+// a key there fails here, in the KDE client's own pin, and in the library's
+// own test: three failures in three repositories rather than a comment asking
+// two of them to be changed together.
 TEST_F(EmrtdAnnexTest, AnnexReadingOrderIsPinnedInFull)
 {
     const QStringList readingOrder{

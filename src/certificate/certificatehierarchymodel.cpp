@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 
 #include "certificatehierarchymodel.h"
+#include "certificate/certformat.h"
 #include "certificateinfoitem.h"
 
 #include <QIcon>
@@ -11,31 +12,6 @@ using LibreSCRS::AgentClient::CertificateInfo;
 using LibreSCRS::AgentClient::TrustStatus;
 
 namespace {
-
-/// LC copy for one security-status token.
-///
-/// Same known-token/verbatim rule the token section applies: a token this
-/// build names renders LC's own string, anything else is displayed exactly as
-/// it arrived. The vocabulary is the agent's and grows independently of this
-/// build.
-[[nodiscard]] QString securityStatusText(const QString& token)
-{
-    if (token == QLatin1StringView("trusted"))
-        return qtTrId("lc-cert-status-trusted");
-    if (token == QLatin1StringView("untrusted-root"))
-        return qtTrId("lc-cert-status-untrusted-root");
-    if (token == QLatin1StringView("broken-chain"))
-        return qtTrId("lc-cert-status-broken-chain");
-    if (token == QLatin1StringView("invalid"))
-        return qtTrId("lc-cert-status-invalid");
-    if (token == QLatin1StringView("expired"))
-        return qtTrId("lc-cert-status-expired");
-    if (token == QLatin1StringView("revoked"))
-        return qtTrId("lc-cert-status-revoked");
-    if (token == QLatin1StringView("offline-unverified"))
-        return qtTrId("lc-cert-status-offline-unverified");
-    return token;
-}
 
 /// The status the leaf row shows: every token the agent reported, in its own
 /// order. An agent that reported none says nothing about trust, which is what
@@ -47,7 +23,7 @@ namespace {
     QStringList parts;
     parts.reserve(cert.securityStatus.size());
     for (const QString& token : cert.securityStatus)
-        parts << securityStatusText(token);
+        parts << librecelik::certformat::securityStatusText(token);
     return parts.join(QStringLiteral(" · "));
 }
 

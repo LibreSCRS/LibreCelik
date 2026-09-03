@@ -18,10 +18,6 @@ class QDateTime;
 /// plus the byte/date renderings the viewer applies to values it receives raw.
 namespace librecelik::certformat {
 
-/// Colon-separated upper-case hex (e.g. `1A:2B:3C`) for byte blocks a caller
-/// holds as raw data rather than as an agent-rendered string.
-[[nodiscard]] QString bytesToHex(QByteArrayView bytes);
-
 /// 16-bytes-per-line space-separated upper-case hex (e.g.
 /// `30 82 03 4F …\n30 82 02 37 …`) for the forensic DER dump in the
 /// unparseable-certificate path. `bytesPerLine` defaults to 16.
@@ -30,10 +26,6 @@ namespace librecelik::certformat {
 /// UTC long date+time format used for certificate validity periods in the
 /// details view (`yyyy-MM-dd HH:mm:ss 'UTC'`). Empty for an invalid instant.
 [[nodiscard]] QString formatTime(const QDateTime& tp);
-
-/// Compact date used in the token section (`dd.MM.yyyy`, UTC). Empty for an
-/// invalid instant.
-[[nodiscard]] QString formatDate(const QDateTime& tp);
 
 /// Localised single-bit label for a KeyUsage bit, via qtTrId.
 /// @param bitIndex RFC 5280 §4.2.1.3 ordinal — the bit index within

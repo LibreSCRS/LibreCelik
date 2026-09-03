@@ -1,3 +1,0 @@
-# Explicit bridge-region allowlist.
-# Should be EMPTY by end of 4.0. Any entry is a known, time-boxed
-# exception to the API boundary.

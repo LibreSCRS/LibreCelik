@@ -385,6 +385,44 @@ def test_platforms_absent_matches_when_no_flag():
     assert checker.match_component("libcurl.so", [cross], None) is cross
 
 
+def test_check_refuses_without_platform(tmp_path, capsys):
+    """``--platform`` is mandatory, and the refusal happens BEFORE any check.
+
+    Asserted on the exit status *and* on the check not having run. A refusal
+    that nevertheless walked the tree would print the ``::error::`` line the
+    unmapped library below provokes, and a test that only inspected the
+    message could not tell the two apart. The control call — same arguments
+    plus ``--platform linux`` — proves the fixture really does provoke it.
+    """
+    import json as _json
+
+    app = tmp_path / "app"
+    app.mkdir()
+    (app / "libunmapped.so.1").write_bytes(b"")
+    manifest_dir = tmp_path / "licenses"
+    manifest_dir.mkdir()
+    manifest = manifest_dir / "manifest.json"
+    manifest.write_text(_json.dumps({"internal_sonames": [], "components": []}))
+
+    # Control: with a platform the check runs and fails on the unmapped library.
+    rc = checker.main(
+        ["--check", str(app), "--manifest", str(manifest), "--platform", "linux"]
+    )
+    assert rc != 0
+    assert "::error::" in capsys.readouterr().out
+
+    # Without a platform: argparse refuses, and no check output is produced.
+    try:
+        rc = checker.main(["--check", str(app), "--manifest", str(manifest)])
+    except SystemExit as exc:
+        assert exc.code != 0
+    else:
+        raise AssertionError(f"expected a refusal, got rc={rc}")
+    captured = capsys.readouterr()
+    assert "::error::" not in captured.out
+    assert "checked " not in captured.out
+
+
 def test_emit_candidates_respects_platform_filter(tmp_path):
     """A component scoped to a platform OTHER than the current one must
     NOT shield a bundled library from the candidate list. Otherwise a

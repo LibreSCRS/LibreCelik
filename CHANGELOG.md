@@ -10,6 +10,27 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Removed
+
+- **`src/utils/utils.h`** — a header whose single macro (`DISABLE_COPY_MOVE`)
+  already had no user at the 4.2.0 tag.
+- **Four helpers with no caller since 4.2.0**: `certformat::bytesToHex`,
+  `certformat::formatDate`, and the `TlDefault` / `defaultTrustedLists()` pair
+  in the signing defaults. The two trusted-list URLs the latter held are not
+  lost: the agent ships them as its own seed, with the same LOTL flags, and
+  that is the copy the application actually uses.
+- **`.apiboundary-allow.txt`** — the API-boundary exception list. It said it
+  should be empty by the end of 4.0; it was, two majors later, so the exception
+  mechanism went with the file rather than waiting to be used by accident.
+
+### Changed
+
+- **The API boundary now forbids the four smart-card bridge headers** —
+  `pcsc_connection.h`, `secure_buffer.h`, `monitor.h` and `monitor_event.h`.
+  They were left reachable while this application still drove a Qt listener and
+  an async card reader off them. Neither exists here any more and nothing
+  includes them, so the migration those headers were waiting on is finished.
+
 ### Added
 
 - **Trust settings: country-signing anchors.** A new section under

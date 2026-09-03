@@ -41,11 +41,6 @@ QString hex(QByteArrayView bytes, char separator, qsizetype bytesPerLine)
 
 } // namespace
 
-QString bytesToHex(QByteArrayView bytes)
-{
-    return hex(bytes, ':', /*bytesPerLine=*/0);
-}
-
 QString bytesToHexLines(QByteArrayView bytes, qsizetype bytesPerLine)
 {
     if (bytesPerLine <= 0)
@@ -58,13 +53,6 @@ QString formatTime(const QDateTime& tp)
     if (!tp.isValid())
         return {};
     return tp.toTimeZone(QTimeZone::UTC).toString(QStringLiteral("yyyy-MM-dd HH:mm:ss 'UTC'"));
-}
-
-QString formatDate(const QDateTime& tp)
-{
-    if (!tp.isValid())
-        return {};
-    return tp.toTimeZone(QTimeZone::UTC).toString(QStringLiteral("dd.MM.yyyy"));
 }
 
 QString keyUsageBitLabel(int bitIndex)

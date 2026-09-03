@@ -33,7 +33,6 @@ set(PROJECT_SOURCES
         utils/readerpages.h
         utils/readerpages.cpp
         utils/printmanager.h
-	utils/utils.h
         utils/iconutils.h
         utils/stringutils.h
         agent/agentgateway.h

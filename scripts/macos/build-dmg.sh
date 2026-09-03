@@ -97,10 +97,6 @@ cp -R "$APP_SRC" "$APP_STAGING"
 # ---------------------------------------------------------------------------
 GUI_PLUGIN_DIR="$BUILD_DIR/gui-plugins"
 
-# --- DSS signing bundle (JRE + JAR) ---
-# Skipped: native signing backend is the default and does not require Java.
-# DSS is deprecated. To re-enable, set SIGNING_BACKEND=dss and uncomment.
-
 echo "Copying GUI plugins..."
 mkdir -p "$APP_STAGING/Contents/PlugIns/gui-plugins"
 for f in "$GUI_PLUGIN_DIR"/*-gui-plugin.*; do

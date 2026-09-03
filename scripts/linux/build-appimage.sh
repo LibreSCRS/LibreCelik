@@ -290,10 +290,6 @@ fi
 echo "Agent client library in AppDir:"
 ls "$APPDIR/usr/lib"/liblibrescrs-agentclient-qt.so*
 
-# --- DSS signing bundle (JRE + JAR) ---
-# Skipped: native signing backend is the default and does not require Java.
-# DSS is deprecated. To re-enable, set SIGNING_BACKEND=dss and uncomment.
-
 echo "Copying GUI plugins..."
 mkdir -p "$APPDIR/usr/lib/gui-plugins"
 for f in "$GUI_PLUGIN_DIR"/*-gui-plugin.so; do

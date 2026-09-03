@@ -17,20 +17,4 @@ inline const QStringList& defaultTsaUrls()
     return urls;
 }
 
-struct TlDefault
-{
-    QString url;
-    bool lotl;
-    bool eager;
-};
-
-inline const QList<TlDefault>& defaultTrustedLists()
-{
-    static const QList<TlDefault> lists = {
-        {QStringLiteral("https://www.mit.gov.rs/TrustedList/TSL-RS.xml"), false, true},
-        {QStringLiteral("https://ec.europa.eu/tools/lotl/eu-lotl.xml"), true, false},
-    };
-    return lists;
-}
-
 } // namespace signing

@@ -19,25 +19,21 @@
 #         the forbidden list is pure regression protection against future
 #         re-exposure.
 #
-# The remaining smartcard headers (pcsc_connection.h, secure_buffer.h,
-# monitor.h, monitor_event.h) are INTENTIONALLY NOT forbidden — they are
-# the LC bridge surface preserved until LC migrates its Qt listener +
-# async reader off them.
-#
-# TODO(smartcard-bridge-followup): once the LC Qt listener and
-# AsyncCardReader finish their migration off those bridge headers, add
-# the four remaining smartcard headers — <smartcard/pcsc_connection.h>,
-# <smartcard/secure_buffer.h>, <smartcard/monitor.h>,
-# <smartcard/monitor_event.h> — to FORBIDDEN_PATTERNS and expect those to
-# disappear from LM's public include tree entirely.
+#   * <smartcard/pcsc_connection.h>, <smartcard/secure_buffer.h>,
+#     <smartcard/monitor.h>, <smartcard/monitor_event.h>
+#       — the former LC bridge surface. They were left reachable while LC
+#         still drove a Qt listener and an async reader off them; neither
+#         exists here any more and no file under src/, plugins/ or test/
+#         includes them, so they join the forbidden set.
 #
 # Match semantics: plain substring grep (no comment / #if 0 stripping).
 # A commented-out `// #include <libresign/...>` WILL flag — this is
 # intentional strictness; the reviewer must delete the comment rather
 # than re-enabling it silently later.
 #
-# `.apiboundary-allow.txt` lists files granted exception status during
-# migration windows. Should be EMPTY by end of 4.0.
+# There is no allowlist. The file that held one said it should be empty by
+# the end of 4.0; it was, two majors later, so the exception mechanism went
+# with it rather than waiting to be used by accident.
 
 set -euo pipefail
 
@@ -51,17 +47,16 @@ FORBIDDEN_PATTERNS=(
     '#include <smartcard/ipcsc_scan_provider.h>'
     '#include <smartcard/pcsc_scan_provider.h>'
     '#include <smartcard/pkcs11_card_provider.h>'
+    '#include <smartcard/pcsc_connection.h>'
+    '#include <smartcard/secure_buffer.h>'
+    '#include <smartcard/monitor.h>'
+    '#include <smartcard/monitor_event.h>'
 )
 SEARCH_PATHS=(src plugins test)
-EXCLUDE_FILE=.apiboundary-allow.txt
 
 violations=0
 for pat in "${FORBIDDEN_PATTERNS[@]}"; do
     while IFS= read -r match; do
-        path=${match%%:*}
-        if [[ -f $EXCLUDE_FILE ]] && grep -Fxq "$path" "$EXCLUDE_FILE"; then
-            continue   # explicitly allowlisted
-        fi
         echo "FORBIDDEN: $match"
         violations=$((violations + 1))
     done < <(grep -rnF "$pat" "${SEARCH_PATHS[@]}" --include='*.h' --include='*.cpp' || true)
@@ -70,7 +65,6 @@ done
 if [[ $violations -gt 0 ]]; then
     echo
     echo "$violations API-boundary violations."
-    echo "See .apiboundary-allow.txt for the explicit allowlist (should be empty post-4.0 merge)."
     exit 1
 fi
 

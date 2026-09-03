@@ -194,8 +194,11 @@ if(GIT_VERSION_FULL STREQUAL "" AND EXISTS "${GIT_VERSION_SRC_DIR}/VERSION")
     # inside a foreign repository is refused the enclosing repo's tags above —
     # so `git describe` cannot answer for any of them. The committed VERSION
     # file is the authoritative fallback ahead of the last-resort default
-    # below: it mirrors the most recent release tag and is bumped in lockstep
-    # with each new tag (the release workflow gates that lockstep at tag time).
+    # below: it carries the version this tree is heading for, not the last one
+    # it shipped, and is bumped at code freeze. That is what lets the
+    # CHANGELOG/VERSION check run on every push instead of first executing on
+    # a permanent tag; a development checkout is unaffected, because
+    # `git describe` still wins above.
     file(STRINGS "${GIT_VERSION_SRC_DIR}/VERSION" GIT_VERSION_FULL LIMIT_COUNT 1)
     string(STRIP "${GIT_VERSION_FULL}" GIT_VERSION_FULL)
     string(REGEX REPLACE "^v" "" GIT_VERSION_FULL "${GIT_VERSION_FULL}")

@@ -49,6 +49,13 @@ jobs:
         # that passed. Costs a second and builds nothing.
         run: ./ci/scripts/check-skip-reasons.sh
 
+      - name: Changelog and version agree on the pending release
+        # Run on every push with the version this tree is heading for, so the
+        # agreement is proved weeks before the tag rather than first on a tag
+        # that cannot be taken back. The release job calls the same script with
+        # the tag's version.
+        run: ci/scripts/check-release-lockstep.sh "$(head -n1 VERSION | tr -d '[:space:]')"
+
   i18n-audit:
     # Static retranslate audit (no build required). Runs the full
     # tools/i18n_audit.py over src+plugins, then runs its own pytest

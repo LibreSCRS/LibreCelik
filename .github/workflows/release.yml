@@ -236,6 +236,7 @@ jobs:
           sparse-checkout: |
             CHANGELOG.md
             VERSION
+            ci/scripts/check-release-lockstep.sh
           sparse-checkout-cone-mode: false
           # Check out into a SUBDIR. The root workspace already holds the
           # downloaded and cosigned artifacts/, and actions/checkout wipes
@@ -259,9 +260,13 @@ jobs:
         # character that is not a digit or a dot, while the publishing step
         # marked a pre-release only on an -rc/-beta/-alpha/-pre suffix. The push
         # filter accepts an arbitrary suffix, so every tag satisfying one test
-        # and not the other (4.3.0-final, 4.3.0a, 4.3.0.hotfix) skipped the
+        # and not the other (5.0.0-final, 5.0.0a, 5.0.0.hotfix) skipped the
         # lockstep entirely AND published as a stable release: exactly the two
         # silences this gate exists to end.
+        #
+        # Whether a tag is a pre-release is a property of the TAG, so it stays
+        # here; the agreement itself is the same check the cheap lint job runs
+        # on every push, so it lives in one script both callers share.
         run: |
           VER="${GITHUB_REF_NAME#v}"
           case "$VER" in
@@ -273,66 +278,28 @@ jobs:
             echo "pre-release tag $VER — lockstep gate not applied"
             exit 0
           fi
-          FAIL=0
-          # Extract with the SAME awk the release-notes step uses, then require
-          # the section to hold a non-whitespace character. Testing only for the
-          # header let a header with nothing under it pass, and the release then
-          # shipped precisely the generic auto-notes this error text warns
-          # about. Matching with a second, near-miss pattern also made the two
-          # steps disagree: `^## .*(\[|[[:space:]])` spends the space in its own
-          # `## ` prefix, so a bracket-less `## 4.3.0` header was called missing
-          # here while the extractor read it correctly.
-          SECTION=""
-          if [ -f _changelog/CHANGELOG.md ]; then
-            SECTION="$(awk -v ver="$VER" \
-              'BEGIN { gsub(/\./, "\\.", ver) }
-               /^## / { if ($0 ~ ("(\\[|[[:space:]])" ver "(\\]|[[:space:]]|$)")) {f=1; next} else if (f) exit } f' \
-              _changelog/CHANGELOG.md)"
-          fi
-          if ! printf '%s' "$SECTION" | grep -q '[^[:space:]]'; then
-            echo "::error::CHANGELOG.md has no section for $VER, or the section is empty — the release would ship generic auto-notes. Rename the [Unreleased] header before tagging."
-            FAIL=1
-          fi
-          FILE_VER="$(head -n1 _changelog/VERSION 2>/dev/null | tr -d '[:space:]')"
-          if [ "$FILE_VER" != "$VER" ]; then
-            echo "::error::VERSION file holds '$FILE_VER' but the tag is '$VER' — no-git source drops would stamp the wrong version. Bump VERSION with the tag."
-            FAIL=1
-          fi
-          exit "$FAIL"
+          export CHANGELOG_FILE=_changelog/CHANGELOG.md
+          export VERSION_FILE=_changelog/VERSION
+          _changelog/ci/scripts/check-release-lockstep.sh "$VER"
 
       - name: Prepare release notes from CHANGELOG
+        # One extractor, in ci/scripts/check-release-lockstep.sh, shared with
+        # the per-push agreement check. It used to be copied inline into every
+        # release workflow, and one of the copies had drifted: without escaping
+        # the version's dots, tag 5.0.0 also matched a [500.0] heading.
+        #
+        # --section exits non-zero when the section is missing OR holds only
+        # whitespace. Both have to fall back: `gh release create --notes-file`
+        # accepts a blank file and publishes a release with no body at all.
+        # --generate-notes and --notes-file are mutually exclusive, hence the
+        # shell branch.
         run: |
           VER="${GITHUB_REF_NAME#v}"
-          NOTES_FILE="$RUNNER_TEMP/relnotes.md"
-          # Extract the section whose `## ` header carries the tag version,
-          # requiring a bracket or whitespace on each side of it: tag 4.2.0
-          # matches `## [4.2.0]`, `## [4.2.0] — <date>` and
-          # `## [Unreleased] — 4.2.0`, but not `## [4.2.0-rc1]` or
-          # `## [14.2.0]`. The header line itself is dropped — the release
-          # title already carries the tag. The version's dots are escaped on
-          # the way into the pattern: `4.2.0` must not also match `432.0`.
-          # A missing CHANGELOG is the no-section case, said out loud —
-          # this step runs under -e, and an awk over an absent file would
-          # otherwise kill it before the fallback branch below.
-          if [ -f _changelog/CHANGELOG.md ]; then
-            awk -v ver="$VER" \
-              'BEGIN { gsub(/\./, "\\.", ver) }
-               /^## / { if ($0 ~ ("(\\[|[[:space:]])" ver "(\\]|[[:space:]]|$)")) {f=1; next} else if (f) exit } f' \
-              _changelog/CHANGELOG.md > "$NOTES_FILE"
+          export CHANGELOG_FILE=_changelog/CHANGELOG.md
+          if _changelog/ci/scripts/check-release-lockstep.sh --section "$VER" > "$RUNNER_TEMP/relnotes.md"; then
+            echo "NOTES_ARG=--notes-file $RUNNER_TEMP/relnotes.md" >> "$GITHUB_ENV"
           else
-            echo "::warning::CHANGELOG.md is absent at this tag"
-            : > "$NOTES_FILE"
-          fi
-          # A miss must be loud. `gh release create --notes-file` accepts a
-          # blank file and publishes a release with no body at all, so test
-          # for a non-whitespace character rather than for file size: a
-          # header followed only by blank lines has to fall back too.
-          if grep -q '[^[:space:]]' "$NOTES_FILE"; then
-            echo "Release notes taken from the CHANGELOG section for $VER:"
-            cat "$NOTES_FILE"
-            echo "NOTES_ARG=--notes-file $NOTES_FILE" >> "$GITHUB_ENV"
-          else
-            echo "::warning::CHANGELOG has no section for $VER — falling back to --generate-notes"
+            echo "No CHANGELOG section for $VER — falling back to --generate-notes"
             echo "NOTES_ARG=--generate-notes" >> "$GITHUB_ENV"
           fi
 

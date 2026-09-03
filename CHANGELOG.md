@@ -8,7 +8,7 @@ tags.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [Unreleased] — 5.0.0
 
 ### Removed
 
@@ -93,6 +93,14 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
   list. Single-PIN cards (rs-eid Apollo, PIV, plain PKCS#15)
   continue to show a single dropdown entry — UX unchanged for
   them.
+
+## 4.1.0 and 4.2.0
+
+These two releases shipped before this file was kept per release, so they
+have no section here and their GitHub release notes were auto-generated from
+the commit log. They are recorded as predating the practice rather than
+reconstructed after the fact: notes written now against what was actually
+released three months ago would be a guess presented as a record.
 
 ## [4.0.0-rc2] — 2026-05-08
 

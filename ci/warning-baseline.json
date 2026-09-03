@@ -1,0 +1,6 @@
+{
+  "GNU-16": {
+    "-Wnull-dereference": 2
+  },
+  "min_compile_units": 389
+}

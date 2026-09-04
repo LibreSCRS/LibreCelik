@@ -20,7 +20,7 @@
 set -uo pipefail
 
 IMAGE="${1:?usage: package-gate.sh <image> [artefact-root]}"
-ART="${2:-/var/tmp/p4b/out}"
+ART="${2:-/var/tmp/librescrs-packages/out}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 REPO_NAME="$(basename "$REPO_ROOT")"

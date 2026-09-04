@@ -10,6 +10,20 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased] — 5.0.0
 
+### Added
+
+- **Native `deb` and `rpm` packages, and an AppStream entry.** Debian 13,
+  Ubuntu 26.04 LTS and Fedora 43. LibreCelik needs none of the root-owned system
+  files that force the agent into a distribution package, so this is a quality
+  decision rather than a necessity; the AppImage remains.
+
+  The AppStream component did not exist before, which meant no software centre
+  could list the application at all. It is now written, installed by the build,
+  and validated during the build by both packaging systems — an invalid
+  component and a missing one look the same to a software centre, and only a
+  validator tells them apart.
+
+
 ### Removed
 
 - **The 4.2 settings importer** (`src/agent/settingsimport.*`, 423 lines with

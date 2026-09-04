@@ -1,0 +1,34 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export DEB_CPPFLAGS_MAINT_APPEND = -DNDEBUG
+
+%:
+	dh $@ --buildsystem=cmake+ninja --builddirectory=build
+
+# The agent client comes from a package. Left at its default this build would
+# FetchContent LibreAgent from the network, and a build that reaches the network
+# is not a build of a package.
+override_dh_auto_configure:
+	dh_auto_configure -- -DBUILD_TESTING=OFF -DINSTALL_GTEST=OFF \
+	                     -DLIBRECELIK_USE_INSTALLED_LIBREAGENT=ON
+	test ! -e build/_deps/libreagent-subbuild || \
+	  { echo "the build fetched LibreAgent instead of using the installed package"; exit 1; }
+
+override_dh_auto_test:
+
+# Stage into debian/tmp even though there is one binary package. With a single
+# package debhelper installs straight into debian/librecelik, the .install list
+# then looks in debian/tmp, finds nothing, and every line reports a missing
+# file. Staging keeps the list meaningful -- it is the written record of what
+# ships -- and keeps dh_missing able to say when something new appears.
+override_dh_auto_install:
+	dh_auto_install --destdir=debian/tmp
+
+# The GUI plugins are dlopen'd from a directory beside the library directory.
+# They carry no SONAME anything links, so keep them out of shlibs.
+override_dh_makeshlibs:
+	dh_makeshlibs -X/gui-plugins/
+
+override_dh_missing:
+	dh_missing --fail-missing

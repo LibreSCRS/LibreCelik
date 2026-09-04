@@ -116,4 +116,14 @@ include(CTest)
 add_subdirectory(resources)
 add_subdirectory(src)
 add_subdirectory(plugins)
-add_subdirectory(test)
+
+# BUILD_TESTING, not unconditional. include(CTest) above defines it and defaults
+# it ON, so every developer build is unaffected -- but a distribution package is
+# built with it OFF, and the test tree fetches googletest over the network. With
+# FETCHCONTENT_FULLY_DISCONNECTED set, as every package build sets it, that fetch
+# quietly does nothing and configuration then fails on a GTest target that was
+# never defined. A build that reaches the network is not a build of a package,
+# and compiling a test suite nobody will run is not one either.
+if(BUILD_TESTING)
+    add_subdirectory(test)
+endif()

@@ -1,0 +1,5 @@
+usr/bin/LibreCelik
+usr/lib/*/gui-plugins/*.so
+usr/share/applications/librecelik.desktop
+usr/share/icons/hicolor/512x512/apps/librecelik.png
+usr/share/metainfo/org.librescrs.librecelik.metainfo.xml

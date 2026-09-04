@@ -1,0 +1,36 @@
+Source: librecelik
+Section: utils
+Priority: optional
+Maintainer: LibreSCRS <packages@librescrs.org>
+Build-Depends: debhelper-compat (= 13),
+               cmake (>= 3.24),
+               ninja-build,
+               make,
+               pkg-config,
+               git,
+               qt6-base-dev,
+               qt6-svg-dev,
+               qt6-pdf-dev,
+               qt6-tools-dev,
+               qt6-tools-dev-tools,
+               libgtest-dev,
+               dbus-daemon,
+               liblibrescrs-dev (>= 5.0),
+               liblibrescrs-agentclient-qt-dev (>= 5.0)
+Standards-Version: 4.7.0
+Homepage: https://librescrs.github.io/
+Rules-Requires-Root: no
+
+Package: librecelik
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+         liblibrescrs-agentclient-qt5 (>= 5.0)
+Recommends: librescrs-agent (>= 5.0)
+Description: Cross-platform reader and signer for LibreSCRS smart cards
+ LibreCelik reads Serbian government smart cards -- identity, vehicle and
+ health -- as well as generic ICAO electronic travel documents, NIST PIV cards
+ and PKCS#15 cards, and signs documents in PAdES, XAdES and CAdES.
+ .
+ It talks to the card through the LibreSCRS agent, so the PIN is collected by
+ the agent's own prompter rather than inside this application. Without the
+ agent installed it starts and says so.

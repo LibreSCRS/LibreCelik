@@ -62,3 +62,6 @@ aqtinstall.log
 testPriint.pdf
 tools/__pycache__/
 __pycache__/
+
+# Working copy of the packaging recipe; dpkg-buildpackage wants it at the root.
+/debian/

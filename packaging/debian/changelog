@@ -1,0 +1,15 @@
+librecelik (5.0.0-1) unstable; urgency=medium
+
+  * The 4.2 settings importer (`src/agent/settingsimport.*`, 423 lines with
+  * `src/utils/utils.h` — a header whose single macro (`DISABLE_COPY_MOVE`)
+  * Four helpers with no caller since 4.2.0: `certformat::bytesToHex`,
+  * `.apiboundary-allow.txt` — the API-boundary exception list. It said it
+  * `--platform` is now required by the bundled-licence checker and the
+  * The API boundary now forbids the four smart-card bridge headers —
+  * Trust settings: country-signing anchors. A new section under
+  * New translation strings `lc-pin-label-auth`, `lc-pin-label-qscd`,
+  * New `librecelik::signing::formatSlotLabel()` helper
+  * Travel-document verification says why, not just whether. Each
+  * Signing wizard slot dropdown now lists each PKCS#11 slot
+
+ -- LibreSCRS <packages@librescrs.org>  Fri, 04 Sep 2026 04:15:57 +0200

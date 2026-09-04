@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.librescrs.librecelik</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <name>LibreCelik</name>
+  <summary>Read smart cards and sign documents with them</summary>
+
+  <description>
+    <p>
+      LibreCelik reads Serbian government smart cards — identity, vehicle and
+      health — as well as generic ICAO electronic travel documents, NIST PIV
+      cards and PKCS#15 cards. It talks to the reader through the LibreSCRS
+      agent, so the PIN is collected by the agent's own prompter rather than
+      inside the application.
+    </p>
+    <p>
+      It also signs documents: PAdES, XAdES and CAdES, at the long-term levels
+      as well as the basic ones, with a visible signature on a PDF page when
+      one is wanted.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">librecelik.desktop</launchable>
+
+  <url type="homepage">https://librescrs.github.io/</url>
+  <url type="bugtracker">https://github.com/LibreSCRS/LibreCelik/issues</url>
+
+  <provides>
+    <binary>LibreCelik</binary>
+  </provides>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="5.0.0" date="2026-09-04"/>
+  </releases>
+</component>

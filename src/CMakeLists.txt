@@ -317,6 +317,10 @@ if(UNIX AND NOT APPLE)
     install(FILES ${PROJECT_SOURCE_DIR}/resources/smartcard-id-512.png
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/512x512/apps
             RENAME librecelik.png)
+    # AppStream metainfo. Software centres list an application only if this
+    # file is present and valid, so it is installed rather than merely written.
+    install(FILES ${PROJECT_SOURCE_DIR}/packaging/appstream/org.librescrs.librecelik.metainfo.xml
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/metainfo)
     # APPEND, not set: a distro packager drives policy through
     # -DCMAKE_INSTALL_RPATH, which seeds this property at target creation.
     set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY

@@ -58,6 +58,22 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Each release now carries two bills of materials, `sbom-linux.cdx.json`
+  and `sbom-macos.cdx.json`, instead of a single `sbom.cdx.json`.** The name
+  changes because the content does: each bill is derived from the staging tree
+  of the artefact it sits beside, by the same walk that already verifies every
+  bundled library has a documented licence. The previous single document was
+  produced by a source-pin reader that searched paths this repository does not
+  have, so it listed nothing at all — and it was signed. Both new bills are
+  signed the same way, and a release whose bill is missing or empty is now
+  refused rather than published.
+
+  If you consumed `sbom.cdx.json`, fetch the one matching your download. Each
+  component carries the sha256 of the object actually shipped, so a bill can
+  be checked against the artefact beside it — the single exception is a macOS
+  framework bundle whose binary cannot be read, which is listed with an empty
+  hash list rather than with a digest of nothing.
+
 - **`--platform` is now required** by the bundled-licence checker and the
   third-party-notice generator. Omitting it applied every component's licence
   rather than the ones the build ships — a Linux-only entry could cover a macOS

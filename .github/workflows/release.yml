@@ -182,7 +182,17 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: linux-artifacts
-          path: LibreCelik-*.AppImage
+          # if-no-files-found defaults to "warn", which would let a job that
+          # matched nothing at all upload an empty set and say so in a line
+          # nobody reads. It is evaluated over the AGGREGATE match set, not
+          # per pattern: if the AppImage matches and the bill does not, this
+          # step still succeeds. So it is a floor, not the net -- the net is
+          # ci/scripts/check-sbom.py in the release job, which reads the
+          # documents that actually arrived.
+          if-no-files-found: error
+          path: |
+            LibreCelik-*.AppImage
+            sbom-linux.cdx.json
 
   build-macos:
     timeout-minutes: 75
@@ -237,7 +247,12 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: macos-artifacts
-          path: LibreCelik-*.dmg
+          # See the linux-artifacts step: a floor over the aggregate match
+          # set, not a per-pattern guarantee.
+          if-no-files-found: error
+          path: |
+            LibreCelik-*.dmg
+            sbom-macos.cdx.json
 
   source-tarball:
     # The source tarball is produced by this project, not by GitHub. GitHub's
@@ -301,15 +316,6 @@ jobs:
           merge-multiple: true
           path: artifacts
 
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v4.0.0
-
-      - name: Sign artifacts with cosign (keyless via Sigstore OIDC)
-        run: |
-          find artifacts -type f \
-            ! -name '*.sigstore.json' \
-            -exec sh -c 'cosign sign-blob "$1" --bundle "$1.sigstore.json" --yes' _ {} \;
-
       - name: Check out CHANGELOG
         uses: actions/checkout@v4
         with:
@@ -318,7 +324,7 @@ jobs:
             CHANGELOG.md
             VERSION
             ci/scripts/check-release-lockstep.sh
-            ci/scripts/make-sbom.sh
+            ci/scripts/check-sbom.py
             cmake/libreagent.pin
           sparse-checkout-cone-mode: false
           # Check out into a SUBDIR. The root workspace already holds the
@@ -327,6 +333,46 @@ jobs:
           # there (clean: false does NOT suppress that path). Isolating the
           # checkout in _changelog/ leaves artifacts/ untouched.
           path: _changelog
+
+      - name: Refuse a release whose bill of materials is missing or empty
+        # Before anything is signed, deliberately. Both bills arrive as
+        # downloaded artefacts, so the blanket signing step below would
+        # otherwise put a Sigstore transparency-log entry on a document this
+        # job is about to reject. The release aborts either way and nothing
+        # reaches a consumer; the residue would be a public signature over a
+        # document the project refused, which is worth not creating.
+        #
+        # This is the only place both bills sit in one directory, so it is
+        # the only place the pair can be judged. One command, both files: a
+        # healthy Linux bill must not launder an empty macOS one.
+        #
+        # The bills themselves are written where the truth is: each packaging
+        # script derives one from its fully assembled staging tree -- the same
+        # walk the fail-closed licence check uses -- and uploads it beside the
+        # artefact it describes. There are two artefacts, so there are two
+        # bills; merging them would claim a single bundle nobody downloads.
+        # This job used to PRODUCE the bill instead, from a source-pin reader
+        # that searched thirdparty/openssl-*, packaging/arch/PKGBUILD and
+        # cmake/FetchQCBOR.cmake -- paths this repository does not have. Every
+        # lookup came back empty, the document published beside both downloads
+        # read "components": [], and it was signed. A signed empty bill is
+        # worse than no bill: it tells whoever is triaging a Qt or OpenSSL
+        # advisory, over this project's signature, that the bundle carries no
+        # third-party code.
+        run: |
+          set -euo pipefail
+          python3 _changelog/ci/scripts/check-sbom.py \
+            artifacts/sbom-linux.cdx.json \
+            artifacts/sbom-macos.cdx.json
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4.0.0
+
+      - name: Sign artifacts with cosign (keyless via Sigstore OIDC)
+        run: |
+          find artifacts -type f \
+            ! -name '*.sigstore.json' \
+            -exec sh -c 'cosign sign-blob "$1" --bundle "$1.sigstore.json" --yes' _ {} \;
 
       - name: Enforce the release lockstep on a final tag
         # A final X.Y.Z tag must find the repository already speaking its
@@ -414,22 +460,16 @@ jobs:
             echo "NOTES_ARG=--generate-notes" >> "$GITHUB_ENV"
           fi
 
-      - name: Bill of materials and checksum manifest
-        # Written here rather than left to a scanner. A scanner reads package
-        # metadata, and the whole point is that the shipped metadata says
-        # nothing about a statically linked OpenSSL: measured on a real build,
-        # lintian flagged the bundled curl and said nothing at all about the
-        # bundled OpenSSL. This file is the only place either version appears,
-        # which is what makes it obligatory rather than nice to have.
+      - name: Checksum manifest over the whole set
+        # The bills are judged and signed earlier in this job; both were
+        # already in artifacts/ when the signing step ran.
         #
         # SHA256SUMS is generated after everything else is in artifacts/ and
         # then signed itself, so one signature covers the whole set.
         run: |
           set -euo pipefail
-          bash _changelog/ci/scripts/make-sbom.sh artifacts/sbom.cdx.json
           ( cd artifacts && sha256sum $(ls | grep -v '^SHA256SUMS$') > SHA256SUMS )
           cat artifacts/SHA256SUMS
-          cosign sign-blob artifacts/sbom.cdx.json --bundle artifacts/sbom.cdx.json.sigstore.json --yes
           cosign sign-blob artifacts/SHA256SUMS   --bundle artifacts/SHA256SUMS.sigstore.json --yes
 
       - name: Debug packages are published or suppressed on purpose

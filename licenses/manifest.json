@@ -23,6 +23,7 @@
     {
       "match": "libQt6*.so",
       "name": "Qt 6",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -47,6 +48,7 @@
     {
       "match": "libq*backend.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -55,6 +57,7 @@
     {
       "match": "libqxcb.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -63,6 +66,7 @@
     {
       "match": "libqxcb-egl-integration.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -71,6 +75,7 @@
     {
       "match": "libqxcb-glx-integration.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -79,6 +84,7 @@
     {
       "match": "libqgif.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -87,6 +93,7 @@
     {
       "match": "libqicns.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -95,6 +102,7 @@
     {
       "match": "libqico.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -103,6 +111,7 @@
     {
       "match": "libqjp2.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -111,6 +120,7 @@
     {
       "match": "libqjpeg.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -119,6 +129,7 @@
     {
       "match": "libqmng.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -127,6 +138,7 @@
     {
       "match": "libqsvg.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -135,6 +147,7 @@
     {
       "match": "libqtga.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -143,6 +156,7 @@
     {
       "match": "libqtiff.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -151,6 +165,7 @@
     {
       "match": "libqwbmp.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -159,6 +174,7 @@
     {
       "match": "libqwebp.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -167,6 +183,7 @@
     {
       "match": "libqpdf.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -175,6 +192,7 @@
     {
       "match": "libcomposeplatforminputcontextplugin.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -183,6 +201,7 @@
     {
       "match": "libibusplatforminputcontextplugin.so",
       "name": "Qt 6 plugins",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -399,6 +418,7 @@
     {
       "match": "libzstd.so",
       "name": "Zstandard",
+      "purl": "pkg:generic/zstd",
       "spdx": "BSD-3-Clause",
       "text": "resources/licenses/bsd-3.txt",
       "sha256": "5a93d5831e1297ab10fe643e1a631e83be392896da14ee2951285a79012df69d",
@@ -543,6 +563,7 @@
     {
       "match": "libgnutls.so",
       "name": "GnuTLS",
+      "purl": "pkg:generic/gnutls",
       "spdx": "LGPL-2.1-or-later",
       "text": "resources/licenses/lgpl-2.1.txt",
       "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331",
@@ -607,6 +628,7 @@
     {
       "match": "libnettle.so",
       "name": "Nettle",
+      "purl": "pkg:generic/nettle",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -615,6 +637,7 @@
     {
       "match": "libhogweed.so",
       "name": "Nettle (Hogweed)",
+      "purl": "pkg:generic/nettle",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -623,6 +646,7 @@
     {
       "match": "libcrypto.so",
       "name": "OpenSSL",
+      "purl": "pkg:generic/openssl",
       "spdx": "Apache-2.0",
       "text": "resources/licenses/apache-2.0.txt",
       "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
@@ -631,6 +655,7 @@
     {
       "match": "libssl.so",
       "name": "OpenSSL",
+      "purl": "pkg:generic/openssl",
       "spdx": "Apache-2.0",
       "text": "resources/licenses/apache-2.0.txt",
       "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
@@ -671,6 +696,7 @@
     {
       "match": "libcurl.so",
       "name": "curl",
+      "purl": "pkg:generic/curl",
       "spdx": "curl",
       "text": "resources/licenses/curl.txt",
       "sha256": "82f2f4427d6545ee5aaac4f0b80428da6cc8ba41c2cf5da3a03680ec327b9681",
@@ -679,6 +705,7 @@
     {
       "match": "libpng16.so",
       "name": "libpng",
+      "purl": "pkg:generic/libpng",
       "spdx": "Libpng",
       "text": "resources/licenses/libpng.txt",
       "sha256": "bdb0a645ea18c60507d0368379b1ac5474b92255fcc2d115e07486a7672ba526",
@@ -687,6 +714,7 @@
     {
       "match": "libjpeg.so",
       "name": "libjpeg-turbo",
+      "purl": "pkg:generic/libjpeg-turbo",
       "spdx": "IJG AND BSD-3-Clause AND Zlib",
       "text": "resources/licenses/jpeg-ijg.txt",
       "sha256": "d56f7bdb1197eb5a4e16c46c5ddee426c854648d5409abb09fe7a17f94c3c5fd",
@@ -695,6 +723,7 @@
     {
       "match": "libicudata.so",
       "name": "ICU",
+      "purl": "pkg:generic/icu",
       "spdx": "ICU",
       "text": "resources/licenses/icu.txt",
       "sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af",
@@ -703,6 +732,7 @@
     {
       "match": "libicui18n.so",
       "name": "ICU",
+      "purl": "pkg:generic/icu",
       "spdx": "ICU",
       "text": "resources/licenses/icu.txt",
       "sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af",
@@ -711,6 +741,7 @@
     {
       "match": "libicuuc.so",
       "name": "ICU",
+      "purl": "pkg:generic/icu",
       "spdx": "ICU",
       "text": "resources/licenses/icu.txt",
       "sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af",
@@ -719,6 +750,7 @@
     {
       "match": "libxml2.so",
       "name": "libxml2",
+      "purl": "pkg:generic/libxml2",
       "spdx": "MIT",
       "text": "resources/licenses/libxml2.txt",
       "sha256": "5d4873884a890122a4b9b20ad56ac6f7da1d796a5bfcf04a427970ac96217626",
@@ -775,6 +807,7 @@
     {
       "match": "QtCore.framework",
       "name": "Qt 6 — QtCore",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -783,6 +816,7 @@
     {
       "match": "QtDBus.framework",
       "name": "Qt 6 — QtDBus",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -791,6 +825,7 @@
     {
       "match": "QtGui.framework",
       "name": "Qt 6 — QtGui",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -799,6 +834,7 @@
     {
       "match": "QtNetwork.framework",
       "name": "Qt 6 — QtNetwork",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -807,6 +843,7 @@
     {
       "match": "QtOpenGL.framework",
       "name": "Qt 6 — QtOpenGL",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -815,6 +852,7 @@
     {
       "match": "QtPdf.framework",
       "name": "Qt 6 — QtPdf",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -823,6 +861,7 @@
     {
       "match": "QtPdfWidgets.framework",
       "name": "Qt 6 — QtPdfWidgets",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -831,6 +870,7 @@
     {
       "match": "QtPrintSupport.framework",
       "name": "Qt 6 — QtPrintSupport",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -839,6 +879,7 @@
     {
       "match": "QtQml.framework",
       "name": "Qt 6 — QtQml",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -847,6 +888,7 @@
     {
       "match": "QtQmlMeta.framework",
       "name": "Qt 6 — QtQmlMeta",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -855,6 +897,7 @@
     {
       "match": "QtQmlModels.framework",
       "name": "Qt 6 — QtQmlModels",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -863,6 +906,7 @@
     {
       "match": "QtQmlWorkerScript.framework",
       "name": "Qt 6 — QtQmlWorkerScript",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -871,6 +915,7 @@
     {
       "match": "QtQuick.framework",
       "name": "Qt 6 — QtQuick",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -879,6 +924,7 @@
     {
       "match": "QtSvg.framework",
       "name": "Qt 6 — QtSvg",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -887,6 +933,7 @@
     {
       "match": "QtWidgets.framework",
       "name": "Qt 6 — QtWidgets",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -895,6 +942,7 @@
     {
       "match": "QtVirtualKeyboard.framework",
       "name": "Qt 6 Virtual Keyboard",
+      "purl": "pkg:generic/qt",
       "spdx": "GPL-3.0-only",
       "text": "resources/licenses/gpl-3.0.txt",
       "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
@@ -903,6 +951,7 @@
     {
       "match": "QtVirtualKeyboardQml.framework",
       "name": "Qt 6 Virtual Keyboard — QML",
+      "purl": "pkg:generic/qt",
       "spdx": "GPL-3.0-only",
       "text": "resources/licenses/gpl-3.0.txt",
       "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
@@ -911,6 +960,7 @@
     {
       "match": "libqapplenetworkinformation.dylib",
       "name": "Qt 6 plugin — apple network information",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -919,6 +969,7 @@
     {
       "match": "libqcertonlybackend.dylib",
       "name": "Qt 6 plugin — cert-only TLS backend",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -927,6 +978,7 @@
     {
       "match": "libqcocoa.dylib",
       "name": "Qt 6 plugin — cocoa",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -935,6 +987,7 @@
     {
       "match": "libqgif.dylib",
       "name": "Qt 6 plugin — gif image format",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -943,6 +996,7 @@
     {
       "match": "libqicns.dylib",
       "name": "Qt 6 plugin — icns image format",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -951,6 +1005,7 @@
     {
       "match": "libqico.dylib",
       "name": "Qt 6 plugin — ico image format",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -959,6 +1014,7 @@
     {
       "match": "libqjpeg.dylib",
       "name": "Qt 6 plugin — jpeg image format",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -967,6 +1023,7 @@
     {
       "match": "libqmacheif.dylib",
       "name": "Qt 6 plugin — macOS HEIF image format",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -975,6 +1032,7 @@
     {
       "match": "libqmacjp2.dylib",
       "name": "Qt 6 plugin — macOS JPEG 2000 image format",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -983,6 +1041,7 @@
     {
       "match": "libqmacstyle.dylib",
       "name": "Qt 6 plugin — macOS style",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -991,6 +1050,7 @@
     {
       "match": "libqopensslbackend.dylib",
       "name": "Qt 6 plugin — OpenSSL TLS backend",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -999,6 +1059,7 @@
     {
       "match": "libqsecuretransportbackend.dylib",
       "name": "Qt 6 plugin — SecureTransport TLS backend",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -1007,6 +1068,7 @@
     {
       "match": "libqsvgicon.dylib",
       "name": "Qt 6 plugin — SVG icon engine",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -1015,6 +1077,7 @@
     {
       "match": "libqtga.dylib",
       "name": "Qt 6 plugin — tga image format",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -1023,6 +1086,7 @@
     {
       "match": "libqtiff.dylib",
       "name": "Qt 6 plugin — tiff image format",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -1031,6 +1095,7 @@
     {
       "match": "libqtvirtualkeyboardplugin.dylib",
       "name": "Qt 6 plugin — virtual keyboard",
+      "purl": "pkg:generic/qt",
       "spdx": "GPL-3.0-only",
       "text": "resources/licenses/gpl-3.0.txt",
       "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
@@ -1039,6 +1104,7 @@
     {
       "match": "libqwbmp.dylib",
       "name": "Qt 6 plugin — wbmp image format",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -1047,6 +1113,7 @@
     {
       "match": "libqwebp.dylib",
       "name": "Qt 6 plugin — webp image format",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
@@ -1055,6 +1122,7 @@
     {
       "match": "libssl.dylib",
       "name": "OpenSSL",
+      "purl": "pkg:generic/openssl",
       "spdx": "Apache-2.0",
       "text": "resources/licenses/apache-2.0.txt",
       "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
@@ -1063,6 +1131,7 @@
     {
       "match": "libcrypto.dylib",
       "name": "OpenSSL",
+      "purl": "pkg:generic/openssl",
       "spdx": "Apache-2.0",
       "text": "resources/licenses/apache-2.0.txt",
       "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
@@ -1199,6 +1268,7 @@
     {
       "match": "libqpdf.dylib",
       "name": "Qt PDF image-format plugin",
+      "purl": "pkg:generic/qt",
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",

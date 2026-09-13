@@ -180,8 +180,10 @@ jobs:
     # (check-bundled-licenses.py + gen-third-party-notices.py): normalize,
     # framework enumeration, internal_sonames .dylib mirrors, --platform
     # filter (both directions, checker + generator + end-to-end main()).
-    # 27 cases. Catches drift in the manifest schema or filter logic
-    # before the release-only AppImage / DMG fail-closed check fires.
+    # Catches drift in the manifest schema or filter logic before the
+    # release-only AppImage / DMG fail-closed check fires. The count is
+    # deliberately not written here: it went stale the first time a case
+    # was added, and pytest prints the real one on every run.
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:

@@ -8,6 +8,7 @@ with a normal ``import`` statement; we load it by file path via
 """
 
 import hashlib
+import json
 import importlib.util
 import pathlib
 
@@ -605,3 +606,425 @@ def test_gen_main_end_to_end_platform_filter(tmp_path):
     text = out_file.read_text()
     assert "libcross" in text
     assert "libavahi-client" not in text
+
+
+# --------------------------------------------------------------------------
+# The vacuum: a fail-closed check that passes over an empty tree is not
+# fail-closed. Before the guard below existed, an empty directory produced
+# "checked 0 assets, 149 components, 0 errors" and rc=0.
+# --------------------------------------------------------------------------
+
+
+def test_check_fails_on_empty_staging_tree(tmp_path):
+    sha = hashlib.sha256(b"CURL LICENSE").hexdigest()
+    (tmp_path / "app").mkdir()
+    assert (
+        checker.run_check(
+            str(tmp_path / "app"), _man(tmp_path, sha), str(tmp_path), "linux"
+        )
+        != 0
+    )
+
+
+def test_check_still_passes_on_a_non_empty_tree(tmp_path):
+    # Perturbation control for the test above: the guard must key on
+    # "nothing was walked", not on "the tree is small".
+    sha = hashlib.sha256(b"CURL LICENSE").hexdigest()
+    (tmp_path / "app").mkdir()
+    (tmp_path / "app" / "libcurl.so.4").write_bytes(b"")
+    assert (
+        checker.run_check(
+            str(tmp_path / "app"), _man(tmp_path, sha), str(tmp_path), "linux"
+        )
+        == 0
+    )
+
+
+# --------------------------------------------------------------------------
+# The bill of materials.
+# --------------------------------------------------------------------------
+
+
+def _sbom_manifest(tmp_path):
+    m = _man(tmp_path, hashlib.sha256(b"CURL LICENSE").hexdigest())
+    m["internal_sonames"] = ["libLibreSCRS_*.so"]
+    m["exclude_not_bundled"] = ["libpcsclite.so"]
+    m["components"] = m["components"] + [
+        {
+            "match": "libjpeg.so",
+            "name": "libjpeg-turbo",
+            "spdx": "IJG AND BSD-3-Clause AND Zlib",
+            "text": "resources/licenses/curl.txt",
+            "sha256": hashlib.sha256(b"CURL LICENSE").hexdigest(),
+        },
+        {
+            "match": "libselinux.so",
+            "name": "libselinux",
+            "spdx": "LicenseRef-libselinux-public-domain",
+            "text": "resources/licenses/curl.txt",
+            "sha256": hashlib.sha256(b"CURL LICENSE").hexdigest(),
+        },
+    ]
+    return m
+
+
+def _staged(tmp_path, names):
+    app = tmp_path / "app"
+    app.mkdir(exist_ok=True)
+    for n in names:
+        (app / n).write_bytes(b"x")
+    return str(app)
+
+
+def test_sbom_lists_what_the_tree_holds(tmp_path):
+    root = _staged(
+        tmp_path, ["libcurl.so.4", "libjpeg.so.8.3.2", "libpcsclite.so.1"]
+    )
+    doc, rc = checker.emit_sbom(
+        root, _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
+    )
+    assert rc == 0
+    names = [c["name"] for c in doc["components"]]
+    assert names == ["curl", "libjpeg-turbo"]  # excluded soname absent
+    assert doc["metadata"]["component"]["version"] == "5.0.0"
+
+
+def test_sbom_reads_the_version_off_the_file(tmp_path):
+    root = _staged(tmp_path, ["libcurl.so.4.8.0"])
+    doc, rc = checker.emit_sbom(
+        root, _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
+    )
+    assert rc == 0
+    assert doc["components"][0]["version"] == "4.8.0"
+
+
+def test_sbom_carries_a_hash_of_the_bundled_file(tmp_path):
+    root = _staged(tmp_path, ["libcurl.so.4"])
+    doc, rc = checker.emit_sbom(
+        root, _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
+    )
+    assert rc == 0
+    assert doc["components"][0]["hashes"] == [
+        {"alg": "SHA-256", "content": hashlib.sha256(b"x").hexdigest()}
+    ]
+
+
+def test_sbom_licence_shapes(tmp_path):
+    root = _staged(
+        tmp_path, ["libcurl.so.4", "libjpeg.so.8", "libselinux.so.1"]
+    )
+    doc, rc = checker.emit_sbom(
+        root, _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
+    )
+    assert rc == 0
+    by = {c["name"]: c["licenses"][0] for c in doc["components"]}
+    assert by["curl"] == {"license": {"id": "curl"}}
+    assert by["libjpeg-turbo"] == {
+        "expression": "IJG AND BSD-3-Clause AND Zlib"
+    }
+    assert by["libselinux"] == {
+        "license": {"name": "LicenseRef-libselinux-public-domain"}
+    }
+
+
+def test_sbom_refuses_an_empty_tree(tmp_path, capsys):
+    """The empty TREE, told apart from the empty COMPONENT LIST.
+
+    Both refusals are fail-closed and both end the build, but they say
+    different things -- "the path is wrong" against "this bundle carries
+    nothing the manifest knows" -- and they carry different codes on
+    purpose. An assertion on ``rc != 0`` alone cannot tell them apart:
+    an empty tree also produces zero entries, so the second refusal
+    catches the same input and the first one could be deleted with the
+    suite still green. The code and the diagnostic are asserted here.
+    """
+    (tmp_path / "app").mkdir()
+    doc, rc = checker.emit_sbom(
+        str(tmp_path / "app"),
+        _sbom_manifest(tmp_path),
+        "linux",
+        "LibreCelik",
+        "5.0.0",
+    )
+    assert doc is None
+    assert rc == 1
+    assert "no shared objects found under" in capsys.readouterr().out
+
+
+def test_sbom_refuses_a_bill_with_no_components(tmp_path):
+    # Everything in the tree is deliberately-not-bundled, so the walk finds
+    # objects but the bill would still be empty. This is the exact shape
+    # that used to be published: a valid CycloneDX document whose
+    # "components" array is empty.
+    root = _staged(tmp_path, ["libpcsclite.so.1"])
+    doc, rc = checker.emit_sbom(
+        root, _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
+    )
+    assert doc is None
+    assert rc == 2
+
+
+def test_sbom_refuses_an_unmapped_library(tmp_path):
+    root = _staged(tmp_path, ["libcurl.so.4", "libmystery.so.1"])
+    doc, rc = checker.emit_sbom(
+        root, _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
+    )
+    assert doc is None
+    assert rc == 1
+
+
+def test_sbom_lists_internal_objects_without_inventing_a_licence(tmp_path):
+    root = _staged(tmp_path, ["libcurl.so.4", "libLibreSCRS_Core.so.5.0.0"])
+    doc, rc = checker.emit_sbom(
+        root, _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
+    )
+    assert rc == 0
+    internal = [
+        c
+        for c in doc["components"]
+        if {"name": "librescrs:internal", "value": "true"} in c["properties"]
+    ]
+    assert len(internal) == 1
+    assert internal[0]["version"] == "5.0.0"
+    assert "licenses" not in internal[0]
+
+
+def test_sbom_framework_version_from_info_plist(tmp_path):
+    import plistlib
+
+    fw = tmp_path / "app" / "Contents" / "Frameworks" / "QtCore.framework"
+    (fw / "Resources").mkdir(parents=True)
+    (fw / "QtCore").write_bytes(b"x")
+    with open(fw / "Resources" / "Info.plist", "wb") as fh:
+        plistlib.dump({"CFBundleShortVersionString": "6.10.0"}, fh)
+    m = _sbom_manifest(tmp_path)
+    m["components"] = m["components"] + [
+        {
+            "match": "QtCore.framework",
+            "name": "Qt 6 — QtCore",
+            "spdx": "LGPL-3.0-or-later",
+            "text": "resources/licenses/curl.txt",
+            "sha256": hashlib.sha256(b"CURL LICENSE").hexdigest(),
+            "platforms": ["macos"],
+        }
+    ]
+    doc, rc = checker.emit_sbom(
+        str(tmp_path / "app"), m, "macos", "LibreCelik", "5.0.0"
+    )
+    assert rc == 0
+    qt = [c for c in doc["components"] if c["name"] == "Qt 6 — QtCore"]
+    assert qt and qt[0]["version"] == "6.10.0"
+    # The bundle is a DIRECTORY, so the plain-file hash helper cannot be
+    # pointed at it. The hash must be the one of the Mach-O binary inside.
+    assert qt[0]["hashes"] == [
+        {"alg": "SHA-256", "content": hashlib.sha256(b"x").hexdigest()}
+    ]
+
+
+# --------------------------------------------------------------------------
+# The publish-side refusal: the producer cannot catch a bill that never
+# arrived -- a build job that uploaded none, or a download that did not
+# merge it.
+# --------------------------------------------------------------------------
+
+_sbom_checker_spec = importlib.util.spec_from_file_location(
+    "sbom_checker", pathlib.Path(__file__).with_name("check-sbom.py")
+)
+sbom_checker = importlib.util.module_from_spec(_sbom_checker_spec)
+_sbom_checker_spec.loader.exec_module(sbom_checker)
+
+
+def _bill(tmp_path, components):
+    p = tmp_path / "bill.cdx.json"
+    p.write_text(
+        json.dumps({"bomFormat": "CycloneDX", "components": components})
+    )
+    return str(p)
+
+
+def test_check_sbom_accepts_a_real_bill(tmp_path):
+    assert sbom_checker.main([_bill(tmp_path, [{"name": "OpenSSL"}])]) == 0
+
+
+def test_check_sbom_rejects_an_empty_bill(tmp_path):
+    assert sbom_checker.main([_bill(tmp_path, [])]) == 1
+
+
+def test_check_sbom_rejects_a_missing_bill(tmp_path):
+    assert sbom_checker.main([str(tmp_path / "nope.cdx.json")]) == 1
+
+
+def test_check_sbom_rejects_a_nameless_component(tmp_path):
+    assert sbom_checker.main([_bill(tmp_path, [{"version": "3"}])]) == 1
+
+
+def test_check_sbom_rejects_a_document_that_is_not_cyclonedx(tmp_path):
+    p = tmp_path / "bill.cdx.json"
+    p.write_text(json.dumps({"components": [{"name": "OpenSSL"}]}))
+    assert sbom_checker.main([str(p)]) == 1
+
+
+def test_check_sbom_rejects_a_document_with_no_components_array(tmp_path):
+    p = tmp_path / "bill.cdx.json"
+    p.write_text(json.dumps({"bomFormat": "CycloneDX"}))
+    assert sbom_checker.main([str(p)]) == 1
+
+
+def test_check_sbom_rejects_an_unparseable_document(tmp_path):
+    p = tmp_path / "bill.cdx.json"
+    p.write_text("{ this is not json")
+    assert sbom_checker.main([str(p)]) == 1
+
+
+def test_check_sbom_no_arguments_is_a_usage_error(tmp_path):
+    assert sbom_checker.main([]) == 2
+
+
+def test_check_sbom_a_good_bill_cannot_launder_a_bad_one_beside_it(tmp_path):
+    """The release job passes BOTH bills in one invocation.
+
+    Two platforms, one command line: if the verdict were taken from the
+    last argument, or from any argument, a healthy Linux bill would carry
+    an empty macOS bill into a signed release. Every argument is checked
+    and any failure fails the set.
+    """
+    good = tmp_path / "sbom-linux.cdx.json"
+    good.write_text(
+        json.dumps({"bomFormat": "CycloneDX", "components": [{"name": "curl"}]})
+    )
+    empty = tmp_path / "sbom-macos.cdx.json"
+    empty.write_text(json.dumps({"bomFormat": "CycloneDX", "components": []}))
+    assert sbom_checker.main([str(good), str(empty)]) == 1
+    assert sbom_checker.main([str(empty), str(good)]) == 1
+
+
+def test_sbom_paths_stay_inside_the_staging_root(tmp_path):
+    """A staging root reached through a symlink must not escape the tree.
+
+    ``enumerate_assets`` yields ``os.path.realpath`` so a symlink and its
+    target count once; the root it is measured against must be resolved
+    the same way or every ``bom-ref`` walks upward out of the tree. On
+    macOS this is not hypothetical: ``mktemp -d`` hands back a path under
+    ``/var/folders/...`` and ``/var`` is a symlink to ``/private/var``, so
+    the whole bundle would publish the build host's temporary directory in
+    a cosign-signed document.
+    """
+    real = tmp_path / "realroot" / "usr" / "lib"
+    real.mkdir(parents=True)
+    (real / "libcurl.so.4").write_bytes(b"x")
+    link = tmp_path / "link"
+    link.symlink_to(tmp_path / "realroot")
+
+    doc, rc = checker.emit_sbom(
+        str(link), _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
+    )
+    assert rc == 0
+    for comp in doc["components"]:
+        assert not comp["bom-ref"].startswith("..")
+        assert comp["bom-ref"] == "usr/lib/libcurl.so.4"
+        paths = [
+            p["value"]
+            for p in comp["properties"]
+            if p["name"] == "librescrs:path"
+        ]
+        assert paths == ["usr/lib/libcurl.so.4"]
+
+
+def test_sbom_internal_name_keeps_the_whole_soname(tmp_path):
+    """Our own objects are named by their soname, not by a package guess.
+
+    The ``lib`` strip in :func:`purl_for` follows the ecosystem convention
+    that ``libcurl.so`` is the package ``curl``. Applied to a first-party
+    soname it eats three letters of the project's own name, and the result
+    goes into a signed, published document: ``librescrs-pkcs11.so`` would
+    be billed as ``rescrs-pkcs11`` and ``libresign.so`` as ``resign``.
+    """
+    m = _sbom_manifest(tmp_path)
+    m["internal_sonames"] = [
+        "libLibreSCRS_*.so",
+        "librescrs-pkcs11.so",
+        "libresign*.so",
+    ]
+    root = _staged(
+        tmp_path,
+        ["libcurl.so.4", "librescrs-pkcs11.so", "libresign.so.5.0.0"],
+    )
+    doc, rc = checker.emit_sbom(root, m, "linux", "LibreCelik", "5.0.0")
+    assert rc == 0
+    by = {c["name"]: c for c in doc["components"]}
+    assert "librescrs-pkcs11" in by
+    assert "rescrs-pkcs11" not in by
+    assert "libresign" in by
+    assert "resign" not in by
+    assert by["librescrs-pkcs11"]["purl"] == "pkg:generic/librescrs-pkcs11@5.0.0"
+    assert by["libresign"]["purl"] == "pkg:generic/libresign@5.0.0"
+    # The third-party derivation is unchanged: libcurl.so IS the package
+    # "curl", and that convention is why the strip exists at all.
+    assert by["curl"]["purl"] == "pkg:generic/curl@4"
+
+
+def test_sbom_app_name_is_given_not_guessed(tmp_path):
+    """``metadata.component.name`` names the product, not a directory.
+
+    It used to be the basename of the manifest's grandparent directory,
+    which is the checkout path -- correct only as long as nobody clones
+    into a differently named directory. The caller that already resolved
+    the version passes the name too.
+    """
+    root = _staged(tmp_path, ["libcurl.so.4"])
+    man = tmp_path / "licenses" / "manifest.json"
+    man.parent.mkdir(parents=True, exist_ok=True)
+    man.write_text(json.dumps(_sbom_manifest(tmp_path)))
+    out = tmp_path / "bill.cdx.json"
+
+    rc = checker.main(
+        [
+            "--sbom", root,
+            "--sbom-out", str(out),
+            "--manifest", str(man),
+            "--platform", "linux",
+            "--app-version", "5.0.0",
+            "--app-name", "LibreCelik",
+        ]
+    )
+    assert rc == 0
+    doc = json.loads(out.read_text())
+    assert doc["metadata"]["component"]["name"] == "LibreCelik"
+    assert doc["metadata"]["component"]["version"] == "5.0.0"
+
+
+def test_check_and_sbom_in_one_invocation_is_refused(tmp_path, capsys):
+    """Two modes in one command line is a refusal, not a silent drop.
+
+    The dispatch returns from the first mode it matches, so a second one
+    used to be discarded without a word: a licence verdict, rc 0, and the
+    document the caller asked for never written. Folding the two
+    packaging invocations into one command is the obvious tidy-up for
+    someone reading the two adjacent calls, and the failure it would
+    produce is the one this whole mode exists to end -- no bill, nothing
+    said about it, and the release job the first to notice.
+    """
+    root = _staged(tmp_path, ["libcurl.so.4"])
+    man = tmp_path / "licenses" / "manifest.json"
+    man.parent.mkdir(parents=True, exist_ok=True)
+    man.write_text(json.dumps(_sbom_manifest(tmp_path)))
+    out = tmp_path / "never.cdx.json"
+
+    try:
+        rc = checker.main(
+            [
+                "--check", root,
+                "--sbom", root,
+                "--sbom-out", str(out),
+                "--manifest", str(man),
+                "--platform", "linux",
+                "--app-version", "5.0.0",
+                "--app-name", "LibreCelik",
+            ]
+        )
+    except SystemExit as exc:
+        assert exc.code == 2
+    else:
+        raise AssertionError(f"expected a refusal, got rc={rc}")
+    assert not out.exists()
+    assert "separate modes" in capsys.readouterr().err

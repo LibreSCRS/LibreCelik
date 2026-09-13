@@ -16,7 +16,7 @@ namespace librecelik::agent {
 class CardController;
 class SignController;
 
-/// Guided-UX presence states (spec §5.4). Detection is ClientQt's:
+/// Guided-UX presence states. Detection is ClientQt's:
 /// agentInstalled() is activation-aware (D-Bus ListActivatableNames).
 enum class PresenceState { AgentMissing, AgentUnavailable, Ready };
 

@@ -1134,7 +1134,7 @@ def detect_d6(
         # prefix could be produced dynamically. We already credit
         # consumer-side QT_TRID_NOOP registrations; but if the caller
         # builds the id at runtime via QString::arg() etc., no NOOP
-        # exists. Suppress the warning in that case (Spec §6.4 D6).
+        # exists. Suppress the warning in that case.
         if has_dynamic and mid.startswith("lc-"):
             continue
         anchor_file = "src/utils/translations_catalog.cpp"

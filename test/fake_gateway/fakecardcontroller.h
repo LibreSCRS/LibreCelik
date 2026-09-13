@@ -37,7 +37,7 @@ public:
     std::uint32_t scriptedCaps = 0;
     LibreSCRS::AgentClient::PreReadAuth scriptedPreAuth = LibreSCRS::AgentClient::PreReadAuth::None;
     QList<LibreSCRS::AgentClient::FieldGroup> scriptedGroups;
-    /// Engaged script => startRead() replays the Task-8 merge emission: a FINAL
+    /// Engaged script => startRead() replays the merge emission: a FINAL
     /// groupReady with this group (key "photo") BEFORE identityReady, and
     /// identityReady carries it as the last group.
     std::optional<LibreSCRS::AgentClient::FieldGroup> scriptedPhotoGroup;

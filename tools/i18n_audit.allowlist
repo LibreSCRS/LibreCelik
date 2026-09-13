@@ -1,4 +1,4 @@
-# i18n-audit allowlist — see spec §6.5
+# i18n-audit allowlist
 # Format (strict): <repo-relative-path>:D<digits>:<reason>
 # Comments start with '#'. Empty lines ignored.
 # File-level entries are an escape hatch; inline annotation

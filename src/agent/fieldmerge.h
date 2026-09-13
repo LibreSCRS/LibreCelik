@@ -8,8 +8,8 @@
 #include <vector>
 
 namespace librecelik::agent {
-/// Merge photo payloads into the field model (spec §5.4: widgets and print
-/// templates consume the photo AS A FIELD).
+/// Merge photo payloads into the field model: widgets and print templates
+/// consume the photo AS A FIELD.
 ///
 /// WIRE KEY SHAPE (do not invent keys): PhotoItem::key is the agent's
 /// "groupKey:fieldKey" composite — GetPhotoOperation builds

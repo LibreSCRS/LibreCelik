@@ -70,7 +70,7 @@ private:
     void chainPhoto(QList<LibreSCRS::AgentClient::FieldGroup> groups);
     /// Emit the completed read. @p photoMerged streams the merged photo group
     /// as a FINAL `groupReady` first — the progressive path cannot carry it
-    /// otherwise (spec §5.4 merge-before-dispatch, D10).
+    /// otherwise. The merge happens before the dispatch, never after it.
     void finishRead(const QList<LibreSCRS::AgentClient::FieldGroup>& groups, bool photoMerged);
     /// Start a credential listing and run @p onListed when it COMPLETES, told
     /// whether it succeeded. Completion is the point the agent's snapshot

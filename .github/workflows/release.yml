@@ -260,11 +260,10 @@ jobs:
     # not ours to assert; this one comes from a clone with --recurse-submodules
     # and is byte-identical run to run -- ci/scripts/check-tarball-determinism.sh
     # measures that on every push, up to the gzip implementation, which is the
-    # one thing the script cannot make a property of the commit. This
-    # repository ships binaries and no
-    # Arch recipe of its own, so the tarball is here for a different reason
-    # than in the components that are packaged from source: it puts the exact
-    # sources next to the binaries built from them, cosigned and listed in
+    # one thing the script cannot make a property of the commit. No recipe
+    # here consumes the archive -- `git ls-files | grep -i pkgbuild` is empty
+    # -- so it is published for what it is on its own: the exact sources beside
+    # the binaries built from them, cosigned and listed in the signed
     # SHA256SUMS like every other asset, so a release is auditable without
     # trusting an archive somebody else generated.
     #

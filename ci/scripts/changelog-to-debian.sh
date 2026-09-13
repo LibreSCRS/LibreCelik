@@ -8,9 +8,11 @@
 # date. A hand-written entry failed with debian-changelog-has-wrong-day-of-week.
 # `date -R` computes the day, so it cannot disagree with itself.
 #
-# The same generator is copied into every packaged repository. The recipes live
-# in separate public repositories and cannot share a submodule, which is the
-# same reason the release lockstep script is duplicated.
+# Here it is hand-run when packaging/debian/changelog needs refreshing; no CI
+# step consumes it, which is why ci/gate-wiring-exceptions.txt carries a line
+# for it. The recipes live in separate public repositories and cannot share a
+# submodule, which is the same reason the release lockstep script is
+# duplicated.
 set -euo pipefail
 
 src="${1:?usage: changelog-to-debian.sh <source-package> [output]}"

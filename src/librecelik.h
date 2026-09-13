@@ -81,7 +81,7 @@ private:
     /// existed. Both maps are keyed by card id and live and die together.
     struct CardReadState
     {
-        /// The Task-8 feature-gate verdicts, exactly as dispatched: a section
+        /// The feature-gate verdicts, exactly as dispatched: a section
         /// whose verb was never issued must never render, so the same flag
         /// that dispatched the verb gates the apply.
         bool tokenInfoAllowed = false;

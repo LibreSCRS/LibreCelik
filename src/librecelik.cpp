@@ -798,7 +798,7 @@ void LibreCelik::applyPendingPki(const QString& cardId)
     if (section == nullptr)
         return; // the section is built when the identity read completes
 
-    // The Task-8 verdicts gate the RENDER, not merely the dispatch: the token
+    // The feature-gate verdicts gate the RENDER, not merely the dispatch: the token
     // block and the credential rows appear exactly when their verb was issued,
     // so visibility cannot drift away from what LC actually asked the agent
     // for. Certificates carry no such gate — reading them is a core verb.

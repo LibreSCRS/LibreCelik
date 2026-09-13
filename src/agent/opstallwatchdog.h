@@ -7,11 +7,11 @@
 // human-in-loop phases (AwaitingConsent, Authenticating — PIN/CAN/consent at
 // the system prompter) STOP the timer ("the human is thinking — never time
 // out"); machine phases (re)START it, and every phaseChanged/progress tick
-// restarts it. NOTE — deliberate deviation from spec §5.4 ("the gateway OWNS
-// the op-stall timer"): the timer lives per-op in the CONTROLLERS (and the
+// restarts it. NOTE — deliberate deviation from the rule that the gateway
+// OWNS the op-stall timer: the timer lives per-op in the CONTROLLERS (and the
 // gateway's own DER fetch), because arming decisions need the op's phase
 // stream; the gateway still owns the POLICY by constructing every controller.
-// Recorded here so the spec deviation is a decision, not drift.
+// Recorded here so the deviation is a decision, not drift.
 #pragma once
 #include <LibreSCRS/AgentClient/ClientTimeouts.h>
 #include <LibreSCRS/AgentClient/OperationPhase.h>

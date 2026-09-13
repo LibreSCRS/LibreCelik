@@ -31,7 +31,7 @@ namespace librecelik::test::i18n {
 /// language (en, sr_RS, sr_Latn_RS) by convention (acronyms, technical
 /// identifiers).
 ///
-/// Initial population per spec §7.2:
+/// Initial population:
 ///   PIN, PUK, PIV, eID, MRZ, BAC, PACE, OK, RFID, NFC, ICAO, EU,
 ///   PKCS, CRL, OCSP, TLS, URL, ID, USB.
 ///

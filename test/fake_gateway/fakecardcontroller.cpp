@@ -65,7 +65,7 @@ void FakeCardController::startRead()
     for (const LibreSCRS::AgentClient::FieldGroup& group : std::as_const(scriptedGroups)) {
         Q_EMIT groupReady(group);
     }
-    // The Task-8 merge emission: the photo group is the FINAL groupReady and
+    // The merge emission: the photo group is the FINAL groupReady and
     // rides along in the identityReady model.
     if (scriptedPhotoGroup.has_value()) {
         groups.append(*scriptedPhotoGroup);

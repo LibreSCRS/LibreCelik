@@ -225,6 +225,15 @@ jobs:
           set -o pipefail
           LC_ALL=C cmake --build build 2>&1 | tee build.log
 
+      - name: The warning floor is still reachable
+        # warning-gate.py judges the LOG, so a tree that has LOST compile units
+        # makes it refuse every full build and blame the build. This judges the
+        # configured graph instead, so the message names the stale number.
+        run: ./ci/scripts/check-warning-floor.sh build
+
+      - name: Warning-floor check self-test
+        run: ./ci/scripts/check-warning-floor.selftest.sh
+
       - name: Check the warning baseline
         # Counted by the [-Wname] tag, never by the message text: diagnostics
         # are localised. An unknown compiler is reported, not failed -- this

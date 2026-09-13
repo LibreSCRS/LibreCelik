@@ -99,6 +99,23 @@ jobs:
         # line in a workflow file.
         run: ./ci/scripts/check-version-floors.selftest.sh
 
+      - name: The version this tree stamps names the major in VERSION
+        # The floor gate reads VERSION and the sources, so it stays green
+        # whatever the version derivation does, and a check that configures
+        # with git switched off is measuring the one input under which a tag
+        # cannot win. Between code freeze and the tag `git describe` still
+        # answers with the PREVIOUS release, and a tree that lets it decide
+        # installs a package whose major contradicts its own VERSION, changelog
+        # and packaging. This configures the real CMakeLists against a stubbed
+        # tag, in both directions, and creates no tag anywhere.
+        run: ci/scripts/check-version-stamp.sh --verbose
+
+      - name: Prove the stamp gate still fails when it should
+        # Seven fixtures, no compiler, no build. Two of them are shapes that
+        # have really been written: the tag deciding unconditionally, and git
+        # being ignored altogether.
+        run: ./ci/scripts/check-version-stamp.selftest.sh
+
       - name: Every uploaded artefact has someone to download it
         # An artefact whose name no download step can match is built, kept for
         # ninety days and dropped from the release without a word: the release

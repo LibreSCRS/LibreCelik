@@ -26,7 +26,7 @@ namespace librecelik::agent {
 /// ESPIPE for pipe-like fds, the same posture as the e2e sign-proof reader).
 /// An artifact that yields ZERO bytes is a failure, never a success: no
 /// signed container is empty, and committing one would report success over
-/// a file with no signature in it (the Leg-1 bench catch, 2026-08-17).
+/// a file with no signature in it (caught on the hardware bench).
 ///
 /// Fixed-size streaming, NOT a bounded whole-payload read: a signed
 /// artifact — an ASiC-E container above all — is unbounded by design.

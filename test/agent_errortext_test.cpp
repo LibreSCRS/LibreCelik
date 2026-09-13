@@ -53,7 +53,7 @@ TEST(ErrorText, AnsweredRefusalPassesTheAgentsProseThroughWithoutAKey)
     // with a classified refusal — errorCode None, callError InvalidArguments /
     // AccessDenied / ProtocolError — and its authored message arrives as the
     // FALLBACK with an EMPTY key. That prose is the only precise record of
-    // why (the Leg-1 bench catch: "tsaUrl is only meaningful for the
+    // why (caught on the hardware bench: "tsaUrl is only meaningful for the
     // timestamped/long-term family" rendered as the generic no-reason line).
     const QString prose = QStringLiteral("tsaUrl is only meaningful for the timestamped/long-term family");
     EXPECT_EQ(librecelik::agent::errorText(ErrorCode::None, CallError::InvalidArguments, {}, prose), prose);

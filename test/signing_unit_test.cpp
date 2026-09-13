@@ -67,7 +67,7 @@ TEST(IsValidTsaUrl, EmptyRejected)
 // configured TSA URL at all. The agent refuses `tsaUrl` outside the
 // timestamped/long-term family (b-t/b-lt/b-lta) — a B_B request that
 // forwards a configured URL anyway is refused at submit, before any card
-// work (the Leg-1 bench catch, 2026-08-17).
+// work (caught on the hardware bench).
 // ---------------------------------------------------------------------------
 
 TEST(TsaUrlForLevel, BaselineLevelNeverCarriesTheConfiguredUrl)

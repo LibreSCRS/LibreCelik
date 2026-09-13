@@ -299,7 +299,7 @@ TEST_F(MainFlowTest, TokenInfoAbsentFeatureIsSilentlyHiddenNeverAnError)
 
 TEST_F(MainFlowTest, OptionalSectionsAreNeverDispatchedAgainstACardWithoutTheCapability)
 {
-    // The Leg-5 bench catch: a pure eMRTD (IdentityData|EmrtdCrypto, no Pki,
+    // Caught on the hardware bench: a pure eMRTD (IdentityData|EmrtdCrypto, no Pki,
     // no PinManagement) against a feature-capable agent. The agent refuses
     // ReadTokenInfo without Pki and ListCredentials without PinManagement,
     // per card — and those refusals came back through errorOccurred while

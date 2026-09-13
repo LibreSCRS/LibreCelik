@@ -5,7 +5,7 @@
 /// @brief writeArtifactTo — the one consumer of a signed-artifact fd.
 ///
 /// The wire hands the artifact memfd with its offset at EOF (the producer
-/// just wrote it), and the Leg-1 bench run proved what the old streaming
+/// just wrote it), and a run on the hardware bench proved what the old streaming
 /// loop did with that: read from the current position, hit EOF instantly,
 /// commit a ZERO-BYTE file, and report the row as signed. These cases pin
 /// the two constraints: the stream rewinds before reading, and an empty

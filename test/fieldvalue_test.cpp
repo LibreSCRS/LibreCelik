@@ -47,7 +47,7 @@ QList<FieldGroup> makeFixture()
 
 TEST(FieldValue, StagedForBuildOrdersGroupsByTheWidgetsOwnStageList)
 {
-    // The Leg-6 bench catch generalized: the final wire model's group order
+    // Generalized from the hardware bench: the final wire model's group order
     // is delivery-dependent (a recovered read hands it over keyed, not
     // staged), while every streaming widget lays sections out in ARRIVAL
     // order — the vehicle page rendered its car-icon header mid-page. The

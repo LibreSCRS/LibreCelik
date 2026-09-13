@@ -53,7 +53,7 @@ EuVrcWidget::EuVrcWidget(const QList<FieldGroup>& cardGroups, QWidget* parent) :
 {
     // Staged: the registration group raises the car-icon header card every
     // later section hangs under, and the final wire model's order is
-    // delivery-dependent (the Leg-6 bench catch: the header rendered
+    // delivery-dependent (caught on the hardware bench: the header rendered
     // mid-page from a recovered read's keyed order).
     for (const auto& group : librecelik::plugin::stagedForBuild(
              cardGroups, {u"registration", u"vehicle", u"holder", u"owner", u"user", u"national"}))

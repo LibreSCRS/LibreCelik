@@ -268,8 +268,8 @@ void LiveCardController::requestTokenInfo()
             // An ancillary surface hides on failure, exactly like the
             // absent-feature guard above — errorOccurred is the READ's
             // channel, and the window kills a still-spinning page on it
-            // (the Leg-5 bench catch: a per-card refusal raced the running
-            // identity read and released its page).
+            // (caught on the hardware bench: a per-card refusal raced the
+            // running identity read and released its page).
             Q_EMIT tokenInfoReady(FieldGroup{QStringLiteral("token"), {}, {}});
         }
         operation->deleteLater();

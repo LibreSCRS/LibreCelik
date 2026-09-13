@@ -33,7 +33,7 @@ struct OptionalSections
 /// the card provably cannot answer is never dispatched: the refusal would
 /// come back through errorOccurred while the page is still the spinner,
 /// which the window reads as a failed READ and releases the page the
-/// still-running identity read was about to fill (the Leg-5 bench catch —
+/// still-running identity read was about to fill (caught on the hardware bench —
 /// a pure eMRTD against a feature-capable agent). An absent token requests
 /// NOTHING (old agents stay silent — the controller-level double-guard
 /// emits the empty-success shapes, never errorOccurred). The returned flags

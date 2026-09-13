@@ -190,11 +190,11 @@ protected:
         const QString readerNeedle = QString::fromUtf8(readerSubstr);
 
         // (There is deliberately NO external-oracle gate here. The suite's
-        // oracle is its own artifact-shape assertions — the Task-37 review
-        // established that no external verification invocation ever existed
-        // in this suite — and the old LIBRESCRS_DSS_JAR gate demanded a jar
-        // NOTHING here runs, skipping the whole suite on a healthy bench:
-        // the Leg-10 bench catch, 2026-08-17.)
+        // oracle is its own artifact-shape assertions — no external
+        // verification invocation ever existed in this suite — and the old
+        // LIBRESCRS_DSS_JAR gate demanded a jar NOTHING here runs, so it
+        // skipped the whole suite on healthy hardware: caught on the
+        // hardware bench.)
 
         // --- agent presence ---
         gateway = std::make_unique<librecelik::agent::LiveAgentGateway>();

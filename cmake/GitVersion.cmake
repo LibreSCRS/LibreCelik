@@ -2,11 +2,19 @@
 #
 # Version derived from the repository's own git tags (https://semver.org/).
 #
-# GIT_VERSION_FULL   - The full, honest version string: the nearest release tag
-#                      plus, when the tree is past that tag, the commit distance
-#                      and abbreviated hash (`4.2.0-38-gda5a00c`), plus `-dirty`
-#                      when the working tree has uncommitted changes. Exactly a
-#                      release tag ONLY on a tagged commit with a clean tree.
+# GIT_VERSION_FULL   - The full, honest version string: a MAJOR.MINOR.PATCH
+#                      triple, plus the commit distance and abbreviated hash
+#                      when the tree is past the tag that distance is measured
+#                      from (`5.0.0-38-gda5a00c`), plus `-dirty` when the
+#                      working tree has uncommitted changes. Exactly a bare
+#                      triple ONLY on a tagged commit with a clean tree.
+#
+#                      The triple is the NEWER of the nearest release tag and
+#                      the VERSION file (see the note further down), so during
+#                      a development cycle it is VERSION's while the distance
+#                      and hash still count from the older tag. That pairing is
+#                      the point: the number says which release this tree is
+#                      heading for, and the suffix says it has not arrived.
 # GIT_VERSION_MAJOR  - Major component of the leading numeric triple
 # GIT_VERSION_MINOR  - Minor component
 # GIT_VERSION_PATCH  - Patch component
@@ -188,24 +196,65 @@ if(GIT_VERSION_REFS_DIR)
     unset(GIT_VERSION_TAG_REFS)
 endif()
 
-if(GIT_VERSION_FULL STREQUAL "" AND EXISTS "${GIT_VERSION_SRC_DIR}/VERSION")
-    # Release tarballs and GitHub source archives ship no .git tree, a
-    # shallow/tagless clone has no tag to describe against, and a source drop
-    # inside a foreign repository is refused the enclosing repo's tags above —
-    # so `git describe` cannot answer for any of them. The committed VERSION
-    # file is the authoritative fallback ahead of the last-resort default
-    # below: it carries the version this tree is heading for, not the last one
-    # it shipped, and is bumped at code freeze. That is what lets the
-    # CHANGELOG/VERSION check run on every push instead of first executing on
-    # a permanent tag; a development checkout is unaffected, because
-    # `git describe` still wins above.
-    file(STRINGS "${GIT_VERSION_SRC_DIR}/VERSION" GIT_VERSION_FULL LIMIT_COUNT 1)
-    string(STRIP "${GIT_VERSION_FULL}" GIT_VERSION_FULL)
-    string(REGEX REPLACE "^v" "" GIT_VERSION_FULL "${GIT_VERSION_FULL}")
-    if(NOT GIT_VERSION_FULL MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+")
-        message(WARNING "VERSION file holds \"${GIT_VERSION_FULL}\", which carries no MAJOR.MINOR.PATCH triple; "
-                        "falling back to the default version.")
-        set(GIT_VERSION_FULL "")
+# The VERSION file is read UNCONDITIONALLY, and the NEWER of the two triples
+# wins.
+#
+# Two callers used to be conflated here. Release tarballs and GitHub source
+# archives ship no .git tree, a shallow/tagless clone has no tag to describe
+# against, and a source drop inside a foreign repository is refused the
+# enclosing repo's tags above — for all of them `git describe` cannot answer
+# and the committed VERSION file is the only version there is. A DEVELOPMENT
+# checkout has the opposite problem: describe answers with the PREVIOUS release
+# for the whole cycle, so between code freeze (VERSION bumped) and the tag the
+# build stamps the OLD major while VERSION, the CHANGELOG and the packaging all
+# state the new one. Measured on this repository: VERSION, the deb/rpm metadata
+# and the changelog said 5.0.0 while project(), the About window, the startup
+# log line and the macOS bundle keys said 4.2.0 — on every push, before any
+# tag, and the package job labelled the artefact with the number the sources
+# did not carry.
+#
+# So VERSION is not a fallback, it is a floor: it carries the version this tree
+# is heading for and is bumped at code freeze. The tag still wins on the
+# release commit (equal) and on any checkout whose tag is ahead of VERSION.
+# Only the leading triple is taken from it, and of what describe appended only
+# what still describes THIS tree: the commit distance, the abbreviated hash and
+# the dirty marker are kept, so a development build goes on saying it is one
+# instead of introducing itself as the release. A pre-release LABEL is dropped,
+# because it belonged to the older tag: carrying `4.0.0-rc2` across a 5.0.0
+# VERSION would announce a release candidate of a version that never had one.
+set(GIT_VERSION_FILE "")
+if(EXISTS "${GIT_VERSION_SRC_DIR}/VERSION")
+    file(STRINGS "${GIT_VERSION_SRC_DIR}/VERSION" GIT_VERSION_FILE LIMIT_COUNT 1)
+    string(STRIP "${GIT_VERSION_FILE}" GIT_VERSION_FILE)
+    string(REGEX REPLACE "^v" "" GIT_VERSION_FILE "${GIT_VERSION_FILE}")
+    if(NOT GIT_VERSION_FILE MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+")
+        message(WARNING "VERSION file holds \"${GIT_VERSION_FILE}\", which carries no MAJOR.MINOR.PATCH triple; "
+                        "ignoring it.")
+        set(GIT_VERSION_FILE "")
+    endif()
+endif()
+
+if(GIT_VERSION_FULL STREQUAL "")
+    set(GIT_VERSION_FULL "${GIT_VERSION_FILE}")
+elseif(NOT GIT_VERSION_FILE STREQUAL "")
+    # Numeric triples only: a pre-release label on the tag (5.0.0-rc2) must not
+    # decide the comparison against a plain VERSION.
+    string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" GIT_VERSION_TAG_TRIPLE "${GIT_VERSION_FULL}")
+    string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" GIT_VERSION_FILE_TRIPLE "${GIT_VERSION_FILE}")
+    if(GIT_VERSION_FILE_TRIPLE VERSION_GREATER GIT_VERSION_TAG_TRIPLE)
+        # Rebuilt from the parts that are still true rather than substituted in
+        # place: a substitution keeps whatever sat between the old triple and
+        # the distance, and on a tree whose nearest tag is a pre-release that is
+        # the rc label.
+        set(GIT_VERSION_KEPT "")
+        if(GIT_VERSION_FULL MATCHES "(-[0-9]+-g[0-9a-f]+)")
+            string(APPEND GIT_VERSION_KEPT "${CMAKE_MATCH_1}")
+        endif()
+        if(GIT_VERSION_FULL MATCHES "-dirty$")
+            string(APPEND GIT_VERSION_KEPT "-dirty")
+        endif()
+        set(GIT_VERSION_FULL "${GIT_VERSION_FILE_TRIPLE}${GIT_VERSION_KEPT}")
+        unset(GIT_VERSION_KEPT)
     endif()
 endif()
 
@@ -231,6 +280,9 @@ set(GIT_VERSION_MINOR ${CMAKE_MATCH_2})
 set(GIT_VERSION_PATCH ${CMAKE_MATCH_3})
 
 unset(GIT_VERSION_NUMERIC_MATCH)
+unset(GIT_VERSION_FILE)
+unset(GIT_VERSION_FILE_TRIPLE)
+unset(GIT_VERSION_TAG_TRIPLE)
 unset(GIT_VERSION_SRC_DIR)
 unset(GIT_VERSION_OWN_REPO)
 unset(GIT_VERSION_TOPLEVEL)

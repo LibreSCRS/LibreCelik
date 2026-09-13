@@ -2,11 +2,10 @@
 # check-tarball-determinism.sh [repository-root]
 #
 # The source tarball published with a release must be a function of the commit
-# and of nothing else. Where the component carries an Arch recipe, that recipe
-# holds the tarball's sha256 and a packager who rebuilds it has to get the same
-# bytes back; where it does not, the tarball is still cosigned and listed in
-# the signed SHA256SUMS beside the binaries, and anyone checking that manifest
-# has to arrive at the same sum.
+# and of nothing else. Here it is cosigned and listed in the signed SHA256SUMS
+# beside the binaries, so anyone checking that manifest -- or rebuilding the
+# tarball from the tag to see whether the published sum is honest -- has to
+# arrive at the same bytes.
 #
 # Three separate facts about the machine used to leak into those bytes, and
 # each of them survived for a different reason:
@@ -27,7 +26,8 @@
 # the closed set --mode writes; the members are in NAME order rather than the
 # order readdir() happened to hand back; no member is under .github/, which the
 # excludes silently failed to drop for as long as this script existed; and the
-# top directory is <Repository>-<VERSION>, which is what the recipes cd into.
+# top directory is <Repository>-<VERSION>, so whatever unpacks the archive can
+# cd into a name derived from the tag rather than from the Debian source name.
 #
 # The order arm is not redundant with the byte comparison, and that is the
 # whole reason it is written out: two runs on ONE machine walk the tree in the
@@ -56,14 +56,11 @@
 # the tarball at all is ci/scripts/check-artifact-names.sh's arm, not this
 # one's. Code review, not this gate, catches a script written to mislead.
 #
-# Not every component that ships make-source-tarball.sh ships this check, and
-# the components that do not do not carry the file at all. Here the clone the
-# script makes is local and takes under a second; where the tree carries
-# submodules or a dependency pinned for FetchContent, the same run pulls them
-# from a third-party host, twice per check (measured: 28 s and 8 s per run),
-# and a format-check that goes red because github.com is unreachable teaches
-# people to ignore red. The property is measured wherever the clone is purely
-# local, and stated as unmeasured in the release workflow of the rest.
+# This runs on every push here because the clone the script makes is purely
+# local: the tree carries no .gitmodules and no cmake/FetchQCBOR.cmake, so
+# nothing is pulled from a third-party host. A tree that carried either would
+# reach the network twice per check, and a gate that goes red because
+# github.com is unreachable teaches people to ignore red.
 #
 # Exit: 0 the tarball is a function of the commit - 1 it is not
 #       2 nothing could be measured, which is NOT a pass.
@@ -153,7 +150,7 @@ census() {  # census <tarball> <label>
         rc=1
     fi
     [ "$gh" = 0 ] || { echo "::error::FAIL github ($label): $gh member(s) under .github/ -- the excludes are not anchored to the top directory and match nothing"; rc=1; }
-    [ "$first" = "$name-$version/" ] || { echo "::error::FAIL topdir ($label): first entry is '$first', expected '$name-$version/' -- the recipes cd into the repository name"; rc=1; }
+    [ "$first" = "$name-$version/" ] || { echo "::error::FAIL topdir ($label): first entry is '$first', expected '$name-$version/' -- the top directory is the repository name"; rc=1; }
     printf '%s modes: %s\n' "$label" "$(printf '%s\n' "$lst" | awk '{print $1}' | sort | uniq -c | tr '\n' ' ')"
 }
 

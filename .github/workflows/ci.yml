@@ -95,8 +95,8 @@ jobs:
         run: ci/scripts/check-version-floors.sh --min 1
 
       - name: Prove the floor gate still fails when it should
-        # Twenty cases, instant, no build. A gate nobody has seen fail is a
-        # line in a workflow file.
+        # No compiler and no build: it runs its whole case list in seconds.
+        # A gate nobody has seen fail is a line in a workflow file.
         run: ./ci/scripts/check-version-floors.selftest.sh
 
       - name: The version this tree stamps names the major in VERSION
@@ -376,9 +376,11 @@ jobs:
     # Path-filtered (packaging paths only, owner-chosen trigger). Builds the
     # AppImage, whose build-appimage.sh walks the assembled AppDir TWICE:
     # --check fails closed on any unmapped bundled library, and --sbom writes
-    # the bill that ships beside the artefact. This job is the only place
-    # either walk meets a real AppDir, so it is where the bill is first seen
-    # to be non-empty; the line to look for in this log is
+    # the bill that ships beside the artefact. In this workflow it is the
+    # only job where either walk meets a real AppDir, so short of a tag it is
+    # where the bill is first seen to be non-empty; release.yml runs the same
+    # script once a tag is pushed, and scripts/macos/build-dmg.sh beside it.
+    # The line to look for in this log is
     #   sbom: N components from M bundled objects (K without a version)
     # and an N of zero aborts the build before appimagetool seals anything.
     # Steps mirror the release.yml build-linux job. Known limitation: a

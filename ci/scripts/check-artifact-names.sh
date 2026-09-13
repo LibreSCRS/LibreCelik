@@ -2,12 +2,12 @@
 # check-artifact-names.sh [workflow-dir]
 #
 # An artefact that is uploaded and never downloaded is built, kept for ninety
-# days and silently dropped from the release. Measured on a sibling repository
-# while this was being written: a job uploaded `source-tarball` into a workflow
-# whose release job collects its inputs with `pattern: '*-artifacts'`. Nothing
-# failed. download-artifact is happy with an empty match, every gate stayed
-# green, and the release would simply have carried no source tarball -- while
-# the packaging recipe pointed at the asset that was never published.
+# days and silently dropped from the release. The shape that does it: a job
+# uploads `source-tarball` into a workflow whose release job collects its
+# inputs with `pattern: '*-artifacts'`. Nothing fails. download-artifact is
+# happy with an empty match, every gate stays green, and the release simply
+# carries no source tarball -- binaries with no sources beside them, missing
+# without a word.
 #
 # So: in a workflow that downloads artefacts at all, every uploaded artefact
 # name must be matched by some consumer's `name:` or `pattern:` in that same
@@ -19,15 +19,16 @@
 # download by hand from the run page -- and demanding a consumer for those
 # would be demanding the wrong thing.
 #
-# Second arm, the other direction, for the one asset with a contract outside
-# this repository. The source tarball the packaging recipes fetch by URL is
-# built by one workflow step and has to be published by another; if the build
-# step is dropped the release publishes no tarball, every gate here stays
-# green, and the recipe's `source=` 404s for everyone at the next tag. The
-# wiring check does not see it either: reachability there is TRANSITIVE, and
-# make-source-tarball.sh is named in code by the recipe check and by the
-# determinism check, so it counts as wired even when no workflow names it at
-# all (measured -- deleting the whole job left that check green). Dropping
+# Second arm, the other direction, for the one asset whose absence no other
+# gate here reports. The source tarball is built by one workflow step and has
+# to be published by another; if the build step is dropped the release
+# publishes no tarball, every gate here stays green, and what ships is
+# binaries with no sources beside them -- cosigned and listed in SHA256SUMS
+# like every other asset, and missing without a word. The wiring check does not
+# see it either: reachability there is TRANSITIVE, and make-source-tarball.sh
+# is named in code by this check and by the determinism check, so it counts as
+# wired even when no workflow names it at all (measured -- deleting the whole
+# job left that check green). Dropping
 # only the upload step is the quieter half of the same hole: the run step
 # that builds the tarball is untouched, so a check that only asked whether
 # some step names the maker stayed green while the job built the tarball and
@@ -38,10 +39,9 @@
 #
 # This checks NAMES only. Whether the consumer is downstream of the producer is
 # the `needs` question, and a name can match while the ordering is still wrong,
-# and vice versa. That question is answered by ci/scripts/check-release-artifacts.sh
-# WHERE A REPOSITORY CARRIES ONE -- not all of them do, and where the file is
-# absent nothing measures the ordering at all. Do not read a green run here as
-# an answer to it.
+# and vice versa. Nothing here answers it: `git ls-files ci/scripts | grep -i
+# release-artifacts` is empty, so no gate in this repository measures the
+# ordering. Do not read a green run here as an answer to it.
 #
 # Threat model. This reads workflow TEXT, so it guards against the honest
 # regression: someone adds an upload, or renames one, in the shapes these
@@ -156,7 +156,7 @@ if [ -n "$root" ] && [ -f "$root/$maker" ]; then
         if [ "$has_upload" -eq 1 ]; then
             printf '%s: job %s runs %s and publishes it\n' "$f" "$job" "$maker"
         else
-            echo "::error file=$f::job '$job' runs $maker but has no actions/upload-artifact step of its own -- the tarball would be built and thrown away, and the packaging recipes fetch that asset by URL"
+            echo "::error file=$f::job '$job' runs $maker but has no actions/upload-artifact step of its own -- the tarball would be built and thrown away, and the release would carry binaries with no sources beside them"
             rc=1
         fi
     }
@@ -183,7 +183,7 @@ if [ -n "$root" ] && [ -f "$root/$maker" ]; then
         flush_job
     done
     if [ "$producers" -eq 0 ]; then
-        echo "::error::$maker is present but no workflow step runs it -- the release would publish no source tarball, and the packaging recipes fetch that asset by URL"
+        echo "::error::$maker is present but no workflow step runs it -- the release would publish binaries with no sources beside them"
         rc=1
     fi
     printf 'source-tarball-producers=%d\n' "$producers"

@@ -83,6 +83,22 @@ jobs:
       - name: Duplicate bodies (this checkout)
         run: python3 tools/dup-scan.py --repo "$(basename "$PWD")"
 
+      - name: Every first-party version floor names the major in VERSION
+        # The 4.x sweep before 5.0 searched for the token `4.2`; the floor that
+        # mattered read `4.0`, in the only executable consumer the project
+        # ships, and survived. This measures the property instead: every
+        # first-party find_package/find_dependency floor must name the major
+        # the VERSION file names. It reads VERSION and never `git describe`, so
+        # it is decidable before a tag exists -- which is the whole window in
+        # which the mistake is cheap. --min 1 is the vacuum guard: a scan that
+        # matches nothing is unmeasured, not clean.
+        run: ci/scripts/check-version-floors.sh --min 1
+
+      - name: Prove the floor gate still fails when it should
+        # Twenty cases, instant, no build. A gate nobody has seen fail is a
+        # line in a workflow file.
+        run: ./ci/scripts/check-version-floors.selftest.sh
+
       - name: Every uploaded artefact has someone to download it
         # An artefact whose name no download step can match is built, kept for
         # ninety days and dropped from the release without a word: the release

@@ -64,6 +64,31 @@ jobs:
         # bound, which is the only moment the omission is cheap to fix.
         run: ci/scripts/check-job-timeouts.sh
 
+      - name: Every uploaded artefact has someone to download it
+        # An artefact whose name no download step can match is built, kept for
+        # ninety days and dropped from the release without a word: the release
+        # simply carries one asset fewer. Names only -- whether the consumer is
+        # ordered after the producer is the needs question, which this
+        # repository answers only if it carries check-release-artifacts.sh.
+        run: |
+          ./ci/scripts/check-artifact-names.selftest.sh
+          ./ci/scripts/check-artifact-names.sh
+
+      - name: The source tarball is a function of the commit
+        # This repository ships binaries and carries no packaging recipe of its
+        # own, so nothing here holds the tarball's sha256 in a source= line.
+        # The tarball is published beside the binaries and listed in the signed
+        # SHA256SUMS instead, and anyone checking that manifest has to arrive
+        # at the same bytes. Two runs, forced apart by a second boundary and a
+        # umask boundary, then the property read out of the archive: every
+        # member carries the commit's own timestamp, owner 0/0, a mode from the
+        # set --mode writes, and a place in name order rather than in the order
+        # readdir happened to return; nothing under .github/; and the top
+        # directory a source build would cd into.
+        run: |
+          ./ci/scripts/check-tarball-determinism.selftest.sh
+          ./ci/scripts/check-tarball-determinism.sh
+
   i18n-audit:
     # Static retranslate audit (no build required). Runs the full
     # tools/i18n_audit.py over src+plugins, then runs its own pytest

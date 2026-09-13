@@ -12,6 +12,15 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Every release carries a source tarball this project built**, cosigned and
+  listed in the signed `SHA256SUMS` manifest like every other asset — so the
+  manifest a release publishes is larger than it was. This project is packaged
+  from binaries rather than from source, so the tarball is here to put the
+  exact sources beside the builds made from them: a release is auditable
+  without trusting an archive somebody else generated. It is a function of the
+  commit — every member carries the commit's own timestamp, owner `0/0` and a
+  mode no umask can widen.
+
 - **Native `deb` and `rpm` packages, and an AppStream entry.** Debian 13,
   Ubuntu 26.04 LTS and Fedora 43. LibreCelik needs none of the root-owned system
   files that force the agent into a distribution package, so this is a quality

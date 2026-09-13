@@ -239,9 +239,57 @@ jobs:
           name: macos-artifacts
           path: LibreCelik-*.dmg
 
+  source-tarball:
+    # The source tarball is produced by this project, not by GitHub. GitHub's
+    # archive/refs/tags tarball omits every submodule tree and its bytes are
+    # not ours to assert; this one comes from a clone with --recurse-submodules
+    # and is byte-identical run to run -- ci/scripts/check-tarball-determinism.sh
+    # measures that on every push, up to the gzip implementation, which is the
+    # one thing the script cannot make a property of the commit. This
+    # repository ships binaries and no
+    # Arch recipe of its own, so the tarball is here for a different reason
+    # than in the components that are packaged from source: it puts the exact
+    # sources next to the binaries built from them, cosigned and listed in
+    # SHA256SUMS like every other asset, so a release is auditable without
+    # trusting an archive somebody else generated.
+    #
+    # It runs after the signature check for the same reason every other job
+    # does: nothing is built for a tag whose signature has not been proved.
+    timeout-minutes: 20
+    needs: verify-signature
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Build the source tarball
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/srctar"
+          ci/scripts/make-source-tarball.sh "$RUNNER_TEMP/srctar"
+          ls -l "$RUNNER_TEMP/srctar"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-tarball-artifacts
+          # Named to end in -artifacts because the release job below collects
+          # its inputs with `pattern: '*-artifacts'`. An artefact this pattern
+          # cannot match is uploaded, never downloaded and silently dropped:
+          # built, then thrown away, with every gate still green.
+          path: ${{ runner.temp }}/srctar/*.orig.tar.gz
+          # An empty upload here would publish a release whose binaries have
+          # no sources beside them -- cosigned and listed in SHA256SUMS like
+          # every other asset, and missing without a word. Fail where it is
+          # cheap.
+          if-no-files-found: error
+
   release:
     timeout-minutes: 20
-    needs: [build-linux, build-macos]
+    needs: [build-linux, build-macos, source-tarball]
     runs-on: ubuntu-latest
     permissions:
       contents: write

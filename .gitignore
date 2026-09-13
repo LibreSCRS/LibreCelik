@@ -58,6 +58,11 @@ AppDir/
 # macOS DMG packaging
 *.dmg
 
+# Bills of materials, written into the repo root by the two packaging
+# scripts beside the artefact each one describes.
+sbom-linux.cdx.json
+sbom-macos.cdx.json
+
 aqtinstall.log
 testPriint.pdf
 tools/__pycache__/

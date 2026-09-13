@@ -414,6 +414,34 @@ python3 "$PROJECT_ROOT/ci/scripts/check-bundled-licenses.py" \
     }
 
 # ---------------------------------------------------------------------------
+# Bill of materials for what this AppImage actually carries. Same walk, same
+# manifest, one step later — so the bill and the licence verdict can never
+# describe different trees.
+#
+# It is produced HERE and not in the release job because only this script ever
+# sees a fully assembled AppDir. The release job used to run a source-pin
+# reader instead, which searched thirdparty/openssl-*, packaging/arch/PKGBUILD
+# and cmake/FetchQCBOR.cmake -- none of which this repository has. It printed
+# "0 components", exited 0, and the empty document was signed and published
+# beside the AppImage.
+#
+# Fail-closed: an empty tree, an unmapped library, or a bill with no
+# components aborts the build before appimagetool seals anything.
+# ---------------------------------------------------------------------------
+echo "Writing the bill of materials..."
+SBOM_OUT="$PROJECT_ROOT/sbom-linux.cdx.json"
+python3 "$PROJECT_ROOT/ci/scripts/check-bundled-licenses.py" \
+    --sbom "$APPDIR" \
+    --sbom-out "$SBOM_OUT" \
+    --manifest "$PROJECT_ROOT/licenses/manifest.json" \
+    --app-name LibreCelik \
+    --app-version "$VERSION" \
+    --platform linux || {
+        echo "ERROR: bill of materials refused (see ::error:: lines above) — not packaging." >&2
+        exit 1
+    }
+
+# ---------------------------------------------------------------------------
 # Phase 2e — dlopen audit. THE gate that keeps a broken object out of a
 # shipped artifact.
 #

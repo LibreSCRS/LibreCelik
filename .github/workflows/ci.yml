@@ -365,6 +365,7 @@ jobs:
               - 'cmake/**'
               - 'scripts/linux/**'
               - 'licenses/**'
+              - 'ci/scripts/**'
               - '.github/workflows/ci.yml'
 
   license-drift-guard:
@@ -373,10 +374,16 @@ jobs:
     if: ${{ needs.changes.outputs.packaging == 'true' }}
     runs-on: ubuntu-latest
     # Path-filtered (packaging paths only, owner-chosen trigger). Builds the
-    # AppImage, whose build-appimage.sh runs check-bundled-licenses.py --check
-    # and fails closed on any unmapped bundled library. Steps mirror the
-    # release.yml build-linux job. Known limitation: a packaging-path filter
-    # does not fire for toolchain / linuxdeploy / non-packaging drift.
+    # AppImage, whose build-appimage.sh walks the assembled AppDir TWICE:
+    # --check fails closed on any unmapped bundled library, and --sbom writes
+    # the bill that ships beside the artefact. This job is the only place
+    # either walk meets a real AppDir, so it is where the bill is first seen
+    # to be non-empty; the line to look for in this log is
+    #   sbom: N components from M bundled objects (K without a version)
+    # and an N of zero aborts the build before appimagetool seals anything.
+    # Steps mirror the release.yml build-linux job. Known limitation: a
+    # packaging-path filter does not fire for toolchain / linuxdeploy /
+    # non-packaging drift.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -473,6 +480,17 @@ jobs:
         env:
           APPIMAGE_EXTRACT_AND_RUN: "1"
         run: scripts/linux/build-appimage.sh build
+
+      - name: The bill that build produced is publishable
+        # The step above aborts if the bill it derives is empty, so this is
+        # not a second opinion on the content. It is an assertion that the
+        # bill EXISTS: deleting the --sbom call from the packaging script is
+        # invisible to every other check here -- the licence walk still names
+        # the same program, the suite still passes, bash -n is still clean --
+        # and the first thing to notice would be the release job, at a tag.
+        # Judged by the same program the release job runs, so the two cannot
+        # disagree about what publishable means.
+        run: python3 ci/scripts/check-sbom.py sbom-linux.cdx.json
 
   coverage:
     runs-on: ubuntu-latest

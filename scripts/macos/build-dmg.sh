@@ -172,6 +172,38 @@ ENTITLEMENTS="$PROJECT_ROOT/resources/macos/LibreCelik.entitlements"
 codesign --deep --force --sign - --entitlements "$ENTITLEMENTS" --options runtime "$APP_STAGING"
 
 # ---------------------------------------------------------------------------
+# Bill of materials for what this DMG actually carries — see the same block in
+# scripts/linux/build-appimage.sh for why the bill is derived from the staging
+# tree instead of from source pins.
+#
+# AFTER codesign and before hdiutil, and the order is the whole point of the
+# hash. `codesign --deep --force ... --options runtime` re-signs every nested
+# Mach-O macdeployqt staged and sets a hardened-runtime flag those objects did
+# not carry, so it rewrites their bytes. A bill written before that step would
+# publish a sha256 for a file that no longer exists in the DMG, which is worse
+# than publishing none: the reader who checks it concludes the artefact was
+# tampered with.
+#
+# Unconditional, outside the bootstrap branch on purpose: the bill is not an
+# optional courtesy, and if someone flips macos_bootstrapped back to false the
+# unmapped-library refusal below is the thing that says so out loud rather
+# than shipping a shorter bill than the bundle.
+# ---------------------------------------------------------------------------
+echo "Writing the bill of materials..."
+SBOM_OUT="$PROJECT_ROOT/sbom-macos.cdx.json"
+python3 "$LICENSE_CHECKER" \
+    --sbom "$APP_STAGING" \
+    --sbom-out "$SBOM_OUT" \
+    --manifest "$LICENSE_MANIFEST" \
+    --app-name LibreCelik \
+    --app-version "$VERSION" \
+    --platform macos || {
+        echo "ERROR: bill of materials refused (see ::error:: lines above) — not packaging." >&2
+        exit 1
+    }
+
+
+# ---------------------------------------------------------------------------
 # Build the DMG
 # ---------------------------------------------------------------------------
 DMG_STAGING="$(mktemp -d)/LibreCelik-dmg-contents"

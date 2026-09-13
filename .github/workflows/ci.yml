@@ -609,8 +609,13 @@ jobs:
           case "${{ matrix.slug }}" in fedora43) fam=rpm ;; *) fam=deb ;; esac
           ver=$(tr -d '[:space:]' < VERSION)
           mkdir -p "$RUNNER_TEMP/librescrs-packages/out/${{ matrix.slug }}/LibreMiddleware/$fam"
+          # The slug is part of the asset name upstream: Debian 13 and
+          # Ubuntu 26.04 build .deb files with identical names, so the
+          # publisher puts the distribution into the name and a consumer that
+          # asked for "*.$fam" would fetch both and install packages built
+          # against another distribution's glibc alongside its own.
           gh release download "$ver" --repo LibreSCRS/LibreMiddleware \
-            --pattern "*.$fam" \
+            --pattern "*.${{ matrix.slug }}.$fam" \
             --dir "$RUNNER_TEMP/librescrs-packages/out/${{ matrix.slug }}/LibreMiddleware/$fam"
           mkdir -p "$RUNNER_TEMP/librescrs-packages/out/${{ matrix.slug }}/LibreAgent/$fam"
           gh release download "$ver" --repo LibreSCRS/LibreAgent \

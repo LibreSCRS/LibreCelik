@@ -10,7 +10,7 @@ source), which lands new source strings in it as `type="unfinished"` since
 `lupdate` has no way to transliterate. Rerunning this script after
 translating the new Cyrillic strings regenerates the Latin catalogue in
 full, so its msgid set and `unfinished` count match the source again (see
-the `i18n_audit.py` D10 check, and `CONTRIBUTING.md`'s i18n section for the
+the i18n audit's D10 check, and `CONTRIBUTING.md`'s i18n section for the
 full update sequence).
 
 Scope discipline (this is the easiest place to get this wrong):

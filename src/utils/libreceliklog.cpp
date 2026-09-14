@@ -3,8 +3,8 @@
 
 #include "libreceliklog.h"
 
-Q_LOGGING_CATEGORY(lcGeneral, "rs.libresc.librecelik.general")
-Q_LOGGING_CATEGORY(lcSmartCard, "rs.libresc.librecelik.smartcard")
-Q_LOGGING_CATEGORY(lcPrinting, "rs.libresc.librecelik.printing")
-Q_LOGGING_CATEGORY(lcCertificates, "rs.libresc.librecelik.certificates")
-Q_LOGGING_CATEGORY(lcPluginRegistry, "rs.libresc.librecelik.plugin")
+Q_LOGGING_CATEGORY(lcGeneral, "rs.librescrs.librecelik.general")
+Q_LOGGING_CATEGORY(lcSmartCard, "rs.librescrs.librecelik.smartcard")
+Q_LOGGING_CATEGORY(lcPrinting, "rs.librescrs.librecelik.printing")
+Q_LOGGING_CATEGORY(lcCertificates, "rs.librescrs.librecelik.certificates")
+Q_LOGGING_CATEGORY(lcPluginRegistry, "rs.librescrs.librecelik.plugin")

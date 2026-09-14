@@ -33,6 +33,19 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
   validator tells them apart.
 
 
+### Changed
+
+- **Logging categories are named with the project's full name:**
+  `rs.librescrs.librecelik.<subsystem>` for `general`, `smartcard`,
+  `printing`, `certificates` and `plugin`, where 4.x spelled the prefix
+  `rs.libresc.`. The category string is what a logging rule filters on and
+  what journald shows, so a rule written for 4.x matches nothing on 5.0:
+  rewrite `rs.libresc.librecelik.*` to `rs.librescrs.librecelik.*` in
+  `QT_LOGGING_RULES` or `qtlogging.ini`. Every other public name this stack
+  owns already spells the project out (`org.librescrs.*` on the bus,
+  `librescrs-*` on disk); this was the last abbreviated one, and a major
+  release is the only place it can change.
+
 ### Removed
 
 - **The 4.2 settings importer** (`src/agent/settingsimport.*`, 423 lines with

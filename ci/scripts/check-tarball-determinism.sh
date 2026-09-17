@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: LGPL-2.1-or-later
 # check-tarball-determinism.sh [repository-root]
 #
 # The source tarball published with a release must be a function of the commit

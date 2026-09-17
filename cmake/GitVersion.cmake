@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # GitVersion
 #
 # Version derived from the repository's own git tags (https://semver.org/).

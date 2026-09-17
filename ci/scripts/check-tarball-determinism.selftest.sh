@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: LGPL-2.1-or-later
 # Selftest for check-tarball-determinism.sh. Six ways to build a tarball that
 # is a fact about the machine rather than about the commit, plus the unmodified
 # script as a control -- and one case where the script fails outright, because a

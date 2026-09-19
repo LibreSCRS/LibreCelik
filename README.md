@@ -25,7 +25,7 @@ LibreCelik (Слободни Челик) is a free and open-source smart card re
 - Multi-PIN support and PIN management
 - Document signing wizard (PAdES, XAdES, CAdES, JAdES, ASiC-E) with optional
   TSA timestamping and Trusted-List-driven validation
-- Bilingual interface (English / Serbian Cyrillic)
+- English, Serbian Cyrillic and Serbian Latin interface
 
 ## Downloads
 

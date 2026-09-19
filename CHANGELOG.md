@@ -10,6 +10,15 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased] — 5.0.0
 
+### Changed
+
+- **LibreCelik no longer opens the card itself.** Every smart-card session now
+  goes through the agent, and the credential dialogs are launchers for the
+  agent's PIN verbs rather than card drivers: the PIN, CAN and MRZ a flow
+  needs are collected by the agent's own prompter, in the agent's own
+  process, and never seen, stored or carried here. Running LibreCelik without
+  the agent installed and reachable is no longer supported.
+
 ### Added
 
 - **Every release carries a source tarball this project built**, cosigned and

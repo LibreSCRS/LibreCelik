@@ -514,7 +514,12 @@ jobs:
         run: python3 ci/scripts/check-sbom.py sbom-linux.cdx.json
 
   coverage:
-    runs-on: ubuntu-latest
+    # 24.04, not the moving label: the ratchet compares against a
+    # baseline recorded under one compiler, and ubuntu-latest moves the
+    # compiler with the image. The key would then fail for a reason that
+    # has nothing to do with the code. ci/coverage-env.txt records what
+    # this is pinned to, and --expect-key below asserts it.
+    runs-on: ubuntu-24.04
     # Not on pull_request: this pass costs an hour and the moment a
     # function actually lands is the push to main. Manual only until one
     # measured run says what it really costs on a hosted runner.
@@ -524,6 +529,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # The compiler the baseline's key names, installed explicitly and named
+      # through CC/CXX. Without this the key is whatever the image happens to
+      # ship, which is the thing the pin above exists to stop.
+      - name: Pin the compiler the baseline was recorded under
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-13 gcc-13
+          echo "CC=gcc-13" >> "$GITHUB_ENV"
+          echo "CXX=g++-13" >> "$GITHUB_ENV"
+          echo "GCOV=gcov-13" >> "$GITHUB_ENV"
 
       - name: Install system dependencies
         run: |
@@ -578,7 +594,7 @@ jobs:
         # across configurations is how a gap becomes an artefact. Record a
         # runner-side baseline with --update, review it in the same commit, and
         # from then on this step is a ratchet.
-        run: ./ci/scripts/coverage-gate.py --check build-cov
+        run: ./ci/scripts/coverage-gate.py --check --expect-key GNU-13 build-cov
 
   package:
     # Distribution packages, built in the target distribution's own container.

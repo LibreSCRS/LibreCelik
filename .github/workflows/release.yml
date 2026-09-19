@@ -429,6 +429,13 @@ jobs:
           VER: ${{ github.ref_name }}
           GH_TOKEN: ${{ github.token }}
         run: |
+          # The `on:` filter above no longer accepts a v-prefixed tag, but the
+          # rehearsal path does: workflow_dispatch runs against whatever ref it
+          # is pointed at, filter or no filter. The agent publishes unprefixed
+          # tags only, so strip it here the way the lockstep check above already
+          # does, or a v5.0.0 rehearsal asks the agent for a tag that cannot
+          # exist and fails looking like a pin that was never bumped.
+          VER="${VER#v}"
           # The release job checks the sources out into _changelog/ so that
           # the downloaded and cosigned artifacts/ tree is left alone.
           pin=$(tr -d '[:space:]' < _changelog/cmake/libreagent.pin)

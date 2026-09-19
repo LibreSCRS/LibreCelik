@@ -10,6 +10,8 @@
 #include <QPluginLoader>
 #include <QString>
 
+/// @brief Loads CardWidgetPlugin shared modules from a directory and looks
+/// them up by the card type they declare.
 class CardWidgetPluginRegistry
 {
 public:

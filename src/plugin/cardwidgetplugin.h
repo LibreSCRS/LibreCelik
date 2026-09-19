@@ -10,6 +10,9 @@
 #include <QStringList>
 #include <QWidget>
 
+/// @brief Interface implemented by each card-type GUI plugin: identifies the
+/// card type it renders and builds the widget(s) that display its field
+/// groups, progressively or all at once.
 class CardWidgetPlugin
 {
 public:

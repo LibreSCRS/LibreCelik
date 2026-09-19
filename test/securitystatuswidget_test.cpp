@@ -49,7 +49,9 @@ TEST_F(SecurityStatusWidgetTest, RendersWithoutCrash)
     status.overallAuthenticity = SecurityCheck::Status::Passed;
     status.overallGenuineness = SecurityCheck::Status::NotPerformed;
     widget.setSecurityStatus(status);
-    // Widget renders without crash
+
+    const QList<QLabel*> summary = widget.findChildren<QLabel*>(QStringLiteral("text"));
+    EXPECT_EQ(summary.size(), 3) << "the pane did not render the three roll-up verdicts";
 }
 
 TEST_F(SecurityStatusWidgetTest, RendersWithDetailChecks)
@@ -76,7 +78,11 @@ TEST_F(SecurityStatusWidgetTest, RendersWithDetailChecks)
     status.checks.push_back(check);
 
     widget.setSecurityStatus(status);
-    // Widget renders without crash with detail checks
+
+    const QList<QLabel*> summary = widget.findChildren<QLabel*>(QStringLiteral("text"));
+    EXPECT_EQ(summary.size(), 3) << "the pane did not render the three roll-up verdicts";
+    const QList<QLabel*> rows = widget.findChildren<QLabel*>(QStringLiteral("checkLabel"));
+    EXPECT_EQ(rows.size(), 2) << "the two per-check rows were not rendered";
 }
 
 TEST_F(SecurityStatusWidgetTest, UpdateStatusTwice)
@@ -92,7 +98,9 @@ TEST_F(SecurityStatusWidgetTest, UpdateStatusTwice)
     status2.overallAuthenticity = SecurityCheck::Status::Passed;
     status2.overallGenuineness = SecurityCheck::Status::Passed;
     widget.setSecurityStatus(status2);
-    // Widget handles status update without crash
+
+    const QList<QLabel*> summary = widget.findChildren<QLabel*>(QStringLiteral("text"));
+    EXPECT_EQ(summary.size(), 3) << "a second status update left stale or duplicated summary rows";
 }
 
 // --- the reason a signer verdict carries ------------------------------------

@@ -14,7 +14,7 @@ LibreCelik (Слободни Челик) is a free and open-source smart card re
   on the NAM card).
 - **Card data through plugins.** Built-in plugins read the document data:
   Serbian eID, Serbian health insurance, EU vehicle registration, and
-  electronic passports (eMRTD).
+  electronic passports (eMRTD, with PACE/BAC).
 
 ## Features
 

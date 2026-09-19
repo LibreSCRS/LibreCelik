@@ -121,13 +121,6 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
   descriptor and the agent decides what counts as a master list. There
   is deliberately no automatic download; fetching the file means
   accepting ICAO's terms, so a person does that themselves.
-- New translation strings `lc-pin-label-auth`, `lc-pin-label-qscd`,
-  and `lc-pin-label-sign` (English + Serbian Cyrillic) used by the
-  signing wizard's PKCS#11 multi-slot dropdown.
-- New `librecelik::signing::formatSlotLabel()` helper
-  (`src/signing/slotlabelformatter.{h,cpp}`) that composes
-  `<token> — <localised PIN label>` for the wizard slot dropdown.
-  5 GTest cases (`test/slotlabelformattertest.cpp`).
 
 ### Changed
 
@@ -137,14 +130,6 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
   it — a trust store nobody has set up yet no longer reads like an
   accusation against the document. The reasons appear in the printed and
   exported PDF report as well, not only on screen.
-- Signing wizard slot dropdown now lists each PKCS#11 slot
-  separately. Multi-PIN cards (e.g. some eID cards) show two
-  entries: `<token> — Authentication` and
-  `<token> — Signing (QSCD)`. Default selection prioritises the
-  QSCD slot, then the Signing slot, then the first slot in the
-  list. Single-PIN cards (rs-eid Apollo, PIV, plain PKCS#15)
-  continue to show a single dropdown entry — UX unchanged for
-  them.
 
 ## 4.1.0 and 4.2.0
 

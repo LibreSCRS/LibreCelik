@@ -39,6 +39,7 @@ work=$(mktemp -d /var/tmp/tarball-determinism-selftest.XXXXXX) || exit 2
 trap 'rm -rf "$work"' EXIT
 fails=0
 cases=0
+red=0
 
 # A fixture is a whole git repository, because the subject reads the commit
 # timestamp out of one and the script clones one.
@@ -74,6 +75,8 @@ fixture() {  # fixture <dir>
 run() {  # run <case> <expected-rc> <arm> <sed-expression>
     local case=$1 want=$2 arm=$3 expr=$4 d="$work/$1/$name" got out
     cases=$((cases + 1))
+    # red-proved: the case in which the gate returned non-zero on a perturbed input.
+    if [ "$want" != 0 ]; then red=$((red + 1)); fi
     fixture "$d"
     if [ -n "$expr" ]; then
         sed -i "$expr" "$d/ci/scripts/make-source-tarball.sh"
@@ -139,5 +142,11 @@ run script_fails 2 'nothing could be measured' \
 # 8 -- control: the shipped script, unperturbed, must pass -- symlink and all.
 run control 0 'tarball determinism: GREEN' ''
 
-if [ "$fails" -eq 0 ]; then echo "check-tarball-determinism selftest: all $cases cases passed"; exit 0; fi
-echo "check-tarball-determinism selftest: $fails of $cases case(s) failed"; exit 1
+if [ "$fails" -eq 0 ]; then
+    echo "check-tarball-determinism selftest: all $cases cases passed"
+    printf 'selftest: %s cases, %s red-proved\n' "$cases" "$red"
+    exit 0
+fi
+echo "check-tarball-determinism selftest: $fails of $cases case(s) failed"
+printf 'selftest: %s cases, %s red-proved\n' "$cases" "$red"
+exit 1

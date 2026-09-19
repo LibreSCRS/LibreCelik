@@ -266,11 +266,6 @@ qt_add_translations(${PROJECT_NAME}
 # regenerate that was skipped), and finally LibreCelik_lrelease to recompile
 # (or just cmake --build). See CONTRIBUTING.md's i18n section for the full
 # sequence.
-# 4.0 LM: trust anchors live inside the LibreSCRS::Trust::TrustStore
-# composed and exposed by SigningService; LC no longer embeds raw cert files
-# via Qt resources or links OpenSSL directly. All certificate parsing and
-# chain validation happens through LibreSCRS::Certificate::ParsedCertificate
-# and LibreSCRS::Trust::TrustStore.
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     librecelik_app

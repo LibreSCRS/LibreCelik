@@ -82,17 +82,16 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 - **A signed SBOM per artefact, `sbom-linux.cdx.json` and
   `sbom-macos.cdx.json`** — LibreCelik published none before: the previous
   single `sbom.cdx.json` was produced by a source-pin reader that searched
-  paths this repository does not have, so it listed nothing at all, though it
-  was signed. Each new bill is derived from the staging tree of the artefact
-  it sits beside, by the same walk that already verifies every bundled
-  library has a documented licence, and a release whose bill is missing or
-  empty is now refused rather than published.
+  paths this repository does not have, so it listed nothing at all. Each new
+  bill is derived from the staging tree of the artefact it sits beside, by
+  the same walk that already verifies every bundled library has a documented
+  licence, and a release whose bill is missing or empty is now refused
+  rather than published.
 
-  If you consumed `sbom.cdx.json`, fetch the one matching your download. Each
-  component carries the sha256 of the object actually shipped, so a bill can
-  be checked against the artefact beside it — the single exception is a macOS
-  framework bundle whose binary cannot be read, which is listed with an empty
-  hash list rather than with a digest of nothing.
+  Each component carries the sha256 of the object actually shipped, so a
+  bill can be checked against the artefact beside it — the single exception
+  is a macOS framework bundle whose binary cannot be read, which is listed
+  with an empty hash list rather than with a digest of nothing.
 
 ### Changed
 

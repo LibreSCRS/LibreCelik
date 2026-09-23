@@ -19,6 +19,12 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
   process, and never seen, stored or carried here. Running LibreCelik without
   the agent installed and reachable is no longer supported.
 
+- **The AppImage and the DMG carry no update channel.** Both are release assets
+  and neither self-updates: the AppImage ships no `updateinformation`, so
+  `AppImageUpdate` cannot see it, and the DMG is not distributed through an
+  update framework. LibreCelik bundles its Qt and its image codecs, so a security
+  fix in any of them is a new release. Re-download from the releases page.
+
 ### Added
 
 - **Every release carries a source tarball this project built**, cosigned and

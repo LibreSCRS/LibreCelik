@@ -621,6 +621,12 @@ jobs:
     # Images are pinned by digest, not by tag. A tag moves under you; a digest
     # does not.
     name: package (${{ matrix.slug }})
+    # Turn this on only after the agent component publishes .deb/.rpm assets AND
+    # the download pattern below has moved from "*.$fam" to
+    # "*.${{ matrix.slug }}.$fam". Until then the job fetches packages that are
+    # not published: the download exits non-zero under `set -euo pipefail`, and
+    # the gate reports the upstream packages missing. The switch looks like
+    # "turn on when ready" and is really "turn on and watch it go red".
     if: vars.PACKAGE_JOB_ENABLED == 'true'
     runs-on: ubuntu-latest
     # Measured locally at 45 minutes for the slowest image, times

@@ -430,8 +430,16 @@ python3 "$PROJECT_ROOT/ci/scripts/check-bundled-licenses.py" \
 # ---------------------------------------------------------------------------
 echo "Writing the bill of materials..."
 SBOM_OUT="$PROJECT_ROOT/sbom-linux.cdx.json"
+# The CI step that fetches the JPEG2000 sources by commit exports this only
+# after it asserted the fetched HEADs, so the bill names a commit only when
+# the build is known to have used it. A local build passes no pins.
+PIN_ARGS=()
+if [[ -n "${JPEG2000_PINS:-}" ]]; then
+    PIN_ARGS=(--pins "$JPEG2000_PINS")
+fi
 python3 "$PROJECT_ROOT/ci/scripts/check-bundled-licenses.py" \
     --sbom "$APPDIR" \
+    "${PIN_ARGS[@]}" \
     --sbom-out "$SBOM_OUT" \
     --manifest "$PROJECT_ROOT/licenses/manifest.json" \
     --app-name LibreCelik \

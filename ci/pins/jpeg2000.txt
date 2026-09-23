@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Sources the AppImage build clones from the network. Pinned by COMMIT, not by
+# branch and not by tag: a tag moves under you, a digest does not — the same
+# sentence the package matrix already carries about container images.
+#
+# Three readers, and that is the point of one file:
+#   1. .github/workflows/{ci,release}.yml fetch these and assert rev-parse HEAD
+#   2. ci/scripts/check-bundled-licenses.py --pins puts the commit in the SBOM
+#   3. ci/scripts/check-network-pins.sh refuses a clone this file does not name
+#
+# qtimageformats is built against the Qt that jurplel/install-qt-action
+# installs ('6.10.*' in the workflows), so its pin moves with that Qt version:
+# a plugin source older or newer than the Qt it is installed into is the
+# mismatch this pin is not allowed to hide.
+#
+# <name>  <url>  <commit>  <human version>
+jasper          https://github.com/jasper-software/jasper.git   63e106c80eb72af9fd4fa28772499ab0138b9994  version-4.2.9
+qtimageformats  https://code.qt.io/qt/qtimageformats.git        cc5f5661ef75f08da7064227de38bab6cc3b857c  6.10.3

@@ -115,7 +115,8 @@
       "spdx": "LGPL-3.0-or-later",
       "text": "resources/licenses/lgpl-3.0.txt",
       "sha256": "996af0513df21f7496288951c41428a03c174e9e4a9d63665c57d670f845ccb1",
-      "platforms": ["linux"]
+      "platforms": ["linux"],
+      "pin": "qtimageformats"
     },
     {
       "match": "libqjpeg.so",
@@ -786,7 +787,8 @@
       "spdx": "JasPer-2.0",
       "text": "resources/licenses/jasper.txt",
       "sha256": "4ad1bb42aff888c4403d792e6e2c5f1716d6c279fea70b296333c9d577d30b81",
-      "platforms": ["linux"]
+      "platforms": ["linux"],
+      "pin": "jasper"
     },
     {
       "match": "libtiff.so",

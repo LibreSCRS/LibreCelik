@@ -107,8 +107,24 @@ jobs:
 
       - name: Build JasPer and qtimageformats for JPEG2000 support
         run: |
-          # JasPer is not in Ubuntu repos; build from source
-          git clone --depth 1 https://github.com/jasper-software/jasper.git /tmp/jasper
+          # JasPer is not in Ubuntu repos; build from source. Both sources are
+          # fetched by the commit ci/pins/jpeg2000.txt names, and the fetched
+          # HEAD is asserted rather than trusted: a pin that "applied" while the
+          # tree stayed on another commit is the failure this replaces. A
+          # shallow clone cannot check out an arbitrary commit, so the pinned
+          # object is fetched directly.
+          fetch_pinned() {  # fetch_pinned <name> <dir>
+            local _n url sha ver got
+            read -r _n url sha ver < <(grep "^$1 " ci/pins/jpeg2000.txt) || true
+            [ -n "${sha:-}" ] || { echo "::error::no pin for $1 in ci/pins/jpeg2000.txt"; exit 1; }
+            mkdir -p "$2" && git -C "$2" init -q .
+            git -C "$2" remote add origin "$url"
+            git -C "$2" fetch --depth 1 origin "$sha"
+            git -C "$2" checkout --detach FETCH_HEAD
+            got="$(git -C "$2" rev-parse HEAD)"
+            [ "$got" = "$sha" ] || { echo "::error::$1 pin $sha but HEAD $got"; exit 1; }
+          }
+          fetch_pinned jasper /tmp/jasper
           cmake -B /tmp/jasper-build -S /tmp/jasper \
             -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
             -DJAS_ENABLE_PROGRAMS=OFF -DJAS_ENABLE_DOC=OFF -G Ninja
@@ -118,10 +134,14 @@ jobs:
 
           # Build qtimageformats against aqtinstall Qt + JasPer
           QT_DIR="$(qmake6 -query QT_INSTALL_PREFIX)"
-          git clone --depth 1 --branch "$(qmake6 -query QT_VERSION)" \
-            https://code.qt.io/qt/qtimageformats.git /tmp/qtimageformats || \
-          git clone --depth 1 --branch "v$(qmake6 -query QT_VERSION)" \
-            https://code.qt.io/qt/qtimageformats.git /tmp/qtimageformats
+          # One fetch and no fallback. The branch-name clone used to retry with
+          # a "v" prefix because Qt names its tags that way; a pin is a commit,
+          # so the prefix question no longer exists, and neither does the
+          # second clone that answered it.
+          fetch_pinned qtimageformats /tmp/qtimageformats
+          # The bill of materials may name these commits only because they were
+          # asserted above; a local build that did not fetch them passes no pins.
+          echo "JPEG2000_PINS=$PWD/ci/pins/jpeg2000.txt" >> "$GITHUB_ENV"
           # Verify JasPer is findable
           echo "JasPer installed files:"
           ls /usr/local/lib/libjasper* /usr/local/include/jasper/jasper.h 2>/dev/null || echo "WARNING: JasPer not found in /usr/local"

@@ -1028,3 +1028,121 @@ def test_check_and_sbom_in_one_invocation_is_refused(tmp_path, capsys):
         raise AssertionError(f"expected a refusal, got rc={rc}")
     assert not out.exists()
     assert "separate modes" in capsys.readouterr().err
+
+
+# --------------------------------------------------------------------------
+# --pins: the commit a network-fetched source was built from, in the bill.
+# --------------------------------------------------------------------------
+
+_JASPER_SHA = "63e106c80eb72af9fd4fa28772499ab0138b9994"
+
+
+def _pinned_manifest(tmp_path):
+    m = _sbom_manifest(tmp_path)
+    m["components"] = m["components"] + [
+        {
+            "match": "libjasper.so",
+            "name": "JasPer",
+            "spdx": "JasPer-2.0",
+            "text": "resources/licenses/curl.txt",
+            "sha256": hashlib.sha256(b"CURL LICENSE").hexdigest(),
+            "pin": "jasper",
+        }
+    ]
+    return m
+
+
+def _pins_file(tmp_path, body):
+    p = tmp_path / "pins.txt"
+    p.write_text("# comment\n\n" + body)
+    return str(p)
+
+
+def test_pins_put_the_commit_and_the_url_in_the_bill(tmp_path):
+    root = _staged(tmp_path, ["libjasper.so.7", "libcurl.so.4"])
+    pins = checker.load_pins(
+        _pins_file(
+            tmp_path,
+            "jasper  https://github.com/jasper-software/jasper.git  "
+            + _JASPER_SHA
+            + "  version-4.2.9\n",
+        )
+    )
+    doc, rc = checker.emit_sbom(
+        root, _pinned_manifest(tmp_path), "linux", "LibreCelik", "5.0.0",
+        pins=pins,
+    )
+    assert rc == 0
+    by = {c["name"]: c for c in doc["components"]}
+    assert by["JasPer"]["version"] == "version-4.2.9"
+    props = {p["name"]: p["value"] for p in by["JasPer"]["properties"]}
+    assert props["librescrs:source-commit"] == _JASPER_SHA
+    assert props["librescrs:source-url"] == (
+        "https://github.com/jasper-software/jasper.git"
+    )
+    # an unpinned component is untouched
+    assert by["curl"]["version"] == "4"
+    assert "librescrs:source-commit" not in {
+        p["name"] for p in by["curl"]["properties"]
+    }
+
+
+def test_pins_absent_keep_the_soname_version(tmp_path):
+    root = _staged(tmp_path, ["libjasper.so.7"])
+    doc, rc = checker.emit_sbom(
+        root, _pinned_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
+    )
+    assert rc == 0
+    assert doc["components"][0]["version"] == "7"
+
+
+def test_pins_refuse_a_pinned_component_the_file_does_not_name(
+    tmp_path, capsys
+):
+    root = _staged(tmp_path, ["libjasper.so.7"])
+    pins = checker.load_pins(
+        _pins_file(
+            tmp_path,
+            "qtimageformats  https://code.qt.io/qt/qtimageformats.git  "
+            + "cc5f5661ef75f08da7064227de38bab6cc3b857c  6.10.3\n",
+        )
+    )
+    doc, rc = checker.emit_sbom(
+        root, _pinned_manifest(tmp_path), "linux", "LibreCelik", "5.0.0",
+        pins=pins,
+    )
+    assert doc is None and rc == 1
+    out = capsys.readouterr().out
+    assert "libjasper.so" in out and "'jasper'" in out
+
+
+def test_pins_refuse_a_pin_that_matched_nothing_bundled(tmp_path, capsys):
+    root = _staged(tmp_path, ["libcurl.so.4"])
+    pins = checker.load_pins(
+        _pins_file(
+            tmp_path,
+            "jasper  https://github.com/jasper-software/jasper.git  "
+            + _JASPER_SHA
+            + "  version-4.2.9\n",
+        )
+    )
+    doc, rc = checker.emit_sbom(
+        root, _pinned_manifest(tmp_path), "linux", "LibreCelik", "5.0.0",
+        pins=pins,
+    )
+    assert doc is None and rc == 1
+    assert "'jasper'" in capsys.readouterr().out
+
+
+def test_pins_file_refuses_a_value_that_is_not_a_commit(tmp_path):
+    bad = _pins_file(
+        tmp_path,
+        "jasper  https://github.com/jasper-software/jasper.git  "
+        "version-4.2.9  version-4.2.9\n",
+    )
+    try:
+        checker.load_pins(bad)
+    except ValueError as exc:
+        assert "40" in str(exc)
+    else:
+        raise AssertionError("a tag name was accepted as a commit")

@@ -359,8 +359,41 @@ def purl_for(comp, soname: str, version: str) -> str:
     return "pkg:generic/%s%s" % (stem, "@" + version if version else "")
 
 
+def load_pins(path: str):
+    """Read a pin file: ``<name>  <url>  <commit>  <human version>`` per line.
+
+    The commit has to be forty hex digits. A tag name in that column is the
+    mistake a pin exists to prevent -- a tag moves, a commit does not -- so it
+    is refused here rather than copied into a signed document.
+    """
+    pins = {}
+    with open(path, "r", encoding="utf-8") as fh:
+        for lineno, raw in enumerate(fh, 1):
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            fields = line.split()
+            if len(fields) != 4:
+                raise ValueError(
+                    f"{path}:{lineno}: expected '<name> <url> <commit> "
+                    f"<version>', got {len(fields)} fields"
+                )
+            name, url, commit, version = fields
+            if not re.fullmatch(r"[0-9a-f]{40}", commit):
+                raise ValueError(
+                    f"{path}:{lineno}: '{commit}' is not a 40-hex commit"
+                )
+            pins[name] = {"url": url, "commit": commit, "version": version}
+    return pins
+
+
 def emit_sbom(
-    root: str, manifest, current_platform, app_name: str, app_version: str
+    root: str,
+    manifest,
+    current_platform,
+    app_name: str,
+    app_version: str,
+    pins=None,
 ):
     """CycloneDX bill of materials for one packaging staging tree.
 
@@ -396,6 +429,14 @@ def emit_sbom(
     Over today's manifest the two sets do not intersect, so the two modes
     agree; if a glob is ever added to both, they would not, and this is
     the line to change.
+
+    ``pins`` (from :func:`load_pins`) names the commit a network-fetched
+    source was built from. A manifest component carrying ``"pin": <name>``
+    then gets that human version and the commit and URL as properties --
+    the soname generation alone cannot say which source shipped, and an
+    LGPL component has to be able to. Fail-closed like the rest: with pins
+    given, a pinned component the file does not name, or a pin row that
+    matched nothing bundled, is an error rather than a weaker bill.
     """
     internal = manifest.get("internal_sonames", [])
     excluded = manifest.get("exclude_not_bundled", [])
@@ -414,6 +455,7 @@ def emit_sbom(
     entries = []
     checked = 0
     unversioned = 0
+    pins_used = set()
 
     for name, rp in enumerate_assets(root):
         checked += 1
@@ -453,6 +495,21 @@ def emit_sbom(
             comp_name = comp["name"]
             licence = licence_entry(comp["spdx"])
             props = []
+            pin_name = comp.get("pin")
+            if pins is not None and pin_name:
+                pin = pins.get(pin_name)
+                if pin is None:
+                    errors.append(
+                        f"::error::{name} ({rel}) is pinned as '{pin_name}' "
+                        f"in the manifest, and the pin file does not name it"
+                    )
+                    continue
+                pins_used.add(pin_name)
+                version = pin["version"]
+                props = [
+                    {"name": "librescrs:source-commit", "value": pin["commit"]},
+                    {"name": "librescrs:source-url", "value": pin["url"]},
+                ]
             purl = purl_for(comp, name, version)
 
         if not version:
@@ -491,6 +548,13 @@ def emit_sbom(
         errors.append(
             f"::error::no shared objects found under {root} — the staging "
             f"tree is empty or the path is wrong"
+        )
+
+    for pin_name in sorted(set(pins or {}) - pins_used):
+        errors.append(
+            f"::error::pin '{pin_name}' matched no bundled object — either "
+            f"the build did not bundle what it fetched, or no manifest "
+            f"component carries \"pin\": \"{pin_name}\""
         )
 
     for line in errors:
@@ -710,6 +774,15 @@ def main(argv=None):
         "artefact beside it is the drift this whole mode exists to end.",
     )
     parser.add_argument(
+        "--pins",
+        metavar="PATH",
+        help="With --sbom: a pin file (<name> <url> <commit> <version>) "
+        "for sources the build fetched from the network. A manifest "
+        "component with \"pin\": <name> is billed with that version, "
+        "commit and URL. Pass it only when the build asserted it fetched "
+        "exactly those commits.",
+    )
+    parser.add_argument(
         "--platform",
         choices=("linux", "macos"),
         required=True,
@@ -743,6 +816,11 @@ def main(argv=None):
             % ", ".join(modes)
         )
 
+    if args.pins and not args.sbom:
+        # Only the bill reads it; accepted anywhere else it would be a flag
+        # that looks applied and changed nothing.
+        parser.error("--pins is only meaningful with --sbom")
+
     if args.emit_candidates:
         manifest = _load_manifest(args.manifest)
         candidates = emit_candidates(
@@ -770,12 +848,20 @@ def main(argv=None):
         repo_root = os.path.dirname(
             os.path.dirname(os.path.abspath(args.manifest))
         )
+        pins = None
+        if args.pins:
+            try:
+                pins = load_pins(args.pins)
+            except (OSError, ValueError) as exc:
+                print(f"::error::{exc}")
+                return 1
         doc, rc = emit_sbom(
             args.sbom,
             manifest,
             args.platform,
             args.app_name or os.path.basename(repo_root),
             args.app_version,
+            pins=pins,
         )
         if rc != 0:
             return rc

@@ -121,6 +121,15 @@ jobs:
         # being ignored altogether.
         run: ./ci/scripts/check-version-stamp.selftest.sh
 
+      - name: The release-asset check can still fail
+        run: ./ci/scripts/check-release-assets.selftest.sh
+
+      - name: The release workflow checks its asset set before publishing
+        # Structural only: the job that runs gh release create runs the
+        # --staged check before it. Whether the set is right is measured on
+        # the tag, over the files themselves.
+        run: ./ci/scripts/check-release-assets.sh --wired
+
       - name: Every uploaded artefact has someone to download it
         # An artefact whose name no download step can match is built, kept for
         # ninety days and dropped from the release without a word: the release

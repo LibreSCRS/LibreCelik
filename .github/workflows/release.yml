@@ -344,6 +344,8 @@ jobs:
         with:
           ref: ${{ github.ref }}
           sparse-checkout: |
+            ci/release-assets.txt
+            ci/scripts/check-release-assets.sh
             CHANGELOG.md
             VERSION
             ci/scripts/check-release-lockstep.sh
@@ -515,6 +517,11 @@ jobs:
             *) echo "published deliberately";;
           esac
 
+      - name: The staged asset set is the set this repository declares
+        # The files gh is about to publish, against ci/release-assets.txt, in
+        # both directions, before the release exists.
+        run: _changelog/ci/scripts/check-release-assets.sh --staged artifacts
+
       - name: Create GitHub release with all signed artefacts
         # Replaces softprops/action-gh-release@v2, which races between
         # asset upload and metadata update: releases carrying several
@@ -558,3 +565,12 @@ jobs:
               $PRERELEASE_FLAG \
               $DRAFT_FLAG \
               artifacts/*
+
+      - name: The published release is the set this repository declares
+        # The release this job just created, read back. A draft is judged too,
+        # and the check prints DRAFT=yes so the log is not taken for evidence
+        # about a published release.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: _changelog/ci/scripts/check-release-assets.sh --published "$TAG"

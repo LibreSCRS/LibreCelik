@@ -36,12 +36,44 @@ project_version() {
         esac
     fi
 
-    # No git, a foreign repository, or a tagless clone: the VERSION file is the
-    # same authority the build falls back to. "dev" only when even that is
-    # missing, so a source drop never silently names itself after nothing.
-    if [ -z "$version" ] && [ -r "$root/VERSION" ]; then
-        version="$(head -n1 "$root/VERSION" | tr -d '[:space:]')"
+    # The VERSION file is read unconditionally and the NEWER of the two wins --
+    # the rule cmake/GitVersion.cmake implements, and this helper must agree
+    # with it. VERSION is not a fallback but a floor: it is bumped at code
+    # freeze, while the newest tag names the PREVIOUS release for the whole
+    # cycle, so a tag-first answer labelled every artefact built before the tag
+    # with the old number. The tag still wins when it is equal or ahead. With
+    # no git, a foreign repository or a tagless clone, VERSION is all there is;
+    # "dev" only when even that is missing, so a source drop never silently
+    # names itself after nothing.
+    local file=""
+    if [ -r "$root/VERSION" ]; then
+        file="$(head -n1 "$root/VERSION" | tr -d '[:space:]')"
+        file="${file#v}"
+        case "$file" in
+            [0-9]*.[0-9]*.[0-9]*) ;;
+            *) file="" ;;
+        esac
+    fi
+    if [ -z "$version" ]; then
+        version="$file"
+    elif [ -n "$file" ] && _project_version_newer "$file" "$version"; then
+        version="$file"
     fi
 
     printf '%s' "${version:-dev}"
+}
+
+# _project_version_newer A B: true when A's MAJOR.MINOR.PATCH is greater than
+# B's. Numeric triples only, as in GitVersion.cmake: a pre-release label on the
+# tag (5.0.0-rc2) must not decide the comparison. Plain arithmetic rather than
+# `sort -V`, which the macOS packaging host is not guaranteed to have.
+_project_version_newer() {
+    local a b i
+    IFS=. read -r -a a <<< "${1%%[!0-9.]*}"
+    IFS=. read -r -a b <<< "${2%%[!0-9.]*}"
+    for i in 0 1 2; do
+        if (( 10#${a[i]:-0} > 10#${b[i]:-0} )); then return 0; fi
+        if (( 10#${a[i]:-0} < 10#${b[i]:-0} )); then return 1; fi
+    done
+    return 1
 }

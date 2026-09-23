@@ -150,6 +150,15 @@ jobs:
       # report the cases it ran and how many proved the gate red. A self-test
       # nothing runs proves as much as no self-test, and a runner that read only
       # exit codes would accept `exit 0` as a body.
+      - name: Prove the network-pin gate still fails when it should
+        run: ./ci/scripts/check-network-pins.selftest.sh
+
+      - name: Every network clone is pinned by commit
+        # The JPEG2000 sources are fetched by commit in two workflows; a pin
+        # applied to one and not the other builds a different AppImage in CI
+        # than the one the release signs.
+        run: ./ci/scripts/check-network-pins.sh
+
       - name: Run every self-test
         run: ./ci/scripts/run-selftests.sh
 

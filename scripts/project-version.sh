@@ -23,7 +23,9 @@ project_version() {
     # belonging to somebody else.
     local toplevel
     toplevel="$(git -C "$root" rev-parse --show-toplevel 2>/dev/null || true)"
-    if [ -n "$toplevel" ] && [ "$toplevel" = "$root" ]; then
+    # git reports the physical path; compare against the physical root too,
+    # or a root reached through a symlink skips the tag, as the build does not.
+    if [ -n "$toplevel" ] && [ "$toplevel" = "$(cd "$root" 2>/dev/null && pwd -P)" ]; then
         # Version-SHAPED tags only: a leading digit plus two further
         # dot-separated groups. `--match` is an fnmatch glob and not a version
         # grammar, so the shape is re-checked below rather than trusted.

@@ -37,5 +37,5 @@ LibreSCRS releases ≥ 4.0 are cryptographically signed.
 |---------|-----------|
 | 5.x     | ✅ Active  |
 | 4.x     | ✅ Active  |
-| 3.x     | ✅ Active  |
+| 3.x     | ❌ EOL     |
 | 2.x     | ❌ EOL     |

@@ -516,18 +516,19 @@ jobs:
           cat artifacts/SHA256SUMS
           cosign sign-blob artifacts/SHA256SUMS   --bundle artifacts/SHA256SUMS.sigstore.json --yes
 
-      - name: Debug packages are published or suppressed on purpose
-        # A -dbgsym / -debuginfo set must never appear in a release directory
-        # unlabelled. Either it is published deliberately, or the build sets
-        # DEB_BUILD_OPTIONS=noautodbgsym and it does not exist. Saying which is
-        # the whole point; a silent third state is what this step forbids.
+      - name: No debug packages are published
+        # This release builds an AppImage and a DMG, not distribution
+        # packages, so no -dbgsym / -debuginfo set can exist here. The step
+        # says that, and refuses one that appears anyway rather than
+        # publishing it unlabelled.
         run: |
           n=$(ls artifacts | grep -cE 'dbgsym|debuginfo|debugsource' || true)
           echo "DEBUG_PACKAGE_COUNT=$n"
-          case "$n" in
-            0) echo "suppressed (DEB_BUILD_OPTIONS=noautodbgsym)";;
-            *) echo "published deliberately";;
-          esac
+          if [ "$n" -ne 0 ]; then
+            echo "::error::$n debug package(s) in a release that builds no distribution packages"
+            exit 1
+          fi
+          echo "none: this release builds no distribution packages"
 
       - name: The staged asset set is the set this repository declares
         # The files gh is about to publish, against ci/release-assets.txt, in

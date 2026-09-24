@@ -146,7 +146,65 @@ d="$work/n8"; fixture "$d"
 pinned_block | grep -v 'rev-parse HEAD' > "$d/.github/workflows/ci.yml"
 cmp -s <(pinned_block) "$d/.github/workflows/ci.yml" \
     && { echo "FAIL  N8 fixture did not change -- the perturbation removed nothing"; fails=$((fails + 1)); }
-check "N8 pinned fetch whose HEAD is never asserted" 1 "$d" "rev-parse HEAD"
+check "N8 pinned fetch whose HEAD is never asserted" 1 "$d" "never asserted"
+
+# The shape the workflows really use: a function that reads the pin row by
+# the name it is called with, and two call sites.
+function_block() {
+    cat <<'YML'
+name: w
+on: push
+jobs:
+  b:
+    runs-on: ubuntu-latest
+    steps:
+      - name: fetch
+        run: |
+          fetch_pinned() {  # fetch_pinned <name> <dir>
+            local _n url sha ver got
+            read -r _n url sha ver < <(grep "^$1 " ci/pins/jpeg2000.txt) || true
+            [ -n "${sha:-}" ] || { echo "::error::no pin for $1"; exit 1; }
+            mkdir -p "$2" && git -C "$2" init -q .
+            git -C "$2" remote add origin "$url"
+            git -C "$2" fetch --depth 1 origin "$sha"
+            git -C "$2" checkout --detach FETCH_HEAD
+            got="$(git -C "$2" rev-parse HEAD)"
+            [ "$got" = "$sha" ] || { echo "::error::$1 pin $sha but HEAD $got"; exit 1; }
+          }
+          fetch_pinned jasper /tmp/jasper
+          fetch_pinned qtimageformats /tmp/qtimageformats
+YML
+}
+fixture2() {
+    fixture "$1"
+    printf '%s\n' "qtimageformats  https://code.qt.io/qt/qtimageformats.git  $OTHER  6.10.3" \
+        >> "$1/ci/pins/jpeg2000.txt"
+}
+
+# N10 -- the function shape, both names pinned: green. Without it the three
+# cases below could be failing on the shape rather than on the defect.
+d="$work/n10"; fixture2 "$d"; function_block > "$d/.github/workflows/ci.yml"
+check "N10 pinned fetch through a function, both names in the pin file" 0 "$d"
+
+# N11 -- a second, unpinned clone inside the block that carries the pin. A
+# verdict per block would call it pinned because its neighbour is.
+d="$work/n11"; fixture2 "$d"
+{ function_block; printf '%s\n' '          git clone --depth 1 https://github.com/example/evil.git /tmp/evil'; } \
+    > "$d/.github/workflows/ci.yml"
+check "N11 unpinned clone in a block that carries a pin" 1 "$d" "ci.yml:22" "example/evil.git"
+
+# N12 -- the comparison deleted, the rev-parse line kept: the words are still
+# there and nothing is asserted.
+d="$work/n12"; fixture2 "$d"
+function_block | grep -v '\[ "$got" = "$sha" \]' > "$d/.github/workflows/ci.yml"
+cmp -s <(function_block) "$d/.github/workflows/ci.yml" \
+    && { echo "FAIL  N12 fixture did not change"; fails=$((fails + 1)); }
+check "N12 rev-parse kept, the comparison against the pin deleted" 1 "$d" "assert"
+
+# N13 -- a name the block fetches is missing from the pin file: the fetch
+# would fail at build time, and the gate has to say so on push.
+d="$work/n13"; fixture "$d"; function_block > "$d/.github/workflows/ci.yml"
+check "N13 a fetched name has no row in the pin file" 1 "$d" "qtimageformats"
 
 # N9 -- no workflow directory: not a pass either.
 d="$work/n9"; mkdir -p "$d/ci/pins"

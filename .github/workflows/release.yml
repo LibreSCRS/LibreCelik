@@ -141,6 +141,12 @@ jobs:
           # so the prefix question no longer exists, and neither does the
           # second clone that answered it.
           fetch_pinned qtimageformats /tmp/qtimageformats
+          # The pin names a Qt release and the action installs '6.10.*', which
+          # floats: a plugin built from one Qt's sources into another Qt is the
+          # mismatch the old branch-name clone could not produce. Refuse it.
+          qt_ver="$(qmake6 -query QT_VERSION)"
+          read -r _ _ _ pin_ver < <(grep '^qtimageformats ' ci/pins/jpeg2000.txt) || true
+          [ "$qt_ver" = "${pin_ver:-}" ] || { echo "::error::Qt $qt_ver is installed but qtimageformats is pinned to ${pin_ver:-nothing} -- move the pin with Qt"; exit 1; }
           # The bill of materials may name these commits only because they were
           # asserted above; a local build that did not fetch them passes no pins.
           echo "JPEG2000_PINS=$PWD/ci/pins/jpeg2000.txt" >> "$GITHUB_ENV"

@@ -269,10 +269,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build python3-jsonschema
 
-      - name: Install Qt 6.10
+      # Pinned to the patch release, not 6.10.*: the warning baseline's
+      # header-diagnostic reasons are keyed by Qt's install path and line
+      # (…/Qt/6.10.3/…/qcomparehelpers.h:1100), so the next patch release
+      # would fail the gate with no change here. Bump it with a re-recorded
+      # baseline, in one commit.
+      - name: Install Qt 6.10.3
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.10.*'
+          version: '6.10.3'
           host: linux
           target: desktop
           arch: linux_gcc_64
@@ -623,10 +628,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build python3-jsonschema
 
-      - name: Install Qt 6.10
+      # Pinned with the build job for the same reason: the baseline this
+      # job checks was recorded against one Qt, and a patch release that
+      # moves inlined header code moves what gets counted.
+      - name: Install Qt 6.10.3
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.10.*'
+          version: '6.10.3'
           host: linux
           target: desktop
           arch: linux_gcc_64

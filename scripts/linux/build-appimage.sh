@@ -68,7 +68,9 @@ if [[ ! -f "$TOOLS_LOCK" ]]; then
     echo "       Set APPIMAGE_TOOLS_LOCK to the images.lock of LibreSCRS/ci."
     exit 1
 fi
-LOCKED_TOOLS="$TOOLS_DIR/locked"
+# APPIMAGE_TOOLS_DIR: where the tools already are (LibreSCRS/ci's
+# appimage-tools action installs them); each is still held to its sum here.
+LOCKED_TOOLS="${APPIMAGE_TOOLS_DIR:-$TOOLS_DIR/locked}"
 mkdir -p "$LOCKED_TOOLS"
 
 # fetch_tool <name> -- print the path of that tool, verified against the lock.

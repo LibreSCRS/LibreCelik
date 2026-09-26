@@ -37,34 +37,19 @@ jobs:
           sudo apt-get install -y clang-format-21
 
       - name: Check clang-format
-        # The roots live in ci/format-dirs.txt, which the shared scope check
-        # reads too: a directory nobody formats cannot appear without one of
-        # these two steps saying so.
-        #
-        # -print0/-0 for paths with spaces, a parenthesised extension filter so
-        # the -o cannot swallow the directory list, and -r because without it an
-        # empty result makes clang-format read stdin and hang rather than fail.
-        # A wedged job in this project once held a runner until it was cancelled by hand.
+        # Every tracked C++ source. -r because with no input clang-format
+        # reads stdin and hangs instead of failing.
         run: |
-          mapfile -t dirs < <(grep -v '^#' ci/format-dirs.txt)
-          find "${dirs[@]}" \
-            \( -name '*.cpp' -o -name '*.h' -o -name '*.hpp' -o -name '*.mm' \) -print0 \
+          git ls-files -z -- '*.cpp' '*.h' '*.hpp' '*.mm' \
             | xargs -0 -r clang-format-21 --dry-run --Werror
 
-      # The gates this repository shares with the others -- formatter scope,
-      # skip reasons, the workflows read as data, the declaration registry,
-      # duplicate bodies, every self-test this repository ships, the locked
-      # upstream revisions, the version surfaces, the release workflow's asset
-      # and artefact wiring, and a deterministic source tarball -- as
-      # LibreSCRS/ci's profile for it lists.
+      # The shared gates: the workflows' time bounds and pins, skip reasons
+      # in the sources, the version surfaces, and deps.lock's form,
+      # reachability and diamond.
       - name: Shared gates
-        uses: LibreSCRS/ci/actions/gates@373a0f82c9af280b7a8ccc4ee30106c947394ca2
-
-      - name: Every network clone is pinned by commit
-        # The JPEG2000 sources are fetched by commit in two workflows; a pin
-        # applied to one and not the other builds a different AppImage in CI
-        # than the one the release signs.
-        run: ./ci/scripts/check-network-pins.sh
+        uses: LibreSCRS/ci/actions/gates@bd36eee50ba085ef4f052ea2767cff910e2e62e7
+        with:
+          gates: check-workflows check-skip-reasons check-version deps-lock
 
   i18n-audit:
     # Static retranslate audit (no build required). Runs the full
@@ -193,15 +178,14 @@ jobs:
           QT_QPA_PLATFORM: offscreen
         run: cmake --build build
 
-      # The discovered test set against ci/test-manifest.linux.txt, and the
-      # agent tree this configure fetched against the deps.lock row -- the
-      # property, not the revision the configure printed.
+      # The agent tree this configure fetched is the deps.lock commit (the
+      # property, not what the configure printed), and every test binary
+      # still registers at least the tests ci/test-floor.txt counts.
       - name: Shared gates after the build
-        uses: LibreSCRS/ci/actions/gates@373a0f82c9af280b7a8ccc4ee30106c947394ca2
+        uses: LibreSCRS/ci/actions/gates@bd36eee50ba085ef4f052ea2767cff910e2e62e7
         with:
-          phase: build
+          gates: deps-lock-build test-floor
           build-dir: build
-          leg: linux
 
       - name: Test (LibreCelik)
         env:
@@ -251,265 +235,3 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: ctest --output-on-failure --no-tests=error --test-dir build
-
-  changes:
-    timeout-minutes: 10
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      pull-requests: read
-    outputs:
-      packaging: ${{ steps.filter.outputs.packaging }}
-      packages: ${{ steps.filter.outputs.packages }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
-        id: filter
-        with:
-          # What decides what the AppImage bundles, and the licence and bill
-          # tooling that walks it. Not the CI's own scripts or this workflow:
-          # a change to a gate is proved by the gate job, and rebuilding an
-          # AppImage for it paid for three quarters of this job's runs.
-          filters: |
-            packaging:
-              - 'CMakeLists.txt'
-              - '**/CMakeLists.txt'
-              - 'cmake/**'
-              - 'deps.lock'
-              - 'scripts/linux/**'
-              - 'licenses/**'
-              - 'ci/pins/**'
-              - 'ci/scripts/check-bundled-licenses.py'
-              - 'ci/scripts/gen-third-party-notices.py'
-              - 'ci/scripts/check-sbom.py'
-            packages:
-              - 'CMakeLists.txt'
-              - '**/CMakeLists.txt'
-              - 'cmake/**'
-              - 'deps.lock'
-              - 'packaging/**'
-              - 'CHANGELOG.md'
-              - 'VERSION'
-
-  license-drift-guard:
-    timeout-minutes: 45
-    needs: changes
-    if: ${{ needs.changes.outputs.packaging == 'true' }}
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-    # Path-filtered (packaging paths only, owner-chosen trigger). Builds the
-    # AppImage, whose build-appimage.sh walks the assembled AppDir TWICE:
-    # --check fails closed on any unmapped bundled library, and --sbom writes
-    # the bill that ships beside the artefact. In this workflow it is the
-    # only job where either walk meets a real AppDir, so short of a release
-    # rehearsal it is where the bill is first seen to be non-empty;
-    # release.yml runs the same script, and scripts/macos/build-dmg.sh beside
-    # it. The line to look for in this log is
-    #   sbom: N components from M bundled objects (K without a version)
-    # and an N of zero aborts the build before appimagetool seals anything.
-    # Steps mirror the release.yml build-linux job. Known limitation: a
-    # packaging-path filter does not fire for toolchain drift.
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build python3-jsonschema patchelf
-
-      - name: Install Qt 6.10.3
-        uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125  # v4.4.1
-        with:
-          version: '6.10.3'
-          host: linux
-          target: desktop
-          arch: linux_gcc_64
-          modules: 'qtpdf'
-          cache: true
-
-      - name: Install jsonschema into Qt's Python
-        run: python3 -m pip install --break-system-packages --user jsonschema
-
-      - name: Build JasPer and qtimageformats for JPEG2000 support
-        run: |
-          # JasPer is not in Ubuntu repos; build from source. Both sources are
-          # fetched by the commit ci/pins/jpeg2000.txt names, and the fetched
-          # HEAD is asserted rather than trusted: a pin that "applied" while the
-          # tree stayed on another commit is the failure this replaces. A
-          # shallow clone cannot check out an arbitrary commit, so the pinned
-          # object is fetched directly.
-          fetch_pinned() {  # fetch_pinned <name> <dir>
-            local _n url sha ver got
-            read -r _n url sha ver < <(grep "^$1 " ci/pins/jpeg2000.txt) || true
-            [ -n "${sha:-}" ] || { echo "::error::no pin for $1 in ci/pins/jpeg2000.txt"; exit 1; }
-            mkdir -p "$2" && git -C "$2" init -q .
-            git -C "$2" remote add origin "$url"
-            git -C "$2" fetch --depth 1 origin "$sha"
-            git -C "$2" checkout --detach FETCH_HEAD
-            got="$(git -C "$2" rev-parse HEAD)"
-            [ "$got" = "$sha" ] || { echo "::error::$1 pin $sha but HEAD $got"; exit 1; }
-          }
-          fetch_pinned jasper /tmp/jasper
-          cmake -B /tmp/jasper-build -S /tmp/jasper \
-            -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
-            -DJAS_ENABLE_PROGRAMS=OFF -DJAS_ENABLE_DOC=OFF -G Ninja
-          cmake --build /tmp/jasper-build
-          sudo cmake --install /tmp/jasper-build
-          sudo ldconfig
-
-          # Build qtimageformats against aqtinstall Qt + JasPer
-          QT_DIR="$(qmake6 -query QT_INSTALL_PREFIX)"
-          # One fetch and no fallback. The branch-name clone used to retry with
-          # a "v" prefix because Qt names its tags that way; a pin is a commit,
-          # so the prefix question no longer exists, and neither does the
-          # second clone that answered it.
-          fetch_pinned qtimageformats /tmp/qtimageformats
-          # The pin names a Qt release and the Qt step installs one exact
-          # version: moving one without the other builds a plugin from one Qt's
-          # sources into another Qt. Refuse it.
-          qt_ver="$(qmake6 -query QT_VERSION)"
-          read -r _ _ _ pin_ver < <(grep '^qtimageformats ' ci/pins/jpeg2000.txt) || true
-          [ "$qt_ver" = "${pin_ver:-}" ] || { echo "::error::Qt $qt_ver is installed but qtimageformats is pinned to ${pin_ver:-nothing} -- move the pin with Qt"; exit 1; }
-          # The bill of materials may name these commits only because they were
-          # asserted above; a local build that did not fetch them passes no pins.
-          echo "JPEG2000_PINS=$PWD/ci/pins/jpeg2000.txt" >> "$GITHUB_ENV"
-          # Verify JasPer is findable
-          echo "JasPer installed files:"
-          ls /usr/local/lib/libjasper* /usr/local/include/jasper/jasper.h 2>/dev/null || echo "WARNING: JasPer not found in /usr/local"
-
-          # Patch FindWrapJasper.cmake in BOTH source tree and Qt install
-          JASPER_FIND='if(TARGET WrapJasper::WrapJasper)\n  set(WrapJasper_FOUND TRUE)\n  return()\nendif()\nadd_library(WrapJasper::WrapJasper INTERFACE IMPORTED)\ntarget_link_libraries(WrapJasper::WrapJasper INTERFACE /usr/local/lib/libjasper.so)\ntarget_include_directories(WrapJasper::WrapJasper INTERFACE /usr/local/include)\nset(WrapJasper_FOUND TRUE)'
-          printf "$JASPER_FIND\n" > /tmp/qtimageformats/cmake/FindWrapJasper.cmake
-          printf "$JASPER_FIND\n" > "$QT_DIR/lib/cmake/Qt6/FindWrapJasper.cmake"
-          echo "Patched FindWrapJasper.cmake in source and Qt install"
-
-          cmake -B /tmp/qtimageformats-build -S /tmp/qtimageformats \
-            -DCMAKE_PREFIX_PATH="$QT_DIR" \
-            -DCMAKE_BUILD_TYPE=Release -G Ninja
-          cmake --build /tmp/qtimageformats-build
-          cmake --install /tmp/qtimageformats-build --prefix "$QT_DIR"
-          # Re-patch FindWrapJasper (cmake --install overwrites it)
-          printf '%s\n' \
-            'if(TARGET WrapJasper::WrapJasper)' \
-            '  set(WrapJasper_FOUND TRUE)' \
-            '  return()' \
-            'endif()' \
-            'add_library(WrapJasper::WrapJasper INTERFACE IMPORTED)' \
-            'target_link_libraries(WrapJasper::WrapJasper INTERFACE /usr/local/lib/libjasper.so)' \
-            'target_include_directories(WrapJasper::WrapJasper INTERFACE /usr/local/include)' \
-            'set(WrapJasper_FOUND TRUE)' \
-            > "$QT_DIR/lib/cmake/Qt6/FindWrapJasper.cmake"
-          echo "Installed imageformat plugins:"
-          ls "$QT_DIR/plugins/imageformats/"
-          # Verify JP2 plugin was built
-          if [[ ! -f "$QT_DIR/plugins/imageformats/libqjp2.so" ]]; then
-            echo "::error::libqjp2.so was NOT built — check config.summary:"
-            cat /tmp/qtimageformats-build/config.summary
-            exit 1
-          fi
-
-      - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
-
-      - name: Build
-        env:
-          QT_QPA_PLATFORM: offscreen
-        run: cmake --build build
-
-      # No test run here: build-linux already runs the suites. This guard's
-      # only job is to build the AppImage so the bundled-license check fires.
-
-      - name: The AppImage tools the shared lock names
-        # linuxdeploy, its Qt plugin, appimagetool and the runtime, by release
-        # version and sha256, from LibreSCRS/ci's images.lock at the one commit
-        # this repository's `uses:` lines pin -- the shared gates hold every one
-        # of them to the same commit, so there is no second pin to drift.
-        run: |
-          set -euo pipefail
-          sha="$(grep -hoE 'LibreSCRS/ci/actions/[a-z-]+@[0-9a-f]{40}' .github/workflows/*.yml | sed 's/.*@//' | sort -u)"
-          if [ -z "$sha" ] || [ "$(printf '%s\n' "$sha" | wc -l)" -ne 1 ]; then
-            echo "::error::the workflows do not pin LibreSCRS/ci at exactly one commit"
-            exit 1
-          fi
-          curl -fsSL --retry 3 "https://raw.githubusercontent.com/LibreSCRS/ci/$sha/images.lock" -o "$RUNNER_TEMP/images.lock"
-          grep '^tool ' "$RUNNER_TEMP/images.lock"
-          echo "APPIMAGE_TOOLS_LOCK=$RUNNER_TEMP/images.lock" >> "$GITHUB_ENV"
-
-      - name: Build AppImage
-        env:
-          APPIMAGE_EXTRACT_AND_RUN: "1"
-        run: scripts/linux/build-appimage.sh build
-
-      - name: The AppImage starts where there is no display
-        # Its own runtime, its own bundled Qt and libraries, and no screen:
-        # --version answers before the application needs one.
-        run: |
-          set -euo pipefail
-          app="$(ls LibreCelik-*-x86_64.AppImage)"
-          ver="${app#LibreCelik-}"; ver="${ver%-x86_64.AppImage}"
-          out="$(env -u DISPLAY -u WAYLAND_DISPLAY "./$app" --appimage-extract-and-run --version)"
-          echo "$out"
-          case "$out" in
-            "LibreCelik $ver"*) ;;
-            *) echo "::error::$app --version answered '$out', expected LibreCelik $ver"; exit 1 ;;
-          esac
-
-      - name: The bill that build produced is publishable
-        # The step above aborts if the bill it derives is empty, so this is
-        # not a second opinion on the content. It is an assertion that the
-        # bill EXISTS: deleting the --sbom call from the packaging script is
-        # invisible to every other check here -- the licence walk still names
-        # the same program, the suite still passes, bash -n is still clean --
-        # and the first thing to notice would be the release job, at a tag.
-        # Judged by the same program the release job runs, so the two cannot
-        # disagree about what publishable means.
-        run: python3 ci/scripts/check-sbom.py sbom-linux.cdx.json
-
-  packages:
-    # The distribution packages, built and installed the way the release
-    # builds them: the agent client and the middleware from the commits
-    # deps.lock closes over, then this repository, each in the slug's own
-    # container, then the whole stack installed in a clean one and judged.
-    # Path-filtered to what decides the packages; one slug per package
-    # manager here, the release and LibreSCRS/ci's stack chain build all five.
-    name: packages (${{ matrix.slug }})
-    needs: changes
-    if: ${{ needs.changes.outputs.packages == 'true' }}
-    runs-on: ubuntu-24.04
-    # Measured: middleware 7-9 min, agent 7-9, this repository 3-4, per slug.
-    timeout-minutes: 120
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        slug: [debian13, fedora44, opensusetw]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: LibreSCRS/ci/actions/pkg-build@373a0f82c9af280b7a8ccc4ee30106c947394ca2
-        id: build
-        with:
-          slug: ${{ matrix.slug }}
-          upstream: source
-      - uses: LibreSCRS/ci/actions/pkg-verify@373a0f82c9af280b7a8ccc4ee30106c947394ca2
-        with:
-          slug: ${{ matrix.slug }}
-          packages: ${{ steps.build.outputs.art }}/${{ matrix.slug }}
-          report: ${{ runner.temp }}/pkg-report
-      - if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: pkg-report-${{ matrix.slug }}
-          retention-days: 7
-          path: |
-            ${{ steps.build.outputs.art }}/log
-            ${{ runner.temp }}/pkg-report

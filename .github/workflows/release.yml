@@ -1,15 +1,33 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 name: Release
 
-# preflight -> build-* -> seal -> publish. A tag push publishes; a dispatch
-# rehearses on any ref -- the same jobs over the same code, with an ephemeral
-# signing key instead of a keyless one, and the release kept as a workflow
-# artefact instead of created. Nothing is built or signed before the
-# preflight has judged the tag's signature (or, on a branch, proved the
-# verifier both ways), the version surfaces and the cross-repository pins.
+# preflight -> build-* -> seal -> publish. A tag push publishes. A dispatch,
+# and a branch push that changes what the release builds, rehearse: the same
+# jobs over the same code, with an ephemeral signing key instead of a keyless
+# one, and the release kept as a workflow artefact instead of created. This is
+# the only path to the AppImage, the DMG and the distribution packages, so a
+# change to any of them is proved the way the tag will build it. Nothing is
+# built or signed before the preflight has judged the tag's signature, the
+# version surfaces and the cross-repository pins.
 on:
   push:
     tags: ['[0-9]+.[0-9]+.[0-9]+*']
+    branches: [main, 'ci/**']
+    paths:
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'deps.lock'
+      - 'VERSION'
+      - 'CHANGELOG.md'
+      - 'packaging/**'
+      - 'licenses/**'
+      - 'scripts/linux/**'
+      - 'scripts/macos/**'
+      - 'ci/pins/**'
+      - 'ci/release-assets.txt'
+      - 'ci/scripts/check-bundled-licenses.py'
+      - 'ci/scripts/gen-third-party-notices.py'
+      - '.github/workflows/release.yml'
   workflow_dispatch:
     inputs:
       mode:
@@ -33,16 +51,17 @@ jobs:
     outputs:
       mode: ${{ steps.pre.outputs.mode }}
       version: ${{ steps.pre.outputs.version }}
-      is_prerelease: ${{ steps.pre.outputs.is_prerelease }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
       - id: pre
-        uses: LibreSCRS/ci/actions/release-preflight@373a0f82c9af280b7a8ccc4ee30106c947394ca2
+        uses: LibreSCRS/ci/actions/release-preflight@bd36eee50ba085ef4f052ea2767cff910e2e62e7
         with:
-          mode: ${{ inputs.mode || 'publish' }}
+          # A tag push publishes; a branch push and a dispatch default to
+          # rehearse (a dispatch may ask for publish, refused off a tag).
+          mode: ${{ inputs.mode || (github.ref_type == 'tag' && 'publish' || 'rehearse') }}
           version-min: '1'
 
   build-linux:
@@ -169,24 +188,14 @@ jobs:
         run: ctest --output-on-failure --no-tests=error --test-dir build
 
       - name: The AppImage tools the shared lock names
-        # linuxdeploy, its Qt plugin, appimagetool and the runtime, by release
-        # version and sha256, from LibreSCRS/ci's images.lock at the one commit
-        # this repository's `uses:` lines pin -- the shared gates hold every one
-        # of them to the same commit, so there is no second pin to drift.
-        run: |
-          set -euo pipefail
-          sha="$(grep -hoE 'LibreSCRS/ci/actions/[a-z-]+@[0-9a-f]{40}' .github/workflows/*.yml | sed 's/.*@//' | sort -u)"
-          if [ -z "$sha" ] || [ "$(printf '%s\n' "$sha" | wc -l)" -ne 1 ]; then
-            echo "::error::the workflows do not pin LibreSCRS/ci at exactly one commit"
-            exit 1
-          fi
-          curl -fsSL --retry 3 "https://raw.githubusercontent.com/LibreSCRS/ci/$sha/images.lock" -o "$RUNNER_TEMP/images.lock"
-          grep '^tool ' "$RUNNER_TEMP/images.lock"
-          echo "APPIMAGE_TOOLS_LOCK=$RUNNER_TEMP/images.lock" >> "$GITHUB_ENV"
+        id: tools
+        uses: LibreSCRS/ci/actions/appimage-tools@bd36eee50ba085ef4f052ea2767cff910e2e62e7
 
       - name: Build AppImage
         env:
           APPIMAGE_EXTRACT_AND_RUN: "1"
+          APPIMAGE_TOOLS_LOCK: ${{ steps.tools.outputs.lock }}
+          APPIMAGE_TOOLS_DIR: ${{ steps.tools.outputs.dir }}
         run: scripts/linux/build-appimage.sh build
 
       - name: The AppImage starts where there is no display
@@ -209,7 +218,7 @@ jobs:
           # if-no-files-found is evaluated over the AGGREGATE match set, not
           # per pattern: if the AppImage matches and the bill does not, this
           # step still succeeds. So it is a floor, not the net -- the net is
-          # ci/scripts/check-sbom.py in the seal job, which reads the
+          # LibreSCRS/ci's check-sbom in the seal job, which reads the
           # documents that actually arrived.
           if-no-files-found: error
           retention-days: 3
@@ -291,15 +300,20 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
-          submodules: recursive
           fetch-depth: 0
+          persist-credentials: false
+      - name: Check out the shared release scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: LibreSCRS/ci
+          ref: bd36eee50ba085ef4f052ea2767cff910e2e62e7
+          path: .ci
           persist-credentials: false
 
       - name: Build the source tarball
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/srctar"
-          ci/scripts/make-source-tarball.sh "$RUNNER_TEMP/srctar"
+          .ci/scripts/make-source-tarball --name librecelik --out "$RUNNER_TEMP/srctar"
           ls -l "$RUNNER_TEMP/srctar"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
@@ -330,17 +344,18 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: LibreSCRS/ci/actions/pkg-build@373a0f82c9af280b7a8ccc4ee30106c947394ca2
+      - uses: LibreSCRS/ci/actions/pkg-build@bd36eee50ba085ef4f052ea2767cff910e2e62e7
         id: build
         with:
           slug: ${{ matrix.slug }}
           upstream: ${{ github.ref_type == 'tag' && 'release' || 'source' }}
           version: ${{ github.ref_type == 'tag' && needs.preflight.outputs.version || '' }}
-      - uses: LibreSCRS/ci/actions/pkg-verify@373a0f82c9af280b7a8ccc4ee30106c947394ca2
+      - uses: LibreSCRS/ci/actions/pkg-verify@bd36eee50ba085ef4f052ea2767cff910e2e62e7
         with:
           slug: ${{ matrix.slug }}
           packages: ${{ steps.build.outputs.art }}/${{ matrix.slug }}
           report: ${{ runner.temp }}/pkg-report
+          hook: packaging/ci/verify-installed.sh
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: packages-${{ matrix.slug }}
@@ -371,14 +386,14 @@ jobs:
           merge-multiple: true
           path: artifacts
 
-      - name: Check out the bill-of-materials check
+      - name: Check out the shared release scripts
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
-          sparse-checkout: ci/scripts/check-sbom.py
-          sparse-checkout-cone-mode: false
+          repository: LibreSCRS/ci
+          ref: bd36eee50ba085ef4f052ea2767cff910e2e62e7
           # A subdirectory: artifacts/ already holds the downloaded set, and
           # a checkout into the workspace root would wipe it.
-          path: _src
+          path: .ci
           persist-credentials: false
 
       - name: Refuse a release whose bill of materials is missing or empty
@@ -390,11 +405,11 @@ jobs:
         # project's signature, that the bundle carries no third-party code.
         run: |
           set -euo pipefail
-          python3 _src/ci/scripts/check-sbom.py \
+          .ci/scripts/check-sbom \
             artifacts/sbom-linux.cdx.json \
             artifacts/sbom-macos.cdx.json
 
-      - uses: LibreSCRS/ci/actions/release-seal@373a0f82c9af280b7a8ccc4ee30106c947394ca2
+      - uses: LibreSCRS/ci/actions/release-seal@bd36eee50ba085ef4f052ea2767cff910e2e62e7
         with:
           mode: ${{ needs.preflight.outputs.mode }}
           version: ${{ needs.preflight.outputs.version }}
@@ -420,8 +435,7 @@ jobs:
         with:
           name: sealed
           path: artifacts
-      - uses: LibreSCRS/ci/actions/release-publish@373a0f82c9af280b7a8ccc4ee30106c947394ca2
+      - uses: LibreSCRS/ci/actions/release-publish@bd36eee50ba085ef4f052ea2767cff910e2e62e7
         with:
           mode: ${{ needs.preflight.outputs.mode }}
           version: ${{ needs.preflight.outputs.version }}
-          is_prerelease: ${{ needs.preflight.outputs.is_prerelease }}

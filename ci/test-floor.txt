@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# <test program> <tests it registers, at least> -- the census of a build,
+# raised with the tests.
+AgentLayerTests 71
+AgentMainFlowTests 25
+CardWidgetPluginRegistryTests 5
+EIdTextDocumentTests 2
+EMRTDTextDocumentTests 9
+EuVrcTextDocumentTests 8
+FieldValueTests 12
+HealthTextDocumentTests 1
+LibreCelik 1
+LibreCelikI18nFixtureSelfTest 7
+LibreCelikTests 35
+LocaleResolverTests 9
+MainWindowTests 3
+PIVTextDocumentTests 2
+PdfPreviewWidgetTests 6
+ReaderPagesTests 7
+SettingsConfig1Tests 42
+SigningUnitTests 24
+SigningWizardE2ETests 12
+SigningWizardFakeTests 11
+SlotLabelFormatterTests 5
+StringUtilsTests 7
+TokenSectionTests 8
+eidwidget_test 2
+emrtdwidget_annex_test 22
+i18n_audit.py 1
+i18n_plugin_retranslate_test 6
+i18n_settings_state_test 3

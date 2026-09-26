@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: LibreCelik
-Upstream-Contact: LibreSCRS <packages@librescrs.org>
+Upstream-Contact: LibreSCRS <librescrs@proton.me>
 Source: https://github.com/LibreSCRS/LibreCelik
 
 Files: *

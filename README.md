@@ -37,7 +37,7 @@ Actions identity; verification instructions are on the
 ## Building from source
 
 LibreCelik consumes LibreAgent (ClientQt) via CMake `FetchContent`, pinned
-by `cmake/libreagent.pin`. For local development, point at a sibling
+by the LibreAgent row of `deps.lock`. For local development, point at a sibling
 LibreAgent checkout:
 
 ```bash

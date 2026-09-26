@@ -66,7 +66,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_link_options(-fexperimental-library)
 endif()
 
-# Hybrid LibreAgent consumption: FetchContent at cmake/libreagent.pin
+# Hybrid LibreAgent consumption: FetchContent at the deps.lock LibreAgent row
 # (default) or find_package(CONFIG). Provides LibreAgent::ClientQt.
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOrUseLibreAgent.cmake)
 

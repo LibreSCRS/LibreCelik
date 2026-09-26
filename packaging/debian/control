@@ -1,7 +1,7 @@
 Source: librecelik
 Section: utils
 Priority: optional
-Maintainer: LibreSCRS <packages@librescrs.org>
+Maintainer: LibreSCRS <librescrs@proton.me>
 Build-Depends: debhelper-compat (= 13),
                cmake (>= 3.24),
                ninja-build,

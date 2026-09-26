@@ -3,7 +3,7 @@
 #
 # Hybrid LibreAgent consumption: prefer find_package(CONFIG) when
 # LIBRECELIK_USE_INSTALLED_LIBREAGENT=ON, otherwise build the Qt client from
-# source via FetchContent at the revision recorded in cmake/libreagent.pin.
+# source via FetchContent at the revision in the LibreAgent row of deps.lock.
 # Either path provides the namespaced LibreAgent::ClientQt target the GUI links.
 #
 # The pin is a fixed 40-hex revision, never a branch: the GUI's behaviour is
@@ -25,15 +25,23 @@
 option(LIBRECELIK_USE_INSTALLED_LIBREAGENT
        "Consume an installed LibreAgent (find_package) instead of FetchContent" OFF)
 
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/cmake/libreagent.pin" LIBREAGENT_PIN)
-string(STRIP "${LIBREAGENT_PIN}" LIBREAGENT_PIN)
-# Exactly 40 lowercase hex characters. Spelled as a length test plus a
-# character-class test because CMake's regex engine has no {n} repetition
-# operator -- "^[0-9a-f]{40}$" would silently never match.
-string(LENGTH "${LIBREAGENT_PIN}" LIBREAGENT_PIN_LENGTH)
-if(NOT LIBREAGENT_PIN_LENGTH EQUAL 40 OR NOT LIBREAGENT_PIN MATCHES "^[0-9a-f]+$")
-    message(FATAL_ERROR "cmake/libreagent.pin must hold one 40-hex commit SHA")
+# The revision -- and the URL -- are the LibreAgent row of deps.lock
+# (`<name> <url> <commit> <main|version>`), which `bump-deps` writes and
+# `bump-deps check` holds (form, reachable from upstream main, same revision
+# as every other consumer, and in CI: the tree actually built == the row).
+# This file only reads the row. CMAKE_CONFIGURE_DEPENDS makes a bumped lock
+# re-run configure, so the fetched tree follows the lock instead of staying
+# at the revision the build directory first fetched.
+set(_librecelik_deps_lock "${CMAKE_CURRENT_LIST_DIR}/../deps.lock")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_librecelik_deps_lock}")
+file(STRINGS "${_librecelik_deps_lock}" _librecelik_agent_row REGEX "^LibreAgent[ \t]")
+list(LENGTH _librecelik_agent_row _librecelik_agent_rows)
+if(NOT _librecelik_agent_rows EQUAL 1)
+    message(FATAL_ERROR "deps.lock must hold exactly one LibreAgent row")
 endif()
+string(REGEX REPLACE "[ \t]+" ";" _librecelik_agent_row "${_librecelik_agent_row}")
+list(GET _librecelik_agent_row 1 LIBREAGENT_URL)
+list(GET _librecelik_agent_row 2 LIBREAGENT_PIN)
 
 if(LIBRECELIK_USE_INSTALLED_LIBREAGENT)
     message(STATUS "LibreAgent: using installed package (CONFIG)")
@@ -51,7 +59,7 @@ else()
     set(LIBREAGENT_BUILD_WIRE      ON  CACHE BOOL "" FORCE)
     set(LIBREAGENT_BUILD_CORE      OFF CACHE BOOL "" FORCE)
     FetchContent_Declare(LibreAgent
-        GIT_REPOSITORY https://github.com/LibreSCRS/LibreAgent.git
+        GIT_REPOSITORY ${LIBREAGENT_URL}
         GIT_TAG ${LIBREAGENT_PIN})
     # CMAKE_INCLUDE_CURRENT_DIR is ON for this project (Qt convention) and it is a
 # *variable*, so it leaks into the fetched project and puts LibreAgent's own

@@ -74,5 +74,5 @@ appstream-util validate-relax --nonet \
 %{_metainfodir}/org.librescrs.librecelik.metainfo.xml
 
 %changelog
-* Fri Sep 04 2026 LibreSCRS <packages@librescrs.org> - 5.0.0-1
+* Fri Sep 04 2026 LibreSCRS <librescrs@proton.me> - 5.0.0-1
 - Initial RPM packaging of LibreCelik.

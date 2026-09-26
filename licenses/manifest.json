@@ -1281,7 +1281,16 @@
       "name": "LibreAgent ClientQt (incl. statically linked Wire)",
       "spdx": "LGPL-2.1-or-later",
       "text": "resources/licenses/lgpl-2.1.txt",
-      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331"
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331",
+      "platforms": ["linux"]
+    },
+    {
+      "match": "liblibrescrs-agentclient-qt.dylib",
+      "name": "LibreAgent ClientQt (incl. statically linked Wire)",
+      "spdx": "LGPL-2.1-or-later",
+      "text": "resources/licenses/lgpl-2.1.txt",
+      "sha256": "20c17d8b8c48a600800dfd14f95d5cb9ff47066a9641ddeab48dc54aec96e331",
+      "platforms": ["macos"]
     }
   ]
 }

@@ -5,7 +5,7 @@ on:
   pull_request:
     branches: [main, 'feature/**']
   push:
-    branches: [main, 'feature/**']
+    branches: [main, 'feature/**', 'ci/**']
 
 jobs:
   check-boundary:

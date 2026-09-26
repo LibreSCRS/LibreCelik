@@ -269,6 +269,7 @@ jobs:
       pull-requests: read
     outputs:
       packaging: ${{ steps.filter.outputs.packaging }}
+      packages: ${{ steps.filter.outputs.packages }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -292,6 +293,14 @@ jobs:
               - 'ci/scripts/check-bundled-licenses.py'
               - 'ci/scripts/gen-third-party-notices.py'
               - 'ci/scripts/check-sbom.py'
+            packages:
+              - 'CMakeLists.txt'
+              - '**/CMakeLists.txt'
+              - 'cmake/**'
+              - 'deps.lock'
+              - 'packaging/**'
+              - 'CHANGELOG.md'
+              - 'VERSION'
 
   license-drift-guard:
     timeout-minutes: 45
@@ -447,91 +456,45 @@ jobs:
         # disagree about what publishable means.
         run: python3 ci/scripts/check-sbom.py sbom-linux.cdx.json
 
-  package:
-    # Distribution packages, built in the target distribution's own container.
-    #
-    # Containers rather than apt/dnf on the runner: ubuntu-latest is one
-    # distribution in one version and cannot produce a trixie or an fc43
-    # package, and a container makes the same build reproducible with one
-    # `docker run` on a development machine.
-    #
-    # Images are pinned by digest, not by tag. A tag moves under you; a digest
-    # does not.
-    name: package (${{ matrix.slug }})
-    # Turn this on only after the agent component publishes .deb/.rpm assets AND
-    # the download pattern below has moved from "*.$fam" to
-    # "*.${{ matrix.slug }}.$fam". Until then the job fetches packages that are
-    # not published: the download exits non-zero under `set -euo pipefail`, and
-    # the gate reports the upstream packages missing. The switch looks like
-    # "turn on when ready" and is really "turn on and watch it go red".
-    if: vars.PACKAGE_JOB_ENABLED == 'true'
-    runs-on: ubuntu-latest
-    # Measured locally at 45 minutes for the slowest image, times
-    # about 2.5. A job with no limit does not fail when it hangs -- it burns
-    # hours and hands back no log, because /logs answers 404 while it runs.
-    timeout-minutes: 112
+  packages:
+    # The distribution packages, built and installed the way the release
+    # builds them: the agent client and the middleware from the commits
+    # deps.lock closes over, then this repository, each in the slug's own
+    # container, then the whole stack installed in a clean one and judged.
+    # Path-filtered to what decides the packages; one slug per package
+    # manager here, the release and LibreSCRS/ci's stack chain build all five.
+    name: packages (${{ matrix.slug }})
+    needs: changes
+    if: ${{ needs.changes.outputs.packages == 'true' }}
+    runs-on: ubuntu-24.04
+    # Measured: middleware 7-9 min, agent 7-9, this repository 3-4, per slug.
+    timeout-minutes: 120
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - slug: debian13
-            image: debian@sha256:f324c7ff54321e8d9c588493a20244965938ce0aa50bbd1022d38010e9ffc4b1
-          - slug: ubuntu2604
-            image: ubuntu@sha256:2260313b31c8c011cd2eebe728008efac1b3982be73eb71348ea2648d2c0e09b
-          - slug: fedora43
-            image: fedora@sha256:a651ddf48ea28a06ed4e1e6519f51c9f47e7a5a138722ade87369b8fbb7e5b42
+        slug: [debian13, fedora44, opensusetw]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
-          submodules: recursive
           fetch-depth: 0
-
-      - name: Check out the working tree as the gate will read it
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      # Upstream packages come from their own published release. This job is
-      # therefore enabled from the bottom up -- middleware first, then the
-      # agent libraries, then the hosts -- because a job wired to a release
-      # that does not exist yet is a job that has never run, and this project
-      # has paid for one of those before. Set the repository variable
-      # PACKAGE_JOB_ENABLED to true once the upstream release carries packages.
-      - name: Fetch the upstream packages from their releases
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          case "${{ matrix.slug }}" in fedora43) fam=rpm ;; *) fam=deb ;; esac
-          ver=$(tr -d '[:space:]' < VERSION)
-          mkdir -p "$RUNNER_TEMP/librescrs-packages/out/${{ matrix.slug }}/LibreMiddleware/$fam"
-          # The slug is part of the asset name upstream: Debian 13 and
-          # Ubuntu 26.04 build .deb files with identical names, so the
-          # publisher puts the distribution into the name and a consumer that
-          # asked for "*.$fam" would fetch both and install packages built
-          # against another distribution's glibc alongside its own.
-          gh release download "$ver" --repo LibreSCRS/LibreMiddleware \
-            --pattern "*.${{ matrix.slug }}.$fam" \
-            --dir "$RUNNER_TEMP/librescrs-packages/out/${{ matrix.slug }}/LibreMiddleware/$fam"
-          mkdir -p "$RUNNER_TEMP/librescrs-packages/out/${{ matrix.slug }}/LibreAgent/$fam"
-          gh release download "$ver" --repo LibreSCRS/LibreAgent \
-            --pattern "*.$fam" \
-            --dir "$RUNNER_TEMP/librescrs-packages/out/${{ matrix.slug }}/LibreAgent/$fam"
-
-      - name: Gate
-        run: |
-          # set +e first: the default shell here is `bash -eo pipefail`, so a
-          # failing gate would end the step before its exit code could be read,
-          # and the echo below would be dead text pretending to be a measurement.
-          set +e
-          bash packaging/ci/package-gate.sh "${{ matrix.image }}" "$RUNNER_TEMP/librescrs-packages/out"
-          rc=$?
-          set -e
-          echo "PACKAGE_GATE_RC=$rc"
-          test "$rc" = 0
-
-      - name: Upload the packages
-        if: always()
-        uses: actions/upload-artifact@v4
+          persist-credentials: false
+      - uses: LibreSCRS/ci/actions/pkg-build@5b9410f9b0e6ab6983c39f931e118e68007c12b4
+        id: build
         with:
-          name: packages-${{ matrix.slug }}
-          path: ${{ runner.temp }}/librescrs-packages/out/${{ matrix.slug }}/**
-          if-no-files-found: warn
+          slug: ${{ matrix.slug }}
+          upstream: source
+      - uses: LibreSCRS/ci/actions/pkg-verify@5b9410f9b0e6ab6983c39f931e118e68007c12b4
+        with:
+          slug: ${{ matrix.slug }}
+          packages: ${{ steps.build.outputs.art }}/${{ matrix.slug }}
+          report: ${{ runner.temp }}/pkg-report
+      - if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: pkg-report-${{ matrix.slug }}
+          retention-days: 7
+          path: |
+            ${{ steps.build.outputs.art }}/log
+            ${{ runner.temp }}/pkg-report

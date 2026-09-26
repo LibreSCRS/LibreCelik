@@ -37,9 +37,12 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
   mode no umask can widen.
 
 - **Native `deb` and `rpm` packages, and an AppStream entry.** Debian 13,
-  Ubuntu 26.04 LTS and Fedora 43. LibreCelik needs none of the root-owned system
-  files that force the agent into a distribution package, so this is a quality
-  decision rather than a necessity; the AppImage remains.
+  Ubuntu 26.04 LTS, Fedora 43 and 44, and openSUSE Tumbleweed. LibreCelik needs
+  none of the root-owned system files that force the agent into a distribution
+  package, so this is a quality decision rather than a necessity; the AppImage
+  remains. The AppImage does not carry the agent: install the `librescrs-agent`
+  package for your distribution beside it. It is built on Ubuntu 24.04 and
+  needs glibc 2.39 or newer.
 
   The AppStream component did not exist before, which meant no software centre
   could list the application at all. It is now written, installed by the build,
@@ -72,7 +75,7 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
   `signing/location` are not carried over. A profile that still holds those
   keys is told once, in Settings, that they are no longer imported.
 
-- **`src/utils/utils.h`** — a header whose single macro (`DISABLE_COPY_MOVE`)
+- **An unused utility header** — its single macro (`DISABLE_COPY_MOVE`)
   already had no user at the 4.2.0 tag.
 - **Four helpers with no caller since 4.2.0**: `certformat::bytesToHex`,
   `certformat::formatDate`, and the `TlDefault` / `defaultTrustedLists()` pair

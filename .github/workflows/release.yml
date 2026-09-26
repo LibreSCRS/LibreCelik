@@ -286,8 +286,46 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
+  packages:
+    # librecelik as a deb and an rpm for every supported distribution. On a
+    # tag the agent client and the middleware come from their own published
+    # releases of the same version (the release order publishes them first);
+    # a rehearsal builds them from the commits deps.lock closes over instead.
+    name: packages (${{ matrix.slug }})
+    needs: [preflight]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        slug: [debian13, ubuntu2604, fedora43, fedora44, opensusetw]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: LibreSCRS/ci/actions/pkg-build@5b9410f9b0e6ab6983c39f931e118e68007c12b4
+        id: build
+        with:
+          slug: ${{ matrix.slug }}
+          upstream: ${{ github.ref_type == 'tag' && 'release' || 'source' }}
+          version: ${{ github.ref_type == 'tag' && needs.preflight.outputs.version || '' }}
+      - uses: LibreSCRS/ci/actions/pkg-verify@5b9410f9b0e6ab6983c39f931e118e68007c12b4
+        with:
+          slug: ${{ matrix.slug }}
+          packages: ${{ steps.build.outputs.art }}/${{ matrix.slug }}
+          report: ${{ runner.temp }}/pkg-report
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: packages-${{ matrix.slug }}
+          path: ${{ steps.build.outputs.dist }}
+          if-no-files-found: error
+          retention-days: 3
+
   seal:
-    needs: [preflight, build-linux, build-macos, source-tarball]
+    needs: [preflight, build-linux, build-macos, source-tarball, packages]
     timeout-minutes: 20
     runs-on: ubuntu-24.04
     permissions:
@@ -298,6 +336,14 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           pattern: '*-artifacts'
+          merge-multiple: true
+          path: artifacts
+
+      # Every package name already carries its slug, and the collector refused
+      # a collision, so merging the per-slug sets cannot overwrite a file.
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          pattern: 'packages-*'
           merge-multiple: true
           path: artifacts
 

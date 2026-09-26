@@ -7,4 +7,4 @@
 # workflow or a job, in the same change — check-workflows prints the job
 # count on every run.
 min_workflows 4
-min_jobs 16
+min_jobs 17

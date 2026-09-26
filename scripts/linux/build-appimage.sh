@@ -71,7 +71,8 @@ fi
 # APPIMAGE_TOOLS_DIR: where the tools already are (LibreSCRS/ci's
 # appimage-tools action installs them); each is still held to its sum here.
 LOCKED_TOOLS="${APPIMAGE_TOOLS_DIR:-$TOOLS_DIR/locked}"
-mkdir -p "$LOCKED_TOOLS"
+# TOOLS_DIR also holds the qmake wrapper written below.
+mkdir -p "$LOCKED_TOOLS" "$TOOLS_DIR"
 
 # fetch_tool <name> -- print the path of that tool, verified against the lock.
 # The file keeps its upstream name: linuxdeploy finds its Qt plugin by that

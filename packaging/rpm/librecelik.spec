@@ -23,6 +23,10 @@ BuildRequires:  qt6-qtsvg-devel
 # package on every distribution and the signing wizard requires it at
 # configuration time.
 BuildRequires:  qt6-qtpdf-devel
+%if 0%{?suse_version}
+# openSUSE ships PdfWidgets apart from Pdf; Fedora's qt6-qtpdf-devel holds both.
+BuildRequires:  qt6-pdfwidgets-devel
+%endif
 BuildRequires:  qt6-qttools-devel
 BuildRequires:  gtest-devel
 BuildRequires:  dbus-daemon
@@ -68,6 +72,7 @@ appstream-util validate-relax --nonet \
 %license LICENSE
 %doc README.md
 %{_bindir}/LibreCelik
+%{_mandir}/man1/LibreCelik.1*
 %{_libdir}/gui-plugins/
 %{_datadir}/applications/librecelik.desktop
 %{_datadir}/icons/hicolor/512x512/apps/librecelik.png

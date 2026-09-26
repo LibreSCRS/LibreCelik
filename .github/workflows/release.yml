@@ -57,7 +57,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - id: pre
-        uses: LibreSCRS/ci/actions/release-preflight@bd36eee50ba085ef4f052ea2767cff910e2e62e7
+        uses: LibreSCRS/ci/actions/release-preflight@ac199ae69bc187a8571c9f29763503c1a966ea2c
         with:
           # A tag push publishes; a branch push and a dispatch default to
           # rehearse (a dispatch may ask for publish, refused off a tag).
@@ -189,7 +189,7 @@ jobs:
 
       - name: The AppImage tools the shared lock names
         id: tools
-        uses: LibreSCRS/ci/actions/appimage-tools@bd36eee50ba085ef4f052ea2767cff910e2e62e7
+        uses: LibreSCRS/ci/actions/appimage-tools@ac199ae69bc187a8571c9f29763503c1a966ea2c
 
       - name: Build AppImage
         env:
@@ -306,7 +306,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: LibreSCRS/ci
-          ref: bd36eee50ba085ef4f052ea2767cff910e2e62e7
+          ref: ac199ae69bc187a8571c9f29763503c1a966ea2c
           path: .ci
           persist-credentials: false
 
@@ -344,13 +344,13 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: LibreSCRS/ci/actions/pkg-build@bd36eee50ba085ef4f052ea2767cff910e2e62e7
+      - uses: LibreSCRS/ci/actions/pkg-build@ac199ae69bc187a8571c9f29763503c1a966ea2c
         id: build
         with:
           slug: ${{ matrix.slug }}
           upstream: ${{ github.ref_type == 'tag' && 'release' || 'source' }}
           version: ${{ github.ref_type == 'tag' && needs.preflight.outputs.version || '' }}
-      - uses: LibreSCRS/ci/actions/pkg-verify@bd36eee50ba085ef4f052ea2767cff910e2e62e7
+      - uses: LibreSCRS/ci/actions/pkg-verify@ac199ae69bc187a8571c9f29763503c1a966ea2c
         with:
           slug: ${{ matrix.slug }}
           packages: ${{ steps.build.outputs.art }}/${{ matrix.slug }}
@@ -390,7 +390,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: LibreSCRS/ci
-          ref: bd36eee50ba085ef4f052ea2767cff910e2e62e7
+          ref: ac199ae69bc187a8571c9f29763503c1a966ea2c
           # A subdirectory: artifacts/ already holds the downloaded set, and
           # a checkout into the workspace root would wipe it.
           path: .ci
@@ -409,7 +409,7 @@ jobs:
             artifacts/sbom-linux.cdx.json \
             artifacts/sbom-macos.cdx.json
 
-      - uses: LibreSCRS/ci/actions/release-seal@bd36eee50ba085ef4f052ea2767cff910e2e62e7
+      - uses: LibreSCRS/ci/actions/release-seal@ac199ae69bc187a8571c9f29763503c1a966ea2c
         with:
           mode: ${{ needs.preflight.outputs.mode }}
           version: ${{ needs.preflight.outputs.version }}
@@ -435,7 +435,7 @@ jobs:
         with:
           name: sealed
           path: artifacts
-      - uses: LibreSCRS/ci/actions/release-publish@bd36eee50ba085ef4f052ea2767cff910e2e62e7
+      - uses: LibreSCRS/ci/actions/release-publish@ac199ae69bc187a8571c9f29763503c1a966ea2c
         with:
           mode: ${{ needs.preflight.outputs.mode }}
           version: ${{ needs.preflight.outputs.version }}

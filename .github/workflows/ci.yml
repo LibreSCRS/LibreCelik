@@ -47,7 +47,7 @@ jobs:
       # in the sources, the version surfaces, and deps.lock's form,
       # reachability and diamond.
       - name: Shared gates
-        uses: LibreSCRS/ci/actions/gates@bd36eee50ba085ef4f052ea2767cff910e2e62e7
+        uses: LibreSCRS/ci/actions/gates@ac199ae69bc187a8571c9f29763503c1a966ea2c
         with:
           gates: check-workflows check-skip-reasons check-version deps-lock
 
@@ -182,7 +182,7 @@ jobs:
       # property, not what the configure printed), and every test binary
       # still registers at least the tests ci/test-floor.txt counts.
       - name: Shared gates after the build
-        uses: LibreSCRS/ci/actions/gates@bd36eee50ba085ef4f052ea2767cff910e2e62e7
+        uses: LibreSCRS/ci/actions/gates@ac199ae69bc187a8571c9f29763503c1a966ea2c
         with:
           gates: deps-lock-build test-floor
           build-dir: build

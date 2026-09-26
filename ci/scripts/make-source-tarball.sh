@@ -51,8 +51,8 @@ trap 'rm -rf "$work"' EXIT
 # The tarball's top directory is the REPOSITORY name, not the Debian source
 # name. dpkg-source -x renames whatever top directory it finds, so Debian does
 # not care; anything that unpacks the archive and cd's into a fixed directory
-# does, and so does ci/scripts/check-tarball-determinism.sh, which asserts the
-# first member is "<Repository>-<VERSION>/" on every push.
+# does, and so does the tarball-determinism check in LibreSCRS/ci, which
+# asserts the first member is "<Repository>-<VERSION>/".
 tree="$work/$name-$version"
 
 git clone --quiet --recurse-submodules "$repo" "$tree"
@@ -83,7 +83,7 @@ mkdir -p "$outdir"
 # The excludes are anchored to the top directory. './.github' matched NOTHING:
 # tar's member names here are "<Repo>-<version>/.github/…", so the release
 # tarball shipped .github/ for as long as this script existed.
-# ci/scripts/check-tarball-determinism.sh now counts the members under that
+# The tarball-determinism check in LibreSCRS/ci counts the members under that
 # prefix and fails on any; it reports github=0 on this tree.
 #
 # `--sort=name` and everything below it are what make two runs produce the same
@@ -107,7 +107,7 @@ mkdir -p "$outdir"
 #    drwxrwxr-x/-rw-rw-r--. A packager rebuilding the tarball to check the
 #    published sum would have concluded the asset had been tampered with.
 #    --mode normalises all three: 755 for anything executable or a directory,
-#    644 for the rest, and ci/scripts/check-tarball-determinism.sh runs this
+#    644 for the rest, and the tarball-determinism check (LibreSCRS/ci) runs this
 #    script under both of those umasks and compares the bytes. It reaches
 #    symlinks too, where the stored mode is a constant either way -- measured
 #    with GNU tar 1.35 on a fixture holding one: stored lrwxrwxrwx without

@@ -2,7 +2,7 @@
 #
 # Scripts CI really runs, but not under a name any workflow spells out, and
 # scripts that are deliberately hand-run. One path per line, then the reason.
-# check-gates-wired.sh treats every line here as a reachability root, so what
+# check-workflows (wired, LibreSCRS/ci) treats every line here as a reachability root, so what
 # these scripts call counts as run too. A path that stops being tracked fails.
 packaging/ci/build-deb.sh  run as packaging/ci/build-$FAMILY.sh by packaging/ci/package-gate.sh:142
 packaging/ci/build-rpm.sh  run as packaging/ci/build-$FAMILY.sh by packaging/ci/package-gate.sh:142

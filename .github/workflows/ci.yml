@@ -58,6 +58,17 @@ jobs:
       - name: Shared gates
         uses: LibreSCRS/ci/actions/gates@5b9410f9b0e6ab6983c39f931e118e68007c12b4
 
+      # The release's own preflight, rehearsed on every push: the CHANGELOG,
+      # VERSION, the version this tree stamps and every packaging surface agree
+      # on the pending release, and the tag verifier still says no to a forged
+      # tag. Proved weeks before the tag rather than first on a tag that
+      # cannot be taken back.
+      - name: The tree is releasable as the version it names
+        uses: LibreSCRS/ci/actions/release-preflight@5b9410f9b0e6ab6983c39f931e118e68007c12b4
+        with:
+          mode: rehearse
+          version-min: '1'
+
       - name: Every network clone is pinned by commit
         # The JPEG2000 sources are fetched by commit in two workflows; a pin
         # applied to one and not the other builds a different AppImage in CI

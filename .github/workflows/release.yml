@@ -1,103 +1,73 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 name: Release
 
+# preflight -> build-* -> seal -> publish. A tag push publishes; a dispatch
+# rehearses on any ref -- the same jobs over the same code, with an ephemeral
+# signing key instead of a keyless one, and the release kept as a workflow
+# artefact instead of created. Nothing is built or signed before the
+# preflight has judged the tag's signature (or, on a branch, proved the
+# verifier both ways), the version surfaces and the cross-repository pins.
 on:
   push:
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+*'
-  # Rehearsal path. A maintainer can start this workflow from the Actions
-  # tab against an existing signed tag (Run workflow -> pick the tag as the
-  # ref) to exercise the whole chain, release notes included, without
-  # pushing a fresh tag. github.ref_name is the tag name on that path too,
-  # so every step below behaves exactly as it does on a tag push — except
-  # publication: a rehearsal creates a DRAFT unless the maintainer
-  # explicitly flips dry_run off, so rehearsing can never overwrite or
-  # duplicate a live release.
+    tags: ['[0-9]+.[0-9]+.[0-9]+*']
   workflow_dispatch:
     inputs:
-      dry_run:
-        description: 'Create the release as a draft (rehearsal)'
-        type: boolean
-        default: true
+      mode:
+        description: 'rehearse (any ref) or publish (a tag ref only)'
+        type: choice
+        options: [rehearse, publish]
+        default: rehearse
+
+permissions: {}
 
 concurrency:
-  group: release-${{ github.ref_name }}
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  verify-signature:
-    timeout-minutes: 10
-    runs-on: ubuntu-latest
-    env:
-      # The release key's PRIMARY fingerprint, named once so the import check
-      # and the signature check cannot pin different keys across a rotation.
-      EXPECTED_FPR: '6B05889AC9A6A7188DF639B06F27A989C2031D16'
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      mode: ${{ steps.pre.outputs.mode }}
+      version: ${{ steps.pre.outputs.version }}
+      is_prerelease: ${{ steps.pre.outputs.is_prerelease }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
-          ref: ${{ github.ref }}
-
-      - name: Import LibreSCRS release public key
-        run: |
-          # The published project key travels with the repository. Report its
-          # absence in terms of what to do about it rather than letting gpg
-          # fail with a bare open error.
-          if [ ! -f KEYS ]; then
-            echo "::error::KEYS is missing from the repository root — a release tag cannot be verified without the published LibreSCRS release public key"
-            exit 1
-          fi
-          gpg --import KEYS
-          gpg --list-keys --with-colons "$EXPECTED_FPR" | grep -q "^pub" \
-            || { echo "::error::Public key import failed or fingerprint mismatch"; exit 1; }
-
-      - name: Verify tag signature
-        # verify-tag alone accepts a good signature by ANY key in the keyring,
-        # so the signer is pinned by fingerprint through --raw's VALIDSIG line.
-        #
-        # Field order is the whole trick here. VALIDSIG's FIRST field is the
-        # fingerprint of the key that physically signed, and this project signs
-        # with a subkey (the primary is certify-only, `cSC`), so the first field
-        # is the SUBKEY. The primary — the identity worth pinning, because it
-        # outlives every subkey rotation — is VALIDSIG's LAST field. Matching
-        # the primary right after "VALIDSIG" therefore rejects every genuinely
-        # signed tag, and pinning the subkey instead would break at the next
-        # rotation; match the primary in the trailing position.
-        #
-        # Anchored, and deliberately not a bare fingerprint grep: gpg also
-        # emits KEY_CONSIDERED with the primary's fingerprint, and it does so
-        # even for a BADSIG, so a loose match would accept a forged tag.
-        #
-        # The ref name moves through the environment, never inline into the
-        # script — a git ref may carry shell metacharacters and the tag
-        # filter's trailing * accepts an arbitrary suffix.
-        env:
-          TAG: ${{ github.ref_name }}
-        run: |
-          git verify-tag --raw "$TAG" 2>&1 \
-            | grep -qE "^\[GNUPG:\] VALIDSIG [0-9A-F]{40} .* ${EXPECTED_FPR}\$" \
-            || { echo "::error::Tag $TAG is not signed by the LibreSCRS release key"; exit 1; }
+          persist-credentials: false
+      - id: pre
+        uses: LibreSCRS/ci/actions/release-preflight@5b9410f9b0e6ab6983c39f931e118e68007c12b4
+        with:
+          mode: ${{ inputs.mode || 'publish' }}
+          version-min: '1'
 
   build-linux:
+    needs: [preflight]
     timeout-minutes: 90
-    needs: verify-signature
-    runs-on: ubuntu-latest
+    # A fixed image: the AppImage's glibc floor is the build host's (2.39 on
+    # Ubuntu 24.04), and a moving label would move it under a tag.
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build python3-jsonschema patchelf
 
-      - name: Install Qt 6.10
-        # Pinned by commit: a moved tag on a third-party action would run its
-        # code in this job. Nothing updates the pin for us -- move it deliberately.
+      - name: Install Qt 6.10.3
         uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125  # v4.4.1
         with:
-          version: '6.10.*'
+          version: '6.10.3'
           host: linux
           target: desktop
           arch: linux_gcc_64
@@ -141,9 +111,9 @@ jobs:
           # so the prefix question no longer exists, and neither does the
           # second clone that answered it.
           fetch_pinned qtimageformats /tmp/qtimageformats
-          # The pin names a Qt release and the action installs '6.10.*', which
-          # floats: a plugin built from one Qt's sources into another Qt is the
-          # mismatch the old branch-name clone could not produce. Refuse it.
+          # The pin names a Qt release and the Qt step installs one exact
+          # version: moving one without the other builds a plugin from one Qt's
+          # sources into another Qt. Refuse it.
           qt_ver="$(qmake6 -query QT_VERSION)"
           read -r _ _ _ pin_ver < <(grep '^qtimageformats ' ci/pins/jpeg2000.txt) || true
           [ "$qt_ver" = "${pin_ver:-}" ] || { echo "::error::Qt $qt_ver is installed but qtimageformats is pinned to ${pin_ver:-nothing} -- move the pin with Qt"; exit 1; }
@@ -198,10 +168,8 @@ jobs:
           QT_QPA_PLATFORM: offscreen
         run: ctest --output-on-failure --no-tests=error --test-dir build
 
-      # DSS Java backend removed — native signing does not require Java.
-
       - name: Cache linuxdeploy tools
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: scripts/linux/tools
           key: linuxdeploy-continuous-v1
@@ -211,43 +179,40 @@ jobs:
           APPIMAGE_EXTRACT_AND_RUN: "1"
         run: scripts/linux/build-appimage.sh build
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: linux-artifacts
-          # if-no-files-found defaults to "warn", which would let a job that
-          # matched nothing at all upload an empty set and say so in a line
-          # nobody reads. It is evaluated over the AGGREGATE match set, not
+          # if-no-files-found is evaluated over the AGGREGATE match set, not
           # per pattern: if the AppImage matches and the bill does not, this
           # step still succeeds. So it is a floor, not the net -- the net is
-          # ci/scripts/check-sbom.py in the release job, which reads the
+          # ci/scripts/check-sbom.py in the seal job, which reads the
           # documents that actually arrived.
           if-no-files-found: error
+          retention-days: 3
           path: |
             LibreCelik-*.AppImage
             sbom-linux.cdx.json
 
   build-macos:
+    needs: [preflight]
     timeout-minutes: 75
-    needs: verify-signature
-    runs-on: macos-latest
+    runs-on: macos-15
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install build tools
-        # Ninja only. The autoconf/automake/libtool/pkg-config chain that
-        # used to live here existed solely for a transitively built
-        # vendored autoconf bootstrap that this repo no longer pulls in;
-        # the agent client library is plain CMake.
+        # Ninja only. The agent client library is plain CMake.
         run: brew install ninja
 
-      - name: Install Qt 6.10
-        # Pinned by commit: a moved tag on a third-party action would run its
-        # code in this job. Nothing updates the pin for us -- move it deliberately.
+      - name: Install Qt 6.10.3
         uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125  # v4.4.1
         with:
-          version: '6.10.*'
+          version: '6.10.3'
           host: mac
           target: desktop
           arch: clang_64
@@ -273,17 +238,16 @@ jobs:
           QT_QPA_PLATFORM: offscreen
         run: ctest --output-on-failure --no-tests=error --test-dir build
 
-      # DSS Java backend removed — native signing does not require Java.
-
       - name: Build DMG
         run: scripts/macos/build-dmg.sh build
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: macos-artifacts
           # See the linux-artifacts step: a floor over the aggregate match
           # set, not a per-pattern guarantee.
           if-no-files-found: error
+          retention-days: 3
           path: |
             LibreCelik-*.dmg
             sbom-macos.cdx.json
@@ -292,27 +256,20 @@ jobs:
     # The source tarball is produced by this project, not by GitHub. GitHub's
     # archive/refs/tags tarball omits every submodule tree and its bytes are
     # not ours to assert; this one comes from a clone with --recurse-submodules
-    # and is byte-identical run to run -- ci/scripts/check-tarball-determinism.sh
-    # measures that on every push, up to the gzip implementation, which is the
-    # one thing the script cannot make a property of the commit. No recipe
-    # here consumes the archive -- `git ls-files | grep -i pkgbuild` is empty
-    # -- so it is published for what it is on its own: the exact sources beside
-    # the binaries built from them, cosigned and listed in the signed
-    # SHA256SUMS like every other asset, so a release is auditable without
-    # trusting an archive somebody else generated.
-    #
-    # It runs after the signature check for the same reason every other job
-    # does: nothing is built for a tag whose signature has not been proved.
+    # and is byte-identical run to run. It is published for what it is on its
+    # own: the exact sources beside the binaries built from them, signed and
+    # listed in SHA256SUMS like every other asset.
+    needs: [preflight]
     timeout-minutes: 20
-    needs: verify-signature
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           submodules: recursive
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Build the source tarball
         run: |
@@ -321,269 +278,80 @@ jobs:
           ci/scripts/make-source-tarball.sh "$RUNNER_TEMP/srctar"
           ls -l "$RUNNER_TEMP/srctar"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
+          # Ends in -artifacts: the seal job collects `*-artifacts`.
           name: source-tarball-artifacts
-          # Named to end in -artifacts because the release job below collects
-          # its inputs with `pattern: '*-artifacts'`. An artefact this pattern
-          # cannot match is uploaded, never downloaded and silently dropped:
-          # built, then thrown away, with every gate still green.
           path: ${{ runner.temp }}/srctar/*.orig.tar.gz
-          # An empty upload here would publish a release whose binaries have
-          # no sources beside them -- cosigned and listed in SHA256SUMS like
-          # every other asset, and missing without a word. Fail where it is
-          # cheap.
           if-no-files-found: error
+          retention-days: 3
 
-  release:
+  seal:
+    needs: [preflight, build-linux, build-macos, source-tarball]
     timeout-minutes: 20
-    needs: [build-linux, build-macos, source-tarball]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
-      contents: write
+      contents: read
       id-token: write
+      attestations: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           pattern: '*-artifacts'
           merge-multiple: true
           path: artifacts
 
-      - name: Check out CHANGELOG
-        uses: actions/checkout@v4
+      - name: Check out the bill-of-materials check
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
-          ref: ${{ github.ref }}
-          sparse-checkout: |
-            ci/release-assets.txt
-            ci/scripts/check-release-assets.sh
-            CHANGELOG.md
-            VERSION
-            ci/scripts/check-release-lockstep.sh
-            ci/scripts/check-sbom.py
-            cmake/libreagent.pin
+          sparse-checkout: ci/scripts/check-sbom.py
           sparse-checkout-cone-mode: false
-          # Check out into a SUBDIR. The root workspace already holds the
-          # downloaded and cosigned artifacts/, and actions/checkout wipes
-          # its target directory whenever there is no pre-existing .git
-          # there (clean: false does NOT suppress that path). Isolating the
-          # checkout in _changelog/ leaves artifacts/ untouched.
-          path: _changelog
+          # A subdirectory: artifacts/ already holds the downloaded set, and
+          # a checkout into the workspace root would wipe it.
+          path: _src
+          persist-credentials: false
 
       - name: Refuse a release whose bill of materials is missing or empty
-        # Before anything is signed, deliberately. Both bills arrive as
-        # downloaded artefacts, so the blanket signing step below would
-        # otherwise put a Sigstore transparency-log entry on a document this
-        # job is about to reject. The release aborts either way and nothing
-        # reaches a consumer; the residue would be a public signature over a
-        # document the project refused, which is worth not creating.
-        #
-        # This is the only place both bills sit in one directory, so it is
-        # the only place the pair can be judged. One command, both files: a
-        # healthy Linux bill must not launder an empty macOS one.
-        #
-        # The bills themselves are written where the truth is: each packaging
-        # script derives one from its fully assembled staging tree -- the same
-        # walk the fail-closed licence check uses -- and uploads it beside the
-        # artefact it describes. There are two artefacts, so there are two
-        # bills; merging them would claim a single bundle nobody downloads.
-        # This job used to PRODUCE the bill instead, from a source-pin reader
-        # that searched thirdparty/openssl-*, packaging/arch/PKGBUILD and
-        # cmake/FetchQCBOR.cmake -- paths this repository does not have. Every
-        # lookup came back empty, the document published beside both downloads
-        # read "components": [], and it was signed. A signed empty bill is
-        # worse than no bill: it tells whoever is triaging a Qt or OpenSSL
-        # advisory, over this project's signature, that the bundle carries no
-        # third-party code.
+        # Before anything is signed, deliberately: a signature over a document
+        # this job is about to reject is worth not creating. Both bills sit in
+        # one directory only here, so the pair is judged here, in one command:
+        # a healthy Linux bill must not launder an empty macOS one. A signed
+        # empty bill tells whoever triages a Qt or OpenSSL advisory, over this
+        # project's signature, that the bundle carries no third-party code.
         run: |
           set -euo pipefail
-          python3 _changelog/ci/scripts/check-sbom.py \
+          python3 _src/ci/scripts/check-sbom.py \
             artifacts/sbom-linux.cdx.json \
             artifacts/sbom-macos.cdx.json
 
-      - name: Install cosign
-        # Pinned by commit: a moved tag on a third-party action would run its
-        # code in this job. Nothing updates the pin for us -- move it deliberately.
-        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad  # v4.0.0
+      - uses: LibreSCRS/ci/actions/release-seal@5b9410f9b0e6ab6983c39f931e118e68007c12b4
+        with:
+          mode: ${{ needs.preflight.outputs.mode }}
+          version: ${{ needs.preflight.outputs.version }}
 
-      - name: Sign artifacts with cosign (keyless via Sigstore OIDC)
-        run: |
-          find artifacts -type f \
-            ! -name '*.sigstore.json' \
-            -exec sh -c 'cosign sign-blob "$1" --bundle "$1.sigstore.json" --yes' _ {} \;
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: sealed
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 3
 
-      - name: Enforce the release lockstep on a final tag
-        # A final X.Y.Z tag must find the repository already speaking its
-        # version: a CHANGELOG section for it (or the release ships generic
-        # auto-notes) and a VERSION file equal to it (or every no-git source
-        # drop stamps the previous release). Both are silent otherwise —
-        # this is the step that makes them loud. Pre-release tags
-        # (-rc/-beta/…) are exempt: they publish as drafts of the coming
-        # version and legitimately ride on --generate-notes.
-        #
-        # ONE predicate decides both the exemption here and how the release is
-        # published later, and it is exported so the two cannot drift apart.
-        # They were separate tests — this step exempted anything containing a
-        # character that is not a digit or a dot, while the publishing step
-        # marked a pre-release only on an -rc/-beta/-alpha/-pre suffix. The push
-        # filter accepts an arbitrary suffix, so every tag satisfying one test
-        # and not the other (5.0.0-final, 5.0.0a, 5.0.0.hotfix) skipped the
-        # lockstep entirely AND published as a stable release: exactly the two
-        # silences this gate exists to end.
-        #
-        # Whether a tag is a pre-release is a property of the TAG, so it stays
-        # here; the agreement itself is the same check the cheap lint job runs
-        # on every push, so it lives in one script both callers share.
-        run: |
-          VER="${GITHUB_REF_NAME#v}"
-          case "$VER" in
-            *-rc*|*-beta*|*-alpha*|*-pre*) IS_PRERELEASE=true ;;
-            *) IS_PRERELEASE=false ;;
-          esac
-          echo "IS_PRERELEASE=$IS_PRERELEASE" >> "$GITHUB_ENV"
-          if [ "$IS_PRERELEASE" = "true" ]; then
-            echo "pre-release tag $VER — lockstep gate not applied"
-            exit 0
-          fi
-          export CHANGELOG_FILE=_changelog/CHANGELOG.md
-          export VERSION_FILE=_changelog/VERSION
-          _changelog/ci/scripts/check-release-lockstep.sh "$VER"
-
-      - name: The agent pin is the agent's tag
-        # The consumers pin the agent by commit so a build cannot drift onto
-        # whatever the agent's branch holds that hour. At release time that pin
-        # must be the commit the agent's own tag of the SAME version points at,
-        # or this component ships built against something the agent never
-        # published.
-        #
-        # The lookup dereferences. For an annotated tag the ref endpoint returns
-        # the SHA of the TAG OBJECT, not of the commit, so comparing the two
-        # directly would fail on every correctly signed tag — the same class of
-        # mistake as reading VALIDSIG's fields in the wrong order.
-        env:
-          VER: ${{ github.ref_name }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # The `on:` filter above no longer accepts a v-prefixed tag, but the
-          # rehearsal path does: workflow_dispatch runs against whatever ref it
-          # is pointed at, filter or no filter. The agent publishes unprefixed
-          # tags only, so strip it here the way the lockstep check above already
-          # does, or a v5.0.0 rehearsal asks the agent for a tag that cannot
-          # exist and fails looking like a pin that was never bumped.
-          VER="${VER#v}"
-          # The release job checks the sources out into _changelog/ so that
-          # the downloaded and cosigned artifacts/ tree is left alone.
-          pin=$(tr -d '[:space:]' < _changelog/cmake/libreagent.pin)
-          tagsha=$(gh api repos/LibreSCRS/LibreAgent/git/ref/tags/"$VER" --jq '.object.sha')
-          type=$(gh api repos/LibreSCRS/LibreAgent/git/ref/tags/"$VER" --jq '.object.type')
-          if [ "$type" = "tag" ]; then
-            tagsha=$(gh api repos/LibreSCRS/LibreAgent/git/tags/"$tagsha" --jq '.object.sha')
-          fi
-          [ "$pin" = "$tagsha" ] || {
-            echo "::error::agent pin is not the agent's $VER tag (pin $pin, tag $tagsha)"
-            exit 1
-          }
-
-      - name: Prepare release notes from CHANGELOG
-        # One extractor, in ci/scripts/check-release-lockstep.sh, shared with
-        # the per-push agreement check. It used to be copied inline into every
-        # release workflow, and one of the copies had drifted: without escaping
-        # the version's dots, tag 5.0.0 also matched a [500.0] heading.
-        #
-        # --section exits non-zero when the section is missing OR holds only
-        # whitespace. Both have to fall back: `gh release create --notes-file`
-        # accepts a blank file and publishes a release with no body at all.
-        # --generate-notes and --notes-file are mutually exclusive, hence the
-        # shell branch.
-        run: |
-          VER="${GITHUB_REF_NAME#v}"
-          export CHANGELOG_FILE=_changelog/CHANGELOG.md
-          if _changelog/ci/scripts/check-release-lockstep.sh --section "$VER" > "$RUNNER_TEMP/relnotes.md"; then
-            echo "NOTES_ARG=--notes-file $RUNNER_TEMP/relnotes.md" >> "$GITHUB_ENV"
-          else
-            echo "No CHANGELOG section for $VER — falling back to --generate-notes"
-            echo "NOTES_ARG=--generate-notes" >> "$GITHUB_ENV"
-          fi
-
-      - name: Checksum manifest over the whole set
-        # The bills are judged and signed earlier in this job; both were
-        # already in artifacts/ when the signing step ran.
-        #
-        # SHA256SUMS is generated after everything else is in artifacts/ and
-        # then signed itself, so one signature covers the whole set.
-        run: |
-          set -euo pipefail
-          ( cd artifacts && sha256sum $(ls | grep -v '^SHA256SUMS$') > SHA256SUMS )
-          cat artifacts/SHA256SUMS
-          cosign sign-blob artifacts/SHA256SUMS   --bundle artifacts/SHA256SUMS.sigstore.json --yes
-
-      - name: No debug packages are published
-        # This release builds an AppImage and a DMG, not distribution
-        # packages, so no -dbgsym / -debuginfo set can exist here. The step
-        # says that, and refuses one that appears anyway rather than
-        # publishing it unlabelled.
-        run: |
-          n=$(ls artifacts | grep -cE 'dbgsym|debuginfo|debugsource' || true)
-          echo "DEBUG_PACKAGE_COUNT=$n"
-          if [ "$n" -ne 0 ]; then
-            echo "::error::$n debug package(s) in a release that builds no distribution packages"
-            exit 1
-          fi
-          echo "none: this release builds no distribution packages"
-
-      - name: The staged asset set is the set this repository declares
-        # The files gh is about to publish, against ci/release-assets.txt, in
-        # both directions, before the release exists.
-        run: _changelog/ci/scripts/check-release-assets.sh --staged artifacts
-
-      - name: Create GitHub release with all signed artefacts
-        # Replaces softprops/action-gh-release@v2, which races between
-        # asset upload and metadata update: releases carrying several
-        # artefacts fail at "error updating release asset metadata:
-        # HttpError: Not Found" even though every upload line reports
-        # success. `gh release create` publishes the assets in one
-        # deterministic request and exits.
-        env:
-          GH_TOKEN: ${{ github.token }}
-          DRY_RUN: ${{ inputs.dry_run }}
-        run: |
-          # Mark X.Y.Z-{rc,beta,alpha,…} as a pre-release; everything else is a
-          # stable release. The verdict is the one the lockstep step computed
-          # and exported, so a tag can never be exempt from the gate here and
-          # stable there.
-          PRERELEASE_FLAG=""
-          if [ "$IS_PRERELEASE" = "true" ]; then
-              PRERELEASE_FLAG="--prerelease"
-          fi
-          # A dispatch rehearsal publishes a DRAFT unless dry_run was
-          # explicitly turned off; a tag push never drafts.
-          DRAFT_FLAG=""
-          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$DRY_RUN" != "false" ]; then
-              DRAFT_FLAG="--draft"
-              echo "::notice::dry_run rehearsal — creating a draft release"
-          fi
-          # --repo lets `gh` skip the .git autodetection: this job downloads
-          # artefacts and sparse-checks-out the CHANGELOG into a subdir, so
-          # the workspace root has no .git of its own. --verify-tag refuses
-          # to invent a tag if this ever runs against a ref that is not one.
-          # NOTES_ARG has to split into two argv entries and PRERELEASE_FLAG
-          # has to disappear when empty, so both stay deliberately unquoted:
-          # quoting NOTES_ARG would hand gh "--notes-file /path" as a single
-          # argument and every release would fail.
-          # shellcheck disable=SC2086
-          gh release create "$GITHUB_REF_NAME" \
-              --repo "$GITHUB_REPOSITORY" \
-              --title "$GITHUB_REF_NAME" \
-              --verify-tag \
-              $NOTES_ARG \
-              $PRERELEASE_FLAG \
-              $DRAFT_FLAG \
-              artifacts/*
-
-      - name: The published release is the set this repository declares
-        # The release this job just created, read back. A draft is judged too,
-        # and the check prints DRAFT=yes so the log is not taken for evidence
-        # about a published release.
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
-        run: _changelog/ci/scripts/check-release-assets.sh --published "$TAG"
+  publish:
+    needs: [preflight, seal]
+    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: sealed
+          path: artifacts
+      - uses: LibreSCRS/ci/actions/release-publish@5b9410f9b0e6ab6983c39f931e118e68007c12b4
+        with:
+          mode: ${{ needs.preflight.outputs.mode }}
+          version: ${{ needs.preflight.outputs.version }}
+          is_prerelease: ${{ needs.preflight.outputs.is_prerelease }}

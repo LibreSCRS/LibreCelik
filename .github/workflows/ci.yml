@@ -53,21 +53,12 @@ jobs:
 
       # The gates this repository shares with the others -- formatter scope,
       # skip reasons, the workflows read as data, the declaration registry,
-      # duplicate bodies, every self-test this repository ships, and the
-      # locked upstream revisions -- as LibreSCRS/ci's profile for it lists.
+      # duplicate bodies, every self-test this repository ships, the locked
+      # upstream revisions, the version surfaces, the release workflow's asset
+      # and artefact wiring, and a deterministic source tarball -- as
+      # LibreSCRS/ci's profile for it lists.
       - name: Shared gates
-        uses: LibreSCRS/ci/actions/gates@5b9410f9b0e6ab6983c39f931e118e68007c12b4
-
-      # The release's own preflight, rehearsed on every push: the CHANGELOG,
-      # VERSION, the version this tree stamps and every packaging surface agree
-      # on the pending release, and the tag verifier still says no to a forged
-      # tag. Proved weeks before the tag rather than first on a tag that
-      # cannot be taken back.
-      - name: The tree is releasable as the version it names
-        uses: LibreSCRS/ci/actions/release-preflight@5b9410f9b0e6ab6983c39f931e118e68007c12b4
-        with:
-          mode: rehearse
-          version-min: '1'
+        uses: LibreSCRS/ci/actions/gates@373a0f82c9af280b7a8ccc4ee30106c947394ca2
 
       - name: Every network clone is pinned by commit
         # The JPEG2000 sources are fetched by commit in two workflows; a pin
@@ -206,7 +197,7 @@ jobs:
       # agent tree this configure fetched against the deps.lock row -- the
       # property, not the revision the configure printed.
       - name: Shared gates after the build
-        uses: LibreSCRS/ci/actions/gates@5b9410f9b0e6ab6983c39f931e118e68007c12b4
+        uses: LibreSCRS/ci/actions/gates@373a0f82c9af280b7a8ccc4ee30106c947394ca2
         with:
           phase: build
           build-dir: build
@@ -504,12 +495,12 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: LibreSCRS/ci/actions/pkg-build@5b9410f9b0e6ab6983c39f931e118e68007c12b4
+      - uses: LibreSCRS/ci/actions/pkg-build@373a0f82c9af280b7a8ccc4ee30106c947394ca2
         id: build
         with:
           slug: ${{ matrix.slug }}
           upstream: source
-      - uses: LibreSCRS/ci/actions/pkg-verify@5b9410f9b0e6ab6983c39f931e118e68007c12b4
+      - uses: LibreSCRS/ci/actions/pkg-verify@373a0f82c9af280b7a8ccc4ee30106c947394ca2
         with:
           slug: ${{ matrix.slug }}
           packages: ${{ steps.build.outputs.art }}/${{ matrix.slug }}

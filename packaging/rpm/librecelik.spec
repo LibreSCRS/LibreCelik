@@ -66,7 +66,7 @@ test ! -e %{_vpath_builddir}/_deps/libreagent-subbuild || \
 # thing a package build can prove and nothing else will.
 desktop-file-validate %{buildroot}%{_datadir}/applications/librecelik.desktop
 appstream-util validate-relax --nonet \
-    %{buildroot}%{_metainfodir}/org.librescrs.librecelik.metainfo.xml
+    %{buildroot}%{_datadir}/metainfo/org.librescrs.librecelik.metainfo.xml
 
 %files
 %license LICENSE
@@ -76,7 +76,7 @@ appstream-util validate-relax --nonet \
 %{_libdir}/gui-plugins/
 %{_datadir}/applications/librecelik.desktop
 %{_datadir}/icons/hicolor/512x512/apps/librecelik.png
-%{_metainfodir}/org.librescrs.librecelik.metainfo.xml
+%{_datadir}/metainfo/org.librescrs.librecelik.metainfo.xml
 
 %changelog
 * Fri Sep 04 2026 LibreSCRS <librescrs@proton.me> - 5.0.0-1

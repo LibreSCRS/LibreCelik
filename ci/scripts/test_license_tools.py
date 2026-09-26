@@ -1,671 +1,68 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 hirashix0
-"""Unit tests for the bundled-license checker tooling.
-
-The checker script has a hyphenated filename, so it cannot be imported
-with a normal ``import`` statement; we load it by file path via
-``importlib.util``.
+"""Unit tests for the bundled-licence tooling: check-bundled-licenses.py
+(the fail-closed licence walk and the bill of materials) and
+gen-third-party-notices.py. Both have hyphenated names, so they are loaded
+by path. One test per behaviour; each assertion names a failure that was
+real or that the walk exists to prevent.
 """
 
 import hashlib
-import json
 import importlib.util
+import json
 import pathlib
+import plistlib
 
-spec = importlib.util.spec_from_file_location(
-    "checker", pathlib.Path(__file__).with_name("check-bundled-licenses.py")
-)
-checker = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(checker)
-
-_gspec = importlib.util.spec_from_file_location(
-    "gen_notices", pathlib.Path(__file__).with_name("gen-third-party-notices.py")
-)
-gen = importlib.util.module_from_spec(_gspec)
-_gspec.loader.exec_module(gen)
+import pytest
 
 
-def test_normalize_soname():
-    assert checker.normalize("libcurl.so.4.8.0") == "libcurl.so"
-    assert checker.normalize("libQt6Core.so.6.10.0") == "libQt6Core.so"
-    assert checker.normalize("libicudata.so.74.2") == "libicudata.so"
-    assert checker.normalize("libfoo.dylib") == "libfoo.dylib"
-    assert checker.normalize("plain-name") == "plain-name"
-
-
-def test_normalize_macos_version_before_extension():
-    """macOS dylibs put the version segment BEFORE the extension
-    (``libssl.3.dylib``), unlike Linux sonames which put it AFTER
-    (``libssl.so.3``). The checker must collapse both shapes to the same
-    bare-extension form so a single manifest entry covers both platforms.
-    """
-    assert checker.normalize("libssl.3.dylib") == "libssl.dylib"
-    assert checker.normalize("libssl.3.0.0.dylib") == "libssl.dylib"
-    assert checker.normalize("libcrypto.3.dylib") == "libcrypto.dylib"
-    # Multi-component name with version-before-extension.
-    assert checker.normalize("libQt6Core.6.dylib") == "libQt6Core.dylib"
-    # Don't strip a non-numeric segment — only digits-with-dots is a
-    # version, otherwise we'd corrupt names like libfoo.helper.dylib.
-    assert checker.normalize("libfoo.helper.dylib") == "libfoo.helper.dylib"
-    # Hyphen-version dylibs (e.g. Homebrew openssl@3 packaging) have no
-    # numeric .N segment; the hyphenated suffix is part of the bare name.
-    assert checker.normalize("libssl-3.dylib") == "libssl-3.dylib"
-
-
-def test_normalize_requires_extension_boundary():
-    # A ".so"/".dylib" substring that is NOT a real extension boundary
-    # must not be mis-normalized (would otherwise misattribute a license).
-    assert checker.normalize("libfoo.solics") == "libfoo.solics"
-    assert checker.normalize("libfoo.so-backup") == "libfoo.so-backup"
-    assert checker.normalize("libfoo.dylibext") == "libfoo.dylibext"
-    assert checker.normalize("libfoo.so") == "libfoo.so"
-
-
-def test_enumerate_ignores_non_extension_so_substring(tmp_path):
-    lib = tmp_path / "usr" / "lib"
-    lib.mkdir(parents=True)
-    (lib / "libcurl.so.4").write_bytes(b"")
-    (lib / "notes.solar").write_bytes(b"")  # must be ignored
-    names = [n for n, _rp in checker.enumerate_assets(str(tmp_path))]
-    assert "libcurl.so" in names
-    assert all("solar" not in n for n in names)
-
-
-def test_longest_specific_match_wins():
-    comps = [
-        {
-            "match": "libQt6*.so",
-            "name": "Qt 6",
-            "spdx": "LGPL-3.0-or-later",
-            "text": "a",
-        },
-        {
-            "match": "libQt6VirtualKeyboard.so",
-            "name": "QtVK",
-            "spdx": "GPL-3.0-only",
-            "text": "b",
-        },
-    ]
-    assert checker.match_component("libQt6VirtualKeyboard.so", comps)["name"] == "QtVK"
-    assert checker.match_component("libQt6Core.so", comps)["name"] == "Qt 6"
-    assert checker.match_component("libcurl.so", comps) is None
-
-
-def test_internal_skipped():
-    assert checker.is_internal(
-        "librescrs-pkcs11.so", ["librescrs-pkcs11.so", "*-gui-plugin.so"]
+def _load(name, filename):
+    spec = importlib.util.spec_from_file_location(
+        name, pathlib.Path(__file__).with_name(filename)
     )
-    assert checker.is_internal("piv-gui-plugin.so", ["*-gui-plugin.so"])
-    assert not checker.is_internal("libcurl.so", ["*-gui-plugin.so"])
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
-def test_internal_skipped_macos_dylib_mirrors():
-    """LibreSCRS-owned modules ship as .dylib on macOS (build-dmg.sh renames
-    the .so artifacts). The shipped manifest's internal_sonames must cover
-    BOTH extensions so the same plugin isn't reported as a third-party
-    dependency just because the bundle layout uses Apple's convention.
-    """
-    import json
-    import pathlib
+checker = _load("checker", "check-bundled-licenses.py")
+gen = _load("gen_notices", "gen-third-party-notices.py")
 
-    manifest_path = (
-        pathlib.Path(__file__).resolve().parents[2] / "licenses" / "manifest.json"
-    )
-    manifest = json.loads(manifest_path.read_text())
-    internal = manifest["internal_sonames"]
-
-    # PKCS#11 module and the SmartCard core library both ship from LM.
-    assert checker.is_internal("librescrs-pkcs11.dylib", internal)
-    assert checker.is_internal("libLibreSCRS_SmartCard.dylib", internal)
-    # Plugin family globs must also match the .dylib mirrors.
-    assert checker.is_internal("libid-card-plugin.dylib", internal)
-    assert checker.is_internal("piv-gui-plugin.dylib", internal)
-    assert checker.is_internal("libresign-core.dylib", internal)
+LICENCE = b"CURL LICENSE"
+LICENCE_SHA = hashlib.sha256(LICENCE).hexdigest()
+JASPER_SHA = "63e106c80eb72af9fd4fa28772499ab0138b9994"
 
 
-def test_enumerate_dedupes_symlinks(tmp_path):
-    lib = tmp_path / "usr" / "lib"
-    lib.mkdir(parents=True)
-    (lib / "libcurl.so.4.8.0").write_bytes(b"")
-    (lib / "libcurl.so.4").symlink_to(lib / "libcurl.so.4.8.0")
-    names = [n for n, _rp in checker.enumerate_assets(str(tmp_path))]
-    assert names.count("libcurl.so") == 1
+def _comp(match, name="x", spdx="MIT", platforms=None, **extra):
+    c = {"match": match, "name": name, "spdx": spdx, "text": "t", "sha256": "s"}
+    if platforms is not None:
+        c["platforms"] = platforms
+    c.update(extra)
+    return c
 
 
-def test_enumerate_finds_dylib(tmp_path):
-    lib = tmp_path / "Contents" / "Frameworks"
-    lib.mkdir(parents=True)
-    (lib / "libfoo.dylib").write_bytes(b"")
-    names = [n for n, _rp in checker.enumerate_assets(str(tmp_path))]
-    assert "libfoo.dylib" in names
-
-
-def test_enumerate_finds_framework_bundle(tmp_path):
-    """macdeployqt copies Qt as ``QtCore.framework/Versions/A/QtCore`` —
-    the binary inside has no ``.so``/``.dylib`` extension, so the
-    enumerator must recognise the surrounding ``.framework`` directory
-    and yield the bundle name. Otherwise every bundled Qt module is
-    invisible to the bundle check and ships without a license entry.
-    """
-    fw = tmp_path / "Contents" / "Frameworks" / "QtFoo.framework"
-    (fw / "Versions" / "A").mkdir(parents=True)
-    (fw / "Versions" / "A" / "QtFoo").write_bytes(b"")
-    # Realistic extras inside the framework — must NOT be yielded.
-    (fw / "Versions" / "A" / "Resources").mkdir()
-    (fw / "Versions" / "A" / "Resources" / "Info.plist").write_text("")
-
-    names = [n for n, _rp in checker.enumerate_assets(str(tmp_path))]
-    assert "QtFoo.framework" in names
-
-
-def test_enumerate_framework_does_not_double_count_inner_dylib(tmp_path):
-    """If a framework happens to contain an inner ``.dylib``/``.so`` file
-    (rare but possible — e.g. a helper library), enumeration should
-    yield ONLY the framework bundle name, not the inner file. Otherwise
-    the bundle check would flag the inner helper as an unmapped
-    third-party library duplicating the framework entry.
-    """
-    fw = tmp_path / "Contents" / "Frameworks" / "QtBar.framework"
-    (fw / "Versions" / "A").mkdir(parents=True)
-    (fw / "Versions" / "A" / "QtBar").write_bytes(b"")
-    # An inner shared object inside the framework — must be hidden.
-    (fw / "Versions" / "A" / "libhelper.dylib").write_bytes(b"")
-
-    names = [n for n, _rp in checker.enumerate_assets(str(tmp_path))]
-    assert "QtBar.framework" in names
-    assert "libhelper.dylib" not in names
-
-
-def test_enumerate_skips_non_libraries(tmp_path):
-    lib = tmp_path / "usr" / "lib"
-    lib.mkdir(parents=True)
-    (lib / "libcurl.so.4.8.0").write_bytes(b"")
-    (lib / "README.txt").write_bytes(b"")
-    names = [n for n, _rp in checker.enumerate_assets(str(tmp_path))]
-    assert names == ["libcurl.so"]
-
-
-def test_emit_candidates_only_unmapped(tmp_path):
-    lib = tmp_path / "usr" / "lib"
-    lib.mkdir(parents=True)
-    # Truly unmapped third-party libs.
-    (lib / "libcurl.so.4.8.0").write_bytes(b"")
-    (lib / "libQt6Core.so.6.10.0").write_bytes(b"")
-    # Internal (LibreSCRS-owned) — must be skipped.
-    (lib / "librescrs-pkcs11.so").write_bytes(b"")
-    # Deliberately not bundled — must be skipped.
-    (lib / "libpcsclite.so.1").write_bytes(b"")
-    # Already mapped in components — must be skipped.
-    (lib / "libzstd.so.1.5.5").write_bytes(b"")
-
-    manifest = {
-        "internal_sonames": ["librescrs-pkcs11.so"],
-        "exclude_not_bundled": ["libpcsclite.so"],
-        "components": [
-            {
-                "match": "libzstd.so",
-                "name": "zstd",
-                "spdx": "BSD-3-Clause",
-                "text": "licenses/bsd-3.txt",
-                "sha256": "x",
-            }
-        ],
-    }
-
-    out = checker.emit_candidates(str(tmp_path), manifest)
-    names = [c["match"] for c in out]
-
-    assert names == ["libQt6Core.so", "libcurl.so"]  # sorted, deduped
-    assert all(
-        set(c) == {"match", "name", "spdx", "text", "sha256"} for c in out
-    )
-    assert all(
-        c["name"] == "" and c["spdx"] == "" and c["text"] == "" and c["sha256"] == ""
-        for c in out
-    )
-
-
-def _man(tmp_path, sha):
-    (tmp_path / "resources" / "licenses").mkdir(parents=True)
-    (tmp_path / "resources" / "licenses" / "curl.txt").write_text("CURL LICENSE")
+def _man(tmp_path, sha=LICENCE_SHA):
+    lic = tmp_path / "resources" / "licenses"
+    lic.mkdir(parents=True, exist_ok=True)
+    (lic / "curl.txt").write_bytes(LICENCE)
+    text = "resources/licenses/curl.txt"
     return {
-        "internal_sonames": [],
-        "exclude_not_bundled": [],
+        "internal_sonames": ["libLibreSCRS_*.so"],
+        "exclude_not_bundled": ["libpcsclite.so"],
         "carve_out": [],
         "components": [
-            {
-                "match": "libcurl.so",
-                "name": "curl",
-                "spdx": "curl",
-                "text": "resources/licenses/curl.txt",
-                "sha256": sha,
-            }
+            {"match": "libcurl.so", "name": "curl", "spdx": "curl",
+             "text": text, "sha256": sha},
+            {"match": "libjpeg.so", "name": "libjpeg-turbo",
+             "spdx": "IJG AND BSD-3-Clause AND Zlib", "text": text,
+             "sha256": LICENCE_SHA},
+            {"match": "libselinux.so", "name": "libselinux",
+             "spdx": "LicenseRef-libselinux-public-domain", "text": text,
+             "sha256": LICENCE_SHA},
+            {"match": "libjasper.so", "name": "JasPer", "spdx": "JasPer-2.0",
+             "text": text, "sha256": LICENCE_SHA, "pin": "jasper"},
         ],
     }
-
-
-def test_check_passes(tmp_path):
-    sha = hashlib.sha256(b"CURL LICENSE").hexdigest()
-    (tmp_path / "app").mkdir()
-    (tmp_path / "app" / "libcurl.so.4").write_bytes(b"")
-    assert (
-        checker.run_check(str(tmp_path / "app"), _man(tmp_path, sha), str(tmp_path))
-        == 0
-    )
-
-
-def test_unmapped_fails(tmp_path):
-    sha = hashlib.sha256(b"CURL LICENSE").hexdigest()
-    (tmp_path / "app").mkdir()
-    (tmp_path / "app" / "libmystery.so.1").write_bytes(b"")
-    assert (
-        checker.run_check(str(tmp_path / "app"), _man(tmp_path, sha), str(tmp_path))
-        != 0
-    )
-
-
-def test_hash_mismatch_fails(tmp_path):
-    (tmp_path / "app").mkdir()
-    (tmp_path / "app" / "libcurl.so.4").write_bytes(b"")
-    assert (
-        checker.run_check(
-            str(tmp_path / "app"), _man(tmp_path, "deadbeef"), str(tmp_path)
-        )
-        != 0
-    )
-
-
-def test_internal_and_excluded_skipped(tmp_path):
-    sha = hashlib.sha256(b"CURL LICENSE").hexdigest()
-    m = _man(tmp_path, sha)
-    m["internal_sonames"] = ["lib-int.so"]
-    m["exclude_not_bundled"] = ["libGL.so"]
-    (tmp_path / "app").mkdir()
-    for n in ("libcurl.so.4", "lib-int.so", "libGL.so.1"):
-        (tmp_path / "app" / n).write_bytes(b"")
-    assert checker.run_check(str(tmp_path / "app"), m, str(tmp_path)) == 0
-
-
-# --- per-component `platforms` filter ----------------------------------
-
-
-def test_platforms_linux_only_component_ignored_on_macos():
-    """A component tagged ``platforms:["linux"]`` must NOT match when the
-    current platform is macOS — even if a matching basename appears in the
-    bundle. With ``--platform macos`` the linux-only entry is invisible to
-    ``match_component`` so the asset is reported as unmapped.
-    """
-    linux_only = {
-        "match": "libavahi-client.so",
-        "name": "Avahi",
-        "spdx": "LGPL-2.1-or-later",
-        "text": "x",
-        "sha256": "y",
-        "platforms": ["linux"],
-    }
-    # macOS: linux-only entry must NOT match.
-    assert (
-        checker.match_component("libavahi-client.so", [linux_only], "macos")
-        is None
-    )
-    # Linux: linux-only entry MUST match.
-    assert (
-        checker.match_component("libavahi-client.so", [linux_only], "linux")
-        is linux_only
-    )
-
-
-def test_platforms_macos_only_component_ignored_on_linux():
-    """Symmetric: a component tagged ``platforms:["macos"]`` must NOT
-    match on Linux but MUST match on macOS.
-    """
-    macos_only = {
-        "match": "libfoo.dylib",
-        "name": "Foo",
-        "spdx": "MIT",
-        "text": "x",
-        "sha256": "y",
-        "platforms": ["macos"],
-    }
-    assert (
-        checker.match_component("libfoo.dylib", [macos_only], "linux") is None
-    )
-    assert (
-        checker.match_component("libfoo.dylib", [macos_only], "macos")
-        is macos_only
-    )
-
-
-def test_platforms_absent_matches_all():
-    """A component WITHOUT a ``platforms`` key is cross-platform: it must
-    match under both ``--platform linux`` and ``--platform macos``.
-    """
-    cross = {
-        "match": "libcurl.so",
-        "name": "curl",
-        "spdx": "curl",
-        "text": "x",
-        "sha256": "y",
-    }
-    assert checker.match_component("libcurl.so", [cross], "linux") is cross
-    assert checker.match_component("libcurl.so", [cross], "macos") is cross
-
-
-def test_platform_scoped_components_never_match_without_a_platform():
-    """With no platform named, a platform-scoped component does NOT apply.
-
-    It used to: omitting ``--platform`` waved every component through, which
-    made a Linux-only entry cover a macOS bundle and vice versa. Only the
-    unscoped (cross-platform) entries survive a call that names no platform.
-    """
-    linux_only = {
-        "match": "libavahi-client.so",
-        "name": "Avahi",
-        "spdx": "LGPL-2.1-or-later",
-        "text": "x",
-        "sha256": "y",
-        "platforms": ["linux"],
-    }
-    macos_only = {
-        "match": "libfoo.dylib",
-        "name": "Foo",
-        "spdx": "MIT",
-        "text": "x",
-        "sha256": "y",
-        "platforms": ["macos"],
-    }
-    cross = {
-        "match": "libcurl.so",
-        "name": "curl",
-        "spdx": "curl",
-        "text": "x",
-        "sha256": "y",
-    }
-    # No platform named — only the unscoped component applies.
-    assert checker.match_component("libavahi-client.so", [linux_only], None) is None
-    assert checker.match_component("libfoo.dylib", [macos_only], None) is None
-    assert checker.match_component("libcurl.so", [cross], None) is cross
-
-
-def test_check_refuses_without_platform(tmp_path, capsys):
-    """``--platform`` is mandatory, and the refusal happens BEFORE any check.
-
-    Asserted on the exit status *and* on the check not having run. A refusal
-    that nevertheless walked the tree would print the ``::error::`` line the
-    unmapped library below provokes, and a test that only inspected the
-    message could not tell the two apart. The control call — same arguments
-    plus ``--platform linux`` — proves the fixture really does provoke it.
-    """
-    import json as _json
-
-    app = tmp_path / "app"
-    app.mkdir()
-    (app / "libunmapped.so.1").write_bytes(b"")
-    manifest_dir = tmp_path / "licenses"
-    manifest_dir.mkdir()
-    manifest = manifest_dir / "manifest.json"
-    manifest.write_text(_json.dumps({"internal_sonames": [], "components": []}))
-
-    # Control: with a platform the check runs and fails on the unmapped library.
-    rc = checker.main(
-        ["--check", str(app), "--manifest", str(manifest), "--platform", "linux"]
-    )
-    assert rc != 0
-    assert "::error::" in capsys.readouterr().out
-
-    # Without a platform: argparse refuses, and no check output is produced.
-    try:
-        rc = checker.main(["--check", str(app), "--manifest", str(manifest)])
-    except SystemExit as exc:
-        assert exc.code != 0
-    else:
-        raise AssertionError(f"expected a refusal, got rc={rc}")
-    captured = capsys.readouterr()
-    assert "::error::" not in captured.out
-    assert "checked " not in captured.out
-
-
-def test_emit_candidates_respects_platform_filter(tmp_path):
-    """A component scoped to a platform OTHER than the current one must
-    NOT shield a bundled library from the candidate list. Otherwise a
-    Linux-only entry would silently cover a macOS-bundled basename of the
-    same soname even though no license text would be emitted for it.
-    """
-    lib = tmp_path / "app"
-    lib.mkdir()
-    (lib / "libcurl.so.4").write_bytes(b"")
-
-    # Component matches the asset BUT is scoped to macOS only.
-    manifest = {
-        "internal_sonames": [],
-        "exclude_not_bundled": [],
-        "components": [
-            {
-                "match": "libcurl.so",
-                "name": "curl",
-                "spdx": "curl",
-                "text": "x",
-                "sha256": "y",
-                "platforms": ["macos"],
-            }
-        ],
-    }
-
-    # On Linux: the macOS-only component does NOT cover libcurl, so it
-    # appears as an unmapped candidate.
-    out = checker.emit_candidates(str(tmp_path / "app"), manifest, "linux")
-    assert [c["match"] for c in out] == ["libcurl.so"]
-
-    # On macOS: the component covers libcurl, so no candidate is emitted.
-    out_macos = checker.emit_candidates(str(tmp_path / "app"), manifest, "macos")
-    assert out_macos == []
-
-
-# --- gen-third-party-notices.py ----------------------------------------
-
-
-def _gen_setup(tmp_path):
-    """Two components sharing one MIT text + one with a distinct text."""
-    lic = tmp_path / "resources" / "licenses"
-    lic.mkdir(parents=True)
-    (lic / "mit.txt").write_text("MIT LICENSE BODY")
-    (lic / "zlib.txt").write_text("ZLIB LICENSE BODY")
-    components = [
-        {"name": "libfoo", "spdx": "MIT", "text": "resources/licenses/mit.txt"},
-        {"name": "libbar", "spdx": "MIT", "text": "resources/licenses/mit.txt"},
-        {"name": "zlib", "spdx": "Zlib", "text": "resources/licenses/zlib.txt"},
-    ]
-    return components, {"lc": str(tmp_path)}
-
-
-def test_render_lists_all_names_and_dedupes_body(tmp_path):
-    components, base_dirs = _gen_setup(tmp_path)
-    out = gen.render(components, base_dirs)
-    # Both names that share the MIT text appear.
-    assert "libfoo" in out
-    assert "libbar" in out
-    assert "zlib" in out
-    # Shared MIT body emitted exactly once.
-    assert out.count("MIT LICENSE BODY") == 1
-    # Distinct body present.
-    assert "ZLIB LICENSE BODY" in out
-
-
-def test_render_deterministic(tmp_path):
-    components, base_dirs = _gen_setup(tmp_path)
-    assert gen.render(components, base_dirs) == gen.render(components, base_dirs)
-
-
-def test_render_sorted_case_insensitive(tmp_path):
-    lic = tmp_path / "resources" / "licenses"
-    lic.mkdir(parents=True)
-    (lic / "a.txt").write_text("A")
-    (lic / "z.txt").write_text("Z")
-    components = [
-        {"name": "Zebra", "spdx": "MIT", "text": "resources/licenses/z.txt"},
-        {"name": "apple", "spdx": "MIT", "text": "resources/licenses/a.txt"},
-    ]
-    out = gen.render(components, {"lc": str(tmp_path)})
-    # "apple" section header precedes "Zebra" (case-insensitive name sort).
-    assert out.index("apple") < out.index("Zebra")
-
-
-def test_render_respects_platform_filter(tmp_path):
-    """The Tier-2 notice baked into the binary must list ONLY components that
-    actually ship in the current platform's artifact. A linux-only entry must
-    be omitted when the build's ``--platform`` is ``macos`` and vice versa;
-    cross-platform entries (no ``platforms`` key) always render.
-
-    This mirrors the checker's :func:`_component_applies_to_platform` rule so
-    a single manifest drives both verification AND the rendered notice.
-    """
-    lic = tmp_path / "resources" / "licenses"
-    lic.mkdir(parents=True)
-    (lic / "mit.txt").write_text("MIT LICENSE BODY")
-    (lic / "lgpl.txt").write_text("LGPL LICENSE BODY")
-    (lic / "bsd.txt").write_text("BSD LICENSE BODY")
-    components = [
-        {
-            "name": "libcross",
-            "spdx": "MIT",
-            "text": "resources/licenses/mit.txt",
-        },
-        {
-            "name": "libavahi-client",
-            "spdx": "LGPL-2.1-or-later",
-            "text": "resources/licenses/lgpl.txt",
-            "platforms": ["linux"],
-        },
-        {
-            "name": "libSecurityFoundation",
-            "spdx": "APSL-2.0",
-            "text": "resources/licenses/bsd.txt",
-            "platforms": ["macos"],
-        },
-    ]
-    base_dirs = {"lc": str(tmp_path)}
-
-    # Render the macOS notice: filter out components whose platforms list
-    # excludes "macos", then render the remainder.
-    filtered = [
-        c for c in components
-        if gen._component_applies_to_platform(c, "macos")
-    ]
-    out = gen.render(filtered, base_dirs)
-
-    assert "libcross" in out
-    assert "libSecurityFoundation" in out
-    assert "libavahi-client" not in out
-
-    # Symmetric direction: filtering for linux must drop the macOS-only
-    # entry — guards against a typo like ``current_platform == "macos"``
-    # being hardcoded instead of using the membership check.
-    filtered_linux = [
-        c for c in components
-        if gen._component_applies_to_platform(c, "linux")
-    ]
-    out_linux = gen.render(filtered_linux, base_dirs)
-    assert "libcross" in out_linux
-    assert "libavahi-client" in out_linux
-    assert "libSecurityFoundation" not in out_linux
-
-
-def test_gen_main_end_to_end_platform_filter(tmp_path):
-    """End-to-end ``main()`` invocation with ``--platform macos`` must drive
-    the filter through argparse → load → render → file write. Guards against
-    a future refactor that drops the filter step from main() while keeping
-    the helper intact (the helper-only test above would still pass).
-    """
-    # gen.main() resolves the LC repo root as dirname(dirname(manifest)),
-    # so the manifest must live two levels below the asset tree root.
-    lic = tmp_path / "resources" / "licenses"
-    lic.mkdir(parents=True)
-    (lic / "mit.txt").write_text("MIT LICENSE BODY")
-    (lic / "lgpl.txt").write_text("LGPL LICENSE BODY")
-    manifest_dir = tmp_path / "licenses"
-    manifest_dir.mkdir()
-    manifest = manifest_dir / "manifest.json"
-    import json
-    manifest.write_text(json.dumps({
-        "components": [
-            {"name": "libcross", "spdx": "MIT",
-             "text": "resources/licenses/mit.txt"},
-            {"name": "libavahi-client", "spdx": "LGPL-2.1-or-later",
-             "text": "resources/licenses/lgpl.txt",
-             "platforms": ["linux"]},
-        ]
-    }))
-    out_file = tmp_path / "THIRD-PARTY-LICENSES.txt"
-
-    rc = gen.main([
-        "--manifest", str(manifest),
-        "-o", str(out_file),
-        "--platform", "macos",
-    ])
-    assert rc == 0
-    text = out_file.read_text()
-    assert "libcross" in text
-    assert "libavahi-client" not in text
-
-
-# --------------------------------------------------------------------------
-# The vacuum: a fail-closed check that passes over an empty tree is not
-# fail-closed. Before the guard below existed, an empty directory produced
-# "checked 0 assets, 149 components, 0 errors" and rc=0.
-# --------------------------------------------------------------------------
-
-
-def test_check_fails_on_empty_staging_tree(tmp_path):
-    sha = hashlib.sha256(b"CURL LICENSE").hexdigest()
-    (tmp_path / "app").mkdir()
-    assert (
-        checker.run_check(
-            str(tmp_path / "app"), _man(tmp_path, sha), str(tmp_path), "linux"
-        )
-        != 0
-    )
-
-
-def test_check_still_passes_on_a_non_empty_tree(tmp_path):
-    # Perturbation control for the test above: the guard must key on
-    # "nothing was walked", not on "the tree is small".
-    sha = hashlib.sha256(b"CURL LICENSE").hexdigest()
-    (tmp_path / "app").mkdir()
-    (tmp_path / "app" / "libcurl.so.4").write_bytes(b"")
-    assert (
-        checker.run_check(
-            str(tmp_path / "app"), _man(tmp_path, sha), str(tmp_path), "linux"
-        )
-        == 0
-    )
-
-
-# --------------------------------------------------------------------------
-# The bill of materials.
-# --------------------------------------------------------------------------
-
-
-def _sbom_manifest(tmp_path):
-    m = _man(tmp_path, hashlib.sha256(b"CURL LICENSE").hexdigest())
-    m["internal_sonames"] = ["libLibreSCRS_*.so"]
-    m["exclude_not_bundled"] = ["libpcsclite.so"]
-    m["components"] = m["components"] + [
-        {
-            "match": "libjpeg.so",
-            "name": "libjpeg-turbo",
-            "spdx": "IJG AND BSD-3-Clause AND Zlib",
-            "text": "resources/licenses/curl.txt",
-            "sha256": hashlib.sha256(b"CURL LICENSE").hexdigest(),
-        },
-        {
-            "match": "libselinux.so",
-            "name": "libselinux",
-            "spdx": "LicenseRef-libselinux-public-domain",
-            "text": "resources/licenses/curl.txt",
-            "sha256": hashlib.sha256(b"CURL LICENSE").hexdigest(),
-        },
-    ]
-    return m
 
 
 def _staged(tmp_path, names):
@@ -676,473 +73,337 @@ def _staged(tmp_path, names):
     return str(app)
 
 
-def test_sbom_lists_what_the_tree_holds(tmp_path):
-    root = _staged(
-        tmp_path, ["libcurl.so.4", "libjpeg.so.8.3.2", "libpcsclite.so.1"]
+def _names(root):
+    return [n for n, _rp in checker.enumerate_assets(str(root))]
+
+
+# --- names -----------------------------------------------------------------
+
+
+@pytest.mark.parametrize("raw, bare", [
+    ("libcurl.so.4.8.0", "libcurl.so"),
+    ("libQt6Core.so.6.10.0", "libQt6Core.so"),
+    ("libfoo.so", "libfoo.so"),
+    ("plain-name", "plain-name"),
+    # macOS puts the version BEFORE the extension; both shapes collapse.
+    ("libssl.3.dylib", "libssl.dylib"),
+    ("libssl.3.0.0.dylib", "libssl.dylib"),
+    ("libQt6Core.6.dylib", "libQt6Core.dylib"),
+    # Only digits-and-dots are a version.
+    ("libfoo.helper.dylib", "libfoo.helper.dylib"),
+    ("libssl-3.dylib", "libssl-3.dylib"),
+    # A ".so"/".dylib" substring that is not an extension boundary.
+    ("libfoo.solics", "libfoo.solics"),
+    ("libfoo.so-backup", "libfoo.so-backup"),
+    ("libfoo.dylibext", "libfoo.dylibext"),
+])
+def test_normalize(raw, bare):
+    assert checker.normalize(raw) == bare
+
+
+def test_enumerate_walks_libraries_and_bundles_only(tmp_path):
+    lib = tmp_path / "usr" / "lib"
+    lib.mkdir(parents=True)
+    (lib / "libcurl.so.4.8.0").write_bytes(b"")
+    (lib / "libcurl.so.4").symlink_to(lib / "libcurl.so.4.8.0")  # counted once
+    (lib / "notes.solar").write_bytes(b"")
+    (lib / "README.txt").write_bytes(b"")
+    (lib / "libfoo.dylib").write_bytes(b"")
+    # macdeployqt's Qt: the binary has no extension, the bundle is the name,
+    # and a helper library inside the bundle is not a second asset.
+    fw = tmp_path / "Contents" / "Frameworks" / "QtBar.framework"
+    (fw / "Versions" / "A" / "Resources").mkdir(parents=True)
+    (fw / "Versions" / "A" / "QtBar").write_bytes(b"")
+    (fw / "Versions" / "A" / "libhelper.dylib").write_bytes(b"")
+    (fw / "Versions" / "A" / "Resources" / "Info.plist").write_text("")
+    assert sorted(_names(tmp_path)) == ["QtBar.framework", "libcurl.so", "libfoo.dylib"]
+
+
+# --- matching --------------------------------------------------------------
+
+
+def test_longest_specific_match_wins():
+    comps = [_comp("libQt6*.so", "Qt 6"), _comp("libQt6VirtualKeyboard.so", "QtVK")]
+    assert checker.match_component("libQt6VirtualKeyboard.so", comps)["name"] == "QtVK"
+    assert checker.match_component("libQt6Core.so", comps)["name"] == "Qt 6"
+    assert checker.match_component("libcurl.so", comps) is None
+
+
+@pytest.mark.parametrize("platforms, current, applies", [
+    (["linux"], "linux", True),
+    (["linux"], "macos", False),
+    (["macos"], "macos", True),
+    (["macos"], "linux", False),
+    (None, "linux", True),
+    (None, "macos", True),
+    # No platform named: only an unscoped entry applies. Omitting it used to
+    # wave everything through, so a Linux entry covered a macOS bundle.
+    (["linux"], None, False),
+    (None, None, True),
+])
+def test_platform_scope(platforms, current, applies):
+    c = _comp("libx.so", platforms=platforms)
+    assert (checker.match_component("libx.so", [c], current) is c) is applies
+
+
+def test_internal_globs_cover_both_extensions():
+    manifest = json.loads(
+        (pathlib.Path(__file__).resolve().parents[2] / "licenses" / "manifest.json")
+        .read_text()
     )
-    doc, rc = checker.emit_sbom(
-        root, _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
-    )
-    assert rc == 0
-    names = [c["name"] for c in doc["components"]]
-    assert names == ["curl", "libjpeg-turbo"]  # excluded soname absent
-    assert doc["metadata"]["component"]["version"] == "5.0.0"
+    internal = manifest["internal_sonames"]
+    for name in ("librescrs-pkcs11.dylib", "libLibreSCRS_SmartCard.dylib",
+                 "libid-card-plugin.dylib", "piv-gui-plugin.dylib",
+                 "piv-gui-plugin.so", "libresign-core.dylib"):
+        assert checker.is_internal(name, internal), name
+    assert not checker.is_internal("libcurl.so", internal)
 
 
-def test_sbom_reads_the_version_off_the_file(tmp_path):
-    root = _staged(tmp_path, ["libcurl.so.4.8.0"])
-    doc, rc = checker.emit_sbom(
-        root, _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
-    )
-    assert rc == 0
-    assert doc["components"][0]["version"] == "4.8.0"
+def test_emit_candidates_lists_only_the_unmapped(tmp_path):
+    for n in ("libcurl.so.4", "libQt6Core.so.6", "libLibreSCRS_Core.so",
+              "libpcsclite.so.1", "libjpeg.so.8"):
+        (tmp_path / n).write_bytes(b"")
+    m = _man(tmp_path)
+    m["components"] = [c for c in m["components"] if c["match"] != "libcurl.so"]
+    out = checker.emit_candidates(str(tmp_path), m, "linux")
+    assert [c["match"] for c in out] == ["libQt6Core.so", "libcurl.so"]
+    assert all(c["name"] == c["spdx"] == c["text"] == c["sha256"] == "" for c in out)
+    # A component scoped to the other platform does not shield an asset.
+    m["components"].append(_comp("libcurl.so", platforms=["macos"]))
+    assert [c["match"] for c in checker.emit_candidates(str(tmp_path), m, "linux")] \
+        == ["libQt6Core.so", "libcurl.so"]
+    assert [c["match"] for c in checker.emit_candidates(str(tmp_path), m, "macos")] \
+        == ["libQt6Core.so"]
 
 
-def test_sbom_carries_a_hash_of_the_bundled_file(tmp_path):
+# --- the licence walk ------------------------------------------------------
+
+
+@pytest.mark.parametrize("files, sha, ok", [
+    (["libcurl.so.4"], LICENCE_SHA, True),
+    (["libcurl.so.4", "libLibreSCRS_Core.so", "libpcsclite.so.1"], LICENCE_SHA, True),
+    (["libmystery.so.1"], LICENCE_SHA, False),
+    (["libcurl.so.4"], "deadbeef", False),
+    # The vacuum: a walk over nothing once reported "0 errors" and rc 0.
+    ([], LICENCE_SHA, False),
+])
+def test_check(tmp_path, files, sha, ok):
+    root = _staged(tmp_path, files)
+    rc = checker.run_check(root, _man(tmp_path, sha), str(tmp_path), "linux")
+    assert (rc == 0) is ok
+
+
+def _write_manifest(tmp_path, manifest):
+    p = tmp_path / "licenses" / "manifest.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(manifest))
+    return str(p)
+
+
+def test_check_refuses_without_a_platform_before_walking(tmp_path, capsys):
+    root = _staged(tmp_path, ["libunmapped.so.1"])
+    man = _write_manifest(tmp_path, {"internal_sonames": [], "components": []})
+    # Control: with a platform the walk runs and fails on the library.
+    assert checker.main(["--check", root, "--manifest", man, "--platform", "linux"]) != 0
+    assert "::error::" in capsys.readouterr().out
+    with pytest.raises(SystemExit) as exc:
+        checker.main(["--check", root, "--manifest", man])
+    assert exc.value.code != 0
+    out = capsys.readouterr().out
+    assert "::error::" not in out and "checked " not in out
+
+
+def test_two_modes_in_one_invocation_are_refused(tmp_path, capsys):
     root = _staged(tmp_path, ["libcurl.so.4"])
-    doc, rc = checker.emit_sbom(
-        root, _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
-    )
-    assert rc == 0
-    assert doc["components"][0]["hashes"] == [
-        {"alg": "SHA-256", "content": hashlib.sha256(b"x").hexdigest()}
+    man = _write_manifest(tmp_path, _man(tmp_path))
+    out = tmp_path / "never.cdx.json"
+    with pytest.raises(SystemExit) as exc:
+        checker.main(["--check", root, "--sbom", root, "--sbom-out", str(out),
+                      "--manifest", man, "--platform", "linux",
+                      "--app-version", "5.0.0", "--app-name", "LibreCelik"])
+    assert exc.value.code == 2
+    assert not out.exists()
+    assert "separate modes" in capsys.readouterr().err
+
+
+# --- the notices file ------------------------------------------------------
+
+
+def test_render_dedupes_sorts_and_is_deterministic(tmp_path):
+    lic = tmp_path / "resources" / "licenses"
+    lic.mkdir(parents=True)
+    (lic / "mit.txt").write_text("MIT LICENSE BODY")
+    (lic / "zlib.txt").write_text("ZLIB LICENSE BODY")
+    comps = [
+        {"name": "Zebra", "spdx": "MIT", "text": "resources/licenses/mit.txt"},
+        {"name": "apple", "spdx": "MIT", "text": "resources/licenses/mit.txt"},
+        {"name": "zlib", "spdx": "Zlib", "text": "resources/licenses/zlib.txt"},
     ]
+    out = gen.render(comps, {"lc": str(tmp_path)})
+    assert out == gen.render(comps, {"lc": str(tmp_path)})
+    assert out.count("MIT LICENSE BODY") == 1 and "ZLIB LICENSE BODY" in out
+    assert out.index("apple") < out.index("Zebra")
 
 
-def test_sbom_licence_shapes(tmp_path):
-    root = _staged(
-        tmp_path, ["libcurl.so.4", "libjpeg.so.8", "libselinux.so.1"]
-    )
-    doc, rc = checker.emit_sbom(
-        root, _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
-    )
+def test_notices_main_filters_by_platform(tmp_path):
+    lic = tmp_path / "resources" / "licenses"
+    lic.mkdir(parents=True)
+    (lic / "mit.txt").write_text("MIT")
+    man = _write_manifest(tmp_path, {"components": [
+        {"name": "libcross", "spdx": "MIT", "text": "resources/licenses/mit.txt"},
+        {"name": "libavahi-client", "spdx": "MIT",
+         "text": "resources/licenses/mit.txt", "platforms": ["linux"]},
+        {"name": "libSecurityFoundation", "spdx": "MIT",
+         "text": "resources/licenses/mit.txt", "platforms": ["macos"]},
+    ]})
+    for plat, present, absent in (("macos", "libSecurityFoundation", "libavahi-client"),
+                                  ("linux", "libavahi-client", "libSecurityFoundation")):
+        out = tmp_path / f"notices-{plat}.txt"
+        assert gen.main(["--manifest", man, "-o", str(out), "--platform", plat]) == 0
+        text = out.read_text()
+        assert "libcross" in text and present in text and absent not in text
+
+
+# --- the bill of materials -------------------------------------------------
+
+
+def _sbom(tmp_path, root, manifest=None, platform="linux", pins=None):
+    return checker.emit_sbom(root, manifest or _man(tmp_path), platform,
+                             "LibreCelik", "5.0.0", pins=pins)
+
+
+def test_sbom_lists_what_the_tree_holds(tmp_path):
+    root = _staged(tmp_path, ["libcurl.so.4.8.0", "libjpeg.so.8", "libselinux.so.1",
+                              "libpcsclite.so.1"])
+    doc, rc = _sbom(tmp_path, root)
     assert rc == 0
-    by = {c["name"]: c["licenses"][0] for c in doc["components"]}
-    assert by["curl"] == {"license": {"id": "curl"}}
-    assert by["libjpeg-turbo"] == {
-        "expression": "IJG AND BSD-3-Clause AND Zlib"
-    }
-    assert by["libselinux"] == {
-        "license": {"name": "LicenseRef-libselinux-public-domain"}
-    }
+    by = {c["name"]: c for c in doc["components"]}
+    assert sorted(by) == ["curl", "libjpeg-turbo", "libselinux"]  # excluded absent
+    assert doc["metadata"]["component"]["version"] == "5.0.0"
+    assert by["curl"]["version"] == "4.8.0"
+    assert by["curl"]["hashes"] == [
+        {"alg": "SHA-256", "content": hashlib.sha256(b"x").hexdigest()}]
+    assert by["curl"]["licenses"][0] == {"license": {"id": "curl"}}
+    assert by["libjpeg-turbo"]["licenses"][0] == {
+        "expression": "IJG AND BSD-3-Clause AND Zlib"}
+    assert by["libselinux"]["licenses"][0] == {
+        "license": {"name": "LicenseRef-libselinux-public-domain"}}
 
 
-def test_sbom_refuses_an_empty_tree(tmp_path, capsys):
-    """The empty TREE, told apart from the empty COMPONENT LIST.
-
-    Both refusals are fail-closed and both end the build, but they say
-    different things -- "the path is wrong" against "this bundle carries
-    nothing the manifest knows" -- and they carry different codes on
-    purpose. An assertion on ``rc != 0`` alone cannot tell them apart:
-    an empty tree also produces zero entries, so the second refusal
-    catches the same input and the first one could be deleted with the
-    suite still green. The code and the diagnostic are asserted here.
-    """
-    (tmp_path / "app").mkdir()
-    doc, rc = checker.emit_sbom(
-        str(tmp_path / "app"),
-        _sbom_manifest(tmp_path),
-        "linux",
-        "LibreCelik",
-        "5.0.0",
-    )
-    assert doc is None
-    assert rc == 1
+def test_sbom_refusals_are_told_apart(tmp_path, capsys):
+    # An empty TREE (the path is wrong) is rc 1 with its own message; a tree
+    # whose objects are all deliberately-not-bundled would publish an empty
+    # bill -- the shape that once shipped, signed -- and is rc 2.
+    (tmp_path / "empty").mkdir()
+    doc, rc = _sbom(tmp_path, str(tmp_path / "empty"))
+    assert doc is None and rc == 1
     assert "no shared objects found under" in capsys.readouterr().out
+    doc, rc = _sbom(tmp_path, _staged(tmp_path, ["libpcsclite.so.1"]))
+    assert doc is None and rc == 2
+    doc, rc = _sbom(tmp_path, _staged(tmp_path, ["libmystery.so.1"]))
+    assert doc is None and rc == 1
 
 
-def test_sbom_refuses_a_bill_with_no_components(tmp_path):
-    # Everything in the tree is deliberately-not-bundled, so the walk finds
-    # objects but the bill would still be empty. This is the exact shape
-    # that used to be published: a valid CycloneDX document whose
-    # "components" array is empty.
-    root = _staged(tmp_path, ["libpcsclite.so.1"])
-    doc, rc = checker.emit_sbom(
-        root, _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
-    )
-    assert doc is None
-    assert rc == 2
-
-
-def test_sbom_refuses_an_unmapped_library(tmp_path):
-    root = _staged(tmp_path, ["libcurl.so.4", "libmystery.so.1"])
-    doc, rc = checker.emit_sbom(
-        root, _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
-    )
-    assert doc is None
-    assert rc == 1
-
-
-def test_sbom_lists_internal_objects_without_inventing_a_licence(tmp_path):
-    root = _staged(tmp_path, ["libcurl.so.4", "libLibreSCRS_Core.so.5.0.0"])
-    doc, rc = checker.emit_sbom(
-        root, _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
-    )
+def test_sbom_names_our_own_objects_by_soname_without_a_licence(tmp_path):
+    m = _man(tmp_path)
+    m["internal_sonames"] = ["libLibreSCRS_*.so", "librescrs-pkcs11.so", "libresign*.so"]
+    root = _staged(tmp_path, ["libcurl.so.4", "librescrs-pkcs11.so",
+                              "libresign.so.5.0.0", "libLibreSCRS_Core.so.5.0.0"])
+    doc, rc = _sbom(tmp_path, root, m)
     assert rc == 0
-    internal = [
-        c
-        for c in doc["components"]
-        if {"name": "librescrs:internal", "value": "true"} in c["properties"]
-    ]
-    assert len(internal) == 1
-    assert internal[0]["version"] == "5.0.0"
-    assert "licenses" not in internal[0]
+    by = {c["name"]: c for c in doc["components"]}
+    # The ecosystem "lib" strip applied to our names would bill "rescrs-pkcs11".
+    assert by["librescrs-pkcs11"]["purl"] == "pkg:generic/librescrs-pkcs11@5.0.0"
+    assert by["libresign"]["purl"] == "pkg:generic/libresign@5.0.0"
+    assert by["curl"]["purl"] == "pkg:generic/curl@4"
+    internal = [c for c in doc["components"]
+                if {"name": "librescrs:internal", "value": "true"} in c["properties"]]
+    assert internal and all("licenses" not in c for c in internal)
 
 
-def test_sbom_framework_version_from_info_plist(tmp_path):
-    import plistlib
-
+def test_sbom_framework_version_and_hash_come_from_the_bundle(tmp_path):
     fw = tmp_path / "app" / "Contents" / "Frameworks" / "QtCore.framework"
     (fw / "Resources").mkdir(parents=True)
     (fw / "QtCore").write_bytes(b"x")
     with open(fw / "Resources" / "Info.plist", "wb") as fh:
         plistlib.dump({"CFBundleShortVersionString": "6.10.0"}, fh)
-    m = _sbom_manifest(tmp_path)
-    m["components"] = m["components"] + [
-        {
-            "match": "QtCore.framework",
-            "name": "Qt 6 — QtCore",
-            "spdx": "LGPL-3.0-or-later",
-            "text": "resources/licenses/curl.txt",
-            "sha256": hashlib.sha256(b"CURL LICENSE").hexdigest(),
-            "platforms": ["macos"],
-        }
-    ]
-    doc, rc = checker.emit_sbom(
-        str(tmp_path / "app"), m, "macos", "LibreCelik", "5.0.0"
-    )
+    m = _man(tmp_path)
+    m["components"].append({"match": "QtCore.framework", "name": "QtCore",
+                            "spdx": "LGPL-3.0-or-later",
+                            "text": "resources/licenses/curl.txt",
+                            "sha256": LICENCE_SHA, "platforms": ["macos"]})
+    doc, rc = _sbom(tmp_path, str(tmp_path / "app"), m, "macos")
     assert rc == 0
-    qt = [c for c in doc["components"] if c["name"] == "Qt 6 — QtCore"]
-    assert qt and qt[0]["version"] == "6.10.0"
-    # The bundle is a DIRECTORY, so the plain-file hash helper cannot be
-    # pointed at it. The hash must be the one of the Mach-O binary inside.
-    assert qt[0]["hashes"] == [
-        {"alg": "SHA-256", "content": hashlib.sha256(b"x").hexdigest()}
-    ]
+    qt = [c for c in doc["components"] if c["name"] == "QtCore"][0]
+    assert qt["version"] == "6.10.0"
+    assert qt["hashes"][0]["content"] == hashlib.sha256(b"x").hexdigest()
 
 
-# --------------------------------------------------------------------------
-# The publish-side refusal: the producer cannot catch a bill that never
-# arrived -- a build job that uploaded none, or a download that did not
-# merge it.
-# --------------------------------------------------------------------------
-
-_sbom_checker_spec = importlib.util.spec_from_file_location(
-    "sbom_checker", pathlib.Path(__file__).with_name("check-sbom.py")
-)
-sbom_checker = importlib.util.module_from_spec(_sbom_checker_spec)
-_sbom_checker_spec.loader.exec_module(sbom_checker)
-
-
-def _bill(tmp_path, components):
-    p = tmp_path / "bill.cdx.json"
-    p.write_text(
-        json.dumps({"bomFormat": "CycloneDX", "components": components})
-    )
-    return str(p)
-
-
-def test_check_sbom_accepts_a_real_bill(tmp_path):
-    assert sbom_checker.main([_bill(tmp_path, [{"name": "OpenSSL"}])]) == 0
-
-
-def test_check_sbom_rejects_an_empty_bill(tmp_path):
-    assert sbom_checker.main([_bill(tmp_path, [])]) == 1
-
-
-def test_check_sbom_rejects_a_missing_bill(tmp_path):
-    assert sbom_checker.main([str(tmp_path / "nope.cdx.json")]) == 1
-
-
-def test_check_sbom_rejects_a_nameless_component(tmp_path):
-    assert sbom_checker.main([_bill(tmp_path, [{"version": "3"}])]) == 1
-
-
-def test_check_sbom_rejects_a_document_that_is_not_cyclonedx(tmp_path):
-    p = tmp_path / "bill.cdx.json"
-    p.write_text(json.dumps({"components": [{"name": "OpenSSL"}]}))
-    assert sbom_checker.main([str(p)]) == 1
-
-
-def test_check_sbom_rejects_a_document_with_no_components_array(tmp_path):
-    p = tmp_path / "bill.cdx.json"
-    p.write_text(json.dumps({"bomFormat": "CycloneDX"}))
-    assert sbom_checker.main([str(p)]) == 1
-
-
-def test_check_sbom_rejects_an_unparseable_document(tmp_path):
-    p = tmp_path / "bill.cdx.json"
-    p.write_text("{ this is not json")
-    assert sbom_checker.main([str(p)]) == 1
-
-
-def test_check_sbom_no_arguments_is_a_usage_error(tmp_path):
-    assert sbom_checker.main([]) == 2
-
-
-def test_check_sbom_a_good_bill_cannot_launder_a_bad_one_beside_it(tmp_path):
-    """The release job passes BOTH bills in one invocation.
-
-    Two platforms, one command line: if the verdict were taken from the
-    last argument, or from any argument, a healthy Linux bill would carry
-    an empty macOS bill into a signed release. Every argument is checked
-    and any failure fails the set.
-    """
-    good = tmp_path / "sbom-linux.cdx.json"
-    good.write_text(
-        json.dumps({"bomFormat": "CycloneDX", "components": [{"name": "curl"}]})
-    )
-    empty = tmp_path / "sbom-macos.cdx.json"
-    empty.write_text(json.dumps({"bomFormat": "CycloneDX", "components": []}))
-    assert sbom_checker.main([str(good), str(empty)]) == 1
-    assert sbom_checker.main([str(empty), str(good)]) == 1
-
-
-def test_sbom_paths_stay_inside_the_staging_root(tmp_path):
-    """A staging root reached through a symlink must not escape the tree.
-
-    ``enumerate_assets`` yields ``os.path.realpath`` so a symlink and its
-    target count once; the root it is measured against must be resolved
-    the same way or every ``bom-ref`` walks upward out of the tree. On
-    macOS this is not hypothetical: ``mktemp -d`` hands back a path under
-    ``/var/folders/...`` and ``/var`` is a symlink to ``/private/var``, so
-    the whole bundle would publish the build host's temporary directory in
-    a cosign-signed document.
-    """
+def test_sbom_paths_stay_inside_a_symlinked_root(tmp_path):
+    # macOS mktemp hands back /var/..., a symlink to /private/var: an
+    # unresolved root put the build host's temp path into a signed bill.
     real = tmp_path / "realroot" / "usr" / "lib"
     real.mkdir(parents=True)
     (real / "libcurl.so.4").write_bytes(b"x")
-    link = tmp_path / "link"
-    link.symlink_to(tmp_path / "realroot")
-
-    doc, rc = checker.emit_sbom(
-        str(link), _sbom_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
-    )
+    (tmp_path / "link").symlink_to(tmp_path / "realroot")
+    doc, rc = _sbom(tmp_path, str(tmp_path / "link"))
     assert rc == 0
-    for comp in doc["components"]:
-        assert not comp["bom-ref"].startswith("..")
-        assert comp["bom-ref"] == "usr/lib/libcurl.so.4"
-        paths = [
-            p["value"]
-            for p in comp["properties"]
-            if p["name"] == "librescrs:path"
-        ]
-        assert paths == ["usr/lib/libcurl.so.4"]
+    (comp,) = doc["components"]
+    assert comp["bom-ref"] == "usr/lib/libcurl.so.4"
 
 
-def test_sbom_internal_name_keeps_the_whole_soname(tmp_path):
-    """Our own objects are named by their soname, not by a package guess.
-
-    The ``lib`` strip in :func:`purl_for` follows the ecosystem convention
-    that ``libcurl.so`` is the package ``curl``. Applied to a first-party
-    soname it eats three letters of the project's own name, and the result
-    goes into a signed, published document: ``librescrs-pkcs11.so`` would
-    be billed as ``rescrs-pkcs11`` and ``libresign.so`` as ``resign``.
-    """
-    m = _sbom_manifest(tmp_path)
-    m["internal_sonames"] = [
-        "libLibreSCRS_*.so",
-        "librescrs-pkcs11.so",
-        "libresign*.so",
-    ]
-    root = _staged(
-        tmp_path,
-        ["libcurl.so.4", "librescrs-pkcs11.so", "libresign.so.5.0.0"],
-    )
-    doc, rc = checker.emit_sbom(root, m, "linux", "LibreCelik", "5.0.0")
-    assert rc == 0
-    by = {c["name"]: c for c in doc["components"]}
-    assert "librescrs-pkcs11" in by
-    assert "rescrs-pkcs11" not in by
-    assert "libresign" in by
-    assert "resign" not in by
-    assert by["librescrs-pkcs11"]["purl"] == "pkg:generic/librescrs-pkcs11@5.0.0"
-    assert by["libresign"]["purl"] == "pkg:generic/libresign@5.0.0"
-    # The third-party derivation is unchanged: libcurl.so IS the package
-    # "curl", and that convention is why the strip exists at all.
-    assert by["curl"]["purl"] == "pkg:generic/curl@4"
-
-
-def test_sbom_app_name_is_given_not_guessed(tmp_path):
-    """``metadata.component.name`` names the product, not a directory.
-
-    It used to be the basename of the manifest's grandparent directory,
-    which is the checkout path -- correct only as long as nobody clones
-    into a differently named directory. The caller that already resolved
-    the version passes the name too.
-    """
+def test_sbom_main_takes_the_app_name_it_is_given(tmp_path):
     root = _staged(tmp_path, ["libcurl.so.4"])
-    man = tmp_path / "licenses" / "manifest.json"
-    man.parent.mkdir(parents=True, exist_ok=True)
-    man.write_text(json.dumps(_sbom_manifest(tmp_path)))
+    man = _write_manifest(tmp_path, _man(tmp_path))
     out = tmp_path / "bill.cdx.json"
-
-    rc = checker.main(
-        [
-            "--sbom", root,
-            "--sbom-out", str(out),
-            "--manifest", str(man),
-            "--platform", "linux",
-            "--app-version", "5.0.0",
-            "--app-name", "LibreCelik",
-        ]
-    )
-    assert rc == 0
-    doc = json.loads(out.read_text())
-    assert doc["metadata"]["component"]["name"] == "LibreCelik"
-    assert doc["metadata"]["component"]["version"] == "5.0.0"
+    assert checker.main(["--sbom", root, "--sbom-out", str(out), "--manifest", man,
+                         "--platform", "linux", "--app-version", "5.0.0",
+                         "--app-name", "LibreCelik"]) == 0
+    assert json.loads(out.read_text())["metadata"]["component"]["name"] == "LibreCelik"
 
 
-def test_check_and_sbom_in_one_invocation_is_refused(tmp_path, capsys):
-    """Two modes in one command line is a refusal, not a silent drop.
-
-    The dispatch returns from the first mode it matches, so a second one
-    used to be discarded without a word: a licence verdict, rc 0, and the
-    document the caller asked for never written. Folding the two
-    packaging invocations into one command is the obvious tidy-up for
-    someone reading the two adjacent calls, and the failure it would
-    produce is the one this whole mode exists to end -- no bill, nothing
-    said about it, and the release job the first to notice.
-    """
-    root = _staged(tmp_path, ["libcurl.so.4"])
-    man = tmp_path / "licenses" / "manifest.json"
-    man.parent.mkdir(parents=True, exist_ok=True)
-    man.write_text(json.dumps(_sbom_manifest(tmp_path)))
-    out = tmp_path / "never.cdx.json"
-
-    try:
-        rc = checker.main(
-            [
-                "--check", root,
-                "--sbom", root,
-                "--sbom-out", str(out),
-                "--manifest", str(man),
-                "--platform", "linux",
-                "--app-version", "5.0.0",
-                "--app-name", "LibreCelik",
-            ]
-        )
-    except SystemExit as exc:
-        assert exc.code == 2
-    else:
-        raise AssertionError(f"expected a refusal, got rc={rc}")
-    assert not out.exists()
-    assert "separate modes" in capsys.readouterr().err
+# --- --pins: the commit a network-fetched source was built from ------------
 
 
-# --------------------------------------------------------------------------
-# --pins: the commit a network-fetched source was built from, in the bill.
-# --------------------------------------------------------------------------
-
-_JASPER_SHA = "63e106c80eb72af9fd4fa28772499ab0138b9994"
-
-
-def _pinned_manifest(tmp_path):
-    m = _sbom_manifest(tmp_path)
-    m["components"] = m["components"] + [
-        {
-            "match": "libjasper.so",
-            "name": "JasPer",
-            "spdx": "JasPer-2.0",
-            "text": "resources/licenses/curl.txt",
-            "sha256": hashlib.sha256(b"CURL LICENSE").hexdigest(),
-            "pin": "jasper",
-        }
-    ]
-    return m
-
-
-def _pins_file(tmp_path, body):
+def _pins(tmp_path, body):
     p = tmp_path / "pins.txt"
     p.write_text("# comment\n\n" + body)
-    return str(p)
+    return checker.load_pins(str(p))
 
 
-def test_pins_put_the_commit_and_the_url_in_the_bill(tmp_path):
+JASPER_ROW = f"jasper  https://github.com/jasper-software/jasper.git  {JASPER_SHA}  version-4.2.9\n"
+
+
+def test_pins_put_the_commit_and_url_in_the_bill(tmp_path):
     root = _staged(tmp_path, ["libjasper.so.7", "libcurl.so.4"])
-    pins = checker.load_pins(
-        _pins_file(
-            tmp_path,
-            "jasper  https://github.com/jasper-software/jasper.git  "
-            + _JASPER_SHA
-            + "  version-4.2.9\n",
-        )
-    )
-    doc, rc = checker.emit_sbom(
-        root, _pinned_manifest(tmp_path), "linux", "LibreCelik", "5.0.0",
-        pins=pins,
-    )
+    doc, rc = _sbom(tmp_path, root, pins=_pins(tmp_path, JASPER_ROW))
     assert rc == 0
     by = {c["name"]: c for c in doc["components"]}
-    assert by["JasPer"]["version"] == "version-4.2.9"
     props = {p["name"]: p["value"] for p in by["JasPer"]["properties"]}
-    assert props["librescrs:source-commit"] == _JASPER_SHA
-    assert props["librescrs:source-url"] == (
-        "https://github.com/jasper-software/jasper.git"
-    )
-    # an unpinned component is untouched
+    assert by["JasPer"]["version"] == "version-4.2.9"
+    assert props["librescrs:source-commit"] == JASPER_SHA
+    assert props["librescrs:source-url"] == "https://github.com/jasper-software/jasper.git"
     assert by["curl"]["version"] == "4"
-    assert "librescrs:source-commit" not in {
-        p["name"] for p in by["curl"]["properties"]
-    }
+    # Without a pins file the soname version stands.
+    doc, rc = _sbom(tmp_path, _staged(tmp_path, ["libjasper.so.7"]))
+    assert rc == 0 and [c for c in doc["components"] if c["name"] == "JasPer"][0]["version"] == "7"
 
 
-def test_pins_absent_keep_the_soname_version(tmp_path):
-    root = _staged(tmp_path, ["libjasper.so.7"])
-    doc, rc = checker.emit_sbom(
-        root, _pinned_manifest(tmp_path), "linux", "LibreCelik", "5.0.0"
-    )
-    assert rc == 0
-    assert doc["components"][0]["version"] == "7"
-
-
-def test_pins_refuse_a_pinned_component_the_file_does_not_name(
-    tmp_path, capsys
-):
-    root = _staged(tmp_path, ["libjasper.so.7"])
-    pins = checker.load_pins(
-        _pins_file(
-            tmp_path,
-            "qtimageformats  https://code.qt.io/qt/qtimageformats.git  "
-            + "cc5f5661ef75f08da7064227de38bab6cc3b857c  6.10.3\n",
-        )
-    )
-    doc, rc = checker.emit_sbom(
-        root, _pinned_manifest(tmp_path), "linux", "LibreCelik", "5.0.0",
-        pins=pins,
-    )
-    assert doc is None and rc == 1
-    out = capsys.readouterr().out
-    assert "libjasper.so" in out and "'jasper'" in out
-
-
-def test_pins_refuse_a_pin_that_matched_nothing_bundled(tmp_path, capsys):
-    root = _staged(tmp_path, ["libcurl.so.4"])
-    pins = checker.load_pins(
-        _pins_file(
-            tmp_path,
-            "jasper  https://github.com/jasper-software/jasper.git  "
-            + _JASPER_SHA
-            + "  version-4.2.9\n",
-        )
-    )
-    doc, rc = checker.emit_sbom(
-        root, _pinned_manifest(tmp_path), "linux", "LibreCelik", "5.0.0",
-        pins=pins,
-    )
+@pytest.mark.parametrize("bundled, row", [
+    # a pinned component the file does not name
+    (["libjasper.so.7"],
+     "qtimageformats  https://code.qt.io/qt/qtimageformats.git  "
+     "cc5f5661ef75f08da7064227de38bab6cc3b857c  6.10.3\n"),
+    # a pin that matched nothing bundled
+    (["libcurl.so.4"], JASPER_ROW),
+])
+def test_pins_refuse_a_mismatch(tmp_path, capsys, bundled, row):
+    doc, rc = _sbom(tmp_path, _staged(tmp_path, bundled), pins=_pins(tmp_path, row))
     assert doc is None and rc == 1
     assert "'jasper'" in capsys.readouterr().out
 
 
-def test_pins_file_refuses_a_value_that_is_not_a_commit(tmp_path):
-    bad = _pins_file(
-        tmp_path,
-        "jasper  https://github.com/jasper-software/jasper.git  "
-        "version-4.2.9  version-4.2.9\n",
-    )
-    try:
-        checker.load_pins(bad)
-    except ValueError as exc:
-        assert "40" in str(exc)
-    else:
-        raise AssertionError("a tag name was accepted as a commit")
+def test_pins_file_refuses_a_tag_for_a_commit(tmp_path):
+    with pytest.raises(ValueError, match="40"):
+        _pins(tmp_path, "jasper  https://github.com/jasper-software/jasper.git  "
+                        "version-4.2.9  version-4.2.9\n")

@@ -17,5 +17,4 @@
 
 ci.yml:license-drift-guard:9    The packaging half of this job runs only when the change touched packaging, decided by a path filter in an earlier job. This row goes if that filter goes.
 ci.yml:license-drift-guard:10    The packaging half of this job runs only when the change touched packaging, decided by a path filter in an earlier job. This row goes if that filter goes.
-ci.yml:coverage:10    The coverage job runs only on workflow_dispatch: the ratchet compares against a baseline recorded in one environment, and the runner image moves the compiler under it. This row goes when the job moves to push on a pinned environment.
 ci.yml:package:4    No repository or organisation variable named PACKAGE_JOB_ENABLED exists, so this job has never run once and the packaging gate it carries has never judged anything. This row goes when the release decision on distribution packages for the agent is taken, either way.

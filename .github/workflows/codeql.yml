@@ -1,22 +1,26 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 name: CodeQL
 
-# GitHub CodeQL static analysis for the C++ surface, on every PR plus a
-# weekly schedule.
+# GitHub CodeQL static analysis for the C++ surface: on every pull request,
+# weekly, and on the ci/ branches that change the CI itself. Not on every
+# push to main -- a full analysis costs about half an hour, and the weekly run
+# still measures main.
 
 on:
   push:
-    branches: [main, 'ci/**']
+    branches: ['ci/**']
   pull_request:
     branches: [main]
   schedule:
     - cron: '0 4 * * 0'
 
+permissions: {}
+
 jobs:
   analyze:
     timeout-minutes: 60
     name: Analyze (cpp)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: read
@@ -24,19 +28,20 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build python3-jsonschema
 
-      - name: Install Qt 6.10
-        uses: jurplel/install-qt-action@v4
+      - name: Install Qt 6.10.3
+        uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125  # v4.4.1
         with:
-          version: '6.10.*'
+          version: '6.10.3'
           host: linux
           target: desktop
           arch: linux_gcc_64
@@ -47,7 +52,7 @@ jobs:
         run: python3 -m pip install --break-system-packages --user jsonschema
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2  # v4.38.2
         with:
           languages: cpp
           queries: security-and-quality
@@ -64,6 +69,6 @@ jobs:
           cmake --build build -j4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2  # v4.38.2
         with:
           category: "/language:cpp"

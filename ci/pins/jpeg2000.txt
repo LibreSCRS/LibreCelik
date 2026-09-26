@@ -10,7 +10,7 @@
 #   3. ci/scripts/check-network-pins.sh refuses a clone this file does not name
 #
 # qtimageformats is built against the Qt that jurplel/install-qt-action
-# installs ('6.10.*' in the workflows), so its pin moves with that Qt version:
+# installs (one exact version in every workflow), so its pin moves with that Qt version:
 # a plugin source older or newer than the Qt it is installed into is the
 # mismatch this pin is not allowed to hide.
 #

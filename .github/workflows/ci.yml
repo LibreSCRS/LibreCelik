@@ -7,23 +7,27 @@ on:
   pull_request:
     branches: [main]
 
-  # Manual runs. Without this a job that is deliberately not part of every pull
-  # request -- a coverage pass that takes an hour, say -- cannot be started at
-  # all: a branch that is not a pull request gets no run, and a gate that cannot
-  # be triggered is green by construction.
+  # Manual runs. A branch that is not a pull request otherwise gets no run,
+  # and a job that cannot be triggered is green by construction.
   workflow_dispatch:
+
+# Every job names the permissions it needs; the workflow grants none.
+permissions: {}
 
 jobs:
   format-check:
     timeout-minutes: 15
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
       # fetch-depth: 0 because the self-test runner picks its set with
       # `git ls-files`, and a shallow checkout is a known source of a
       # different set here than locally.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install clang-format-21
         run: |
@@ -33,7 +37,7 @@ jobs:
           sudo apt-get install -y clang-format-21
 
       - name: Check clang-format
-        # The roots live in ci/format-dirs.txt, which the scope check below
+        # The roots live in ci/format-dirs.txt, which the shared scope check
         # reads too: a directory nobody formats cannot appear without one of
         # these two steps saying so.
         #
@@ -47,155 +51,18 @@ jobs:
             \( -name '*.cpp' -o -name '*.h' -o -name '*.hpp' -o -name '*.mm' \) -print0 \
             | xargs -0 -r clang-format-21 --dry-run --Werror
 
-      - name: Check every tracked source is reachable by the formatter
-        run: ./ci/scripts/check-format-scope.sh
-
-      - name: Check every skip carries a reason
-        # A test that skips without saying why is indistinguishable from a test
-        # that passed. Costs a second and builds nothing.
-        run: ./ci/scripts/check-skip-reasons.sh
-
-      - name: Changelog and version agree on the pending release
-        # Run on every push with the version this tree is heading for, so the
-        # agreement is proved weeks before the tag rather than first on a tag
-        # that cannot be taken back. The release job calls the same script with
-        # the tag's version.
-        run: ci/scripts/check-release-lockstep.sh "$(head -n1 VERSION | tr -d '[:space:]')"
-
-      - name: Every job carries a time bound
-        # An unbounded job that hangs holds a runner for six hours and will
-        # not serve its log until the run is cancelled, so the failing test
-        # cannot even be named. This fails when a new job arrives without a
-        # bound, which is the only moment the omission is cheap to fix.
-        run: ci/scripts/check-job-timeouts.sh
-
-      - name: Every shipped gate is wired into CI
-        # A gate nobody runs is not a gate: this repository shipped
-        # tools/dup-scan.py and tools/canonical-types.py, both self-tested,
-        # and no workflow here named either until this gate arrived.
-        run: ci/scripts/check-gates-wired.sh
-
-      - name: Gate-wiring check self-test
-        run: ci/scripts/check-gates-wired.selftest.sh
-
-      - name: Canonical declaration registry
-        # Single-checkout subset of the workspace scan. The cross-repository
-        # half -- duplicate bodies between two checkouts -- needs every tree
-        # side by side, which no single repository's CI has; this half is the
-        # part one repository can prove on its own.
-        run: python3 tools/canonical-types.py --repo "$(basename "$PWD")"
-
-      - name: Duplicate bodies (this checkout)
-        run: python3 tools/dup-scan.py --repo "$(basename "$PWD")"
-
-      - name: Every first-party version floor names the major in VERSION
-        # The 4.x sweep before 5.0 searched for the token `4.2`; the floor that
-        # mattered read `4.0`, in the only executable consumer the project
-        # ships, and survived. This measures the property instead: every
-        # first-party find_package/find_dependency floor must name the major
-        # the VERSION file names. It reads VERSION and never `git describe`, so
-        # it is decidable before a tag exists -- which is the whole window in
-        # which the mistake is cheap. --min 1 is the vacuum guard: a scan that
-        # matches nothing is unmeasured, not clean.
-        run: ci/scripts/check-version-floors.sh --min 1
-
-      - name: Prove the floor gate still fails when it should
-        # No compiler and no build: it runs its whole case list in seconds.
-        # A gate nobody has seen fail is a line in a workflow file.
-        run: ./ci/scripts/check-version-floors.selftest.sh
-
-      - name: The version this tree stamps names the major in VERSION
-        # The floor gate reads VERSION and the sources, so it stays green
-        # whatever the version derivation does, and a check that configures
-        # with git switched off is measuring the one input under which a tag
-        # cannot win. Between code freeze and the tag `git describe` still
-        # answers with the PREVIOUS release, and a tree that lets it decide
-        # installs a package whose major contradicts its own VERSION, changelog
-        # and packaging. This configures the real CMakeLists against a stubbed
-        # tag, in both directions, and creates no tag anywhere.
-        run: ci/scripts/check-version-stamp.sh --verbose
-
-      - name: Prove the stamp gate still fails when it should
-        # Seven fixtures, no compiler, no build. Two of them are shapes that
-        # have really been written: the tag deciding unconditionally, and git
-        # being ignored altogether.
-        run: ./ci/scripts/check-version-stamp.selftest.sh
-
-      - name: The artefact-producer check can still fail
-        run: ./ci/scripts/check-release-artifacts.selftest.sh
-
-      - name: Every artefact a release publishes has a producer in the same run
-        # A release job that collects artefacts by pattern is happy with an
-        # empty match: the release simply carries one asset fewer, and the
-        # first run that could notice is the tag. This reads the pairing
-        # through needs on every push instead.
-        run: ci/scripts/check-release-artifacts.sh
-
-      - name: Prove the version-surface check still fails when it should
-        run: ./ci/scripts/check-version-surfaces.selftest.sh
-
-      - name: Every surface states the version in VERSION
-        # The build's project() stamp, the Debian changelog and the RPM spec,
-        # each against the version file: a package labelled one version must
-        # not install a binary that calls itself another.
-        run: ./ci/scripts/check-version-surfaces.sh
-
-      - name: The release-asset check can still fail
-        run: ./ci/scripts/check-release-assets.selftest.sh
-
-      - name: The release workflow checks its asset set before publishing
-        # Structural only: the job that runs gh release create runs the
-        # --staged check before it. Whether the set is right is measured on
-        # the tag, over the files themselves.
-        run: ./ci/scripts/check-release-assets.sh --wired
-
-      - name: Every uploaded artefact has someone to download it
-        # An artefact whose name no download step can match is built, kept for
-        # ninety days and dropped from the release without a word: the release
-        # simply carries one asset fewer. Names only -- whether the consumer is
-        # ordered after the producer is the needs question, which this
-        # repository answers only if it carries check-release-artifacts.sh.
-        run: |
-          ./ci/scripts/check-artifact-names.selftest.sh
-          ./ci/scripts/check-artifact-names.sh
-
-      - name: The source tarball is a function of the commit
-        # This repository ships binaries and carries no packaging recipe of its
-        # own, so nothing here holds the tarball's sha256 in a source= line.
-        # The tarball is published beside the binaries and listed in the signed
-        # SHA256SUMS instead, and anyone checking that manifest has to arrive
-        # at the same bytes. Two runs, forced apart by a second boundary and a
-        # umask boundary, then the property read out of the archive: every
-        # member carries the commit's own timestamp, owner 0/0, a mode from the
-        # set --mode writes, and a place in name order rather than in the order
-        # readdir happened to return; nothing under .github/; and the top
-        # directory a source build would cd into.
-        run: |
-          ./ci/scripts/check-tarball-determinism.selftest.sh
-          ./ci/scripts/check-tarball-determinism.sh
-
-      # Every self-test in this repository, by pathspec, and each one must
-      # report the cases it ran and how many proved the gate red. A self-test
-      # nothing runs proves as much as no self-test, and a runner that read only
-      # exit codes would accept `exit 0` as a body.
-      - name: Prove the network-pin gate still fails when it should
-        run: ./ci/scripts/check-network-pins.selftest.sh
+      # The gates this repository shares with the others -- formatter scope,
+      # skip reasons, the workflows read as data, the declaration registry,
+      # duplicate bodies, every self-test this repository ships, and the
+      # locked upstream revisions -- as LibreSCRS/ci's profile for it lists.
+      - name: Shared gates
+        uses: LibreSCRS/ci/actions/gates@5b9410f9b0e6ab6983c39f931e118e68007c12b4
 
       - name: Every network clone is pinned by commit
         # The JPEG2000 sources are fetched by commit in two workflows; a pin
         # applied to one and not the other builds a different AppImage in CI
         # than the one the release signs.
         run: ./ci/scripts/check-network-pins.sh
-
-      - name: Run every self-test
-        run: ./ci/scripts/run-selftests.sh
-
-      # A step can land in a job that does not run on push, or before the
-      # checkout that creates the directory its working-directory names, and
-      # nothing says so: the wiring check sees the name and the timeout check
-      # sees the bound. This reads the workflows as data and fails on both.
-      - name: Every step can run where it was placed
-        run: ./ci/scripts/workflow-step-order.py
 
   i18n-audit:
     # Static retranslate audit (no build required). Runs the full
@@ -204,12 +71,16 @@ jobs:
     # JSON dump is uploaded as an artefact for PR review and historical
     # comparison. See tools/README-i18n-audit.md for the audit design.
     timeout-minutes: 15
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: '3.12'
 
@@ -222,14 +93,14 @@ jobs:
       - name: Run i18n audit (strict)
         env:
           QT_QPA_PLATFORM: offscreen
-        run: python3 tools/i18n_audit.py --strict --json /tmp/i18n-audit.json
+        run: python3 tools/i18n_audit.py --strict --json "$RUNNER_TEMP/i18n-audit.json"
 
       - name: Upload audit JSON
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: i18n-audit-json
-          path: /tmp/i18n-audit.json
+          path: ${{ runner.temp }}/i18n-audit.json
 
   license-tools:
     # Pytest coverage for the bundled-license tooling
@@ -241,12 +112,16 @@ jobs:
     # deliberately not written here: it went stale the first time a case
     # was added, and pytest prints the real one on every run.
     timeout-minutes: 15
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: '3.12'
 
@@ -258,24 +133,25 @@ jobs:
 
   build-linux:
     timeout-minutes: 60
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build python3-jsonschema
 
-      # Pinned to the patch release, not 6.10.*: the warning baseline's
-      # header-diagnostic reasons are keyed by Qt's install path and line
-      # (…/Qt/6.10.3/…/qcomparehelpers.h:1100), so the next patch release
-      # would fail the gate with no change here. Bump it with a re-recorded
-      # baseline, in one commit.
+      # One exact Qt release in every workflow: a patch release on the day of a
+      # tag must not build something the branch never did. Moved deliberately,
+      # together with the qtimageformats row of ci/pins/jpeg2000.txt.
       - name: Install Qt 6.10.3
-        uses: jurplel/install-qt-action@v4
+        uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125  # v4.4.1
         with:
           version: '6.10.3'
           host: linux
@@ -291,113 +167,64 @@ jobs:
         # `python3` so manifest2header.py codegen succeeds.
         run: python3 -m pip install --break-system-packages --user jsonschema
 
-      # The compiler the warning baseline's key names, installed explicitly and
-      # named through CC/CXX. Without it the key is whatever the image happens to
-      # ship on the day, and `--require-key` turns that drift into a failure
-      # nobody caused -- the same step, for the same reason, as the one the
-      # coverage job already carries.
-      - name: Pin the compiler the warning baseline is keyed to
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y g++-13 gcc-13
-          echo "CC=gcc-13" >> "$GITHUB_ENV"
-          echo "CXX=g++-13" >> "$GITHUB_ENV"
-
       - name: Configure (Release, warnings as errors)
         # Release matches what users receive — same `-O2 -DNDEBUG` code
         # path runs in production. Debug coverage lives in the developer
         # workflow; the CI gate exists to catch regressions in the
         # shipped configuration. The agent client library is built
-        # transitively via FetchContent at the revision recorded in
-        # cmake/libreagent.pin — a fixed commit SHA, never a branch — so
-        # this job also gives a consumer-side Release cross-check of that
-        # exact client revision. Qt6 is the only external toolchain the
-        # fetch needs.
+        # transitively via FetchContent at the LibreAgent commit deps.lock
+        # names -- never a branch -- so this job also gives a consumer-side
+        # Release cross-check of that exact client revision. Qt6 is the only
+        # external toolchain the fetch needs.
         #
         # LIBRECELIK_WERROR covers the GUI, its printing library and the six
         # GUI plugins; the fetched client, googletest and this repo's own test
         # executables stay warning-only. Deliberately not set on the macOS job:
-        # the clean baseline this gate rests on was measured with GCC, and
-        # AppleClang's diagnostic set is a different one that has never been
-        # surveyed. Build type and the option are pinned together here so a
-        # later edit to one cannot quietly disarm the other.
+        # the clean state this rests on was measured with GCC, and AppleClang's
+        # diagnostic set is a different one that has never been surveyed.
+        # Build type and the option are pinned together here so a later edit
+        # to one cannot quietly disarm the other.
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja -DLIBRECELIK_WERROR=ON
 
       - name: Build
         env:
           QT_QPA_PLATFORM: offscreen
-        run: |
-          # set -o pipefail is explicit: without it `| tee` reports tee's status
-          # and a failed build becomes a green step, after which the warning
-          # check measures a log that was never produced.
-          set -o pipefail
-          LC_ALL=C cmake --build build 2>&1 | tee build.log
+        run: cmake --build build
 
-      - name: The warning floor is still reachable
-        # warning-gate.py judges the LOG, so a tree that has LOST compile units
-        # makes it refuse every full build and blame the build. This judges the
-        # configured graph instead, so the message names the stale number.
-        run: ./ci/scripts/check-warning-floor.sh build
-
-      - name: Warning-floor check self-test
-        run: ./ci/scripts/check-warning-floor.selftest.sh
-
-      - name: Check the warning baseline
-        # Counted by the [-Wname] tag, never by the message text: diagnostics
-        # are localised. --require-key means a compiler the baseline has no
-        # section for FAILS rather than being reported: the sentence that used to
-        # stand here -- "an unknown compiler is reported, not failed" -- described
-        # the behaviour this flag removed. That is only a usable rule if the key
-        # cannot drift, which is what the pin above is for.
-        run: ./ci/scripts/warning-gate.py --check --require-key build.log --build-dir build
-
-      - name: Check the discovered test set
-        run: ./ci/scripts/test-manifest-gate.sh --check build linux
+      # The discovered test set against ci/test-manifest.linux.txt, and the
+      # agent tree this configure fetched against the deps.lock row -- the
+      # property, not the revision the configure printed.
+      - name: Shared gates after the build
+        uses: LibreSCRS/ci/actions/gates@5b9410f9b0e6ab6983c39f931e118e68007c12b4
+        with:
+          phase: build
+          build-dir: build
+          leg: linux
 
       - name: Test (LibreCelik)
         env:
           QT_QPA_PLATFORM: offscreen
-        run: |
-          # The pipe is removed rather than patched. The runner's default shell
-          # for a `run:` step is `bash -e {0}` WITHOUT pipefail, so
-          # `ctest ... | tee ctest.log` reports the status of tee: a failed
-          # suite showed as a green step, and a check reading that log
-          # afterwards passed too. With no pipe there is no question about what
-          # the default is. Measured: the old shape exits 0 on a ctest that
-          # fails, this one exits 1.
-          set +e
-          ctest --output-on-failure --no-tests=error --test-dir build > ctest.log 2>&1
-          rc=$?
-          set -e
-          cat ctest.log
-          echo "ctest rc=$rc"
-          exit "$rc"
-
-      - name: Check the skip ledger
-        # always(): the ledger's whole point is the run where something did not
-        # run, including runs where something also failed.
-        if: always()
-        run: ./ci/scripts/skip-ledger.sh --check ctest.log linux
+        run: ctest --output-on-failure --no-tests=error --test-dir build
 
   build-macos:
     timeout-minutes: 60
-    runs-on: macos-latest
+    runs-on: macos-15
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install build tools
-        # Ninja only. The autoconf/automake/libtool/pkg-config chain that
-        # used to live here existed solely for a transitively built
-        # vendored autoconf bootstrap that this repo no longer pulls in;
-        # the agent client library is plain CMake.
+        # Ninja only. The agent client library is plain CMake.
         run: brew install ninja
 
-      - name: Install Qt 6.10
-        uses: jurplel/install-qt-action@v4
+      - name: Install Qt 6.10.3
+        uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125  # v4.4.1
         with:
-          version: '6.10.*'
+          version: '6.10.3'
           host: mac
           target: desktop
           arch: clang_64
@@ -425,56 +252,70 @@ jobs:
 
   changes:
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       packaging: ${{ steps.filter.outputs.packaging }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
         id: filter
         with:
+          # What decides what the AppImage bundles, and the licence and bill
+          # tooling that walks it. Not the CI's own scripts or this workflow:
+          # a change to a gate is proved by the gate job, and rebuilding an
+          # AppImage for it paid for three quarters of this job's runs.
           filters: |
             packaging:
               - 'CMakeLists.txt'
               - '**/CMakeLists.txt'
               - 'cmake/**'
+              - 'deps.lock'
               - 'scripts/linux/**'
               - 'licenses/**'
-              - 'ci/scripts/**'
-              - '.github/workflows/ci.yml'
+              - 'ci/pins/**'
+              - 'ci/scripts/check-bundled-licenses.py'
+              - 'ci/scripts/gen-third-party-notices.py'
+              - 'ci/scripts/check-sbom.py'
 
   license-drift-guard:
     timeout-minutes: 45
     needs: changes
     if: ${{ needs.changes.outputs.packaging == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     # Path-filtered (packaging paths only, owner-chosen trigger). Builds the
     # AppImage, whose build-appimage.sh walks the assembled AppDir TWICE:
     # --check fails closed on any unmapped bundled library, and --sbom writes
     # the bill that ships beside the artefact. In this workflow it is the
-    # only job where either walk meets a real AppDir, so short of a tag it is
-    # where the bill is first seen to be non-empty; release.yml runs the same
-    # script once a tag is pushed, and scripts/macos/build-dmg.sh beside it.
-    # The line to look for in this log is
+    # only job where either walk meets a real AppDir, so short of a release
+    # rehearsal it is where the bill is first seen to be non-empty;
+    # release.yml runs the same script, and scripts/macos/build-dmg.sh beside
+    # it. The line to look for in this log is
     #   sbom: N components from M bundled objects (K without a version)
     # and an N of zero aborts the build before appimagetool seals anything.
     # Steps mirror the release.yml build-linux job. Known limitation: a
-    # packaging-path filter does not fire for toolchain / linuxdeploy /
-    # non-packaging drift.
+    # packaging-path filter does not fire for toolchain drift.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build python3-jsonschema patchelf
 
-      - name: Install Qt 6.10
-        uses: jurplel/install-qt-action@v4
+      - name: Install Qt 6.10.3
+        uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125  # v4.4.1
         with:
-          version: '6.10.*'
+          version: '6.10.3'
           host: linux
           target: desktop
           arch: linux_gcc_64
@@ -518,9 +359,9 @@ jobs:
           # so the prefix question no longer exists, and neither does the
           # second clone that answered it.
           fetch_pinned qtimageformats /tmp/qtimageformats
-          # The pin names a Qt release and the action installs '6.10.*', which
-          # floats: a plugin built from one Qt's sources into another Qt is the
-          # mismatch the old branch-name clone could not produce. Refuse it.
+          # The pin names a Qt release and the Qt step installs one exact
+          # version: moving one without the other builds a plugin from one Qt's
+          # sources into another Qt. Refuse it.
           qt_ver="$(qmake6 -query QT_VERSION)"
           read -r _ _ _ pin_ver < <(grep '^qtimageformats ' ci/pins/jpeg2000.txt) || true
           [ "$qt_ver" = "${pin_ver:-}" ] || { echo "::error::Qt $qt_ver is installed but qtimageformats is pinned to ${pin_ver:-nothing} -- move the pin with Qt"; exit 1; }
@@ -574,7 +415,7 @@ jobs:
       # only job is to build the AppImage so the bundled-license check fires.
 
       - name: Cache linuxdeploy tools
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: scripts/linux/tools
           key: linuxdeploy-continuous-v1
@@ -594,92 +435,6 @@ jobs:
         # Judged by the same program the release job runs, so the two cannot
         # disagree about what publishable means.
         run: python3 ci/scripts/check-sbom.py sbom-linux.cdx.json
-
-  coverage:
-    # 24.04, not the moving label: the ratchet compares against a
-    # baseline recorded under one compiler, and ubuntu-latest moves the
-    # compiler with the image. The key would then fail for a reason that
-    # has nothing to do with the code. ci/coverage-env.txt records what
-    # this is pinned to, and --expect-key below asserts it.
-    runs-on: ubuntu-24.04
-    # Not on pull_request: this pass costs an hour and the moment a
-    # function actually lands is the push to main. Manual only until one
-    # measured run says what it really costs on a hosted runner.
-    if: github.event_name == 'workflow_dispatch'
-    timeout-minutes: 120
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      # The compiler the baseline's key names, installed explicitly and named
-      # through CC/CXX. Without this the key is whatever the image happens to
-      # ship, which is the thing the pin above exists to stop.
-      - name: Pin the compiler the baseline was recorded under
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y g++-13 gcc-13
-          echo "CC=gcc-13" >> "$GITHUB_ENV"
-          echo "CXX=g++-13" >> "$GITHUB_ENV"
-          echo "GCOV=gcov-13" >> "$GITHUB_ENV"
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build python3-jsonschema
-
-      # Pinned with the build job for the same reason: the baseline this
-      # job checks was recorded against one Qt, and a patch release that
-      # moves inlined header code moves what gets counted.
-      - name: Install Qt 6.10.3
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.10.3'
-          host: linux
-          target: desktop
-          arch: linux_gcc_64
-          modules: 'qtpdf'
-          cache: true
-
-      - name: Install jsonschema into Qt's Python
-        # aqtinstall puts its own Python on PATH; the apt-installed
-        # python3-jsonschema package is invisible to it. Install
-        # jsonschema again via pip targeting the post-Qt-setup
-        # `python3` so manifest2header.py codegen succeeds.
-        run: python3 -m pip install --break-system-packages --user jsonschema
-
-
-      - name: Install gcovr
-        # Pinned: the baseline records the gcovr version it was measured with
-        # and the gate refuses to compare across versions, because the exclude
-        # semantics that decide the denominator have changed between them.
-        run: python3 -m pip install --break-system-packages 'gcovr==8.6'
-
-      - name: Configure (coverage)
-        run: cmake --preset coverage
-
-      - name: Build
-        run: cmake --build build-cov -j4
-
-      - name: Test
-        run: |
-          set +e
-          ctest --output-on-failure --no-tests=error --test-dir build-cov > ctest.log 2>&1
-          rc=$?
-          set -e
-          cat ctest.log
-          echo "ctest rc=$rc"
-          exit "$rc"
-
-      - name: Check coverage against the baseline
-        # The committed baseline was measured with a different compiler than
-        # this runner uses, so the FIRST authorised run of this job is expected
-        # to refuse to compare and say so. Refusing is the design: a coverage
-        # number carries the configuration it was measured under, and comparing
-        # across configurations is how a gap becomes an artefact. Record a
-        # runner-side baseline with --update, review it in the same commit, and
-        # from then on this step is a ratchet.
-        run: ./ci/scripts/coverage-gate.py --check --expect-key GNU-13 build-cov
 
   package:
     # Distribution packages, built in the target distribution's own container.

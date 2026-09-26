@@ -8,10 +8,12 @@
 # Prerequisites:
 #   - CMake Release build already compiled in BUILD_DIR
 #   - Qt6 development tools on PATH (qmake6)
-#   - wget or curl
+#   - wget or curl, sha256sum
+#   - LibreSCRS/ci's images.lock, which names the tools by version and sha256:
+#     APPIMAGE_TOOLS_LOCK, or ../ci/images.lock beside this checkout
 #
-# The script auto-downloads linuxdeploy + linuxdeploy-plugin-qt + appimagetool
-# into scripts/linux/tools/ if they are not already present.
+# The script downloads linuxdeploy, linuxdeploy-plugin-qt, appimagetool and the
+# AppImage runtime into scripts/linux/tools/locked/, and verifies each one.
 #
 # Output: LibreCelik-<VERSION>-x86_64.AppImage in the project root.
 
@@ -49,31 +51,59 @@ echo "Qt qmake:   $QMAKE"
 echo "Qt plugins: $QT_PLUGINS_SYSTEM"
 
 # ---------------------------------------------------------------------------
-# Auto-download linuxdeploy tools
+# The tools, by release version and sha256.
+#
+# linuxdeploy, its Qt plugin, appimagetool and the AppImage runtime appimagetool
+# embeds are named once for the whole project, as `tool <name> <version> <url>
+# <sha256>` rows of LibreSCRS/ci's images.lock. APPIMAGE_TOOLS_LOCK names that
+# file; a local build beside a checkout of LibreSCRS/ci finds it there. Nothing
+# comes from a moving URL: the bytes behind `continuous` change under one name,
+# and appimagetool left alone fetches its runtime from exactly such a URL, so
+# the runtime is passed to it explicitly. Every run re-checks every sum -- a
+# cached tool is trusted no more than a downloaded one.
 # ---------------------------------------------------------------------------
-mkdir -p "$TOOLS_DIR"
-
-LINUXDEPLOY="$TOOLS_DIR/linuxdeploy-x86_64.AppImage"
-LINUXDEPLOY_QT="$TOOLS_DIR/linuxdeploy-plugin-qt-x86_64.AppImage"
-APPIMAGETOOL="$TOOLS_DIR/appimagetool-x86_64.AppImage"
-
-if [[ ! -x "$LINUXDEPLOY" ]]; then
-    echo "Downloading linuxdeploy..."
-    download "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage" "$LINUXDEPLOY"
-    chmod +x "$LINUXDEPLOY"
+TOOLS_LOCK="${APPIMAGE_TOOLS_LOCK:-$PROJECT_ROOT/../ci/images.lock}"
+if [[ ! -f "$TOOLS_LOCK" ]]; then
+    echo "ERROR: no tool lock at $TOOLS_LOCK."
+    echo "       Set APPIMAGE_TOOLS_LOCK to the images.lock of LibreSCRS/ci."
+    exit 1
 fi
+LOCKED_TOOLS="$TOOLS_DIR/locked"
+mkdir -p "$LOCKED_TOOLS"
 
-if [[ ! -x "$LINUXDEPLOY_QT" ]]; then
-    echo "Downloading linuxdeploy-plugin-qt..."
-    download "https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage" "$LINUXDEPLOY_QT"
-    chmod +x "$LINUXDEPLOY_QT"
-fi
-
-if [[ ! -x "$APPIMAGETOOL" ]]; then
-    echo "Downloading appimagetool..."
-    download "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage" "$APPIMAGETOOL"
-    chmod +x "$APPIMAGETOOL"
-fi
+# fetch_tool <name> -- print the path of that tool, verified against the lock.
+# The file keeps its upstream name: linuxdeploy finds its Qt plugin by that
+# name, beside itself.
+fetch_tool() {
+    local name="$1" rows ver url sum dest got
+    rows="$(awk -v n="$name" '$1 == "tool" && $2 == n { print $3, $4, $5 }' "$TOOLS_LOCK")"
+    if [[ -z "$rows" || "$(wc -l <<<"$rows")" -ne 1 ]]; then
+        echo "ERROR: $TOOLS_LOCK does not name exactly one '$name' tool" >&2
+        return 1
+    fi
+    read -r ver url sum <<<"$rows"
+    dest="$LOCKED_TOOLS/${url##*/}"
+    if [[ ! -f "$dest" ]] || [[ "$(sha256sum "$dest" | cut -d' ' -f1)" != "$sum" ]]; then
+        echo "Downloading $name $ver..." >&2
+        download "$url" "$dest.part" >&2
+        mv -f "$dest.part" "$dest"
+    fi
+    got="$(sha256sum "$dest" | cut -d' ' -f1)"
+    if [[ "$got" != "$sum" ]]; then
+        echo "ERROR: $name $ver from $url has sha256 $got; the lock says $sum" >&2
+        rm -f "$dest"
+        return 1
+    fi
+    chmod +x "$dest"
+    printf '%s\n' "$dest"
+}
+need sha256sum
+LINUXDEPLOY="$(fetch_tool linuxdeploy)"
+LINUXDEPLOY_QT="$(fetch_tool linuxdeploy-plugin-qt)"
+APPIMAGETOOL="$(fetch_tool appimagetool)"
+APPIMAGE_RUNTIME="$(fetch_tool appimage-runtime)"
+# linuxdeploy finds its Qt plugin beside itself, not through a flag.
+[[ "$(dirname "$LINUXDEPLOY_QT")" == "$(dirname "$LINUXDEPLOY")" ]]
 
 # ---------------------------------------------------------------------------
 # Determine version from git tag
@@ -525,7 +555,7 @@ echo "  $AUDIT_TOTAL bundled objects loaded cleanly."
 # ---------------------------------------------------------------------------
 echo ""
 echo "Packaging AppImage..."
-ARCH=x86_64 "$APPIMAGETOOL" "$APPDIR" "$OUTPUT"
+ARCH=x86_64 "$APPIMAGETOOL" --runtime-file "$APPIMAGE_RUNTIME" "$APPDIR" "$OUTPUT"
 
 echo ""
 echo "AppImage created: $OUTPUT"

@@ -1017,6 +1017,16 @@ endif()
 add_test(NAME I18nAudit COMMAND ${_i18n_audit_command})
 set_tests_properties(I18nAudit PROPERTIES TIMEOUT 120)
 
+# `LibreCelik --version` answers with no display at all: the AppImage smoke
+# test and a package check start the program where there is no screen, so the
+# answer has to come before the QApplication that would need one. The display
+# variables are emptied here so a developer's session cannot make it pass.
+add_test(NAME ExecutableVersion COMMAND $<TARGET_FILE:LibreCelik> --version)
+set_tests_properties(ExecutableVersion PROPERTIES
+    ENVIRONMENT "DISPLAY=;WAYLAND_DISPLAY=;QT_QPA_PLATFORM="
+    PASS_REGULAR_EXPRESSION "^LibreCelik ${LIBRECELIK_VERSION_FULL}\n$"
+    TIMEOUT 30)
+
 # The main window itself. Every other target here names the individual src/
 # files it needs; this one cannot, because the window composes most of the
 # application. It links the application object library instead — the same

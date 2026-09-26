@@ -434,16 +434,40 @@ jobs:
       # No test run here: build-linux already runs the suites. This guard's
       # only job is to build the AppImage so the bundled-license check fires.
 
-      - name: Cache linuxdeploy tools
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: scripts/linux/tools
-          key: linuxdeploy-continuous-v1
+      - name: The AppImage tools the shared lock names
+        # linuxdeploy, its Qt plugin, appimagetool and the runtime, by release
+        # version and sha256, from LibreSCRS/ci's images.lock at the one commit
+        # this repository's `uses:` lines pin -- the shared gates hold every one
+        # of them to the same commit, so there is no second pin to drift.
+        run: |
+          set -euo pipefail
+          sha="$(grep -hoE 'LibreSCRS/ci/actions/[a-z-]+@[0-9a-f]{40}' .github/workflows/*.yml | sed 's/.*@//' | sort -u)"
+          if [ -z "$sha" ] || [ "$(printf '%s\n' "$sha" | wc -l)" -ne 1 ]; then
+            echo "::error::the workflows do not pin LibreSCRS/ci at exactly one commit"
+            exit 1
+          fi
+          curl -fsSL --retry 3 "https://raw.githubusercontent.com/LibreSCRS/ci/$sha/images.lock" -o "$RUNNER_TEMP/images.lock"
+          grep '^tool ' "$RUNNER_TEMP/images.lock"
+          echo "APPIMAGE_TOOLS_LOCK=$RUNNER_TEMP/images.lock" >> "$GITHUB_ENV"
 
       - name: Build AppImage
         env:
           APPIMAGE_EXTRACT_AND_RUN: "1"
         run: scripts/linux/build-appimage.sh build
+
+      - name: The AppImage starts where there is no display
+        # Its own runtime, its own bundled Qt and libraries, and no screen:
+        # --version answers before the application needs one.
+        run: |
+          set -euo pipefail
+          app="$(ls LibreCelik-*-x86_64.AppImage)"
+          ver="${app#LibreCelik-}"; ver="${ver%-x86_64.AppImage}"
+          out="$(env -u DISPLAY -u WAYLAND_DISPLAY "./$app" --appimage-extract-and-run --version)"
+          echo "$out"
+          case "$out" in
+            "LibreCelik $ver"*) ;;
+            *) echo "::error::$app --version answered '$out', expected LibreCelik $ver"; exit 1 ;;
+          esac
 
       - name: The bill that build produced is publishable
         # The step above aborts if the bill it derives is empty, so this is

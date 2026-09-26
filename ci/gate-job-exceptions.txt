@@ -16,4 +16,4 @@
 # The last one is what makes these rows disappear when the condition does.
 
 ci.yml:license-drift-guard:9    The packaging half of this job runs only when the change touched packaging, decided by a path filter in an earlier job. This row goes if that filter goes.
-ci.yml:license-drift-guard:10    The packaging half of this job runs only when the change touched packaging, decided by a path filter in an earlier job. This row goes if that filter goes.
+ci.yml:license-drift-guard:11    The packaging half of this job runs only when the change touched packaging, decided by a path filter in an earlier job. This row goes if that filter goes.

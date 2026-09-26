@@ -9,6 +9,9 @@
 #include <QGuiApplication>
 #include <QIcon>
 
+#include <cstdio>
+#include <string_view>
+
 using namespace std::literals;
 const static char* LOGPATTERN =
     "\033[32m[%{time yyyyMMdd h:mm:ss.zzz ttt} "
@@ -20,6 +23,16 @@ const static char* LOGPATTERN =
 
 int main(int argc, char* argv[])
 {
+    // Answered before a QApplication exists, which needs a display: a check
+    // that the program starts at all -- the AppImage smoke test, a package
+    // check -- runs where there is no screen.
+    for (int i = 1; i < argc; ++i) {
+        if (std::string_view(argv[i]) == "--version"sv) {
+            std::printf("LibreCelik %s\n", LIBRECELIK_VERSION_FULL);
+            return 0;
+        }
+    }
+
     QApplication a(argc, argv);
 
     qSetMessagePattern(LOGPATTERN);

@@ -4,10 +4,9 @@
 # branch and not by tag: a tag moves under you, a digest does not — the same
 # sentence the package matrix already carries about container images.
 #
-# Three readers, and that is the point of one file:
-#   1. .github/workflows/{ci,release}.yml fetch these and assert rev-parse HEAD
+# Two readers, and that is the point of one file:
+#   1. .github/workflows/release.yml fetches these and asserts rev-parse HEAD
 #   2. ci/scripts/check-bundled-licenses.py --pins puts the commit in the SBOM
-#   3. ci/scripts/check-network-pins.sh refuses a clone this file does not name
 #
 # qtimageformats is built against the Qt that jurplel/install-qt-action
 # installs (one exact version in every workflow), so its pin moves with that Qt version:

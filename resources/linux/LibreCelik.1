@@ -1,0 +1,24 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.TH LIBRECELIK 1 "2026" "LibreCelik 5.0" "User Commands"
+.SH NAME
+LibreCelik \- read and sign with LibreSCRS smart cards
+.SH SYNOPSIS
+.B LibreCelik
+.RB [ \-\-version ]
+.SH DESCRIPTION
+.B LibreCelik
+reads Serbian government smart cards (identity, vehicle and health), ICAO
+electronic travel documents, NIST PIV cards and PKCS#15 cards, and signs
+documents in PAdES, XAdES and CAdES.
+.PP
+It talks to the card through the LibreSCRS agent
+.RB ( librescrs\-agent ),
+which owns the card session and collects the PIN in its own prompter.
+Without the agent installed and running, LibreCelik starts and says so.
+.SH OPTIONS
+.TP
+.B \-\-version
+Print the version and exit, without opening a window.
+.SH SEE ALSO
+.UR https://librescrs.github.io/
+.UE

@@ -1,4 +1,5 @@
 usr/bin/LibreCelik
+usr/share/man/man1/LibreCelik.1
 usr/lib/*/gui-plugins/*.so
 usr/share/applications/librecelik.desktop
 usr/share/icons/hicolor/512x512/apps/librecelik.png

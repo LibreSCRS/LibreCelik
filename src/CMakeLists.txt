@@ -316,6 +316,8 @@ if(UNIX AND NOT APPLE)
     # file is present and valid, so it is installed rather than merely written.
     install(FILES ${PROJECT_SOURCE_DIR}/packaging/appstream/org.librescrs.librecelik.metainfo.xml
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/metainfo)
+    install(FILES ${PROJECT_SOURCE_DIR}/resources/linux/LibreCelik.1
+            DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
     # APPEND, not set: a distro packager drives policy through
     # -DCMAKE_INSTALL_RPATH, which seeds this property at target creation.
     set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY

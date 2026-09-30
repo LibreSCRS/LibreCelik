@@ -30,7 +30,6 @@ BuildRequires:  qt6-pdfwidgets-devel
 BuildRequires:  qt6-qttools-devel
 BuildRequires:  gtest-devel
 BuildRequires:  dbus-daemon
-BuildRequires:  librescrs-middleware-devel >= 5.0
 BuildRequires:  librescrs-agent-client-qt-devel >= 5.0
 BuildRequires:  desktop-file-utils
 BuildRequires:  libappstream-glib

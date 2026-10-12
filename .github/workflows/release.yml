@@ -232,7 +232,20 @@ jobs:
     runs-on: macos-15
     permissions:
       contents: read
+    env:
+      # The Apple team the agent client is built for: the App Group holding
+      # the agent's socket is named after it. An organization variable, read
+      # only when publishing; a rehearsal builds without a team ("group.").
+      LIBRESCRS_TEAM_ID: ${{ needs.preflight.outputs.mode == 'publish' && vars.LIBRESCRS_TEAM_ID || '' }}
     steps:
+      - name: A release names its team
+        if: needs.preflight.outputs.mode == 'publish'
+        run: |
+          if [ -z "$LIBRESCRS_TEAM_ID" ]; then
+            echo "::error::publishing needs the LIBRESCRS_TEAM_ID organization variable; the macOS client finds the agent in that team's App Group"
+            exit 1
+          fi
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
@@ -259,7 +272,7 @@ jobs:
         run: python3 -m pip install --break-system-packages --user jsonschema
 
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DLIBRESCRS_TEAM_ID="$LIBRESCRS_TEAM_ID"
 
       - name: Build
         env:

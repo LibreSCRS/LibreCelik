@@ -12,6 +12,10 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Built against the agent client whose certificates carry the card's
+  per-operation consent rule (a new trailing member of the D-Bus certificate
+  result); no visible change.
+
 - **LibreCelik no longer opens the card itself.** Every smart-card session now
   goes through the agent, and the credential dialogs are launchers for the
   agent's PIN verbs rather than card drivers: the PIN, CAN and MRZ a flow

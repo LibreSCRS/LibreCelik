@@ -1,0 +1,84 @@
+# Maintainer: hirashix0 <hirashix0@proton.me>
+#
+# LibreCelik — the Qt 6 desktop reader and signer for LibreSCRS smart cards.
+#
+# LibreCelik is a THIN CLIENT of the LibreSCRS agent over D-Bus: it opens no
+# card itself and links no LibreMiddleware target. It links
+# `librescrs-agent-client-qt` (LibreAgent::ClientQt, its own pkgbase built from
+# the LibreAgent repository) and talks to `librescrs-agent` (built from pkgbase
+# `librelinux`). Without the agent it starts and finds no card, so the agent is
+# a hard dependency here, as it is for librekde -- pacman installs no
+# optdepends on its own.
+#
+# Dependency chain — two roots, not one:
+#     librescrs-middleware  <=  librelinux  <=  librecelik
+#     librescrs-agent-client-qt  <=  librecelik
+#
+# Versioning: released in lockstep with the rest of the stack; pkgver is the
+# first line of the repository's VERSION file.
+
+pkgname=librecelik
+pkgver=5.0.0
+pkgrel=1
+pkgdesc="Reader and signer for LibreSCRS smart cards: Serbian eID, vehicle and health cards, ICAO travel documents, PIV and PKCS#15"
+arch=('x86_64')
+url="https://github.com/LibreSCRS/LibreCelik"
+license=('GPL-3.0-or-later')
+depends=(
+    'librescrs-agent'            # the D-Bus agent that owns the card
+    'librescrs-agent-client-qt'  # LibreAgent::ClientQt (find_package(LibreAgent CONFIG))
+    'qt6-base'                   # Core/Gui/Widgets/PrintSupport/DBus
+    'qt6-svg'
+    'qt6-webengine'              # QtPdf + QtPdfWidgets (signing preview); Arch ships them here
+)
+makedepends=(
+    'cmake'
+    'ninja'
+    'git'                        # GitVersion.cmake
+    'qt6-tools'                  # lrelease for the .ts catalogues
+    'python'                     # the third-party licence notice generated at build time
+    'desktop-file-utils'         # check(): desktop-file-validate
+    'appstream'                  # check(): appstreamcli validate
+)
+options=('!lto')   # LTO off, as the RPM spec does; not measured to be required
+# The signed tag itself, not a tarball: makepkg checks the tag's signature
+# against validpgpkeys before it builds anything. The key is the release key's
+# primary fingerprint, the one KEYS carries (the tag is signed by a subkey;
+# makepkg matches the primary). check-recipe (LibreSCRS/ci) holds this
+# repository, the tag and the key to the tree.
+source=(
+    "git+https://github.com/LibreSCRS/LibreCelik.git#tag=$pkgver?signed"
+)
+validpgpkeys=('6B05889AC9A6A7188DF639B06F27A989C2031D16')  # LibreSCRS release key
+sha256sums=('SKIP')  # a git source has no archive to checksum; the signature is the check
+
+build() {
+    cd "$srcdir/LibreCelik"
+    # BUILD_TESTING=OFF: the test tree fetches googletest over the network,
+    # and build() touches none. The installed agent client, never a FetchContent
+    # copy of LibreAgent: the package is built against the library it runs with.
+    cmake -S . -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DBUILD_TESTING=OFF \
+        -DLIBRECELIK_USE_INSTALLED_LIBREAGENT=ON
+    # The same assertion the RPM spec makes: nothing was fetched.
+    test ! -e build/_deps || { echo "the build fetched a dependency instead of using the installed packages"; return 1; }
+    cmake --build build -j4
+}
+
+check() {
+    cd "$srcdir/LibreCelik"
+    # What a software centre and a menu read, validated as the RPM %check does.
+    desktop-file-validate resources/linux/librecelik.desktop
+    appstreamcli validate --no-net --explain packaging/appstream/org.librescrs.librecelik.metainfo.xml
+}
+
+package() {
+    cd "$srcdir/LibreCelik"
+    DESTDIR="$pkgdir" cmake --install build
+    # cmake --install lays down bin/LibreCelik, its GUI plugins under
+    # lib/gui-plugins, the desktop entry, the icon, the AppStream metainfo and
+    # the man page -- the same set the RPM %files lists.
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

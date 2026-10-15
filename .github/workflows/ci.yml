@@ -44,12 +44,12 @@ jobs:
             | xargs -0 -r clang-format-21 --dry-run --Werror
 
       # The shared gates: the workflows' time bounds and pins, skip reasons
-      # in the sources, the version surfaces, and deps.lock's form,
-      # reachability and diamond.
+      # in the sources, the version surfaces, deps.lock's form, reachability
+      # and diamond, and the Arch recipe building this repository's signed tag.
       - name: Shared gates
         uses: LibreSCRS/ci/actions/gates@b9848b4990ae046072497f10d6f5b2bfdfa45470
         with:
-          gates: check-workflows check-skip-reasons check-version deps-lock
+          gates: check-workflows check-skip-reasons check-version deps-lock check-recipe
 
   i18n-audit:
     # Static retranslate audit (no build required). Runs the full

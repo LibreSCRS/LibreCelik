@@ -55,6 +55,10 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
   package, so this is a quality decision rather than a necessity. Install it
   beside the agent's packages, in the same transaction.
 
+  On Arch and Manjaro, `packaging/arch/PKGBUILD` builds `librecelik` from the
+  signed release tag, beside the recipes of the middleware, the agent and
+  LibreKDE.
+
   The AppStream component did not exist before, which meant no software centre
   could list the application at all. It is now written, installed by the build,
   and validated during the build by both packaging systems — an invalid

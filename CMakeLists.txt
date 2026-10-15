@@ -112,6 +112,14 @@ set(DART_TESTING_TIMEOUT 300 CACHE STRING
     "Default per-test ctest timeout, in seconds")
 include(CTest)
 
+# PRE_TEST, not the default POST_BUILD: POST_BUILD runs each freshly linked test
+# binary in the middle of a parallel build. On a loaded runner that yields an
+# empty test list and kills the build, naming a different target each time; on
+# CMake 4.4.0 every target also wrote the same discovery file, and ctest reported
+# all tests passing while five binaries carried another binary's list. Set here,
+# before any add_subdirectory(), because the variable is directory-scoped.
+set(CMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE PRE_TEST)
+
 add_subdirectory(resources)
 add_subdirectory(src)
 add_subdirectory(plugins)

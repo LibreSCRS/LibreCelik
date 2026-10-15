@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # <test program> <tests it registers, at least> -- the census of a build,
 # raised with the tests.
+AgentBootstrapTests 15
 AgentLayerTests 71
-AgentMainFlowTests 25
+AgentMainFlowTests 28
 CardWidgetPluginRegistryTests 5
 EIdTextDocumentTests 2
 EMRTDTextDocumentTests 9

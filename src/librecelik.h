@@ -4,6 +4,7 @@
 #pragma once
 
 #include "agent/agentgateway.h"
+#include "agent/agentstarter.h"
 #include "config.h"
 #include "plugin/cardwidgetpluginregistry.h"
 #include "utils/readerpages.h"
@@ -33,6 +34,10 @@ class LibreCelik;
 }
 QT_END_NAMESPACE
 
+namespace librecelik::agent {
+class AgentBootstrap;
+}
+
 class LibreCelik : public QMainWindow
 {
     Q_OBJECT
@@ -44,9 +49,14 @@ public:
     /// The gateway is this window's only card I/O seam, so handing it in is
     /// what lets the composition be exercised at all: the window that ships
     /// and the window under test are then the same code reading a different
-    /// roster. The default constructor above delegates here with the live
-    /// gateway, so nothing about the shipped application changes.
+    /// roster. It brings up no agent of its own (the null starter): a window
+    /// under test must never launch anything.
     explicit LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> gateway, QWidget* parent = nullptr);
+    /// @brief Builds the window over @p gateway, with @p starter to bring a
+    ///        missing agent up. Both constructors above delegate here — the
+    ///        default one with the live gateway and the platform's starter.
+    LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> gateway,
+               std::unique_ptr<librecelik::agent::AgentStarter> starter, QWidget* parent = nullptr);
     ~LibreCelik();
 
 signals:
@@ -149,6 +159,12 @@ private:
     /// every card verb, every roster fact and every presence verdict comes
     /// through it, and nothing in this window talks to a card directly.
     std::unique_ptr<librecelik::agent::AgentGateway> gateway;
+    /// The platform's way to start a missing agent; borrowed by `bootstrap`.
+    std::unique_ptr<librecelik::agent::AgentStarter> starter;
+    /// Child of this window, but deleted explicitly in the destructor: as a
+    /// QObject child it would otherwise outlive `gateway` and `starter`, which
+    /// it holds by reference.
+    librecelik::agent::AgentBootstrap* bootstrap = nullptr;
     CardWidgetPluginRegistry guiPluginRegistry;
 
     /// One page per card in the agent's roster, keyed by the agent's opaque

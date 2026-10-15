@@ -4,6 +4,7 @@
 #include "librecelik.h"
 #include "aboutdialog.h"
 #include "agent/cardretrypage.h"
+#include "agent/agentbootstrap.h"
 #include "agent/errortext.h" // readFailureAction
 #include "agent/agentstatewidget.h"
 #include "agent/cardcontroller.h"
@@ -103,10 +104,18 @@ constexpr QLatin1StringView kCardTypeFeature{"card-type"};
 
 } // namespace
 
-LibreCelik::LibreCelik(QWidget* parent) : LibreCelik(std::make_unique<librecelik::agent::LiveAgentGateway>(), parent) {}
+LibreCelik::LibreCelik(QWidget* parent)
+    : LibreCelik(std::make_unique<librecelik::agent::LiveAgentGateway>(), librecelik::agent::makePlatformAgentStarter(),
+                 parent)
+{}
 
 LibreCelik::LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> injectedGateway, QWidget* parent)
-    : QMainWindow(parent), ui(new Ui::LibreCelik)
+    : LibreCelik(std::move(injectedGateway), std::make_unique<librecelik::agent::NullAgentStarter>(), parent)
+{}
+
+LibreCelik::LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> injectedGateway,
+                       std::unique_ptr<librecelik::agent::AgentStarter> injectedStarter, QWidget* parent)
+    : QMainWindow(parent), ui(new Ui::LibreCelik), starter(std::move(injectedStarter))
 {
     qCDebug(lcGeneral, "Setting up GUI");
 
@@ -209,8 +218,14 @@ LibreCelik::LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> injected
     connect(gateway.get(), &AgentGateway::readersChanged, this, &LibreCelik::onReadersChanged);
     connect(gateway.get(), &AgentGateway::cardChanged, this, &LibreCelik::onCardChanged);
     connect(gateway.get(), &AgentGateway::cardRemoved, this, &LibreCelik::onCardRemoved);
-    connect(ui->agentStateWidget, &librecelik::agent::AgentStateWidget::retryRequested, this,
-            [this]() { gateway->refresh(); });
+    // StillMissing is the one retry a refresh cannot answer: the agent's host
+    // has to be launched again.
+    connect(ui->agentStateWidget, &librecelik::agent::AgentStateWidget::retryRequested, this, [this]() {
+        if (bootstrap->guidance() == librecelik::agent::Guidance::StillMissing)
+            bootstrap->retry();
+        else
+            gateway->refresh();
+    });
     // The client resolves presence in its own constructor and emits nothing
     // for the state it starts in, so the first render happens here, after the
     // gateway exists — otherwise a reachable agent's version would stay hidden
@@ -218,6 +233,17 @@ LibreCelik::LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> injected
     updateAboutText();
     onPresenceChanged(gateway->presence());
     onReadersChanged();
+
+    bootstrap = new librecelik::agent::AgentBootstrap(*gateway, *starter, this);
+    connect(bootstrap, &librecelik::agent::AgentBootstrap::guidanceChanged, ui->agentStateWidget,
+            &librecelik::agent::AgentStateWidget::setGuidance);
+    // A poll can find the agent no longer missing without the gateway having
+    // signalled the move, so the window re-reads presence itself.
+    connect(bootstrap, &librecelik::agent::AgentBootstrap::presenceSettled, this, [this]() {
+        onPresenceChanged(gateway->presence());
+        updateAboutText();
+    });
+    bootstrap->start();
 }
 
 void LibreCelik::updateAboutText()
@@ -445,7 +471,7 @@ void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
         applyPendingPki(cardId);
     });
     connect(controller, &CardController::errorOccurred, this,
-            [this, cardId, controller](const QString& message, LibreSCRS::AgentClient::ErrorCode code) {
+            [this, cardId](const QString& message, LibreSCRS::AgentClient::ErrorCode code) {
                 if (readerPages->page(cardId) == nullptr)
                     return; // a stale terminal for a card whose page is already gone
                 ui->statusbar->show();
@@ -826,6 +852,9 @@ void LibreCelik::showAboutDialog()
 
 LibreCelik::~LibreCelik()
 {
+    // Before the members it borrows (gateway, starter) are destroyed.
+    delete bootstrap;
+    bootstrap = nullptr;
 #ifdef Q_OS_MACOS
     // Runs while Cocoa and the file-scope strings the block reads are alive;
     // static destruction order is undefined.

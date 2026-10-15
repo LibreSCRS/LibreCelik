@@ -50,6 +50,9 @@ set(PROJECT_SOURCES
         agent/optionalsections.h
         agent/agentstatewidget.h
         agent/agentstatewidget.cpp
+        agent/agentstarter.h
+        agent/agentbootstrap.h
+        agent/agentbootstrap.cpp
         agent/cardstatuspage.h
         agent/cardretrypage.cpp
         agent/cardstatuspage.cpp
@@ -119,7 +122,8 @@ set(PROJECT_SOURCES
 )
 
 if(APPLE)
-    list(APPEND PROJECT_SOURCES utils/macos_menu.h utils/macos_menu.mm)
+    list(APPEND PROJECT_SOURCES utils/macos_menu.h utils/macos_menu.mm
+        agent/macagentstarter.h agent/macagentstarter.mm)
 endif()
 
 if(LIBRECELIK_SIGNING_ENABLED)

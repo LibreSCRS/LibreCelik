@@ -102,6 +102,70 @@ TEST_F(AgentStateWidgetTest, RendersDistinctTextPerPresenceState)
     EXPECT_NE(unavailable, ready);
 }
 
+TEST_F(AgentStateWidgetTest, GuidanceOverridesTheMissingCopy)
+{
+    using librecelik::agent::Guidance;
+    using librecelik::agent::PresenceState;
+    AgentStateWidget w;
+    w.setState(PresenceState::AgentMissing, false);
+    w.setGuidance(Guidance::Starting);
+    EXPECT_EQ(stateMessage(w), qtTrId("lc-agent-guidance-starting"));
+    auto* retry = w.findChild<QPushButton*>();
+    ASSERT_NE(retry, nullptr);
+    // isVisibleTo, not isVisible: the panel is never shown here, so isVisible
+    // is false for every child and would assert nothing.
+    EXPECT_FALSE(retry->isVisibleTo(&w));
+    w.setGuidance(Guidance::StillMissing);
+    EXPECT_EQ(stateMessage(w), qtTrId("lc-agent-guidance-still-missing"));
+    EXPECT_TRUE(retry->isVisibleTo(&w));
+    w.setGuidance(Guidance::None);
+    EXPECT_EQ(stateMessage(w), qtTrId("lc-agent-state-missing"));
+    EXPECT_FALSE(retry->isVisibleTo(&w));
+}
+
+TEST_F(AgentStateWidgetTest, GuidanceRetranslatesOnLanguageChange)
+{
+    // Serbian, not English: under the English catalog the id and its
+    // translation are the strings this case compares, and a panel that never
+    // retranslated would still render an English sentence that "matches".
+    using librecelik::agent::Guidance;
+    using librecelik::agent::PresenceState;
+    AgentStateWidget w;
+    w.setState(PresenceState::AgentMissing, false);
+    w.setGuidance(Guidance::NotInApplications);
+    const QString before = stateMessage(w);
+
+    QTranslator sr;
+    const QString qmDir = QStringLiteral(LIBRECELIK_TRANSLATIONS_DIR_DEFAULT);
+    ASSERT_TRUE(sr.load(QStringLiteral("LibreCelik_sr_RS"), qmDir))
+        << "failed to load LibreCelik_sr_RS.qm from " << qmDir.toStdString();
+    QCoreApplication::installTranslator(&sr);
+    QEvent change(QEvent::LanguageChange);
+    QCoreApplication::sendEvent(&w, &change);
+    const QString after = stateMessage(w);
+    const QString expected = qtTrId("lc-agent-guidance-not-in-applications");
+    // Removed before any assertion can return early: another suite in this
+    // binary installs the English catalog and must not inherit this one.
+    QCoreApplication::removeTranslator(&sr);
+
+    EXPECT_EQ(after, expected);
+    EXPECT_NE(after, before);
+    EXPECT_EQ(after, QStringLiteral("Преместите LibreMac и LibreCelik у Applications, па поново отворите LibreCelik."));
+}
+
+TEST_F(AgentStateWidgetTest, ReadyClearsGuidance)
+{
+    using librecelik::agent::Guidance;
+    using librecelik::agent::PresenceState;
+    AgentStateWidget w;
+    w.setState(PresenceState::AgentMissing, false);
+    w.setGuidance(Guidance::Starting);
+    EXPECT_FALSE(w.isHidden());
+    w.setState(PresenceState::Ready, false);
+    EXPECT_TRUE(w.isHidden());
+    EXPECT_TRUE(stateMessage(w).isEmpty());
+}
+
 TEST_F(MainFlowTest, StreamedGroupsReachThePluginWidgetInOrder)
 {
     using namespace LibreSCRS::AgentClient;

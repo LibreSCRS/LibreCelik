@@ -12,6 +12,46 @@
 
 namespace librecelik::agent {
 
+namespace {
+
+const char* guidanceName(Guidance guidance)
+{
+    switch (guidance) {
+    case Guidance::None:
+        return "None";
+    case Guidance::Starting:
+        return "Starting";
+    case Guidance::NotInstalled:
+        return "NotInstalled";
+    case Guidance::NotInApplications:
+        return "NotInApplications";
+    case Guidance::StillMissing:
+        return "StillMissing";
+    }
+    return "?";
+}
+
+/// The title a guidance replaces the missing-agent copy with. Read on every
+/// retranslate, never cached: a language switch must reach it at once.
+QString guidanceTitle(Guidance guidance)
+{
+    switch (guidance) {
+    case Guidance::Starting:
+        return qtTrId("lc-agent-guidance-starting");
+    case Guidance::NotInstalled:
+        return qtTrId("lc-agent-guidance-not-installed");
+    case Guidance::NotInApplications:
+        return qtTrId("lc-agent-guidance-not-in-applications");
+    case Guidance::StillMissing:
+        return qtTrId("lc-agent-guidance-still-missing");
+    case Guidance::None:
+        break;
+    }
+    return {};
+}
+
+} // namespace
+
 AgentStateWidget::AgentStateWidget(QWidget* parent) : QWidget(parent)
 {
     auto* layout = new QVBoxLayout(this);
@@ -53,7 +93,14 @@ void AgentStateWidget::setState(librecelik::agent::PresenceState state, bool any
                       << (state == PresenceState::Ready          ? "Ready"
                           : state == PresenceState::AgentMissing ? "AgentMissing"
                                                                  : "AgentUnavailable")
-                      << "anyReader=" << anyReader;
+                      << "anyReader=" << anyReader << "guidance=" << guidanceName(guidance);
+    retranslateUi();
+}
+
+void AgentStateWidget::setGuidance(librecelik::agent::Guidance value)
+{
+    guidance = value;
+    qCInfo(lcGeneral) << "AgentStateWidget: guidance=" << guidanceName(guidance);
     retranslateUi();
 }
 
@@ -68,8 +115,16 @@ void AgentStateWidget::retranslateUi()
 {
     switch (presenceState) {
     case PresenceState::AgentMissing:
-        titleLabel->setText(qtTrId("lc-agent-state-missing"));
-        hintLabel->setText(qtTrId("lc-agent-state-missing-hint"));
+        if (guidance == Guidance::None) {
+            titleLabel->setText(qtTrId("lc-agent-state-missing"));
+            hintLabel->setText(qtTrId("lc-agent-state-missing-hint"));
+        } else {
+            titleLabel->setText(guidanceTitle(guidance));
+            if (guidance == Guidance::StillMissing)
+                hintLabel->setText(qtTrId("lc-agent-guidance-still-missing-hint"));
+            else
+                hintLabel->clear();
+        }
         break;
     case PresenceState::AgentUnavailable:
         titleLabel->setText(qtTrId("lc-agent-state-unavailable"));
@@ -85,10 +140,13 @@ void AgentStateWidget::retranslateUi()
     const bool guided = presenceState != PresenceState::Ready;
     titleLabel->setVisible(guided);
     hintLabel->setVisible(guided && !hintLabel->text().isEmpty());
-    // Only the unavailable state is retryable: a missing agent does not start
-    // because LC asked it to, and an offered button that cannot work is worse
-    // than no button.
-    retryButton->setVisible(presenceState == PresenceState::AgentUnavailable);
+    // Retry is offered only where it can work: an unavailable agent may answer
+    // a fresh probe, and a missing one whose host was launched without result
+    // can be brought up by launching the host again. A plain missing agent
+    // does not start because LC asked it to, and an offered button that
+    // cannot work is worse than no button.
+    retryButton->setVisible(presenceState == PresenceState::AgentUnavailable ||
+                            (presenceState == PresenceState::AgentMissing && guidance == Guidance::StillMissing));
     setVisible(guided);
 }
 

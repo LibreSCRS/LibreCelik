@@ -1702,6 +1702,26 @@
         <source>Try again</source>
         <translation>Try again</translation>
     </message>
+    <message id="lc-agent-guidance-starting">
+        <source>Starting LibreMac…</source>
+        <translation>Starting LibreMac…</translation>
+    </message>
+    <message id="lc-agent-guidance-not-installed">
+        <source>Install LibreSCRS for macOS: drag LibreMac and LibreCelik from the same disk image into Applications.</source>
+        <translation>Install LibreSCRS for macOS: drag LibreMac and LibreCelik from the same disk image into Applications.</translation>
+    </message>
+    <message id="lc-agent-guidance-not-in-applications">
+        <source>Move LibreMac and LibreCelik into Applications, then open LibreCelik again.</source>
+        <translation>Move LibreMac and LibreCelik into Applications, then open LibreCelik again.</translation>
+    </message>
+    <message id="lc-agent-guidance-still-missing">
+        <source>LibreMac did not start the card agent.</source>
+        <translation>LibreMac did not start the card agent.</translation>
+    </message>
+    <message id="lc-agent-guidance-still-missing-hint">
+        <source>Open LibreMac and allow it to run in the background (System Settings → General → Login Items), then try again.</source>
+        <translation>Open LibreMac and allow it to run in the background (System Settings → General → Login Items), then try again.</translation>
+    </message>
     <message id="lc-health-title">
         <source>Health Insurance Card</source>
         <translation>Health Insurance Card</translation>

@@ -56,6 +56,16 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-agent-state-unavailable");
     //% "Try again"
     QT_TRID_NOOP("lc-agent-state-retry");
+    //% "Starting LibreMac…"
+    QT_TRID_NOOP("lc-agent-guidance-starting");
+    //% "Install LibreSCRS for macOS: drag LibreMac and LibreCelik from the same disk image into Applications."
+    QT_TRID_NOOP("lc-agent-guidance-not-installed");
+    //% "Move LibreMac and LibreCelik into Applications, then open LibreCelik again."
+    QT_TRID_NOOP("lc-agent-guidance-not-in-applications");
+    //% "LibreMac did not start the card agent."
+    QT_TRID_NOOP("lc-agent-guidance-still-missing");
+    //% "Open LibreMac and allow it to run in the background (System Settings → General → Login Items), then try again."
+    QT_TRID_NOOP("lc-agent-guidance-still-missing-hint");
     //% "Agent: %1"
     QT_TRID_NOOP("lc-main-about-agent");
     //% "♥ Support this project — <a href=\"https://librescrs.github.io/donate\">librescrs.github.io/donate</a>"

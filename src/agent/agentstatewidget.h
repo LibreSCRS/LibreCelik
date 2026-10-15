@@ -17,6 +17,7 @@
 #pragma once
 
 #include "agent/agentgateway.h"
+#include "agent/agentstarter.h"
 
 #include <QWidget>
 
@@ -40,10 +41,19 @@ public:
     ///                  copy, so it changes no pixel here.
     void setState(librecelik::agent::PresenceState state, bool anyReader);
 
+    /// @brief Replace the missing-agent copy with what is being done about it.
+    ///
+    /// Only the `AgentMissing` state speaks through it; `None` restores the
+    /// panel's own "not installed" copy. Kept across state changes, so an
+    /// agent that comes and goes again finds the guidance it left with.
+    void setGuidance(librecelik::agent::Guidance guidance);
+
 signals:
     /// @brief The retry affordance was used. The window answers it with
-    ///        `AgentGateway::refresh()`; the panel holds no gateway of its own
-    ///        (its constructor takes a parent and nothing else).
+    ///        `AgentGateway::refresh()`, or — while the guidance is
+    ///        `StillMissing` — by launching the agent's host again; the panel
+    ///        holds no gateway of its own (its constructor takes a parent and
+    ///        nothing else).
     void retryRequested();
 
 protected:
@@ -54,6 +64,7 @@ private:
 
     PresenceState presenceState = PresenceState::Ready;
     bool readerPresent = false;
+    Guidance guidance = Guidance::None;
 
     QLabel* titleLabel = nullptr;
     QLabel* hintLabel = nullptr;

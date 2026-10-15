@@ -975,6 +975,40 @@ gtest_discover_tests(AgentMainFlowTests
     TEST_PREFIX "AgentMainFlow."
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+# The missing-agent coordinator. Core-only: it drives no widget, so the
+# fixture installs a QCoreApplication for the completion hop and the poll
+# timer. The fake gateway (and the vtable anchors it needs) supplies presence;
+# the starter is a recording fake in the test itself.
+#
+# The TEST_PREFIX is load-bearing for the same reason as above: the gtest suite
+# name alone would not match `ctest -R AgentBootstrap` once it is renamed.
+add_executable(AgentBootstrapTests
+    agent_bootstrap_test.cpp
+    fake_gateway/fakeagentgateway.cpp
+    fake_gateway/fakecardcontroller.cpp
+    fake_gateway/fakesigncontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/agentgateway.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/cardcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/signcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/agentbootstrap.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
+)
+target_include_directories(AgentBootstrapTests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${PROJECT_BINARY_DIR}/../src
+)
+target_link_libraries(AgentBootstrapTests PRIVATE
+    GTest::gtest_main
+    Qt6::Core
+    Qt6::Test
+    LibreAgent::ClientQt
+)
+set_target_properties(AgentBootstrapTests PROPERTIES AUTOMOC ON)
+gtest_discover_tests(AgentBootstrapTests
+    TEST_PREFIX "AgentBootstrap."
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
 # The reader selector and the page stack, lifted out of the window so the two
 # defects that lived between them are reachable at all. Needs no window, no
 # gateway and no plugins — two widgets and a map — so this target stays tiny.

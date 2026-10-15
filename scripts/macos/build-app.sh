@@ -263,9 +263,10 @@ python3 "$LICENSE_CHECKER" \
 sign_bundle "$APP_STAGING"
 
 # ---------------------------------------------------------------------------
-# Bill of materials for what this bundle actually carries — see the same block
-# in scripts/linux/build-appimage.sh for why the bill is derived from the
-# staging tree instead of from source pins.
+# Bill of materials for what this bundle actually carries, derived from the
+# staging tree and not from source pins: a source-pin reader once searched for
+# files this repository does not have, printed "0 components", exited 0, and
+# the empty document was signed and published beside the artefact.
 #
 # AFTER signing, and the order is the whole point of the hash: codesign
 # rewrites the bytes of every Mach-O it signs. A bill written before that step

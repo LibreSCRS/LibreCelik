@@ -24,7 +24,7 @@ LibreSCRS releases ≥ 4.0 are cryptographically signed.
   release pipeline rejects any unsigned or wrong-fingerprint tag.
   See `KEYS` in this repository for the public key blob and the
   `gpg --verify` / `git tag -v` workflow.
-- **Release artifacts** (AppImage, DMG, archives) are signed via
+- **Release artifacts** (distribution packages, source tarball) are signed via
   Sigstore cosign keyless using GitHub Actions OIDC. The SLSA
   provenance bundle (`*.sigstore.json`) ships alongside every release
   asset. See <https://librescrs.github.io/security/> for the

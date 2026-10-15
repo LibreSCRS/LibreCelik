@@ -24,7 +24,7 @@ const static char* LOGPATTERN =
 int main(int argc, char* argv[])
 {
     // Answered before a QApplication exists, which needs a display: a check
-    // that the program starts at all -- the AppImage smoke test, a package
+    // that the program starts at all -- the macOS bundle smoke test, a package
     // check -- runs where there is no screen.
     for (int i = 1; i < argc; ++i) {
         if (std::string_view(argv[i]) == "--version"sv) {

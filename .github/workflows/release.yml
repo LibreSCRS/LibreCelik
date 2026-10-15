@@ -5,14 +5,19 @@ name: Release
 # and a branch push that changes what the release builds, rehearse: the same
 # jobs over the same code, with an ephemeral signing key instead of a keyless
 # one, and the release kept as a workflow artefact instead of created. This is
-# the only path to the AppImage and the distribution packages, so a change to
-# any of them is proved the way the tag will build it. Nothing is built or
+# the only path to the distribution packages, so a change to any of them is
+# proved the way the tag will build it. Nothing is built or
 # signed before the preflight has judged the tag's signature, the version
 # surfaces and the cross-repository pins.
 #
 # No macOS asset: the macOS release of LibreCelik comes from LibreMac's
 # release, one disk image carrying both applications, which packages this
 # repository's revision with scripts/macos/build-app.sh.
+#
+# No AppImage either. LibreCelik reads cards only through the agent, and the
+# agent cannot ride in one (a polkit action, a session bus activation file and
+# a systemd user unit are system files), so on Linux LibreCelik ships as a
+# package beside the agent's, for every distribution the agent is packaged for.
 on:
   push:
     tags: ['[0-9]+.[0-9]+.[0-9]+*']
@@ -25,8 +30,6 @@ on:
       - 'CHANGELOG.md'
       - 'packaging/**'
       - 'licenses/**'
-      - 'scripts/linux/**'
-      - 'ci/pins/**'
       - 'ci/release-assets.txt'
       - 'ci/scripts/check-bundled-licenses.py'
       - 'ci/scripts/gen-third-party-notices.py'
@@ -66,168 +69,6 @@ jobs:
           # rehearse (a dispatch may ask for publish, refused off a tag).
           mode: ${{ inputs.mode || (github.ref_type == 'tag' && 'publish' || 'rehearse') }}
           version-min: '1'
-
-  build-linux:
-    needs: [preflight]
-    timeout-minutes: 90
-    # A fixed image: the AppImage's glibc floor is the build host's (2.39 on
-    # Ubuntu 24.04), and a moving label would move it under a tag.
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build python3-jsonschema patchelf
-
-      - name: Install Qt 6.10.3
-        uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125  # v4.4.1
-        with:
-          version: '6.10.3'
-          host: linux
-          target: desktop
-          arch: linux_gcc_64
-          modules: 'qtpdf'
-          cache: true
-
-      - name: Install jsonschema into Qt's Python
-        run: python3 -m pip install --break-system-packages --user jsonschema
-
-      - name: Build JasPer and qtimageformats for JPEG2000 support
-        run: |
-          # JasPer is not in Ubuntu repos; build from source. Both sources are
-          # fetched by the commit ci/pins/jpeg2000.txt names, and the fetched
-          # HEAD is asserted rather than trusted: a pin that "applied" while the
-          # tree stayed on another commit is the failure this replaces. A
-          # shallow clone cannot check out an arbitrary commit, so the pinned
-          # object is fetched directly.
-          fetch_pinned() {  # fetch_pinned <name> <dir>
-            local _n url sha ver got
-            read -r _n url sha ver < <(grep "^$1 " ci/pins/jpeg2000.txt) || true
-            [ -n "${sha:-}" ] || { echo "::error::no pin for $1 in ci/pins/jpeg2000.txt"; exit 1; }
-            mkdir -p "$2" && git -C "$2" init -q .
-            git -C "$2" remote add origin "$url"
-            git -C "$2" fetch --depth 1 origin "$sha"
-            git -C "$2" checkout --detach FETCH_HEAD
-            got="$(git -C "$2" rev-parse HEAD)"
-            [ "$got" = "$sha" ] || { echo "::error::$1 pin $sha but HEAD $got"; exit 1; }
-          }
-          fetch_pinned jasper /tmp/jasper
-          cmake -B /tmp/jasper-build -S /tmp/jasper \
-            -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
-            -DJAS_ENABLE_PROGRAMS=OFF -DJAS_ENABLE_DOC=OFF -G Ninja
-          cmake --build /tmp/jasper-build
-          sudo cmake --install /tmp/jasper-build
-          sudo ldconfig
-
-          # Build qtimageformats against aqtinstall Qt + JasPer
-          QT_DIR="$(qmake6 -query QT_INSTALL_PREFIX)"
-          # One fetch and no fallback. The branch-name clone used to retry with
-          # a "v" prefix because Qt names its tags that way; a pin is a commit,
-          # so the prefix question no longer exists, and neither does the
-          # second clone that answered it.
-          fetch_pinned qtimageformats /tmp/qtimageformats
-          # The pin names a Qt release and the Qt step installs one exact
-          # version: moving one without the other builds a plugin from one Qt's
-          # sources into another Qt. Refuse it.
-          qt_ver="$(qmake6 -query QT_VERSION)"
-          read -r _ _ _ pin_ver < <(grep '^qtimageformats ' ci/pins/jpeg2000.txt) || true
-          [ "$qt_ver" = "${pin_ver:-}" ] || { echo "::error::Qt $qt_ver is installed but qtimageformats is pinned to ${pin_ver:-nothing} -- move the pin with Qt"; exit 1; }
-          # The bill of materials may name these commits only because they were
-          # asserted above; a local build that did not fetch them passes no pins.
-          echo "JPEG2000_PINS=$PWD/ci/pins/jpeg2000.txt" >> "$GITHUB_ENV"
-          # Verify JasPer is findable
-          echo "JasPer installed files:"
-          ls /usr/local/lib/libjasper* /usr/local/include/jasper/jasper.h 2>/dev/null || echo "WARNING: JasPer not found in /usr/local"
-
-          # Patch FindWrapJasper.cmake in BOTH source tree and Qt install
-          JASPER_FIND='if(TARGET WrapJasper::WrapJasper)\n  set(WrapJasper_FOUND TRUE)\n  return()\nendif()\nadd_library(WrapJasper::WrapJasper INTERFACE IMPORTED)\ntarget_link_libraries(WrapJasper::WrapJasper INTERFACE /usr/local/lib/libjasper.so)\ntarget_include_directories(WrapJasper::WrapJasper INTERFACE /usr/local/include)\nset(WrapJasper_FOUND TRUE)'
-          printf "$JASPER_FIND\n" > /tmp/qtimageformats/cmake/FindWrapJasper.cmake
-          printf "$JASPER_FIND\n" > "$QT_DIR/lib/cmake/Qt6/FindWrapJasper.cmake"
-          echo "Patched FindWrapJasper.cmake in source and Qt install"
-
-          cmake -B /tmp/qtimageformats-build -S /tmp/qtimageformats \
-            -DCMAKE_PREFIX_PATH="$QT_DIR" \
-            -DCMAKE_BUILD_TYPE=Release -G Ninja
-          cmake --build /tmp/qtimageformats-build
-          cmake --install /tmp/qtimageformats-build --prefix "$QT_DIR"
-          # Re-patch FindWrapJasper (cmake --install overwrites it)
-          printf '%s\n' \
-            'if(TARGET WrapJasper::WrapJasper)' \
-            '  set(WrapJasper_FOUND TRUE)' \
-            '  return()' \
-            'endif()' \
-            'add_library(WrapJasper::WrapJasper INTERFACE IMPORTED)' \
-            'target_link_libraries(WrapJasper::WrapJasper INTERFACE /usr/local/lib/libjasper.so)' \
-            'target_include_directories(WrapJasper::WrapJasper INTERFACE /usr/local/include)' \
-            'set(WrapJasper_FOUND TRUE)' \
-            > "$QT_DIR/lib/cmake/Qt6/FindWrapJasper.cmake"
-          echo "Installed imageformat plugins:"
-          ls "$QT_DIR/plugins/imageformats/"
-          # Verify JP2 plugin was built
-          if [[ ! -f "$QT_DIR/plugins/imageformats/libqjp2.so" ]]; then
-            echo "::error::libqjp2.so was NOT built — check config.summary:"
-            cat /tmp/qtimageformats-build/config.summary
-            exit 1
-          fi
-
-      - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
-
-      - name: Build
-        env:
-          QT_QPA_PLATFORM: offscreen
-        run: cmake --build build
-
-      - name: Test (LibreCelik)
-        env:
-          QT_QPA_PLATFORM: offscreen
-        run: ctest --output-on-failure --no-tests=error --test-dir build
-
-      - name: The AppImage tools the shared lock names
-        id: tools
-        uses: LibreSCRS/ci/actions/appimage-tools@164794a2151a30d5772355b7498acc2d73a2f7fa
-
-      - name: Build AppImage
-        env:
-          APPIMAGE_EXTRACT_AND_RUN: "1"
-          APPIMAGE_TOOLS_LOCK: ${{ steps.tools.outputs.lock }}
-          APPIMAGE_TOOLS_DIR: ${{ steps.tools.outputs.dir }}
-        run: scripts/linux/build-appimage.sh build
-
-      - name: The AppImage starts where there is no display
-        # Its own runtime, its own bundled Qt and libraries, and no screen:
-        # --version answers before the application needs one.
-        run: |
-          set -euo pipefail
-          app="$(ls LibreCelik-*-x86_64.AppImage)"
-          ver="${app#LibreCelik-}"; ver="${ver%-x86_64.AppImage}"
-          out="$(env -u DISPLAY -u WAYLAND_DISPLAY "./$app" --appimage-extract-and-run --version)"
-          echo "$out"
-          case "$out" in
-            "LibreCelik $ver"*) ;;
-            *) echo "::error::$app --version answered '$out', expected LibreCelik $ver"; exit 1 ;;
-          esac
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: linux-artifacts
-          # if-no-files-found is evaluated over the AGGREGATE match set, not
-          # per pattern: if the AppImage matches and the bill does not, this
-          # step still succeeds. So it is a floor, not the net -- the net is
-          # LibreSCRS/ci's check-sbom in the seal job, which reads the
-          # documents that actually arrived.
-          if-no-files-found: error
-          retention-days: 3
-          path: |
-            LibreCelik-*.AppImage
-            sbom-linux.cdx.json
 
   source-tarball:
     # The source tarball is produced by this project, not by GitHub. GitHub's
@@ -308,7 +149,7 @@ jobs:
           retention-days: 3
 
   seal:
-    needs: [preflight, build-linux, source-tarball, packages]
+    needs: [preflight, source-tarball, packages]
     timeout-minutes: 20
     runs-on: ubuntu-24.04
     permissions:
@@ -339,15 +180,6 @@ jobs:
           # a checkout into the workspace root would wipe it.
           path: .ci
           persist-credentials: false
-
-      - name: Refuse a release whose bill of materials is missing or empty
-        # Before anything is signed, deliberately: a signature over a document
-        # this job is about to reject is worth not creating. A signed empty
-        # bill tells whoever triages a Qt or OpenSSL advisory, over this
-        # project's signature, that the bundle carries no third-party code.
-        run: |
-          set -euo pipefail
-          .ci/scripts/check-sbom artifacts/sbom-linux.cdx.json
 
       - uses: LibreSCRS/ci/actions/release-seal@164794a2151a30d5772355b7498acc2d73a2f7fa
         with:

@@ -1051,7 +1051,7 @@ endif()
 add_test(NAME I18nAudit COMMAND ${_i18n_audit_command})
 set_tests_properties(I18nAudit PROPERTIES TIMEOUT 120)
 
-# `LibreCelik --version` answers with no display at all: the AppImage smoke
+# `LibreCelik --version` answers with no display at all: the macOS bundle smoke
 # test and a package check start the program where there is no screen, so the
 # answer has to come before the QApplication that would need one. The display
 # variables are emptied here so a developer's session cannot make it pass.

@@ -95,7 +95,7 @@ jobs:
     # framework enumeration, internal_sonames .dylib mirrors, --platform
     # filter (both directions, checker + generator + end-to-end main()).
     # Catches drift in the manifest schema or filter logic before the
-    # release-only AppImage / DMG fail-closed check fires. The count is
+    # macOS bundle's fail-closed check fires in LibreMac's release. The count is
     # deliberately not written here: it went stale the first time a case
     # was added, and pytest prints the real one on every run.
     timeout-minutes: 15
@@ -135,8 +135,7 @@ jobs:
           sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build python3-jsonschema
 
       # One exact Qt release in every workflow: a patch release on the day of a
-      # tag must not build something the branch never did. Moved deliberately,
-      # together with the qtimageformats row of ci/pins/jpeg2000.txt.
+      # tag must not build something the branch never did. Moved deliberately.
       - name: Install Qt 6.10.3
         uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125  # v4.4.1
         with:

@@ -130,7 +130,7 @@ LibreCelik::LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> injected
     ui->setupUi(this);
     uiReady = true;
 
-    // Load the GUI plugins. In deployed packages (AppImage, DMG) they live next
+    // Load the GUI plugins. In deployed packages (deb/rpm, the macOS bundle) they live next
     // to the executable; fall back to the build-tree path for development.
     // There is no middleware plugin directory to resolve any more — the agent
     // owns the card drivers, and LC only renders what they produce.
@@ -140,7 +140,7 @@ LibreCelik::LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> injected
         // .app/Contents/MacOS/../PlugIns/<subdir>
         QDir bundleDir(appDir.filePath("../PlugIns/" + subdir));
 #else
-        // AppImage / prefix install: usr/bin/../<libdir>/<subdir> — the same
+        // Prefix install: usr/bin/../<libdir>/<subdir> — the same
         // libdir the install rules and the RPATH use ("lib64" on some
         // distros), so the resolver walks the tree the install wrote.
         QDir bundleDir(appDir.filePath(QStringLiteral("../" LIBRECELIK_INSTALL_LIBDIR "/") + subdir));

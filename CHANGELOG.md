@@ -33,11 +33,10 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
   packages LibreCelik from the matching revision of this repository. When the
   agent is missing, LibreCelik launches LibreMac and starts its agent.
 
-- **The AppImage and the macOS bundle carry no update channel.** Neither
-  self-updates: the AppImage ships no `updateinformation`, so `AppImageUpdate`
-  cannot see it, and the macOS disk image is not distributed through an update
-  framework. LibreCelik bundles its Qt and its image codecs, so a security fix
-  in any of them is a new release. Re-download from the releases page.
+- **The macOS bundle carries no update channel.** The macOS disk image is not
+  distributed through an update framework, and LibreCelik bundles its Qt and
+  its image codecs there, so a security fix in any of them is a new release.
+  Re-download from the releases page.
 
 ### Added
 
@@ -53,10 +52,8 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 - **Native `deb` and `rpm` packages, and an AppStream entry.** Debian 13,
   Ubuntu 26.04 LTS, Fedora 43 and 44, and openSUSE Tumbleweed. LibreCelik needs
   none of the root-owned system files that force the agent into a distribution
-  package, so this is a quality decision rather than a necessity; the AppImage
-  remains. The AppImage does not carry the agent: install the `librescrs-agent`
-  package for your distribution beside it. It is built on Ubuntu 24.04 and
-  needs glibc 2.39 or newer.
+  package, so this is a quality decision rather than a necessity. Install it
+  beside the agent's packages, in the same transaction.
 
   The AppStream component did not exist before, which meant no software centre
   could list the application at all. It is now written, installed by the build,
@@ -80,6 +77,13 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Removed
 
+- **The AppImage.** LibreCelik reads cards only through the agent, and the agent
+  cannot ride in an AppImage: it is a per-user systemd service on the session
+  bus behind polkit, which only a system package can install. Without it the
+  AppImage started and found no card, and on Ubuntu 24.04, the system it was
+  built for, there is no agent package to install. On Linux, install the
+  `librecelik` package for your distribution beside the agent's.
+
 - **The 4.2 settings importer** — it copied a 4.2 installation's `QSettings`
   onto the agent's configuration item by item and re-ran on every transition
   to Ready. Carrying the previous major's configuration is the previous
@@ -102,12 +106,12 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **A signed SBOM per artefact, `sbom-linux.cdx.json` here and
-  `sbom-librecelik-macos.cdx.json` in LibreMac's release** — LibreCelik
+- **A signed SBOM for the macOS bundle, `sbom-librecelik-macos.cdx.json` in
+  LibreMac's release** — LibreCelik
   published none before: the previous single `sbom.cdx.json` was produced by
   a source-pin reader that searched paths this repository does not have, so
-  it listed nothing at all. Each new
-  bill is derived from the staging tree of the artefact it sits beside, by
+  it listed nothing at all. The new
+  bill is derived from the staging tree of the bundle it sits beside, by
   the same walk that already verifies every bundled library has a documented
   licence, and a release whose bill is missing or empty is now refused
   rather than published.

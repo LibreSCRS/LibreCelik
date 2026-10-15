@@ -9,13 +9,11 @@
 # step before `gh release create`; --published <tag> compares it against the
 # release that exists. Changing what the workflow publishes without changing
 # this file fails the release before it is created.
-LibreCelik-*-x86_64.AppImage  single-file Linux build; make it executable and run it
 librecelik_*.orig.tar.gz      the deterministic source tarball
 librecelik_*.debian13.deb     Debian 13 package
 librecelik_*.ubuntu2604.deb   Ubuntu 26.04 LTS package
 librecelik-*.fedora43.rpm     Fedora 43 package
 librecelik-*.fedora44.rpm     Fedora 44 package
 librecelik-*.opensusetw.rpm   openSUSE Tumbleweed package
-sbom-linux.cdx.json           CycloneDX bill of materials for the AppImage
 SHA256SUMS                    checksums over every other asset in this release
 *.sigstore.json               cosign keyless signature bundle, one per asset

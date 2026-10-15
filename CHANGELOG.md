@@ -27,11 +27,17 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
   process, and never seen, stored or carried here. Running LibreCelik without
   the agent installed and reachable is no longer supported.
 
-- **The AppImage and the DMG carry no update channel.** Both are release assets
-  and neither self-updates: the AppImage ships no `updateinformation`, so
-  `AppImageUpdate` cannot see it, and the DMG is not distributed through an
-  update framework. LibreCelik bundles its Qt and its image codecs, so a security
-  fix in any of them is a new release. Re-download from the releases page.
+- **On macOS, LibreCelik ships in the LibreSCRS disk image, beside LibreMac.**
+  This repository no longer publishes a macOS disk image of its own: LibreMac's
+  release carries one disk image with both applications, signed inside out, and
+  packages LibreCelik from the matching revision of this repository. When the
+  agent is missing, LibreCelik launches LibreMac and starts its agent.
+
+- **The AppImage and the macOS bundle carry no update channel.** Neither
+  self-updates: the AppImage ships no `updateinformation`, so `AppImageUpdate`
+  cannot see it, and the macOS disk image is not distributed through an update
+  framework. LibreCelik bundles its Qt and its image codecs, so a security fix
+  in any of them is a new release. Re-download from the releases page.
 
 ### Added
 
@@ -96,10 +102,11 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **A signed SBOM per artefact, `sbom-linux.cdx.json` and
-  `sbom-macos.cdx.json`** — LibreCelik published none before: the previous
-  single `sbom.cdx.json` was produced by a source-pin reader that searched
-  paths this repository does not have, so it listed nothing at all. Each new
+- **A signed SBOM per artefact, `sbom-linux.cdx.json` here and
+  `sbom-librecelik-macos.cdx.json` in LibreMac's release** — LibreCelik
+  published none before: the previous single `sbom.cdx.json` was produced by
+  a source-pin reader that searched paths this repository does not have, so
+  it listed nothing at all. Each new
   bill is derived from the staging tree of the artefact it sits beside, by
   the same walk that already verifies every bundled library has a documented
   licence, and a release whose bill is missing or empty is now refused

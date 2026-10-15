@@ -5,10 +5,14 @@ name: Release
 # and a branch push that changes what the release builds, rehearse: the same
 # jobs over the same code, with an ephemeral signing key instead of a keyless
 # one, and the release kept as a workflow artefact instead of created. This is
-# the only path to the AppImage, the DMG and the distribution packages, so a
-# change to any of them is proved the way the tag will build it. Nothing is
-# built or signed before the preflight has judged the tag's signature, the
-# version surfaces and the cross-repository pins.
+# the only path to the AppImage and the distribution packages, so a change to
+# any of them is proved the way the tag will build it. Nothing is built or
+# signed before the preflight has judged the tag's signature, the version
+# surfaces and the cross-repository pins.
+#
+# No macOS asset: the macOS release of LibreCelik comes from LibreMac's
+# release, one disk image carrying both applications, which packages this
+# repository's revision with scripts/macos/build-app.sh.
 on:
   push:
     tags: ['[0-9]+.[0-9]+.[0-9]+*']
@@ -22,7 +26,6 @@ on:
       - 'packaging/**'
       - 'licenses/**'
       - 'scripts/linux/**'
-      - 'scripts/macos/**'
       - 'ci/pins/**'
       - 'ci/release-assets.txt'
       - 'ci/scripts/check-bundled-licenses.py'
@@ -226,78 +229,6 @@ jobs:
             LibreCelik-*.AppImage
             sbom-linux.cdx.json
 
-  build-macos:
-    needs: [preflight]
-    timeout-minutes: 75
-    runs-on: macos-15
-    permissions:
-      contents: read
-    env:
-      # The Apple team the agent client is built for: the App Group holding
-      # the agent's socket is named after it. An organization variable, read
-      # only when publishing; a rehearsal builds without a team ("group.").
-      LIBRESCRS_TEAM_ID: ${{ needs.preflight.outputs.mode == 'publish' && vars.LIBRESCRS_TEAM_ID || '' }}
-    steps:
-      - name: A release names its team
-        if: needs.preflight.outputs.mode == 'publish'
-        run: |
-          if [ -z "$LIBRESCRS_TEAM_ID" ]; then
-            echo "::error::publishing needs the LIBRESCRS_TEAM_ID organization variable; the macOS client finds the agent in that team's App Group"
-            exit 1
-          fi
-
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Install build tools
-        # Ninja only. The agent client library is plain CMake.
-        run: brew install ninja
-
-      - name: Install Qt 6.10.3
-        uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125  # v4.4.1
-        with:
-          version: '6.10.3'
-          host: mac
-          target: desktop
-          arch: clang_64
-          modules: 'qtimageformats qtpdf'
-          cache: true
-
-      - name: Install jsonschema into Qt's Python
-        # aqtinstall puts its own Python on PATH; install jsonschema
-        # AFTER Qt setup so it lands in the python3 that cmake will
-        # invoke for manifest2header.py codegen.
-        run: python3 -m pip install --break-system-packages --user jsonschema
-
-      - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DLIBRESCRS_TEAM_ID="$LIBRESCRS_TEAM_ID"
-
-      - name: Build
-        env:
-          QT_QPA_PLATFORM: offscreen
-        run: cmake --build build
-
-      - name: Test (LibreCelik)
-        env:
-          QT_QPA_PLATFORM: offscreen
-        run: ctest --output-on-failure --no-tests=error --test-dir build
-
-      - name: Build DMG
-        run: scripts/macos/build-dmg.sh build
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: macos-artifacts
-          # See the linux-artifacts step: a floor over the aggregate match
-          # set, not a per-pattern guarantee.
-          if-no-files-found: error
-          retention-days: 3
-          path: |
-            LibreCelik-*.dmg
-            sbom-macos.cdx.json
-
   source-tarball:
     # The source tarball is produced by this project, not by GitHub. GitHub's
     # archive/refs/tags tarball omits every submodule tree and its bytes are
@@ -377,7 +308,7 @@ jobs:
           retention-days: 3
 
   seal:
-    needs: [preflight, build-linux, build-macos, source-tarball, packages]
+    needs: [preflight, build-linux, source-tarball, packages]
     timeout-minutes: 20
     runs-on: ubuntu-24.04
     permissions:
@@ -411,16 +342,12 @@ jobs:
 
       - name: Refuse a release whose bill of materials is missing or empty
         # Before anything is signed, deliberately: a signature over a document
-        # this job is about to reject is worth not creating. Both bills sit in
-        # one directory only here, so the pair is judged here, in one command:
-        # a healthy Linux bill must not launder an empty macOS one. A signed
-        # empty bill tells whoever triages a Qt or OpenSSL advisory, over this
+        # this job is about to reject is worth not creating. A signed empty
+        # bill tells whoever triages a Qt or OpenSSL advisory, over this
         # project's signature, that the bundle carries no third-party code.
         run: |
           set -euo pipefail
-          .ci/scripts/check-sbom \
-            artifacts/sbom-linux.cdx.json \
-            artifacts/sbom-macos.cdx.json
+          .ci/scripts/check-sbom artifacts/sbom-linux.cdx.json
 
       - uses: LibreSCRS/ci/actions/release-seal@ee82c97e5eff32cbf0a4803b861500658c48135e
         with:

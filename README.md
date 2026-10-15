@@ -29,7 +29,10 @@ LibreCelik (Слободни Челик) is a free and open-source smart card re
 
 ## Downloads
 
-Pre-built packages are available on the [Releases](https://github.com/LibreSCRS/LibreCelik/releases) page.
+Pre-built Linux packages are available on the [Releases](https://github.com/LibreSCRS/LibreCelik/releases) page.
+On macOS, LibreCelik ships in the LibreSCRS disk image together with LibreMac,
+which provides the card agent: download it from the
+[LibreMac releases](https://github.com/LibreSCRS/LibreMac/releases).
 Releases are signed with cosign keyless against the LibreSCRS GitHub
 Actions identity; verification instructions are on the
 [security page](https://librescrs.github.io/security/).

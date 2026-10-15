@@ -214,7 +214,7 @@ jobs:
           host: mac
           target: desktop
           arch: clang_64
-          modules: 'qtpdf'
+          modules: 'qtimageformats qtpdf'
           cache: true
 
       - name: Install jsonschema into Qt's Python
@@ -235,3 +235,18 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: ctest --output-on-failure --no-tests=error --test-dir build
+
+      - name: Package the app bundle (ad hoc) and check its signature
+        # The macOS release ships this bundle inside LibreMac's disk image,
+        # built by LibreMac's release from this repository's revision;
+        # packaging is proved here so a defect surfaces on this push, not in
+        # that release. --version answers before the application object
+        # exists, so it proves that dyld loads every linked framework from
+        # the signed bundle -- not that the GUI starts.
+        run: |
+          scripts/macos/build-app.sh build "$RUNNER_TEMP/app"
+          codesign --verify --strict --deep "$RUNNER_TEMP/app/LibreCelik.app"
+          QT_QPA_PLATFORM=offscreen "$RUNNER_TEMP/app/LibreCelik.app/Contents/MacOS/LibreCelik" --version
+
+      - name: Selftest (packaging)
+        run: scripts/macos/build-app.selftest.sh

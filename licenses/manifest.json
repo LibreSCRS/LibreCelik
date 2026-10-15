@@ -1,5 +1,4 @@
 {
-  "macos_bootstrapped": true,
   "internal_sonames": [
     "librescrs-pkcs11.so",
     "lib*-plugin.so",

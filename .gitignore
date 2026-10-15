@@ -55,13 +55,9 @@ resources/i18n/*.qm
 AppDir/
 *.AppImage
 
-# macOS DMG packaging
-*.dmg
-
-# Bills of materials, written into the repo root by the two packaging
-# scripts beside the artefact each one describes.
+# Bill of materials, written into the repo root by the AppImage packaging
+# script beside the artefact it describes.
 sbom-linux.cdx.json
-sbom-macos.cdx.json
 
 aqtinstall.log
 testPriint.pdf

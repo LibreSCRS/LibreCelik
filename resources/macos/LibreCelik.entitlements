@@ -2,10 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <!-- JVM JIT compilation requires writable+executable memory -->
-    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-    <true/>
-    <!-- Loading middleware/GUI plugins not signed by our team -->
+    <!-- Ad hoc only: the bundled libraries carry no team for library
+         validation to match. scripts/macos/build-app.sh removes this key
+         when the build names a team. -->
     <key>com.apple.security.cs.disable-library-validation</key>
     <true/>
 </dict>

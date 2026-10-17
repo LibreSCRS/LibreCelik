@@ -63,7 +63,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - id: pre
-        uses: LibreSCRS/ci/actions/release-preflight@164794a2151a30d5772355b7498acc2d73a2f7fa
+        uses: LibreSCRS/ci/actions/release-preflight@b9848b4990ae046072497f10d6f5b2bfdfa45470
         with:
           # A tag push publishes; a branch push and a dispatch default to
           # rehearse (a dispatch may ask for publish, refused off a tag).
@@ -91,7 +91,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: LibreSCRS/ci
-          ref: 164794a2151a30d5772355b7498acc2d73a2f7fa
+          ref: b9848b4990ae046072497f10d6f5b2bfdfa45470
           path: .ci
           persist-credentials: false
 
@@ -129,13 +129,13 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: LibreSCRS/ci/actions/pkg-build@164794a2151a30d5772355b7498acc2d73a2f7fa
+      - uses: LibreSCRS/ci/actions/pkg-build@b9848b4990ae046072497f10d6f5b2bfdfa45470
         id: build
         with:
           slug: ${{ matrix.slug }}
           upstream: ${{ github.ref_type == 'tag' && 'release' || 'source' }}
           version: ${{ github.ref_type == 'tag' && needs.preflight.outputs.version || '' }}
-      - uses: LibreSCRS/ci/actions/pkg-verify@164794a2151a30d5772355b7498acc2d73a2f7fa
+      - uses: LibreSCRS/ci/actions/pkg-verify@b9848b4990ae046072497f10d6f5b2bfdfa45470
         with:
           slug: ${{ matrix.slug }}
           packages: ${{ steps.build.outputs.art }}/${{ matrix.slug }}
@@ -175,13 +175,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: LibreSCRS/ci
-          ref: 164794a2151a30d5772355b7498acc2d73a2f7fa
+          ref: b9848b4990ae046072497f10d6f5b2bfdfa45470
           # A subdirectory: artifacts/ already holds the downloaded set, and
           # a checkout into the workspace root would wipe it.
           path: .ci
           persist-credentials: false
 
-      - uses: LibreSCRS/ci/actions/release-seal@164794a2151a30d5772355b7498acc2d73a2f7fa
+      - uses: LibreSCRS/ci/actions/release-seal@b9848b4990ae046072497f10d6f5b2bfdfa45470
         with:
           mode: ${{ needs.preflight.outputs.mode }}
           version: ${{ needs.preflight.outputs.version }}
@@ -207,7 +207,7 @@ jobs:
         with:
           name: sealed
           path: artifacts
-      - uses: LibreSCRS/ci/actions/release-publish@164794a2151a30d5772355b7498acc2d73a2f7fa
+      - uses: LibreSCRS/ci/actions/release-publish@b9848b4990ae046072497f10d6f5b2bfdfa45470
         with:
           mode: ${{ needs.preflight.outputs.mode }}
           version: ${{ needs.preflight.outputs.version }}

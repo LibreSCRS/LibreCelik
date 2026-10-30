@@ -196,6 +196,16 @@ set(RESOURCE_SOURCES
         ${APP_ICON_MACOS}
 )
 
+# The application's name in the macOS menu bar comes from the bundle's
+# CFBundleName, localized per .lproj; Qt's translations never reach it.
+# English stays a localization of its own, or an English system would match
+# no .lproj and show the Serbian name.
+foreach(_lproj en sr sr-Latn)
+    set(_strings "${PROJECT_SOURCE_DIR}/resources/macos/${_lproj}.lproj/InfoPlist.strings")
+    set_source_files_properties(${_strings} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources/${_lproj}.lproj")
+    list(APPEND RESOURCE_SOURCES ${_strings})
+endforeach()
+
 # The generated notice .txt is an add_custom_command OUTPUT, not a real
 # source: mark it GENERATED so CMake wires the dependency without trying to
 # compile it directly.

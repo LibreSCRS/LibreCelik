@@ -1,0 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
+/* The menu bar names the application by this, not by anything Qt sets. */
+"CFBundleName" = "Слободни Челик";

@@ -1,5 +1,7 @@
 [Desktop Entry]
 Name=LibreCelik
+Name[sr]=Слободни Челик
+Name[sr@latin]=Slobodni Čelik
 GenericName=Smart Card Reader
 GenericName[sr]=Читач паметних картица
 Comment=Open-source smart card reader — any card, any platform

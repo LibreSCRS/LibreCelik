@@ -63,7 +63,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - id: pre
-        uses: LibreSCRS/ci/actions/release-preflight@b9848b4990ae046072497f10d6f5b2bfdfa45470
+        uses: LibreSCRS/ci/actions/release-preflight@d68f5d781a665759eaba63c67ef0e6eb1f738063
         with:
           # A tag push publishes; a branch push and a dispatch default to
           # rehearse (a dispatch may ask for publish, refused off a tag).
@@ -91,7 +91,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: LibreSCRS/ci
-          ref: b9848b4990ae046072497f10d6f5b2bfdfa45470
+          ref: d68f5d781a665759eaba63c67ef0e6eb1f738063
           path: .ci
           persist-credentials: false
 
@@ -129,13 +129,13 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: LibreSCRS/ci/actions/pkg-build@b9848b4990ae046072497f10d6f5b2bfdfa45470
+      - uses: LibreSCRS/ci/actions/pkg-build@d68f5d781a665759eaba63c67ef0e6eb1f738063
         id: build
         with:
           slug: ${{ matrix.slug }}
           upstream: ${{ github.ref_type == 'tag' && 'release' || 'source' }}
           version: ${{ github.ref_type == 'tag' && needs.preflight.outputs.version || '' }}
-      - uses: LibreSCRS/ci/actions/pkg-verify@b9848b4990ae046072497f10d6f5b2bfdfa45470
+      - uses: LibreSCRS/ci/actions/pkg-verify@d68f5d781a665759eaba63c67ef0e6eb1f738063
         with:
           slug: ${{ matrix.slug }}
           packages: ${{ steps.build.outputs.art }}/${{ matrix.slug }}
@@ -165,7 +165,7 @@ jobs:
           pattern: 'packages-*'
           merge-multiple: true
           path: signed
-      - uses: LibreSCRS/ci/actions/pkg-sign@b9848b4990ae046072497f10d6f5b2bfdfa45470
+      - uses: LibreSCRS/ci/actions/pkg-sign@d68f5d781a665759eaba63c67ef0e6eb1f738063
         with:
           mode: ${{ needs.preflight.outputs.mode }}
           packages: signed
@@ -203,13 +203,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: LibreSCRS/ci
-          ref: b9848b4990ae046072497f10d6f5b2bfdfa45470
+          ref: d68f5d781a665759eaba63c67ef0e6eb1f738063
           # A subdirectory: artifacts/ already holds the downloaded set, and
           # a checkout into the workspace root would wipe it.
           path: .ci
           persist-credentials: false
 
-      - uses: LibreSCRS/ci/actions/release-seal@b9848b4990ae046072497f10d6f5b2bfdfa45470
+      - uses: LibreSCRS/ci/actions/release-seal@d68f5d781a665759eaba63c67ef0e6eb1f738063
         with:
           mode: ${{ needs.preflight.outputs.mode }}
           version: ${{ needs.preflight.outputs.version }}
@@ -235,7 +235,7 @@ jobs:
         with:
           name: sealed
           path: artifacts
-      - uses: LibreSCRS/ci/actions/release-publish@b9848b4990ae046072497f10d6f5b2bfdfa45470
+      - uses: LibreSCRS/ci/actions/release-publish@d68f5d781a665759eaba63c67ef0e6eb1f738063
         with:
           mode: ${{ needs.preflight.outputs.mode }}
           version: ${{ needs.preflight.outputs.version }}

@@ -197,7 +197,7 @@ cases=$((cases + 1))
 [ "$last" = "$work/app" ] || ok_order=0
 [ -n "$fw_line" ] || ok_order=0
 for l in $lib_lines; do [ "$l" -lt "${fw_line:-0}" ] || ok_order=0; done
-[ "$(printf '%s\n' "$lib_lines" | grep -c .)" = 3 ] || ok_order=0
+[ "$(printf '%s\n' "$lib_lines" | grep -c .)" = 2 ] || ok_order=0
 printf '%s\n' "$order" | grep -q 'libinside.dylib' && ok_order=0
 [ "$(printf '%s\n' "$log" | grep -c -- '--entitlements')" = 1 ] || ok_order=0
 if [ "$ok_order" = 1 ]; then

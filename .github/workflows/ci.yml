@@ -234,7 +234,10 @@ jobs:
       - name: Configure (Release)
         # Both Linux and macOS CI build Release — matches what users
         # receive. Debug coverage lives in the developer workflow.
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
+        # Host architecture only: GoogleTest comes from Homebrew, which builds it
+        # for the host alone, so a universal test binary cannot link. The
+        # universal app is the release workflow's.
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="$(uname -m)" -G Ninja
 
       - name: Build
         run: cmake --build build

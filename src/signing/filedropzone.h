@@ -12,7 +12,6 @@ class FileDropZone : public QWidget
 public:
     explicit FileDropZone(QWidget* parent = nullptr);
 
-    QStringList filePaths() const;
     void clear();
     void addFiles(const QStringList& paths);
     void removeFile(const QString& path);

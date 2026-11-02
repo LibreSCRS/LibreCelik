@@ -5,22 +5,21 @@
 
 #include "utils/libreceliklog.h"
 
-#include <QCoreApplication>
-#include <QPointer>
+#include <QScopeGuard>
 
 namespace librecelik::agent {
 
-AgentBootstrap::AgentBootstrap(AgentGateway& gateway, AgentStarter& starter, Timing timing, QObject* parent)
-    : QObject(parent), gateway(gateway), starter(starter), timing(timing)
+using LibreSCRS::AgentClient::AgentStartResult;
+
+AgentBootstrap::AgentBootstrap(AgentGateway& gateway, Options options, QObject* parent)
+    : QObject(parent), gateway(gateway), options(options)
 {
-    pollTimer.setInterval(timing.poll);
+    pollTimer.setInterval(options.poll);
     connect(&pollTimer, &QTimer::timeout, this, &AgentBootstrap::onTick);
     connect(&gateway, &AgentGateway::presenceChanged, this, &AgentBootstrap::onPresence);
 }
 
-AgentBootstrap::AgentBootstrap(AgentGateway& gateway, AgentStarter& starter, QObject* parent)
-    : AgentBootstrap(gateway, starter, Timing{}, parent)
-{}
+AgentBootstrap::AgentBootstrap(AgentGateway& gateway, QObject* parent) : AgentBootstrap(gateway, Options{}, parent) {}
 
 void AgentBootstrap::start()
 {
@@ -30,7 +29,7 @@ void AgentBootstrap::start()
 void AgentBootstrap::retry()
 {
     pollTimer.stop();
-    runLaunch();
+    runStart();
 }
 
 Guidance AgentBootstrap::guidance() const
@@ -38,92 +37,88 @@ Guidance AgentBootstrap::guidance() const
     return current;
 }
 
+bool AgentBootstrap::isStarting() const
+{
+    return starting;
+}
+
 void AgentBootstrap::onPresence(PresenceState state)
 {
-    if (!starter.canStart())
-        return;
-    if (state != PresenceState::AgentMissing) {
+    if (state == PresenceState::Ready) {
         pollTimer.stop();
         set(Guidance::None);
         return;
     }
-    if (attempted) {
-        // Once per session on its own. An agent that was here and has gone
-        // again is offered the retry; a launch still under way, or guidance
-        // already on screen, stays as it is.
-        if (current == Guidance::None)
-            set(Guidance::StillMissing);
+    if (pollTimer.isActive())
+        return; // a start is under way; its own poll decides
+    if (!attempted) {
+        runStart();
         return;
     }
-    runLaunch();
+    // Once per session on its own. An agent that was here and has gone again
+    // is offered the retry; guidance already on screen stays as it is.
+    if (state == PresenceState::AgentMissing && current == Guidance::None)
+        guide(Guidance::StillMissing);
 }
 
-void AgentBootstrap::runLaunch()
+void AgentBootstrap::runStart()
 {
+    if (starting)
+        return; // the start in progress answers for this one too
     attempted = true;
-    kicked = false;
-    const std::uint64_t generation = ++launchGeneration;
-    switch (starter.locate()) {
-    case HostLocation::NotFound:
-        set(Guidance::NotInstalled);
+    starting = true;
+    emit startingChanged(true);
+    const AgentStartResult result = [this] {
+        // Ended however the call ends: a start that threw is not in flight, and
+        // "Try again" must not stay held for one.
+        const auto done = qScopeGuard([this] {
+            starting = false;
+            emit startingChanged(false);
+        });
+        return gateway.requestAgentStart();
+    }();
+    qCInfo(lcGeneral) << "AgentBootstrap: start answered" << static_cast<int>(result);
+    switch (result) {
+    case AgentStartResult::Running:
+        set(Guidance::None);
+        break;
+    case AgentStartResult::Requested:
+        guide(Guidance::Starting);
+        sinceStart.start();
+        pollTimer.start();
         return;
-    case HostLocation::ElsewhereOnly:
-        set(Guidance::NotInApplications);
-        return;
-    case HostLocation::Installed:
+    case AgentStartResult::NotInstalled:
+        guide(Guidance::NotInstalled);
+        break;
+    case AgentStartResult::NotInApplications:
+        guide(Guidance::NotInApplications);
+        break;
+    case AgentStartResult::Failed:
+        guide(Guidance::StillMissing);
         break;
     }
-    set(Guidance::Starting);
-    // The completion may arrive on any thread. Hop to the GUI thread first and
-    // only there ask whether this object still exists: a QPointer is safe to
-    // copy anywhere, but only meaningful to read where the object lives.
-    starter.launchHost([guard = QPointer<AgentBootstrap>(this), generation](bool ok) {
-        QMetaObject::invokeMethod(
-            QCoreApplication::instance(),
-            [guard, generation, ok] {
-                if (guard && guard->launchGeneration == generation)
-                    guard->onLaunched(ok);
-            },
-            Qt::QueuedConnection);
-    });
-}
-
-void AgentBootstrap::onLaunched(bool ok)
-{
-    qCInfo(lcGeneral) << "AgentBootstrap: host launch" << (ok ? "succeeded" : "failed");
-    // The agent may have arrived before the completion did; the presence
-    // signal has already cleared the guidance then.
-    if (gateway.presence() != PresenceState::AgentMissing)
-        return;
-    if (!ok) {
-        set(Guidance::StillMissing);
-        return;
-    }
-    sinceLaunch.start();
-    pollTimer.start();
+    emit presenceSettled();
 }
 
 void AgentBootstrap::onTick()
 {
     gateway.refresh();
-    if (gateway.presence() != PresenceState::AgentMissing) {
+    if (gateway.presence() == PresenceState::Ready) {
         pollTimer.stop();
         set(Guidance::None);
         emit presenceSettled();
         return;
     }
-    const auto elapsed = std::chrono::milliseconds(sinceLaunch.elapsed());
-    if (!kicked && elapsed >= timing.kickAfter) {
-        // The host runs but its agent job did not come up with it — a job
-        // stopped earlier stays stopped until someone starts it.
-        qCInfo(lcGeneral) << "AgentBootstrap: kicking the agent job";
-        starter.kickAgent();
-        kicked = true;
-    }
-    if (elapsed >= timing.giveUp) {
+    if (std::chrono::milliseconds(sinceStart.elapsed()) >= options.giveUp) {
         pollTimer.stop();
-        set(Guidance::StillMissing);
+        guide(Guidance::StillMissing);
+        emit presenceSettled();
     }
+}
+
+void AgentBootstrap::guide(Guidance value)
+{
+    set(options.hostGuidance ? value : Guidance::None);
 }
 
 void AgentBootstrap::set(Guidance value)
@@ -133,12 +128,5 @@ void AgentBootstrap::set(Guidance value)
     current = value;
     emit guidanceChanged(current);
 }
-
-#ifndef Q_OS_MACOS
-std::unique_ptr<AgentStarter> makePlatformAgentStarter()
-{
-    return std::make_unique<NullAgentStarter>();
-}
-#endif
 
 } // namespace librecelik::agent

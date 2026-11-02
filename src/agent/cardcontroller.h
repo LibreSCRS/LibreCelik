@@ -24,7 +24,11 @@ public:
     [[nodiscard]] virtual QString cardType() const = 0; // G10, empty until resolved
     [[nodiscard]] virtual QString atrHex() const = 0;   // uppercase, no separators
     [[nodiscard]] virtual std::uint32_t capabilityBits() const = 0;
-    [[nodiscard]] virtual LibreSCRS::AgentClient::PreReadAuth preReadAuth() const = 0;
+    /// Whether the card wants an unlock (CAN, MRZ, or a method this build
+    /// cannot name) before its identity can be read. An unknown method counts
+    /// as one: reading such a card as if it needed nothing would start a read
+    /// the holder never unlocked.
+    [[nodiscard]] virtual bool preReadUnlockRequired() const = 0;
 
     /// ReadIdentity (streams groupReady) then GetPhoto; the controller merges
     /// the photo into the final field model before identityReady.

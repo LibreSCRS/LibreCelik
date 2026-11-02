@@ -168,14 +168,12 @@ fi
 echo "macdeployqt: $MACDEPLOYQT"
 
 # ---------------------------------------------------------------------------
-# Version, for the bill of materials. The resolution is shared with the other
-# packaging script and mirrors cmake/GitVersion.cmake — it refuses a foreign
-# repository's tags, accepts only version-shaped ones, and falls back to the
-# VERSION file.
+# Version, for the bill of materials: the one the build being packaged was
+# configured with (cmake/GitVersion.cmake), read from its cache. A second
+# resolver here would be a second answer to the same question.
 # ---------------------------------------------------------------------------
-# shellcheck source=../project-version.sh
-. "$SCRIPT_DIR/../project-version.sh"
-VERSION="$(project_version "$PROJECT_ROOT")"
+VERSION="$(sed -n 's/^CMAKE_PROJECT_VERSION:[A-Z]*=//p' "$BUILD_DIR/CMakeCache.txt")"
+[[ -n "$VERSION" ]] || die "no CMAKE_PROJECT_VERSION in $BUILD_DIR/CMakeCache.txt -- is that a configured LibreCelik build?"
 echo "Packaging LibreCelik.app for version: $VERSION"
 
 # ---------------------------------------------------------------------------
@@ -196,25 +194,11 @@ echo "Staging .app..."
 mkdir -p "$STAGING_DIR"
 cp -R "$APP_SRC" "$APP_STAGING"
 
-# ---------------------------------------------------------------------------
-# Copy the LibreSCRS GUI plugins into the app bundle.
-#
-# The app resolves these at runtime via ../PlugIns/ relative to the binary
-# (i.e. Contents/PlugIns/).
-#
-# Card access is not bundled at all: it lives in the separate agent service,
-# which this bundle never ships (LibreMac carries it), so there is no
-# card-side plugin directory, PKCS#11 module or certificate store to stage
-# here.
-# ---------------------------------------------------------------------------
-GUI_PLUGIN_DIR="$BUILD_DIR/gui-plugins"
-
-echo "Copying GUI plugins..."
-mkdir -p "$APP_STAGING/Contents/PlugIns/gui-plugins"
-for f in "$GUI_PLUGIN_DIR"/*-gui-plugin.*; do
-    [[ -f "$f" ]] && cp "$f" "$APP_STAGING/Contents/PlugIns/gui-plugins/"
-done
-ls "$APP_STAGING/Contents/PlugIns/gui-plugins/"
+# The card pages are linked into the executable, so there is no plugin of
+# this project's own to stage. Card access is not bundled at all: it lives in
+# the separate agent service, which this bundle never ships (LibreMac carries
+# it), so there is no card-side plugin directory, PKCS#11 module or
+# certificate store to stage here either.
 
 # ---------------------------------------------------------------------------
 # Run macdeployqt — bundles Qt frameworks, plugins, and .qm translations
@@ -263,10 +247,11 @@ python3 "$LICENSE_CHECKER" \
 sign_bundle "$APP_STAGING"
 
 # ---------------------------------------------------------------------------
-# Bill of materials for what this bundle actually carries, derived from the
-# staging tree and not from source pins: a source-pin reader once searched for
-# files this repository does not have, printed "0 components", exited 0, and
-# the empty document was signed and published beside the artefact.
+# Bill of materials for the part of the disk image this bundle is: the
+# application and the Qt it bundles, derived from the staging tree. Qt is a
+# binary installation with no source pin to read, so the tree is the only
+# input this part has; the parts built from pinned sources get their bills
+# from the shared generator, which reads the pins.
 #
 # AFTER signing, and the order is the whole point of the hash: codesign
 # rewrites the bytes of every Mach-O it signs. A bill written before that step

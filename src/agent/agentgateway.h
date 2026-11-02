@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 
 #pragma once
+#include <LibreSCRS/AgentClient/AgentClient.h> // AgentState
 #include <LibreSCRS/AgentClient/SyncError.h>
 #include <LibreSCRS/AgentClient/Types.h>
 #include <QObject>
@@ -16,15 +17,24 @@ namespace librecelik::agent {
 class CardController;
 class SignController;
 
-/// Guided-UX presence states. Detection is ClientQt's:
-/// agentInstalled() is activation-aware (D-Bus ListActivatableNames).
+/// Guided-UX presence states: the client library's agent state, in the
+/// words this window's panel speaks.
 enum class PresenceState { AgentMissing, AgentUnavailable, Ready };
 
-[[nodiscard]] constexpr PresenceState resolvePresence(bool installed, bool available) noexcept
+/// The panel's word for the client's agent state. The client learns that
+/// state itself and answers it without asking anyone, so this is safe in any
+/// signal handler.
+[[nodiscard]] constexpr PresenceState presenceFor(LibreSCRS::AgentClient::AgentState state) noexcept
 {
-    if (available)
+    switch (state) {
+    case LibreSCRS::AgentClient::AgentState::Ready:
         return PresenceState::Ready;
-    return installed ? PresenceState::AgentUnavailable : PresenceState::AgentMissing;
+    case LibreSCRS::AgentClient::AgentState::Stopped:
+        return PresenceState::AgentUnavailable;
+    case LibreSCRS::AgentClient::AgentState::Missing:
+        break;
+    }
+    return PresenceState::AgentMissing;
 }
 
 struct ReaderInfo
@@ -47,6 +57,9 @@ public:
     [[nodiscard]] virtual QString agentVersion() const = 0;
     [[nodiscard]] virtual bool hasFeature(const QString& token) const = 0;
     virtual void refresh() = 0; // AgentClient::refreshDiscovery passthrough
+    /// AgentClient::requestAgentStart passthrough: start the agent if it is
+    /// installed but not running. The library knows how on each platform.
+    virtual LibreSCRS::AgentClient::AgentStartResult requestAgentStart() = 0;
 
     /// Per-card controllers, parented to the gateway; nullptr for an id not
     /// in the roster. One live controller per card id (idempotent lookup).

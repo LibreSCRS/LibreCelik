@@ -7,7 +7,6 @@
 #include <LibreSCRS/AgentClient/Types.h>
 
 #include <QApplication>
-#include <QDir>
 #include <QLabel>
 #include <QList>
 
@@ -18,17 +17,17 @@ char* argv[] = {arg0, nullptr};
 QApplication app(argc, argv);
 } // namespace
 
-TEST(CardWidgetPluginRegistryTest, LoadsPluginFromDirectory)
+TEST(CardWidgetPluginRegistryTest, RegistersTheLinkedInCardPage)
 {
     CardWidgetPluginRegistry registry;
-    registry.loadPluginsFromDirectory(QString(MOCK_WIDGET_PLUGIN_DIR));
+    registry.loadStaticPlugins();
     EXPECT_EQ(registry.plugins().size(), 1);
 }
 
 TEST(CardWidgetPluginRegistryTest, FindByCardType)
 {
     CardWidgetPluginRegistry registry;
-    registry.loadPluginsFromDirectory(QString(MOCK_WIDGET_PLUGIN_DIR));
+    registry.loadStaticPlugins();
     auto* plugin = registry.findByCardType("mock");
     ASSERT_NE(plugin, nullptr);
     EXPECT_EQ(plugin->cardType(), "mock");
@@ -38,14 +37,14 @@ TEST(CardWidgetPluginRegistryTest, FindByCardType)
 TEST(CardWidgetPluginRegistryTest, FindByCardTypeNotFound)
 {
     CardWidgetPluginRegistry registry;
-    registry.loadPluginsFromDirectory(QString(MOCK_WIDGET_PLUGIN_DIR));
+    registry.loadStaticPlugins();
     EXPECT_EQ(registry.findByCardType("nonexistent"), nullptr);
 }
 
 TEST(CardWidgetPluginRegistryTest, CreateWidgetFromPlugin)
 {
     CardWidgetPluginRegistry registry;
-    registry.loadPluginsFromDirectory(QString(MOCK_WIDGET_PLUGIN_DIR));
+    registry.loadStaticPlugins();
     auto* plugin = registry.findByCardType("mock");
     ASSERT_NE(plugin, nullptr);
 
@@ -58,14 +57,4 @@ TEST(CardWidgetPluginRegistryTest, CreateWidgetFromPlugin)
     auto* label = qobject_cast<QLabel*>(widget);
     ASSERT_NE(label, nullptr);
     EXPECT_EQ(label->text(), "mock");
-}
-
-TEST(CardWidgetPluginRegistryTest, EmptyDirectoryLoadsNothing)
-{
-    CardWidgetPluginRegistry registry;
-    QDir tmpDir(QDir::tempPath() + "/librescrs-test-empty-plugins");
-    tmpDir.mkpath(".");
-    registry.loadPluginsFromDirectory(tmpDir.absolutePath());
-    EXPECT_EQ(registry.plugins().size(), 0);
-    tmpDir.removeRecursively();
 }

@@ -9,7 +9,7 @@
 // library decodes a value this build does not know through verbatim rather than
 // rejecting it. Every switch over such a type is therefore obliged to carry a
 // `default:` arm — which is exactly what stops -Wswitch from noticing an append.
-// namedCodeText() and callText() both carry one on purpose: at RUN time an
+// codeText() and callText() both carry one on purpose: at RUN time an
 // unknown code must fall through to whatever the agent itself said, not to a
 // diagnostic.
 //
@@ -27,9 +27,12 @@
 
 #include "agent/errortext.h"
 
+#include <LibreSCRS/AgentClient/FailureCopy.h>
+
 #include "qstring_printto.h"
 
 #include <QCoreApplication>
+#include <QLatin1StringView>
 #include <QSet>
 #include <QString>
 #include <QTranslator>
@@ -231,7 +234,7 @@ TEST_F(ErrorTextCoverage, EveryEnumeratedCodeHasADeliberateOutcome)
             EXPECT_FALSE(text.isEmpty()) << "code " << value << " is classified Localized but rendered nothing";
             EXPECT_NE(text, sentinel) << "code " << value
                                       << " is classified Localized but fell through to the agent message — phrase it "
-                                         "in namedCodeText() or reclassify it AgentFallback here";
+                                         "in codeText() or reclassify it AgentFallback here";
             EXPECT_NE(text, generic) << "code " << value
                                      << " is classified Localized but renders the generic; a user cannot tell it "
                                         "apart from an unclassified failure";
@@ -257,13 +260,40 @@ TEST_F(ErrorTextCoverage, EveryEnumeratedCodeHasADeliberateOutcome)
 }
 
 // Forward compatibility: an agent newer than this client may already send the
-// next code. Until this build names it, the agent-authored message must surface
-// untouched — the behaviour namedCodeText()'s `default:` arm exists for,
-// asserted rather than assumed.
+// next code. Until this build names it, the agent-authored message must still
+// reach the user, below the generic headline — the behaviour codeText()'s
+// `default:` arm exists for, asserted rather than assumed.
 TEST_F(ErrorTextCoverage, FirstValueBeyondTheTailFallsBackToTheAgentMessage)
 {
     const QString sentinel = sentinelMessage();
-    EXPECT_EQ(forCode(static_cast<ErrorCode>(kClassifiedCount), sentinel), sentinel);
+    EXPECT_EQ(forCode(static_cast<ErrorCode>(kClassifiedCount), sentinel),
+              librecelik::agent::errorText(ErrorCode::None, CallError::None, {}, {}) + QLatin1Char('\n') + sentinel);
+}
+
+// The third axis: the agent's message keys the client library tells every
+// client to phrase (kLocalizedMessageKeys). describeFailure() puts such a key
+// ahead of the code, so a key without a sentence here would reach the user as
+// the generic line in place of the most specific report there is -- and the
+// list grows in the client library, not in this repository. Each key must
+// render a sentence of its own: never the agent's prose, never the generic,
+// never another key's.
+TEST_F(ErrorTextCoverage, EveryMessageKeyTheClientNamesHasItsOwnSentence)
+{
+    const QString sentinel = sentinelMessage();
+    const QString generic = librecelik::agent::errorText(ErrorCode::None, CallError::None, QString(), QString());
+    ASSERT_FALSE(LibreSCRS::AgentClient::kLocalizedMessageKeys.empty());
+
+    QSet<QString> seen;
+    for (const QLatin1StringView key : LibreSCRS::AgentClient::kLocalizedMessageKeys) {
+        const QString text = librecelik::agent::errorText(ErrorCode::None, CallError::None, key, sentinel);
+        EXPECT_FALSE(text.trimmed().isEmpty()) << "message key " << key.data() << " rendered nothing";
+        EXPECT_NE(text, sentinel) << "message key " << key.data() << " fell through to the agent's prose";
+        EXPECT_NE(text, generic) << "message key " << key.data()
+                                 << " renders the generic line; phrase it in errortext.cpp";
+        EXPECT_FALSE(seen.contains(text))
+            << "message key " << key.data() << " shares its sentence with another key; a user cannot tell them apart";
+        seen.insert(text);
+    }
 }
 
 // Every transport classification must carry copy of its own: non-empty, and

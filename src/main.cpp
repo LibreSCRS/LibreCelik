@@ -4,6 +4,7 @@
 #include "librecelik.h"
 #include "config.h"
 #include "utils/libreceliklog.h"
+#include "utils/singleinstance.h"
 
 #include <QApplication>
 #include <QGuiApplication>
@@ -35,6 +36,12 @@ int main(int argc, char* argv[])
 
     QApplication a(argc, argv);
 
+    // One LibreCelik per user. A second start shows the running window and
+    // exits, instead of opening another window that reads the same cards.
+    librecelik::utils::SingleInstance instance(librecelik::utils::SingleInstance::defaultName());
+    if (!instance.claim())
+        return 0;
+
     qSetMessagePattern(LOGPATTERN);
     // Ties the running window to the installed librecelik.desktop. The entry's
     // StartupWMClass covers X11 only; on Wayland the association is made by the
@@ -46,6 +53,12 @@ int main(int argc, char* argv[])
 
     LibreCelik w;
     w.show();
+    QObject::connect(&instance, &librecelik::utils::SingleInstance::activationRequested, &w, [&w] {
+        w.setWindowState((w.windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+        w.show();
+        w.raise();
+        w.activateWindow();
+    });
 
     return a.exec();
 }

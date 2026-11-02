@@ -35,7 +35,7 @@ public:
     QString scriptedCardType;
     QString scriptedAtr;
     std::uint32_t scriptedCaps = 0;
-    LibreSCRS::AgentClient::PreReadAuth scriptedPreAuth = LibreSCRS::AgentClient::PreReadAuth::None;
+    bool scriptedUnlockRequired = false;
     QList<LibreSCRS::AgentClient::FieldGroup> scriptedGroups;
     /// Engaged script => startRead() replays the merge emission: a FINAL
     /// groupReady with this group (key "photo") BEFORE identityReady, and
@@ -64,6 +64,10 @@ public:
     /// `readingFinished`, and NEVER `identityReady` — a read that failed
     /// produced no model, and the shared contract's expectError arm pins that.
     bool failNextRead = false;
+    /// Engaged => `startRead()` records the call and emits only
+    /// `readingStarted`: a read still in flight, so the page that announced it
+    /// is still on screen to be asserted.
+    bool holdRead = false;
     /// Records verb calls for assertions.
     QStringList callLog;
 
@@ -73,7 +77,7 @@ public:
     [[nodiscard]] QString cardType() const override;
     [[nodiscard]] QString atrHex() const override;
     [[nodiscard]] std::uint32_t capabilityBits() const override;
-    [[nodiscard]] LibreSCRS::AgentClient::PreReadAuth preReadAuth() const override;
+    [[nodiscard]] bool preReadUnlockRequired() const override;
 
     void startRead() override;
     void requestCertificates() override;

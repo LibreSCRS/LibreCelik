@@ -17,7 +17,7 @@ signature against `validpgpkeys` -- the release key's primary fingerprint, the
 one `KEYS` carries -- before it builds anything. `pkgver` is the first line of
 the repository's `VERSION` file.
 
-`build()` touches no network: the tests (which fetch googletest) are off, and
+`build()` touches no network: the tests are off, and
 LibreAgent comes from the installed `librescrs-agent-client-qt`, never from a
 FetchContent copy — `build()` fails if anything was fetched. `check()`
 validates the desktop entry and the AppStream metainfo, as the RPM `%check`

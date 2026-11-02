@@ -17,7 +17,7 @@
 #pragma once
 
 #include "agent/agentgateway.h"
-#include "agent/agentstarter.h"
+#include "agent/agentbootstrap.h"
 
 #include <QWidget>
 
@@ -33,13 +33,12 @@ class AgentStateWidget : public QWidget
 public:
     explicit AgentStateWidget(QWidget* parent = nullptr);
 
-    /// @brief Render @p state.
-    /// @param state     The gateway's presence verdict.
-    /// @param anyReader Whether the agent currently enumerates any reader.
-    ///                  Recorded for the guided-state trace (the manual smoke
-    ///                  reads it) — both `Ready` shapes render the window's own
-    ///                  copy, so it changes no pixel here.
-    void setState(librecelik::agent::PresenceState state, bool anyReader);
+    /// @brief Render @p state, the gateway's presence verdict.
+    void setState(librecelik::agent::PresenceState state);
+
+    /// @brief Where the missing-agent state points the reader for installing
+    ///        the agent, in the window's current language.
+    void setInstallHelpUrl(const QString& url);
 
     /// @brief Replace the missing-agent copy with what is being done about it.
     ///
@@ -48,12 +47,14 @@ public:
     /// agent that comes and goes again finds the guidance it left with.
     void setGuidance(librecelik::agent::Guidance guidance);
 
+    /// @brief Hold the retry affordance while a start is being answered.
+    void setStarting(bool starting);
+
 signals:
-    /// @brief The retry affordance was used. The window answers it with
-    ///        `AgentGateway::refresh()`, or — while the guidance is
-    ///        `StillMissing` — by launching the agent's host again; the panel
-    ///        holds no gateway of its own (its constructor takes a parent and
-    ///        nothing else).
+    /// @brief The retry affordance was used. The window answers it by asking
+    ///        for the agent to be started (`AgentBootstrap::retry()`); the
+    ///        panel holds no gateway of its own (its constructor takes a
+    ///        parent and nothing else).
     void retryRequested();
 
 protected:
@@ -63,11 +64,12 @@ private:
     void retranslateUi();
 
     PresenceState presenceState = PresenceState::Ready;
-    bool readerPresent = false;
     Guidance guidance = Guidance::None;
 
     QLabel* titleLabel = nullptr;
     QLabel* hintLabel = nullptr;
+    QLabel* installHelpLabel = nullptr;
+    QString installHelpUrl;
     QPushButton* retryButton = nullptr;
 };
 

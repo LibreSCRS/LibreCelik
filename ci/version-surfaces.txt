@@ -1,4 +1,3 @@
 # <kind> <path>
 cmake-project      .
 rpm-spec-version   packaging/rpm/librecelik.spec
-shell-version-helper  scripts/project-version.sh

@@ -32,7 +32,6 @@
 
 #include "emrtd/emrtdwidget.h"
 #include "eu-vrc/euvrcwidget.h"
-#include "piv/pivwidget.h"
 #include "rs-eid/eidwidget.h"
 #include "rs-health/healthwidget.h"
 #include "utils/collapsiblesection.h"
@@ -139,63 +138,12 @@ QWidget* buildEuVrc()
     return new EuVrcWidget(mock::makeEuVrcMock());
 }
 
-QWidget* buildPiv()
-{
-    return new PIVWidget(mock::makePivMock());
-}
-
 } // namespace
 
 INSTANTIATE_TEST_SUITE_P(AllPlugins, PluginRetranslateTest,
                          ::testing::Values(PluginCase{"EidWidget", &buildEid}, PluginCase{"HealthWidget", &buildHealth},
                                            PluginCase{"EMRTDWidget", &buildEmrtd},
-                                           PluginCase{"EuVrcWidget", &buildEuVrc}, PluginCase{"PIVWidget", &buildPiv}),
+                                           PluginCase{"EuVrcWidget", &buildEuVrc}),
                          [](const ::testing::TestParamInfo<PluginCase>& info) { return info.param.name; });
-
-/// Copy the widget walk above cannot reach, asserted against the catalog
-/// directly.
-///
-/// The mock PIV read carries a discovery field group, so its section is
-/// built and its outer heading is folded into the snapshot by
-/// outerSectionOf() — but "lc-piv-section-discovery" itself names a nested
-/// section (a child of the outer section, not of the widget), which is
-/// exactly the DFS-drift case the file comment describes: it is not read
-/// directly, and its walk-assigned key is not guaranteed to line up between
-/// the two snapshots. It still has a live call site in the plugin, so a
-/// Serbian entry that is still the English source is a real gap this suite
-/// would otherwise miss.
-class PluginCatalogTest : public RetranslatableWidgetFixture
-{
-protected:
-    /// The rendering of @p id under @p language, with the fixture's translator
-    /// swapped for the duration of the call.
-    [[nodiscard]] QString rendered(const QString& language, const char* id)
-    {
-        switchTo(language);
-        QCoreApplication::processEvents();
-        return qtTrId(id);
-    }
-
-    [[nodiscard]] static bool hasCyrillic(const QString& text)
-    {
-        return std::ranges::any_of(text, [](QChar c) { return c.script() == QChar::Script_Cyrillic; });
-    }
-};
-
-TEST_F(PluginCatalogTest, PivCopyOutsideTheWidgetWalkIsTranslated)
-{
-    for (const char* id : {"lc-piv-widget-title", "lc-piv-section-discovery"}) {
-        SCOPED_TRACE(id);
-        const QString english = rendered(QStringLiteral("en"), id);
-        const QString serbian = rendered(QStringLiteral("sr_RS"), id);
-
-        ASSERT_FALSE(english.isEmpty()) << "id absent from the English catalog";
-        ASSERT_FALSE(serbian.isEmpty()) << "id absent from the Serbian catalog";
-        EXPECT_NE(serbian, english) << "the Serbian entry is still the English source";
-        // Serbian ships in Cyrillic, so script is what separates a translation
-        // from an untouched copy that happens to differ by punctuation.
-        EXPECT_TRUE(hasCyrillic(serbian)) << "rendered \"" << serbian.toStdString() << "\", which is not Serbian";
-    }
-}
 
 } // namespace librecelik::test::i18n

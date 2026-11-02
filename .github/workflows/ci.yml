@@ -92,7 +92,7 @@ jobs:
   license-tools:
     # Pytest coverage for the bundled-license tooling
     # (check-bundled-licenses.py + gen-third-party-notices.py): normalize,
-    # framework enumeration, internal_sonames .dylib mirrors, --platform
+    # framework enumeration, no object exempted by its name, --platform
     # filter (both directions, checker + generator + end-to-end main()).
     # Catches drift in the manifest schema or filter logic before the
     # macOS bundle's fail-closed check fires in LibreMac's release. The count is
@@ -132,7 +132,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libpcsclite-dev uuid-dev libcurl4-openssl-dev libxml2-dev cmake ninja-build python3-jsonschema
+          sudo apt-get install -y cmake ninja-build python3-jsonschema libgtest-dev
 
       # One exact Qt release in every workflow: a patch release on the day of a
       # tag must not build something the branch never did. Moved deliberately.
@@ -163,14 +163,15 @@ jobs:
         # Release cross-check of that exact client revision. Qt6 is the only
         # external toolchain the fetch needs.
         #
-        # LIBRECELIK_WERROR covers the GUI, its printing library and the six
-        # GUI plugins; the fetched client, googletest and this repo's own test
-        # executables stay warning-only. Deliberately not set on the macOS job:
-        # the clean state this rests on was measured with GCC, and AppleClang's
-        # diagnostic set is a different one that has never been surveyed.
+        # LIBRESCRS_WERROR covers the GUI, its printing libraries, the
+        # card-page plugins and the fetched client library, which reads the
+        # same option; test executables stay warning-only. Deliberately not
+        # set on the macOS job: the clean state this rests on was measured
+        # with GCC, and AppleClang's diagnostic set is a different one that
+        # has never been surveyed.
         # Build type and the option are pinned together here so a later edit
         # to one cannot quietly disarm the other.
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja -DLIBRECELIK_WERROR=ON
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja -DLIBRESCRS_WERROR=ON
 
       - name: Build
         env:
@@ -193,7 +194,11 @@ jobs:
 
   build-macos:
     timeout-minutes: 60
-    runs-on: macos-15
+    # The runner image is chosen by the Xcode it carries (the one named in
+    # .xcode-version, the Xcode the macOS release builds this application
+    # with), and that Xcode and its SDK are then selected explicitly by the
+    # shared action: an image's default Xcode changes on the image's schedule.
+    runs-on: xcode-27
     permissions:
       contents: read
     steps:
@@ -202,9 +207,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Select Xcode
+        uses: LibreSCRS/ci/actions/select-xcode@d68f5d781a665759eaba63c67ef0e6eb1f738063
+
       - name: Install build tools
-        # Ninja only. The agent client library is plain CMake.
-        run: brew install ninja
+        # Ninja, and GoogleTest for the test suite. The agent client library
+        # is plain CMake.
+        run: brew install ninja googletest
 
       - name: Install Qt 6.10.3
         uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125  # v4.4.1

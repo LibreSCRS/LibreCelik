@@ -13,18 +13,19 @@ Build-Depends: debhelper-compat (= 13),
                qt6-pdf-dev,
                qt6-tools-dev,
                qt6-tools-dev-tools,
-               libgtest-dev,
-               dbus-daemon,
-               liblibrescrs-dev (>= 5.0),
+               python3,
                liblibrescrs-agentclient-qt-dev (>= 5.0)
 Standards-Version: 4.7.0
 Homepage: https://librescrs.github.io/
 Rules-Requires-Root: no
 
+# The agent client library is released in lockstep with its consumers and
+# carries no ABI gate, so this package depends on EXACTLY the build it was
+# compiled against. That dependency is not written here: the library's own
+# shlibs file names its exact version, and ${shlibs:Depends} carries it.
 Package: librecelik
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends},
-         liblibrescrs-agentclient-qt5 (>= 5.0)
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: librescrs-agent (>= 5.0)
 Description: Cross-platform reader and signer for LibreSCRS smart cards
  LibreCelik reads Serbian government smart cards -- identity, vehicle and

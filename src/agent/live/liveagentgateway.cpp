@@ -5,7 +5,6 @@
 
 #include "agent/live/livecardcontroller.h"
 #include "agent/live/livesigncontroller.h"
-#include "agent/opstallwatchdog.h"
 
 #include <LibreSCRS/AgentClient/AgentCard.h>
 #include <LibreSCRS/AgentClient/AgentClient.h>
@@ -44,7 +43,7 @@ LiveAgentGateway::~LiveAgentGateway() = default;
 
 PresenceState LiveAgentGateway::presence() const
 {
-    return resolvePresence(client->agentInstalled(), client->isAvailable());
+    return presenceFor(client->agentState());
 }
 
 QList<ReaderInfo> LiveAgentGateway::readers() const
@@ -71,6 +70,11 @@ bool LiveAgentGateway::hasFeature(const QString& token) const
 void LiveAgentGateway::refresh()
 {
     client->refreshDiscovery();
+}
+
+LibreSCRS::AgentClient::AgentStartResult LiveAgentGateway::requestAgentStart()
+{
+    return client->requestAgentStart();
 }
 
 CardController* LiveAgentGateway::cardController(const QString& cardId)
@@ -175,19 +179,10 @@ void LiveAgentGateway::fetchCertificateDer(const QString& readerId, const QStrin
         return;
     }
 
-    // The DER fetch is public data with no consent step, but it is still card
-    // I/O and the client enforces no stall bound of its own, so it carries the
-    // same caller-side watchdog every controller operation does: parented to
-    // the operation, fed by its phase stream, cancelling on expiry. A cancelled
-    // fetch answers an EMPTY DER through the very same handler — the viewer
-    // gets its answer either way and never waits forever.
-    auto* dog = new OpStallWatchdog(LibreSCRS::AgentClient::kLongOperationTimeoutMs, operation);
-    connect(operation, &AgentOperation::phaseChanged, dog, &OpStallWatchdog::onPhase);
-    connect(dog, &OpStallWatchdog::expired, operation, [operation]() { operation->cancel(); });
-    dog->begin();
-
-    connect(operation, &AgentOperation::finished, this, [this, operation, dog, certId]() {
-        dog->stop(); // a normal completion must never leave a live timer behind
+    // A fetch that stalls is ended by the client library like any other
+    // operation, and answers an EMPTY DER through the very same handler — the
+    // viewer gets its answer either way and never waits forever.
+    connect(operation, &AgentOperation::finished, this, [this, operation, certId]() {
         Q_EMIT certificateDerReady(certId, operation->certificateDerResult());
         operation->deleteLater();
     });

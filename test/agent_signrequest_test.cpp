@@ -21,9 +21,14 @@
 #include <LibreSCRS/AgentClient/SignOptions.h>
 
 #include <QByteArray>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QList>
 #include <QRectF>
+#include <QStringList>
 #include <QString>
+#include <QTemporaryDir>
 #include <QtGlobal>
 
 #include "anonymous_fd.h"
@@ -33,10 +38,11 @@
 #include <utility>
 #include <vector>
 
+#include <unistd.h>
+
 #ifdef Q_OS_LINUX
 #include <dirent.h>
 #include <sys/mman.h>
-#include <unistd.h>
 #endif
 
 using namespace LibreSCRS::AgentClient;
@@ -164,56 +170,6 @@ TEST(SignRequest, DisplayNameIsTheFileNameNeverThePath)
     EXPECT_EQ(
         documentDisplayName({QStringLiteral("/tmp/dir/report.docx"), SignatureFormat::ASiCe, Packaging::Enveloped}),
         QStringLiteral("report.docx"));
-}
-
-// The output-naming contract, per format and packaging. These cases came from
-// the signing suite's local copy of the sign page's path builder; they call the
-// production helper now, so the names a user finds in their output folder are
-// pinned by the code that actually produces them. The folder does not exist,
-// which is deliberate: the never-overwrite search only engages for a path that
-// is already taken.
-TEST(SignRequest, OutputNamePAdESIsBaseNameSigned)
-{
-    const SignRequestItem item{QStringLiteral("/tmp/document.pdf"), SignatureFormat::PAdES, Packaging::Enveloped};
-    EXPECT_EQ(outputPathFor(item, QStringLiteral("/out")), QStringLiteral("/out/document-signed.pdf"));
-}
-
-TEST(SignRequest, OutputNameXAdESEnvelopedIsBaseNameSigned)
-{
-    const SignRequestItem item{QStringLiteral("/tmp/data.xml"), SignatureFormat::XAdES, Packaging::Enveloped};
-    EXPECT_EQ(outputPathFor(item, QStringLiteral("/out")), QStringLiteral("/out/data-signed.xml"));
-}
-
-TEST(SignRequest, OutputNameXAdESDetachedKeepsTheWholeSourceName)
-{
-    // The detached signature is a SECOND file: it stays recognisable next to
-    // the document it belongs to, extension included.
-    const SignRequestItem item{QStringLiteral("/tmp/data.xml"), SignatureFormat::XAdES, Packaging::Detached};
-    EXPECT_EQ(outputPathFor(item, QStringLiteral("/out")), QStringLiteral("/out/data.xml.xsig"));
-}
-
-TEST(SignRequest, OutputNameAsicEIsBaseNameContainer)
-{
-    const SignRequestItem item{QStringLiteral("/tmp/report.docx"), SignatureFormat::ASiCe, Packaging::Enveloped};
-    EXPECT_EQ(outputPathFor(item, QStringLiteral("/out")), QStringLiteral("/out/report.asice"));
-}
-
-TEST(SignRequest, OutputNameCAdESKeepsTheWholeSourceName)
-{
-    const SignRequestItem item{QStringLiteral("/tmp/file.bin"), SignatureFormat::CAdES, Packaging::Detached};
-    EXPECT_EQ(outputPathFor(item, QStringLiteral("/out")), QStringLiteral("/out/file.bin.p7s"));
-}
-
-TEST(SignRequest, OutputNameJAdESKeepsTheWholeSourceName)
-{
-    const SignRequestItem item{QStringLiteral("/tmp/data.json"), SignatureFormat::JAdES, Packaging::Detached};
-    EXPECT_EQ(outputPathFor(item, QStringLiteral("/out")), QStringLiteral("/out/data.json.jose"));
-}
-
-TEST(SignRequest, OutputNameStripsOnlyTheLastExtension)
-{
-    const SignRequestItem item{QStringLiteral("/tmp/archive.tar.gz"), SignatureFormat::ASiCe, Packaging::Enveloped};
-    EXPECT_EQ(outputPathFor(item, QStringLiteral("/out")), QStringLiteral("/out/archive.tar.asice"));
 }
 
 TEST(SignRequest, RowSuccessNeedsNoErrorAndNonEmptyArtifact)
@@ -399,4 +355,144 @@ TEST(ConsumeBatchOutcome, EmissionsMapThroughSourceIndexes)
     EXPECT_EQ(outcome.emissions[0].sourceIndex, 0);
     EXPECT_EQ(outcome.emissions[1].sourceIndex, 2);
 #endif
+}
+
+namespace {
+
+/// A descriptor carrying @p bytes with its offset left at the end -- the shape
+/// the agent hands a signed artifact over in.
+FdHandle artifactAtEnd(const QByteArray& bytes)
+{
+    FdHandle fd{librecelik::test::makeAnonymousFd("signed-artifact")};
+    if (fd.valid() && !bytes.isEmpty()) {
+        EXPECT_EQ(::write(fd.get(), bytes.constData(), static_cast<std::size_t>(bytes.size())),
+                  static_cast<ssize_t>(bytes.size()));
+    }
+    return fd;
+}
+
+QByteArray contentsOf(const QString& path)
+{
+    QFile file(path);
+    return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
+}
+
+} // namespace
+
+// The writing itself is the client library's and is tested there; what is
+// this application's is the call: the document's own format and packaging,
+// and the output folder the user chose rather than the document's.
+TEST(WriteSignedArtifact, TheArtifactLandsInTheOutputFolderUnderTheClientsName)
+{
+    QTemporaryDir documents;
+    QTemporaryDir output;
+    ASSERT_TRUE(documents.isValid() && output.isValid());
+    SignRequestItem item;
+    item.filePath = documents.filePath(QStringLiteral("contract.pdf"));
+    item.format = SignatureFormat::CAdES;
+    item.packaging = Packaging::Detached;
+    const QByteArray signature = QByteArrayLiteral("detached CMS signature bytes");
+    const FdHandle artifact = artifactAtEnd(signature);
+    ASSERT_TRUE(artifact.valid());
+
+    const QString expected = signedOutputPath(item.filePath, item.format, item.packaging, output.path());
+
+    const QString written = writeSignedArtifact(item, artifact.get(), output.path());
+
+    EXPECT_EQ(written, expected);
+    EXPECT_EQ(QFileInfo(written).absolutePath(), QFileInfo(output.path()).absoluteFilePath());
+    EXPECT_EQ(contentsOf(written), signature);
+    EXPECT_TRUE(QDir(documents.path()).isEmpty());
+}
+
+TEST(WriteSignedArtifact, SigningTheSameDocumentAgainNeverReplacesTheFirstFile)
+{
+    QTemporaryDir output;
+    ASSERT_TRUE(output.isValid());
+    SignRequestItem item;
+    item.filePath = output.filePath(QStringLiteral("report.pdf"));
+    const FdHandle first = artifactAtEnd(QByteArrayLiteral("%PDF first signature"));
+    const FdHandle second = artifactAtEnd(QByteArrayLiteral("%PDF second signature"));
+    ASSERT_TRUE(first.valid() && second.valid());
+
+    const QString firstPath = writeSignedArtifact(item, first.get(), output.path());
+    const QString secondPath = writeSignedArtifact(item, second.get(), output.path());
+
+    ASSERT_FALSE(firstPath.isEmpty());
+    ASSERT_FALSE(secondPath.isEmpty());
+    EXPECT_NE(secondPath, firstPath);
+    EXPECT_EQ(contentsOf(firstPath), QByteArrayLiteral("%PDF first signature"));
+    EXPECT_EQ(contentsOf(secondPath), QByteArrayLiteral("%PDF second signature"));
+}
+
+TEST(WriteSignedArtifact, AnEmptyArtifactWritesNothing)
+{
+    QTemporaryDir output;
+    ASSERT_TRUE(output.isValid());
+    SignRequestItem item;
+    item.filePath = output.filePath(QStringLiteral("empty.pdf"));
+    const FdHandle artifact = artifactAtEnd({});
+    ASSERT_TRUE(artifact.valid());
+
+    EXPECT_TRUE(writeSignedArtifact(item, artifact.get(), output.path()).isEmpty());
+    EXPECT_TRUE(writeSignedArtifact(item, -1, output.path()).isEmpty());
+    EXPECT_TRUE(QDir(output.path()).isEmpty());
+}
+
+namespace {
+
+QStringList* g_capturedWarnings = nullptr;
+
+void captureWarning(QtMsgType type, const QMessageLogContext&, const QString& message)
+{
+    if (type == QtWarningMsg && g_capturedWarnings)
+        g_capturedWarnings->append(message);
+}
+
+// Collects the warnings logged while it lives; the previous handler comes back
+// with it.
+class WarningCapture
+{
+public:
+    WarningCapture() : previous(qInstallMessageHandler(captureWarning))
+    {
+        g_capturedWarnings = &warnings;
+    }
+    ~WarningCapture()
+    {
+        g_capturedWarnings = nullptr;
+        qInstallMessageHandler(previous);
+    }
+    WarningCapture(const WarningCapture&) = delete;
+    WarningCapture& operator=(const WarningCapture&) = delete;
+
+    QStringList warnings;
+
+private:
+    QtMessageHandler previous;
+};
+
+} // namespace
+
+// The user is told only that the signed file could not be written; why it
+// could not is what tells an empty artifact from an unreadable one or a full
+// disk, so each refusal leaves its own reason in the log.
+TEST(WriteSignedArtifact, AFileNotWrittenLogsWhy)
+{
+    QTemporaryDir output;
+    ASSERT_TRUE(output.isValid());
+    SignRequestItem item;
+    item.filePath = output.filePath(QStringLiteral("report.pdf"));
+    const FdHandle empty = artifactAtEnd({});
+    ASSERT_TRUE(empty.valid());
+
+    WarningCapture capture;
+    ASSERT_TRUE(writeSignedArtifact(item, empty.get(), output.path()).isEmpty());
+    ASSERT_TRUE(writeSignedArtifact(item, -1, output.path()).isEmpty());
+
+    ASSERT_EQ(capture.warnings.size(), 2) << capture.warnings.join(QLatin1Char('|')).toStdString();
+    EXPECT_TRUE(capture.warnings.at(0).contains(QStringLiteral("the artifact is empty")))
+        << capture.warnings.at(0).toStdString();
+    EXPECT_TRUE(capture.warnings.at(1).contains(QStringLiteral("the artifact could not be read")))
+        << capture.warnings.at(1).toStdString();
 }

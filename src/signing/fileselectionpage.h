@@ -80,6 +80,7 @@ private:
     void updateFormatDescription();
     void updateLimitsLabel();
     void updateSequentialNotice();
+    [[nodiscard]] bool offersTsaChoice() const;
     void updateTsaRowVisibility();
     void showFormatComboForItem(int row);
     void dismissFormatCombos();

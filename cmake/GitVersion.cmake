@@ -1,7 +1,11 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: LGPL-2.1-or-later
 # GitVersion
 #
 # Version derived from the repository's own git tags (https://semver.org/).
+# Every LibreSCRS repository carries a byte-identical copy in its cmake/ (the
+# check-version gate compares the two): six copies used to answer this one
+# question six ways, and a second resolver beside one of them had to be told
+# that "the two used to differ".
 #
 # GIT_VERSION_FULL   - The full, honest version string: a MAJOR.MINOR.PATCH
 #                      triple, plus the commit distance and abbreviated hash
@@ -21,8 +25,8 @@
 # GIT_VERSION_PATCH  - Patch component
 #
 # The numeric triple is the *only* thing that may feed `project(VERSION ...)`,
-# CMake's own version comparisons and the macOS bundle version keys: all three
-# reject a suffix. The full string is what user-facing banners show, because a
+# CMake's own version comparisons, SOVERSION and the macOS bundle version keys:
+# all of them reject a suffix. The full string is what user-facing banners show, because a
 # development build that prints a bare release number is claiming to be a
 # release it is not.
 #
@@ -43,9 +47,11 @@ if(NOT DEFINED GIT_EXECUTABLE)
     find_package(Git QUIET REQUIRED)
 endif()
 
-# The repo root relative to THIS module (cmake/), not CMAKE_SOURCE_DIR: the
-# module must describe its own repository no matter which directory the
-# top-level build happens to start from. REALPATH collapses the `/..` and
+# The repo root relative to THIS module (cmake/), not CMAKE_SOURCE_DIR and not
+# PROJECT_VERSION: the module must describe its own repository no matter which
+# directory the top-level build starts from, and a repository consumed through
+# FetchContent or add_subdirectory() sees the ENCLOSING project's
+# PROJECT_VERSION before its own project() call. REALPATH collapses the `/..` and
 # resolves symlinks on the way, because the ownership test below compares this
 # against a path git prints already normalised — `<root>/cmake/..` is the same
 # directory as `<root>` but never the same string.
@@ -93,13 +99,11 @@ if(GIT_VERSION_OWN_REPO)
     #    as the last release. Without it, describe appends `-<commits>-g<sha>`
     #    off-tag and prints the bare tag on a tagged commit.
     #  * `--match` restricted to VERSION-SHAPED tags: a leading digit and two
-    #    further dot-separated groups that each start with one. This repository
-    #    carries local rollback/bookkeeping tags (SAVED_PRE_SQUASH_LC and
-    #    friends), and while none of them happens to begin with a digit today —
-    #    so the older `[0-9]*` glob was not actually letting one through — that
-    #    is a property of the names chosen so far, not a rule anyone enforces.
-    #    A date-stamped bookkeeping tag would satisfy the old glob on the day
-    #    someone makes one.
+    #    further dot-separated groups that each start with one. A clone may
+    #    carry local rollback/bookkeeping tags, and that none of them begins
+    #    with a digit is a property of the names chosen so far, not a rule
+    #    anyone enforces: a date-stamped bookkeeping tag would satisfy a bare
+    #    `[0-9]*` glob on the day someone makes one.
     execute_process(
         COMMAND ${GIT_EXECUTABLE} describe --tags --dirty
                 --match "[0-9]*.[0-9]*.[0-9]*" --match "v[0-9]*.[0-9]*.[0-9]*"
@@ -189,10 +193,9 @@ if(GIT_VERSION_REFS_DIR)
 
     # A newly created loose tag lands under refs/tags instead, touching
     # neither HEAD, the index, nor packed-refs. Re-globbing the directory at
-    # build time and comparing the matched file set is the same
-    # CONFIGURE_DEPENDS mechanism this project's licenses glob already relies
-    # on (src/CMakeLists.txt) — it notices an added or removed file rather
-    # than trusting the directory's raw mtime.
+    # build time and comparing the matched file set (CONFIGURE_DEPENDS)
+    # notices an added or removed file rather than trusting the directory's
+    # raw mtime.
     file(GLOB_RECURSE GIT_VERSION_TAG_REFS CONFIGURE_DEPENDS "${GIT_VERSION_REFS_DIR}/refs/tags/*")
     unset(GIT_VERSION_TAG_REFS)
 endif()
@@ -208,11 +211,11 @@ endif()
 # checkout has the opposite problem: describe answers with the PREVIOUS release
 # for the whole cycle, so between code freeze (VERSION bumped) and the tag the
 # build stamps the OLD major while VERSION, the CHANGELOG and the packaging all
-# state the new one. Measured on this repository: VERSION, the deb/rpm metadata
-# and the changelog said 5.0.0 while project(), the About window, the startup
-# log line and the macOS bundle keys said 4.2.0 — on every push, before any
-# tag, and the package job labelled the artefact with the number the sources
-# did not carry.
+# state the new one. Measured: VERSION, the deb/rpm metadata and the changelog
+# said 5.0.0 while project(), the About window and the macOS bundle keys said
+# 4.2.0; an installed CONFIG package advertised the old major, so
+# `find_package(LibreMiddleware 5.0 CONFIG)` refused it in three repositories
+# at once -- on every push, before any tag.
 #
 # So VERSION is not a fallback, it is a floor: it carries the version this tree
 # is heading for and is bumped at code freeze. The tag still wins on the

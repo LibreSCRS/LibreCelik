@@ -8,11 +8,11 @@
 
 #include "agent/errortext.h"
 
+#include <LibreSCRS/AgentClient/FailureCopy.h>
+
 #include <QDebug>
 
 #include <QCoreApplication>
-
-#include <optional>
 
 namespace librecelik::agent {
 
@@ -21,24 +21,15 @@ namespace {
 using LibreSCRS::AgentClient::CallError;
 using LibreSCRS::AgentClient::CredentialOutcome;
 using LibreSCRS::AgentClient::ErrorCode;
+using LibreSCRS::AgentClient::FailureCopy;
+using LibreSCRS::AgentClient::FailureSource;
 using LibreSCRS::AgentClient::OperationPhase;
 
-/// LC copy for the agent's wire-frozen error taxonomy — or nothing at all when
-/// this build does not name the code.
-///
-/// The empty answer is the point of the `std::optional`: "this build has copy
-/// for that code" is a question `errorText` has to ASK before it decides whether
-/// the agent's own message is worth rendering, and a function that folded the
-/// unnamed case into a generic string could not be asked it. Two values land on
-/// the empty answer:
-///
-///   * `ErrorCode::None` — a failure that named no code has nothing to say, and
-///     whatever else the operation carries is more specific than a generic.
-///   * anything past this build's tail. The client library decodes an ErrorCode
-///     value it does not know through verbatim rather than rejecting it (see
-///     ErrorCode.h's append-tolerance note), so the `default:` arm is REQUIRED,
-///     not stylistic, and an unrecognised value is opaque display data.
-[[nodiscard]] std::optional<QString> namedCodeText(ErrorCode code)
+/// LC copy for the agent's wire-frozen error taxonomy. A code this build does
+/// not name — the client library passes an unrecognised value through rather
+/// than rejecting it — gets the generic line; the agent's detail below it
+/// still says what happened.
+[[nodiscard]] QString codeText(ErrorCode code)
 {
     switch (code) {
     case ErrorCode::CardRemoved:
@@ -83,7 +74,7 @@ using LibreSCRS::AgentClient::OperationPhase;
         return qtTrId("lc-agent-error-entry-expired");
     case ErrorCode::None:
     default:
-        return std::nullopt;
+        return qtTrId("lc-agent-error-generic");
     }
 }
 
@@ -116,31 +107,9 @@ using LibreSCRS::AgentClient::OperationPhase;
     }
 }
 
-/// LC copy for an agent-authored message key, or an empty string when this
-/// build does not name the key.
-///
-/// Only keys whose meaning is EXACTLY an entry LC already renders are named
-/// here; a key LC would have to paraphrase is deliberately left unknown, so the
-/// agent's own authored fallback is what a user reads rather than a guess made
-/// on this side. The key vocabulary is the agent's and it grows independently
-/// of this build, which is the whole reason the fallback pass-through exists.
-///
-/// Naming a key is not free, because this rule resolves AHEAD of the error code:
-/// a key coarser than the code it travels with would displace a more precise
-/// localized line with a vaguer one. Most of the agent's vocabulary is in
-/// exactly that position — one key covering many distinct failures that each
-/// arrive with their own code — and is deliberately absent here for that reason.
-/// The keys that belong here are the ones whose failures report NO code, so
-/// there is nothing more precise for them to displace:
-///
-///   * `op.card_removed` and `op.watchdog_timeout` both map onto the copy their
-///     own code would have produced, so the rule order cannot change what a user
-///     reads either way.
-///   * `op.cancelled` reports no code at all, and the message riding with it is
-///     a bare restatement of the key. Without an entry here it was the one
-///     failure where an untranslated English line reached the user with nothing
-///     lost by translating it.
-[[nodiscard]] QString knownMsgKeyText(const QString& msgKey)
+/// LC copy for each of the agent's message keys the client library names in
+/// `kLocalizedMessageKeys` — the only keys `describeFailure()` ever selects.
+[[nodiscard]] QString messageKeyText(const QString& msgKey)
 {
     if (msgKey == QLatin1StringView("op.card_removed"))
         return qtTrId("lc-agent-error-card-removed");
@@ -148,15 +117,11 @@ using LibreSCRS::AgentClient::OperationPhase;
         return qtTrId("lc-agent-error-watchdog");
     if (msgKey == QLatin1StringView("op.cancelled"))
         return qtTrId("lc-agent-msg-cancelled");
-    // Named here, not left to the code arm below, so the localized sentence
-    // stands ALONE. The agent's own prose for this key now says the same thing
-    // in English, and the code arm would append it as a "detail line" -- the
-    // holder would read one sentence twice, in two languages.
     if (msgKey == QLatin1StringView("op.entry_expired"))
         return qtTrId("lc-agent-error-entry-expired");
     if (msgKey == QLatin1StringView("op.helper_too_old"))
         return qtTrId("lc-agent-error-helper-too-old");
-    return {};
+    return qtTrId("lc-agent-error-generic");
 }
 
 } // namespace
@@ -191,66 +156,47 @@ ReadFailureAction readFailureAction(bool pageIsSpinner, ErrorCode code)
 
 QString errorText(ErrorCode code, CallError call, const QString& msgKey, const QString& msgFallback)
 {
-    // A whitespace-only agent message is not a message: non-empty to QString,
-    // blank to a reader. Normalised once, here, so no arm below can hand a user
-    // an empty error line.
-    const QString message = msgFallback.trimmed().isEmpty() ? QString() : msgFallback;
-
-    // 1. A key this build names. The most specific thing anyone knows about the
-    //    failure, in the user's own language.
-    if (!msgKey.isEmpty()) {
-        if (const QString named = knownMsgKeyText(msgKey); !named.isEmpty())
-            return named;
+    const FailureCopy copy = describeFailure(code, call, msgKey, msgFallback);
+    switch (copy.source) {
+    case FailureSource::MessageKey:
+        return messageKeyText(copy.messageKey);
+    case FailureSource::ErrorCode: {
+        const QString headline = codeText(copy.errorCode);
+        if (copy.detail.isEmpty() || copy.detail == headline)
+            return headline;
+        // Plain qWarning, not a category: this TU is compiled into test targets
+        // that do not carry the logging TU, and the line must not cost them a
+        // link dependency.
+        qWarning() << "agent detail behind localized error" << static_cast<quint32>(copy.errorCode) << ":"
+                   << copy.detail;
+        return headline + QLatin1Char('\n') + copy.detail;
     }
-    // 2. A code this build names. The agent's message for such a failure is
-    //    authored in English and is never translated on the way here, so
-    //    preferring it — which is what this function used to do for every
-    //    failure that carried a key — leaked English into every non-English
-    //    session on the whole agent-answered class of errors. LC's copy for a
-    //    code it recognises is the localized HEADLINE — but it is coarser than
-    //    the prose on the classes where the agent collapses distinct failures
-    //    onto one code and carries the distinction only in its message (a
-    //    signing-engine error names the actual engine complaint there; a
-    //    reader-communication failure says WHICH leg failed). Discarding that
-    //    prose would trade the only specific record of the failure for a
-    //    general sentence, so it rides below the headline as a detail line,
-    //    and is logged either way so a report without a screenshot still
-    //    carries it.
-    if (const std::optional<QString> named = namedCodeText(code)) {
-        if (!message.isEmpty() && message != *named) {
-            // Plain qWarning, not a category: this TU is compiled into test
-            // targets that do not carry the logging TU, and the line must not
-            // cost them a link dependency.
-            qWarning() << "agent detail behind localized error" << static_cast<quint32>(code) << ":" << message;
-            return *named + QLatin1Char('\n') + message;
-        }
-        return *named;
+    case FailureSource::AgentMessage:
+        return copy.detail;
+    case FailureSource::Transport:
+        return callText(copy.callError);
+    case FailureSource::Generic:
+        break;
     }
-    // 3. An ANSWERED refusal (arguments/authorization/protocol): the agent
-    //    classified the request and authored the message — arriving with an
-    //    empty key on the entry-refusal path (AgentOperation::failEntry) — and
-    //    that prose is the only precise record of why. Rule 2 cannot have
-    //    consumed this shape: an entry refusal reports no error code.
-    const bool agentAnswered =
-        call == CallError::InvalidArguments || call == CallError::AccessDenied || call == CallError::ProtocolError;
-    if (agentAnswered && !message.isEmpty())
-        return message;
-    // 4. The transport axis, ahead of the agent's prose: on these routes the
-    //    message is raw bus text written for a developer, never shown to a user.
-    //    The two classification axes are mutually exclusive on a failed op —
-    //    when the call never reached the agent, `code` is None and carries
-    //    nothing.
-    if (call != CallError::None)
-        return callText(call);
-    // 5. The agent's authored message, in the degraded position it belongs in:
-    //    reachable only once neither axis named the failure, which is when that
-    //    message is the only thing left that carries meaning. Untranslated, and
-    //    that is the honest trade — an English sentence about the actual failure
-    //    beats a localized sentence about nothing.
-    if (!message.isEmpty())
-        return message;
-    // 6. The floor that makes a blank error line impossible.
     return qtTrId("lc-agent-error-generic");
+}
+
+QString credentialGuidanceText(const std::optional<QString>& key, const std::optional<QString>& fallback)
+{
+    // The guidance vocabulary is the agent's and grows independently of this
+    // build, which is why the fallback arm exists and is the common one.
+    const QString wireKey = key.value_or(QString());
+    if (wireKey == QLatin1StringView("librescrs.pin.blocked.issuer"))
+        return qtTrId("lc-pin-guidance-blocked-issuer");
+    if (wireKey == QLatin1StringView("librescrs.pin.keyActivation.issuer"))
+        return qtTrId("lc-pin-guidance-key-activation-issuer");
+    const QString authored = fallback.value_or(QString());
+    return authored.trimmed().isEmpty() ? QString() : authored;
+}
+
+QString cardGoneText()
+{
+    return errorText(ErrorCode::CardRemoved, CallError::None, {}, {});
 }
 
 QString phaseText(OperationPhase phase)

@@ -1,13 +1,16 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Every action is pinned by commit; this is what moves the pins, one reviewed
-# pull request a week. One group, so the LibreSCRS/ci references -- which must
-# all name the same commit -- move together.
+# pull request a week. LibreSCRS/ci is not moved here: every reference to it
+# must name the same commit, and that commit is moved deliberately, in one
+# change.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: 'LibreSCRS/ci*'
     groups:
       github-actions:
         patterns: ['*']

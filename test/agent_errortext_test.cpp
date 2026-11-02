@@ -35,9 +35,11 @@ TEST(ErrorText, NamedCodeBeatsTheAgentsProseEvenWithAKeyPresent)
     EXPECT_NE(text, librecelik::agent::errorText(ErrorCode::None, CallError::None, {}, {}));
 }
 
-// The other half of the same rule: when neither axis names the failure, the
-// agent's authored message is all that carries meaning and must still reach the
-// user untouched. Both an unnamed code and one past this build's tail.
+// The other half of the same rule: when nothing names the failure, the agent's
+// authored message is all that carries meaning and must still reach the user
+// untouched. A code past this build's tail is still a code the agent NAMED, so
+// it is treated like a known one, as every client of the agent treats it: the
+// generic headline, with the agent's message as the detail below it.
 TEST(ErrorText, UnnamedCodeStillPassesTheAgentsFallbackText)
 {
     EXPECT_EQ(librecelik::agent::errorText(ErrorCode::None, CallError::None, QStringLiteral("future.key"),
@@ -45,7 +47,8 @@ TEST(ErrorText, UnnamedCodeStillPassesTheAgentsFallbackText)
               QStringLiteral("Future thing"));
     EXPECT_EQ(librecelik::agent::errorText(static_cast<ErrorCode>(9999), CallError::None, QStringLiteral("future.key"),
                                            QStringLiteral("Future thing")),
-              QStringLiteral("Future thing"));
+              librecelik::agent::errorText(ErrorCode::None, CallError::None, {}, {}) +
+                  QStringLiteral("\nFuture thing"));
 }
 TEST(ErrorText, AnsweredRefusalPassesTheAgentsProseThroughWithoutAKey)
 {

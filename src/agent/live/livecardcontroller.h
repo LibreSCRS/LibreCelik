@@ -5,14 +5,11 @@
 /// @brief The production `CardController`: one card's flows over the agent
 ///        client, in the LC vocabulary the GUI consumes.
 ///
-/// Adds three things the client deliberately does not provide. A CALLER-SIDE
-/// stall bound per operation (the library has none — see `OpStallWatchdog`).
-/// The photo MERGE: the wire delivers a portrait through a second operation,
-/// and every LC surface consumes it as a field of the identity model, so the
-/// read is not finished until the two are one model. And the FEATURE GATE on
-/// the optional sections: against an agent predating token info / credentials
-/// the client refuses those verbs LOUDLY, which would surface as an error on
-/// every insertion for surfaces LC should simply not show.
+/// Adds two things the client deliberately does not provide. The photo MERGE: the wire delivers a portrait through a
+/// second operation, and every LC surface consumes it as a field of the identity model, so the read is not finished
+/// until the two are one model. And the FEATURE GATE on the optional sections: against an agent predating token info /
+/// credentials the client refuses those verbs LOUDLY, which would surface as an error on every insertion for surfaces
+/// LC should simply not show.
 
 #pragma once
 
@@ -48,7 +45,7 @@ public:
     [[nodiscard]] QString cardType() const override;
     [[nodiscard]] QString atrHex() const override;
     [[nodiscard]] std::uint32_t capabilityBits() const override;
-    [[nodiscard]] LibreSCRS::AgentClient::PreReadAuth preReadAuth() const override;
+    [[nodiscard]] bool preReadUnlockRequired() const override;
 
     void startRead() override;
     void requestCertificates() override;

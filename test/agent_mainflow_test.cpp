@@ -86,11 +86,11 @@ TEST_F(AgentStateWidgetTest, RendersDistinctTextPerPresenceState)
 {
     using librecelik::agent::PresenceState;
     AgentStateWidget w;
-    w.setState(PresenceState::AgentMissing, false);
+    w.setState(PresenceState::AgentMissing);
     const QString missing = stateMessage(w);
-    w.setState(PresenceState::AgentUnavailable, false);
+    w.setState(PresenceState::AgentUnavailable);
     const QString unavailable = stateMessage(w);
-    w.setState(PresenceState::Ready, false);
+    w.setState(PresenceState::Ready);
     const QString ready = stateMessage(w);
     EXPECT_FALSE(missing.isEmpty());
     EXPECT_FALSE(unavailable.isEmpty());
@@ -107,7 +107,7 @@ TEST_F(AgentStateWidgetTest, GuidanceOverridesTheMissingCopy)
     using librecelik::agent::Guidance;
     using librecelik::agent::PresenceState;
     AgentStateWidget w;
-    w.setState(PresenceState::AgentMissing, false);
+    w.setState(PresenceState::AgentMissing);
     w.setGuidance(Guidance::Starting);
     EXPECT_EQ(stateMessage(w), qtTrId("lc-agent-guidance-starting"));
     auto* retry = w.findChild<QPushButton*>();
@@ -120,7 +120,30 @@ TEST_F(AgentStateWidgetTest, GuidanceOverridesTheMissingCopy)
     EXPECT_TRUE(retry->isVisibleTo(&w));
     w.setGuidance(Guidance::None);
     EXPECT_EQ(stateMessage(w), qtTrId("lc-agent-state-missing"));
-    EXPECT_FALSE(retry->isVisibleTo(&w));
+    EXPECT_TRUE(retry->isVisibleTo(&w));
+}
+
+/// "Not installed" is not a dead end: the agent may be installed while the
+/// window is open, and only asking again tells the client so. The state offers
+/// that, and the way to install the agent, in the window's language.
+TEST_F(AgentStateWidgetTest, TheMissingStateOffersARecheckAndTheInstallGuide)
+{
+    using librecelik::agent::PresenceState;
+    AgentStateWidget w;
+    w.setInstallHelpUrl(QStringLiteral("https://example.invalid/install-agent/"));
+    w.setState(PresenceState::AgentMissing);
+
+    auto* retry = w.findChild<QPushButton*>();
+    ASSERT_NE(retry, nullptr);
+    EXPECT_TRUE(retry->isVisibleTo(&w));
+    auto* help = w.findChild<QLabel*>(QStringLiteral("agentInstallHelp"));
+    ASSERT_NE(help, nullptr);
+    EXPECT_TRUE(help->isVisibleTo(&w));
+    EXPECT_TRUE(help->text().contains(QStringLiteral("https://example.invalid/install-agent/")));
+    EXPECT_TRUE(help->openExternalLinks());
+
+    w.setState(PresenceState::AgentUnavailable);
+    EXPECT_FALSE(help->isVisibleTo(&w));
 }
 
 TEST_F(AgentStateWidgetTest, GuidanceRetranslatesOnLanguageChange)
@@ -131,7 +154,7 @@ TEST_F(AgentStateWidgetTest, GuidanceRetranslatesOnLanguageChange)
     using librecelik::agent::Guidance;
     using librecelik::agent::PresenceState;
     AgentStateWidget w;
-    w.setState(PresenceState::AgentMissing, false);
+    w.setState(PresenceState::AgentMissing);
     w.setGuidance(Guidance::NotInApplications);
     const QString before = stateMessage(w);
 
@@ -158,10 +181,10 @@ TEST_F(AgentStateWidgetTest, ReadyClearsGuidance)
     using librecelik::agent::Guidance;
     using librecelik::agent::PresenceState;
     AgentStateWidget w;
-    w.setState(PresenceState::AgentMissing, false);
+    w.setState(PresenceState::AgentMissing);
     w.setGuidance(Guidance::Starting);
     EXPECT_FALSE(w.isHidden());
-    w.setState(PresenceState::Ready, false);
+    w.setState(PresenceState::Ready);
     EXPECT_TRUE(w.isHidden());
     EXPECT_TRUE(stateMessage(w).isEmpty());
 }

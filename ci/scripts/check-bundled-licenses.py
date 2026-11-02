@@ -90,15 +90,6 @@ def normalize(basename: str) -> str:
     return basename[: m.end(1)]
 
 
-def is_internal(name: str, internal_globs) -> bool:
-    """Return True if ``name`` matches any glob in ``internal_globs``.
-
-    Internal (LibreSCRS-owned) libraries carry the project's own license
-    and are skipped by the bundle check.
-    """
-    return any(fnmatch.fnmatch(name, g) for g in internal_globs)
-
-
 def _component_applies_to_platform(comp, current_platform) -> bool:
     """Return True if ``comp`` is in scope for ``current_platform``.
 
@@ -198,7 +189,6 @@ def emit_candidates(root: str, manifest, current_platform=None):
     candidate manifest entry per normalized soname that is **not** yet
     accounted for. A soname is skipped when it:
 
-    - matches an ``internal_sonames`` glob (LibreSCRS-owned), or
     - matches an ``exclude_not_bundled`` glob (deliberately not bundled
       by the packaging scripts), or
     - already resolves to an existing ``components`` entry.
@@ -213,14 +203,11 @@ def emit_candidates(root: str, manifest, current_platform=None):
     cover a macOS-bundled soname of the same name while no license text
     would actually ship for it.
     """
-    internal = manifest.get("internal_sonames", [])
     excluded = manifest.get("exclude_not_bundled", [])
     components = manifest.get("components", [])
 
     unmapped = set()
     for name, _rp in enumerate_assets(root):
-        if is_internal(name, internal):
-            continue
         if any(fnmatch.fnmatch(name, g) for g in excluded):
             continue
         if match_component(name, components, current_platform) is not None:
@@ -350,10 +337,7 @@ def purl_for(comp, soname: str, version: str) -> str:
             return explicit + "@" + version
         return explicit
     stem = _soname_stem(soname)
-    # The ecosystem convention: libcurl.so IS the package "curl". It holds
-    # for third-party sonames and only for those -- see the internal branch
-    # of emit_sbom, where the same strip would eat three letters of our own
-    # project's name.
+    # The ecosystem convention: libcurl.so IS the package "curl".
     if stem.startswith("lib"):
         stem = stem[3:]
     return "pkg:generic/%s%s" % (stem, "@" + version if version else "")
@@ -399,15 +383,16 @@ def emit_sbom(
 
     Returns ``(document, 0)`` or ``(None, non-zero)``.
 
+    The bill for the part of a disk image that is LibreCelik.app: the
+    application and the Qt it bundles. That part is read from the staging
+    tree because it has no other input to read: Qt arrives as a binary
+    installation, with no source pin a bill could be derived from. What is
+    built from a pinned source (the middleware, the agent) gets its bill
+    from the shared generator, which reads those pins. One generator per
+    kind of input, never two for the same one.
+
     Same walk, same matching and the same fail-closed rule as
     :func:`run_check`: what the artefact carries is what the bill lists.
-    Deriving the bill from the tree rather than from a hand-written list
-    of source pins is the entire point. A list of pins is a claim, and a
-    claim is what went wrong: the published, cosign-signed bill beside
-    this repository's AppImage carried ``"components": []`` for a bundle
-    that ships OpenSSL, Qt and curl, because not one of the source paths
-    its pin reader searched exists in this repository. It printed
-    "0 components" and exited 0.
 
     Three refusals, all of them things that producer did silently:
 
@@ -419,16 +404,9 @@ def emit_sbom(
       small bill. It is a signed document stating that this artefact
       bundles no third-party code.
 
-    First-party objects (``internal_sonames``) are listed too, without a
-    licence: a consumer asking "which build is inside" is asking a
-    bill-of-materials question, and the several first-party globs do not
-    share one licence, so naming one here would be a guess.
-
-    One deliberate difference from :func:`run_check`: the exclusion globs
-    are consulted BEFORE the internal ones here, and after them there.
-    Over today's manifest the two sets do not intersect, so the two modes
-    agree; if a glob is ever added to both, they would not, and this is
-    the line to change.
+    A LibreSCRS library is no exception: the one the application bundles,
+    the agent client, is a licensed component of the manifest like any
+    other, and nothing is exempted by its name.
 
     ``pins`` (from :func:`load_pins`) names the commit a network-fetched
     source was built from. A manifest component carrying ``"pin": <name>``
@@ -438,7 +416,6 @@ def emit_sbom(
     given, a pinned component the file does not name, or a pin row that
     matched nothing bundled, is an error rather than a weaker bill.
     """
-    internal = manifest.get("internal_sonames", [])
     excluded = manifest.get("exclude_not_bundled", [])
     components = manifest.get("components", [])
 
@@ -470,47 +447,32 @@ def emit_sbom(
         else:
             version = soname_version(real)
 
-        if is_internal(name, internal):
-            # A first-party object is named by its soname, minus only the
-            # extension. purl_for's "lib" strip is the convention that
-            # libcurl.so is the package "curl"; over our own names it eats
-            # three letters of the project -- librescrs-pkcs11.so would be
-            # billed as "rescrs-pkcs11", libresign.so as "resign", and both
-            # of those go into a signed document nobody re-reads.
-            comp_name = _soname_stem(name)
-            licence = None
-            props = [{"name": "librescrs:internal", "value": "true"}]
-            version = version or app_version
-            purl = "pkg:generic/%s%s" % (
-                comp_name, "@" + version if version else ""
+        comp = match_component(name, components, current_platform)
+        if comp is None:
+            errors.append(
+                f"::error::{name} ({rel}) is bundled but maps to no "
+                f"license component in the manifest"
             )
-        else:
-            comp = match_component(name, components, current_platform)
-            if comp is None:
+            continue
+        comp_name = comp["name"]
+        licence = licence_entry(comp["spdx"])
+        props = []
+        pin_name = comp.get("pin")
+        if pins is not None and pin_name:
+            pin = pins.get(pin_name)
+            if pin is None:
                 errors.append(
-                    f"::error::{name} ({rel}) is bundled but maps to no "
-                    f"license component in the manifest"
+                    f"::error::{name} ({rel}) is pinned as '{pin_name}' "
+                    f"in the manifest, and the pin file does not name it"
                 )
                 continue
-            comp_name = comp["name"]
-            licence = licence_entry(comp["spdx"])
-            props = []
-            pin_name = comp.get("pin")
-            if pins is not None and pin_name:
-                pin = pins.get(pin_name)
-                if pin is None:
-                    errors.append(
-                        f"::error::{name} ({rel}) is pinned as '{pin_name}' "
-                        f"in the manifest, and the pin file does not name it"
-                    )
-                    continue
-                pins_used.add(pin_name)
-                version = pin["version"]
-                props = [
-                    {"name": "librescrs:source-commit", "value": pin["commit"]},
-                    {"name": "librescrs:source-url", "value": pin["url"]},
-                ]
-            purl = purl_for(comp, name, version)
+            pins_used.add(pin_name)
+            version = pin["version"]
+            props = [
+                {"name": "librescrs:source-commit", "value": pin["commit"]},
+                {"name": "librescrs:source-url", "value": pin["url"]},
+            ]
+        purl = purl_for(comp, name, version)
 
         if not version:
             unversioned += 1
@@ -601,7 +563,7 @@ def run_check(
     """Fail-closed verdict over a packaging staging tree.
 
     Enumerates every bundled shared library under ``staging_root`` and
-    requires each one to either be internal/excluded, or map to a manifest
+    requires each one to either be excluded, or map to a manifest
     component whose recorded license text exists and hashes verbatim. Any
     unmapped library, missing license text, or sha256 mismatch is an
     ``::error::`` and makes the function return non-zero.
@@ -621,7 +583,6 @@ def run_check(
 
     Returns 0 when no errors were found, non-zero otherwise.
     """
-    internal = manifest.get("internal_sonames", [])
     excluded = manifest.get("exclude_not_bundled", [])
     components = manifest.get("components", [])
 
@@ -637,8 +598,6 @@ def run_check(
     for name, rp in enumerate_assets(staging_root):
         checked += 1
 
-        if is_internal(name, internal):
-            continue
         if any(fnmatch.fnmatch(name, g) for g in excluded):
             continue
 

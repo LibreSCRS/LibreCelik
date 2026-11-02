@@ -39,20 +39,19 @@ endif()
 # clean.
 #
 # Deliberately NOT an add_compile_options(-Werror) next to the line above:
-# that is directory-scoped and would also reach the agent client library and
-# googletest, both of which are built from source inside this build tree
-# (see cmake/FindOrUseLibreAgent.cmake). Their diagnostics belong to their own
-# projects and no change here could fix them, so a global -Werror would let an
-# upstream revision bump break this build. The opt-in below is per target and
-# is applied only to the GUI, its printing library and the GUI plugins. Test
+# that is directory-scoped and would also reach this tree's test executables
+# and the third-party CBOR library the agent client fetches and builds here
+# (see cmake/FindOrUseLibreAgent.cmake). The agent reads this same option and
+# applies it to its own library targets; the opt-in below is per target and is
+# applied only to the GUI, its printing library and the GUI plugins. Test
 # executables stay warning-only for the same reason the strictness is scoped
-# at all: the gate exists to protect the shipped application code.
-option(LIBRECELIK_WERROR "Treat compiler warnings as errors" OFF)
+# at all: the gate exists to protect the shipped code.
+option(LIBRESCRS_WERROR "Treat compiler warnings as errors" OFF)
 
-# Opts the named targets into LIBRECELIK_WERROR. A no-op when the option is
+# Opts the named targets into LIBRESCRS_WERROR. A no-op when the option is
 # off, so call sites need no condition of their own.
 function(librecelik_warnings_as_errors)
-    if(NOT LIBRECELIK_WERROR)
+    if(NOT LIBRESCRS_WERROR)
         return()
     endif()
     foreach(_target IN LISTS ARGN)
@@ -66,18 +65,18 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
     add_link_options(-fexperimental-library)
 endif()
 
-# Hybrid LibreAgent consumption: FetchContent at the deps.lock LibreAgent row
-# (default) or find_package(CONFIG). Provides LibreAgent::ClientQt.
+# The agent client library: built from the deps.lock LibreAgent revision by
+# default, an installed package with -DLIBRESCRS_AGENT_FROM_SOURCE=OFF (what the
+# distribution recipes do). Provides LibreAgent::ClientQt.
+set(LIBRESCRS_AGENT_FROM_SOURCE_DEFAULT ON)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOrUseLibreAgent.cmake)
+librescrs_use_libreagent(COMPONENTS ClientQt)
 
 # Digital signing UI. Nothing in this build produces signatures in-process
 # any more, so the switch is a pure user-interface choice with no dependency
 # to satisfy.
 option(ENABLE_SIGNING "Enable digital signing UI" ON)
 set(LIBRECELIK_SIGNING_ENABLED ${ENABLE_SIGNING})
-
-set(LIBRECELIK_GUI_PLUGIN_DIR "${CMAKE_BINARY_DIR}/gui-plugins" CACHE PATH
-    "Directory where GUI plugin .so files are placed")
 
 # Two placement invariants, both load-bearing:
 #
@@ -119,11 +118,8 @@ add_subdirectory(plugins)
 
 # BUILD_TESTING, not unconditional. include(CTest) above defines it and defaults
 # it ON, so every developer build is unaffected -- but a distribution package is
-# built with it OFF, and the test tree fetches googletest over the network. With
-# FETCHCONTENT_FULLY_DISCONNECTED set, as every package build sets it, that fetch
-# quietly does nothing and configuration then fails on a GTest target that was
-# never defined. A build that reaches the network is not a build of a package,
-# and compiling a test suite nobody will run is not one either.
+# built with it OFF: compiling a test suite nobody will run is not part of
+# building a package, and it would make GoogleTest a build dependency of one.
 if(BUILD_TESTING)
     add_subdirectory(test)
 endif()

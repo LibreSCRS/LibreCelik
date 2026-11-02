@@ -222,6 +222,26 @@ TEST_F(TokenSectionPlaceholderTest, CredentialCountersRenderRetriesAndUses)
     EXPECT_TRUE(row.contains(QStringLiteral("3")));
 }
 
+/// A blocked credential's guidance follows the same rule as the PIN dialog's:
+/// a guidance key LibreCelik names renders its own (translated) sentence, not
+/// the agent's English fallback.
+TEST_F(TokenSectionPlaceholderTest, BlockedGuidanceWithAKnownKeyRendersTheCatalogSentence)
+{
+    using namespace LibreSCRS::AgentClient;
+    TokenSection ts;
+    CredentialRecord r;
+    r.id = QStringLiteral("pin-1");
+    r.label = QStringLiteral("User PIN");
+    r.kind = CredentialKind::User;
+    r.state = CredentialState::Blocked;
+    r.blockedGuidanceKey = QStringLiteral("librescrs.pin.blocked.issuer");
+    r.blockedGuidanceFallback = QStringLiteral("The agent's own words.");
+    ts.setCredentials({r});
+    const QString row = credentialRowTextForTest(ts, 0);
+    EXPECT_TRUE(row.contains(qtTrId("lc-pin-guidance-blocked-issuer"))) << row.toStdString();
+    EXPECT_FALSE(row.contains(QStringLiteral("The agent's own words."))) << row.toStdString();
+}
+
 // --- certificate viewer: criticality arrives as a cell, renders as a mark ---
 //
 // The properties model lives in this target because the target already

@@ -23,11 +23,6 @@ FileDropZone::FileDropZone(QWidget* parent) : QWidget(parent)
     setCursor(Qt::PointingHandCursor);
 }
 
-QStringList FileDropZone::filePaths() const
-{
-    return files;
-}
-
 void FileDropZone::clear()
 {
     files.clear();

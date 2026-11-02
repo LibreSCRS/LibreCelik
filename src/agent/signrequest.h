@@ -102,9 +102,16 @@ struct BatchOutcome
 /// O_RDONLY open → FdHandle; invalid handle on failure.
 [[nodiscard]] LibreSCRS::AgentClient::FdHandle openDocumentFd(const QString& filePath);
 
-/// Output path: <folder>/<basename>-signed.<ext per format/packaging>
-/// (preserves today's SignPage::buildOutputPath naming).
-[[nodiscard]] QString outputPathFor(const SignRequestItem& item, const QString& outputFolder);
+/// Write one signed artifact into @p outputFolder under the name the client
+/// library gives @p item's signed document; the path written, or empty when
+/// no file was written.
+///
+/// The client library's writer does the rest, the same for every client of
+/// the agent: it rewinds the descriptor the producer left at its end, never
+/// replaces a file (a name taken by the time the file is created moves on to
+/// the next free one), never leaves a partial or empty file behind, and
+/// refuses a zero-byte artifact.
+[[nodiscard]] QString writeSignedArtifact(const SignRequestItem& item, int artifactFd, const QString& outputFolder);
 
 /// The one line for an artifact the agent signed but LC could not write out.
 ///

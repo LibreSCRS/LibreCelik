@@ -3,6 +3,12 @@
 Name:           librecelik
 Version:        5.0.0
 Release:        1%{?dist}
+# The agent client library is released in lockstep with its consumers and
+# carries no ABI gate, so this package depends on EXACTLY the build it was
+# compiled against: the version of the -devel package in the build root. Before
+# that package is installed (source-package stage) nothing is resolved, and this
+# package's own version stands in.
+%global agentclient_evr %(rpm -q --qf '%%{VERSION}-%%{RELEASE}' librescrs-agent-client-qt-devel 2>/dev/null | grep -v 'not installed' || echo %{version})
 Summary:        Cross-platform reader and signer for LibreSCRS smart cards
 
 License:        GPL-3.0-or-later
@@ -28,13 +34,14 @@ BuildRequires:  qt6-qtpdf-devel
 BuildRequires:  qt6-pdfwidgets-devel
 %endif
 BuildRequires:  qt6-qttools-devel
-BuildRequires:  gtest-devel
-BuildRequires:  dbus-daemon
+# The third-party licence notice compiled into the binary is generated at build
+# time.
+BuildRequires:  python3
 BuildRequires:  librescrs-agent-client-qt-devel >= 5.0
 BuildRequires:  desktop-file-utils
 BuildRequires:  libappstream-glib
 
-Requires:       librescrs-agent-client-qt%{?_isa} >= 5.0
+Requires:       librescrs-agent-client-qt%{?_isa} = %{agentclient_evr}
 Recommends:     librescrs-agent >= 5.0
 
 %description
@@ -49,8 +56,8 @@ the agent's own prompter rather than inside this application.
 %autosetup -n %{name}-%{version}
 
 %build
-%cmake -GNinja -DBUILD_TESTING=OFF -DINSTALL_GTEST=OFF \
-    -DLIBRECELIK_USE_INSTALLED_LIBREAGENT=ON
+%cmake -GNinja -DBUILD_TESTING=OFF \
+    -DLIBRESCRS_AGENT_FROM_SOURCE=OFF
 # Left at its default this build would fetch LibreAgent from the network.
 test ! -e %{_vpath_builddir}/_deps/libreagent-subbuild || \
   { echo "the build fetched LibreAgent instead of using the installed package"; exit 1; }
@@ -72,7 +79,6 @@ appstream-util validate-relax --nonet \
 %doc README.md
 %{_bindir}/LibreCelik
 %{_mandir}/man1/LibreCelik.1*
-%{_libdir}/gui-plugins/
 %{_datadir}/applications/librecelik.desktop
 %{_datadir}/icons/hicolor/512x512/apps/librecelik.png
 %{_datadir}/metainfo/org.librescrs.librecelik.metainfo.xml

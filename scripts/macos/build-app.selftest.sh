@@ -54,6 +54,7 @@ mkbuild() {  # mkbuild <dir> <team>   (team "NONE" = no cache entry at all)
     mkdir -p "$1"
     {
         echo "CMAKE_BUILD_TYPE:STRING=Release"
+        echo "CMAKE_PROJECT_VERSION:STATIC=5.0.0"
         [ "$2" = NONE ] || echo "LIBRESCRS_TEAM_ID:STRING=$2"
     } > "$1/CMakeCache.txt"
 }
@@ -64,13 +65,12 @@ mkbuild "$work/b-noentry" NONE
 mkapp() {  # mkapp <app>
     local c="$1/Contents"
     mkdir -p "$c/MacOS" "$c/Frameworks/QtCore.framework/Versions/A" \
-        "$c/PlugIns/platforms" "$c/PlugIns/gui-plugins"
+        "$c/PlugIns/platforms"
     printf 'x' > "$c/MacOS/LibreCelik"; chmod +x "$c/MacOS/LibreCelik"
     printf 'x' > "$c/Frameworks/QtCore.framework/Versions/A/QtCore"
     printf 'x' > "$c/Frameworks/QtCore.framework/Versions/A/libinside.dylib"
     printf 'x' > "$c/Frameworks/liblibrescrs-agentclient-qt.1.dylib"
     printf 'x' > "$c/PlugIns/platforms/libqcocoa.dylib"
-    printf 'x' > "$c/PlugIns/gui-plugins/eid-gui-plugin.so"
 }
 
 # A copy of the repository's two inputs, for mutants: the script finds the

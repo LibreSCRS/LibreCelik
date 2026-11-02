@@ -39,15 +39,18 @@ std::uint32_t FakeCardController::capabilityBits() const
     return scriptedCaps;
 }
 
-LibreSCRS::AgentClient::PreReadAuth FakeCardController::preReadAuth() const
+bool FakeCardController::preReadUnlockRequired() const
 {
-    return scriptedPreAuth;
+    return scriptedUnlockRequired;
 }
 
 void FakeCardController::startRead()
 {
     callLog << QStringLiteral("startRead");
     Q_EMIT readingStarted();
+    if (holdRead) {
+        return;
+    }
     if (failNextRead) {
         // Mirrors the live controller's failed-read shape (errorOccurred then
         // readingFinished, no identityReady). One-shot: a fake that stayed

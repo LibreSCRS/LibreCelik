@@ -5,6 +5,7 @@
 
 #include "agent/signrequest.h"
 
+#include <LibreSCRS/AgentClient/ConfigKeys.h>
 #include <QCheckBox>
 #include <QDateTime>
 #include <QEvent>
@@ -120,8 +121,8 @@ void SignaturePlacementPage::retranslateUi()
 
 void SignaturePlacementPage::applyConfig(const QVariantMap& config)
 {
-    reasonEdit->setText(config.value(QStringLiteral("DefaultReason")).toString());
-    locationEdit->setText(config.value(QStringLiteral("DefaultLocation")).toString());
+    reasonEdit->setText(config.value(LibreSCRS::AgentClient::kConfigDefaultReason).toString());
+    locationEdit->setText(config.value(LibreSCRS::AgentClient::kConfigDefaultLocation).toString());
 }
 
 void SignaturePlacementPage::setLayoutProvider(PdfPreviewWidget::LayoutProvider provider)

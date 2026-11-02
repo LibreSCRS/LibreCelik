@@ -93,6 +93,18 @@ void FakeAgentGateway::refresh()
     callLog << QStringLiteral("refresh");
 }
 
+LibreSCRS::AgentClient::AgentStartResult FakeAgentGateway::requestAgentStart()
+{
+    callLog << QStringLiteral("requestAgentStart");
+    if (duringAgentStart) {
+        const auto hook = duringAgentStart; // a copy, as in setConfigValue
+        hook();
+    }
+    if (scriptedStartResult == LibreSCRS::AgentClient::AgentStartResult::Running)
+        setPresence(librecelik::agent::PresenceState::Ready);
+    return scriptedStartResult;
+}
+
 librecelik::agent::CardController* FakeAgentGateway::cardController(const QString& cardId)
 {
     return cardControllers.value(cardId, nullptr);
@@ -125,6 +137,12 @@ std::optional<LibreSCRS::AgentClient::SyncError> FakeAgentGateway::setConfigValu
                                                                                   const QVariant& value)
 {
     configWrites.append(qMakePair(key, value));
+    if (duringConfigWrite) {
+        // A copy runs: a hook that clears itself would otherwise destroy the
+        // closure it is still executing.
+        const auto hook = duringConfigWrite;
+        hook();
+    }
     if (nextRefusal.has_value()) {
         return nextRefusal;
     }

@@ -10,6 +10,44 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased] — 5.0.0
 
+### Fixed
+
+- Removing a card while its certificate details, or a certificate's menu,
+  were open no longer crashes LibreCelik.
+- On Linux, opening LibreCelik — and **Try again** — now starts the card agent
+  when it is installed but not running, instead of waiting for something else
+  to start it. **Try again** is unavailable while that start is under way, so
+  pressing it again does not ask for a second one.
+- Settings opened while the agent was unavailable read the agent's
+  configuration once it becomes available, so saving no longer replaces its
+  timestamp server list with the one entry just added.
+- While Settings saves, its controls other than **Cancel** are disabled: a
+  second **OK** no longer starts a second save, **Cancel** stops the save, and
+  a newly chosen language is kept only once the save has succeeded.
+- Guidance for a blocked PIN in the card's PIN list is shown in the selected
+  language, as in the PIN dialog.
+
+### Changed
+
+- When the card agent is not installed, the window offers **Try again** and a
+  link to the installation guide.
+- A second start of LibreCelik brings up the window that is already open
+  instead of opening another one.
+- Signed files are named and written the way every LibreSCRS client does it;
+  when the name is taken the next free one is used, for example
+  `report-signed (2).pdf`, and a file is never overwritten, even by two
+  signings of the same document finishing at the same time.
+- The signing wizard offers only the timestamp authorities the agent is
+  configured with, and the one it last used.
+- An operation the agent stops reporting on ends as a timeout.
+- The PIV card page is gone: no card ever reached it. PIV cards are shown on
+  the token page, with their certificates and PINs, as before.
+- For packagers: the card pages are linked into the application and no
+  `gui-plugins` directory is installed; the package depends on exactly the
+  agent client library version it was built with. The build options are now
+  `LIBRESCRS_AGENT_FROM_SOURCE=OFF` (use an installed agent client) and
+  `LIBRESCRS_WERROR`, and the tests use the system's GoogleTest.
+
 ### Changed
 
 - Built against the agent client whose certificates carry each key's ID, type,

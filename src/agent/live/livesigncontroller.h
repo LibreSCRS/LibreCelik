@@ -5,22 +5,18 @@
 /// @brief The production `SignController`: one card's signing flows over the
 ///        agent client, in the LC vocabulary the wizard consumes.
 ///
-/// Three things it adds to what the client offers. The RUN structure: a
+/// Two things it adds to what the client offers. The RUN structure: a
 /// selection is partitioned into homogeneous (format, packaging) runs, and one
 /// run is one call — so the consents a user pays for depend on what was
-/// selected, never on the order it was selected in. The CALLER-SIDE stall
-/// bound per operation (the library has none — see `OpStallWatchdog`). And the
-/// WRITE: the agent hands back descriptors, and turning those into files in
-/// the user's output folder, without ever losing one, is this class's job —
-/// delegated row-by-row to the pure `consumeBatchOutcome`, which is where the
-/// batch wire's observed behaviour is written down and tested.
+/// selected, never on the order it was selected in. And the WRITE: the agent hands back descriptors, and turning those
+/// into files in the user's output folder, without ever losing one, is this class's job — delegated row-by-row to the
+/// pure `consumeBatchOutcome`, which is where the batch wire's observed behaviour is written down and tested.
 
 #pragma once
 
 #include "agent/signcontroller.h"
 #include "agent/signrequest.h"
 
-#include <LibreSCRS/AgentClient/FdHandle.h>
 #include <LibreSCRS/AgentClient/SignOptions.h>
 
 #include <QList>
@@ -56,12 +52,7 @@ private:
     void dispatchNextRun();
     /// Turn one finished operation into written files and per-row results, and
     /// decide whether the remaining runs may still be dialled.
-    void consumeFinished(LibreSCRS::AgentClient::AgentOperation* operation, bool watchdogFired, bool batched,
-                         const SignRun& run);
-    /// Stream one signed artifact into the output folder; the written path, or
-    /// empty when the artifact could not be written.
-    [[nodiscard]] QString writeArtifact(const SignRequestItem& item, LibreSCRS::AgentClient::FdHandle artifact);
-
+    void consumeFinished(LibreSCRS::AgentClient::AgentOperation* operation, bool batched, const SignRun& run);
     /// Report one selection-order row and keep the running tally.
     void emitRow(int sourceIndex, bool ok, const QString& outputPath, const QString& message);
     /// Report every row of @p run as failed with @p message.

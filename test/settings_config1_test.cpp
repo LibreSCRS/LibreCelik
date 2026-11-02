@@ -19,6 +19,7 @@
 #include "settings/settingsdialog.h"
 
 #include "fake_gateway/fakeagentgateway.h"
+#include "settings/settingskeys.h"
 #include "settings/tlitemdelegate.h"
 
 #include <LibreSCRS/AgentClient/SyncError.h>
@@ -41,6 +42,7 @@
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QScopeGuard>
+#include <QSettings>
 #include <QStandardPaths>
 #include <QString>
 #include <QStringList>
@@ -198,6 +200,105 @@ TEST_F(SettingsConfig1Test, LevelComboWritesWireToken)
     invokeSave(dlg); // clicks the OK button by objectName
     ASSERT_FALSE(gw.configWrites.isEmpty());
     EXPECT_EQ(gw.configWrites.last(), qMakePair(QStringLiteral("DefaultLevel"), QVariant(QStringLiteral("b-t"))));
+}
+
+/// A dialog opened while the agent was away holds an empty snapshot. When the
+/// agent arrives, the dialog must read the agent's configuration before anyone
+/// can save over it: a save diffed against the empty snapshot would write the
+/// controls' lists over the agent's, dropping every entry the dialog never saw.
+TEST_F(SettingsConfig1Test, AnAgentArrivingAfterTheDialogOpenedIsReadBeforeAnySave)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::AgentUnavailable);
+    SettingsDialog dlg(&gw);
+
+    gw.config[QStringLiteral("DefaultReason")] = QStringLiteral("Approved");
+    gw.config[QStringLiteral("TsaUrls")] =
+        QStringList{QStringLiteral("https://tsa.one.example/"), QStringLiteral("https://tsa.two.example/")};
+    gw.setPresence(librecelik::agent::PresenceState::Ready); // presence only: no configChanged
+
+    auto* reason = dlg.findChild<QLineEdit*>(QStringLiteral("defaultReasonEdit"));
+    ASSERT_NE(reason, nullptr);
+    EXPECT_EQ(reason->text(), QStringLiteral("Approved"));
+
+    invokeSave(dlg);
+    for (const auto& write : std::as_const(gw.configWrites))
+        EXPECT_NE(write.first, QStringLiteral("TsaUrls")) << "an untouched list must not be written";
+}
+
+/// A write can wait minutes for an authorization prompt, and the dialog keeps
+/// processing events meanwhile. A second OK must not start a second series of
+/// writes (and a second prompt): the controls are taken away while it waits.
+TEST_F(SettingsConfig1Test, ASecondOkWhileTheFirstIsWritingStartsNothing)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    SettingsDialog dlg(&gw);
+    auto* reason = dlg.findChild<QLineEdit*>(QStringLiteral("defaultReasonEdit"));
+    auto* location = dlg.findChild<QLineEdit*>(QStringLiteral("defaultLocationEdit"));
+    auto* ok = dlg.findChild<QPushButton*>(QStringLiteral("okButton"));
+    ASSERT_NE(reason, nullptr);
+    ASSERT_NE(location, nullptr);
+    ASSERT_NE(ok, nullptr);
+    reason->setText(QStringLiteral("Approved"));
+    location->setText(QStringLiteral("Belgrade"));
+
+    bool okEnabledDuringWrite = true;
+    gw.duringConfigWrite = [&] {
+        okEnabledDuringWrite = okEnabledDuringWrite && ok->isEnabled();
+        ok->click(); // the impatient second click
+    };
+    ok->click();
+
+    EXPECT_FALSE(okEnabledDuringWrite);
+    EXPECT_EQ(gw.configWrites.size(), 2) << "one series: DefaultReason and DefaultLocation, once each";
+    EXPECT_TRUE(ok->isEnabled()) << "the controls come back when the write is done";
+}
+
+/// The Cancel button, pressed while a write waits, stops the run: nothing is
+/// written after it, the dialog does not then accept, and the language the
+/// human previewed is not kept.
+TEST_F(SettingsConfig1Test, CancelWhileWritingStopsTheRunAndKeepsNothingAfterIt)
+{
+    {
+        QSettings fresh(settings::kOrganization, settings::kApplication);
+        fresh.clear();
+    }
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    SettingsDialog dlg(&gw);
+    QString revertedTo;
+    QObject::connect(&dlg, &SettingsDialog::languageChanged, [&](const QString& l) { revertedTo = l; });
+    auto* language = dlg.findChild<QComboBox*>(QStringLiteral("languageCombo"));
+    auto* reason = dlg.findChild<QLineEdit*>(QStringLiteral("defaultReasonEdit"));
+    auto* location = dlg.findChild<QLineEdit*>(QStringLiteral("defaultLocationEdit"));
+    ASSERT_NE(language, nullptr);
+    ASSERT_NE(reason, nullptr);
+    ASSERT_NE(location, nullptr);
+    const QString opened = language->currentData().toString();
+    const int other = language->currentIndex() == 0 ? 1 : 0;
+    language->setCurrentIndex(other);
+    const QString previewed = language->currentData().toString();
+    ASSERT_NE(previewed, opened);
+    auto* cancel = dlg.findChild<QPushButton*>(QStringLiteral("cancelButton"));
+    ASSERT_NE(cancel, nullptr);
+    reason->setText(QStringLiteral("Approved"));
+    location->setText(QStringLiteral("Belgrade"));
+
+    bool cancelEnabledDuringWrite = false;
+    gw.duringConfigWrite = [&] {
+        gw.duringConfigWrite = nullptr;
+        cancelEnabledDuringWrite = cancel->isEnabled();
+        cancel->click(); // the button itself, while the first write waits
+    };
+    invokeSave(dlg);
+
+    EXPECT_TRUE(cancelEnabledDuringWrite) << "Cancel is the way out of a write waiting for a prompt";
+    EXPECT_EQ(gw.configWrites.size(), 1) << "nothing is written after the cancel";
+    EXPECT_EQ(dlg.result(), QDialog::Rejected);
+    EXPECT_EQ(revertedTo, opened);
+    QSettings stored(settings::kOrganization, settings::kApplication);
+    EXPECT_NE(stored.value(settings::kLanguage).toString(), previewed);
 }
 
 TEST_F(SettingsConfig1Test, TslCacheDirControlIsGone)

@@ -21,7 +21,6 @@
         <file>smartcard-id-512.png</file>
         <file>vehicle-icon.svg</file>
         <file>health-icon.svg</file>
-        <file>piv-icon.svg</file>
         <file>sign-icon.svg</file>
     </qresource>
     <qresource prefix="/html">
@@ -33,7 +32,6 @@
         <file>healthcard.css</file>
         <file>emrtdcard.html</file>
         <file>emrtdcard.css</file>
-        <file>pivcard.css</file>
     </qresource>
     <qresource prefix="/">
         <file>licenses/gpl-3.0.txt</file>

@@ -5,8 +5,6 @@
 
 #include "agent/errortext.h"
 #include "agent/fieldmerge.h"
-#include "agent/live/opwatch.h"
-#include "agent/opstallwatchdog.h"
 #include "agent/optionalsections.h" // the ONE spelling of the feature tokens
 
 #include <LibreSCRS/AgentClient/AgentCapabilities.h>
@@ -28,24 +26,17 @@ using LibreSCRS::AgentClient::CallError;
 using LibreSCRS::AgentClient::ErrorCode;
 using LibreSCRS::AgentClient::FieldGroup;
 using LibreSCRS::AgentClient::OperationStatus;
-using LibreSCRS::AgentClient::PreReadAuth;
 /// `Cap` is a namespace of bit constants, not a type — an alias, not a
 /// using-declaration.
 namespace Cap = LibreSCRS::AgentClient::Cap;
 
 namespace {
 
-/// The localized line for a failed terminal.
-///
-/// A caller-enforced stall has no wire error of its own — the operation
-/// reports Cancelled with no code, which would otherwise render as the
-/// generic line and read as final. The agent's own watchdog copy is the honest
-/// text for it: the same failure, and it reads as retryable.
-[[nodiscard]] QString terminalText(AgentOperation* operation, const OpWatch& watch)
+/// The localized line for a failed terminal. A stalled operation is the
+/// client library's to end (it times the operation out with
+/// `CallError::Timeout`), so it renders like any other failure.
+[[nodiscard]] QString terminalText(AgentOperation* operation)
 {
-    if (watch.fired && *watch.fired) {
-        return errorText(ErrorCode::WatchdogTimeout, CallError::None, {}, {});
-    }
     return errorText(operation->errorCode(), operation->callError(), operation->messageKey(),
                      operation->messageFallback());
 }
@@ -108,9 +99,9 @@ std::uint32_t LiveCardController::capabilityBits() const
     return card.isNull() ? Cap::None : LibreSCRS::AgentClient::capabilityBits(card->capabilities());
 }
 
-PreReadAuth LiveCardController::preReadAuth() const
+bool LiveCardController::preReadUnlockRequired() const
 {
-    return card.isNull() ? PreReadAuth::None : LibreSCRS::AgentClient::preReadAuthFromToken(card->preReadAuth());
+    return !card.isNull() && LibreSCRS::AgentClient::preReadUnlockRequired(card->preReadAuth());
 }
 
 void LiveCardController::startRead()
@@ -126,13 +117,11 @@ void LiveCardController::startRead()
     // Progressive delivery straight through: the client's groups are already
     // the LC field model, so there is nothing to convert on this path.
     connect(operation, &AgentOperation::groupReady, this, &CardController::groupReady);
-    const OpWatch watch = armWatchdog(operation);
 
-    connect(operation, &AgentOperation::finished, this, [this, operation, watch] {
-        watch.dog->stop(); // a completed operation must never leave a live timer
+    connect(operation, &AgentOperation::finished, this, [this, operation] {
         forget(operation);
         const bool ok = operation->status() == OperationStatus::Ok;
-        const QString failure = ok ? QString() : terminalText(operation, watch);
+        const QString failure = ok ? QString() : terminalText(operation);
         QList<FieldGroup> groups = operation->identityResult();
         operation->deleteLater();
 
@@ -156,10 +145,8 @@ void LiveCardController::chainPhoto(QList<FieldGroup> groups)
 
     AgentOperation* operation = card->getPhoto();
     track(operation);
-    const OpWatch watch = armWatchdog(operation);
 
-    connect(operation, &AgentOperation::finished, this, [this, operation, watch, groups = std::move(groups)]() mutable {
-        watch.dog->stop();
+    connect(operation, &AgentOperation::finished, this, [this, operation, groups = std::move(groups)]() mutable {
         forget(operation);
         bool merged = false;
         if (operation->status() == OperationStatus::Ok) {
@@ -215,15 +202,13 @@ void LiveCardController::requestCertificates()
 
     AgentOperation* operation = card->readCertificates();
     track(operation);
-    const OpWatch watch = armWatchdog(operation);
 
-    connect(operation, &AgentOperation::finished, this, [this, operation, watch] {
-        watch.dog->stop();
+    connect(operation, &AgentOperation::finished, this, [this, operation] {
         forget(operation);
         if (operation->status() == OperationStatus::Ok) {
             Q_EMIT certificatesReady(operation->certificatesResult());
         } else {
-            Q_EMIT errorOccurred(terminalText(operation, watch), operation->errorCode());
+            Q_EMIT errorOccurred(terminalText(operation), operation->errorCode());
         }
         operation->deleteLater();
     });
@@ -246,10 +231,8 @@ void LiveCardController::requestTokenInfo()
 
     AgentOperation* operation = card->readTokenInfo();
     track(operation);
-    const OpWatch watch = armWatchdog(operation);
 
-    connect(operation, &AgentOperation::finished, this, [this, operation, watch] {
-        watch.dog->stop();
+    connect(operation, &AgentOperation::finished, this, [this, operation] {
         forget(operation);
         if (operation->status() == OperationStatus::Ok) {
             // readTokenInfo binds the SAME accessor readIdentity() does: a
@@ -306,10 +289,8 @@ void LiveCardController::listCredentials(std::function<void(bool)> onListed)
 
     AgentOperation* operation = card->listCredentials();
     track(operation);
-    const OpWatch watch = armWatchdog(operation);
 
-    connect(operation, &AgentOperation::finished, this, [this, operation, watch, onListed = std::move(onListed)] {
-        watch.dog->stop();
+    connect(operation, &AgentOperation::finished, this, [this, operation, onListed = std::move(onListed)] {
         forget(operation);
         const bool listed = operation->status() == OperationStatus::Ok;
         if (listed) {
@@ -337,14 +318,12 @@ void LiveCardController::managePin(const QString& pinId, LibreSCRS::AgentClient:
     }
     AgentOperation* operation = card->managePin(pinId, verb, options);
     track(operation);
-    const OpWatch watch = armWatchdog(operation);
     // The mutation's phase stream is forwarded to the human as well as to the
     // watchdog: this is the one verb where the wait is long, interactive, and
     // owned by a dialog that has a row to put it in.
     connect(operation, &AgentOperation::phaseChanged, this, &CardController::pinPhaseChanged);
 
-    connect(operation, &AgentOperation::finished, this, [this, operation, watch, pinId, verb, options] {
-        watch.dog->stop();
+    connect(operation, &AgentOperation::finished, this, [this, operation, pinId, verb, options] {
         forget(operation);
         // The agent forgets a card's credential listing after an idle window,
         // and a dialog left open across it still holds the ids from before.
@@ -396,11 +375,9 @@ void LiveCardController::activateSigningKey()
     }
     AgentOperation* operation = card->activateSigningKey();
     track(operation);
-    const OpWatch watch = armWatchdog(operation);
     connect(operation, &AgentOperation::phaseChanged, this, &CardController::pinPhaseChanged); // as managePin
 
-    connect(operation, &AgentOperation::finished, this, [this, operation, watch] {
-        watch.dog->stop();
+    connect(operation, &AgentOperation::finished, this, [this, operation] {
         forget(operation);
         Q_EMIT pinResultReady(operation->pinResult()); // same always-delivered shape as managePin
         operation->deleteLater();

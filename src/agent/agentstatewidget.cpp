@@ -73,6 +73,13 @@ AgentStateWidget::AgentStateWidget(QWidget* parent) : QWidget(parent)
     hintLabel->setWordWrap(true);
     layout->addWidget(hintLabel);
 
+    installHelpLabel = new QLabel(this);
+    installHelpLabel->setObjectName(QStringLiteral("agentInstallHelp"));
+    installHelpLabel->setAlignment(Qt::AlignCenter);
+    installHelpLabel->setTextFormat(Qt::RichText);
+    installHelpLabel->setOpenExternalLinks(true);
+    layout->addWidget(installHelpLabel);
+
     retryButton = new QPushButton(this);
     layout->addWidget(retryButton, 0, Qt::AlignHCenter);
     connect(retryButton, &QPushButton::clicked, this, &AgentStateWidget::retryRequested);
@@ -82,10 +89,9 @@ AgentStateWidget::AgentStateWidget(QWidget* parent) : QWidget(parent)
     retranslateUi();
 }
 
-void AgentStateWidget::setState(librecelik::agent::PresenceState state, bool anyReader)
+void AgentStateWidget::setState(librecelik::agent::PresenceState state)
 {
     presenceState = state;
-    readerPresent = anyReader;
     // The guided states are exactly what a manual smoke has to be able to see
     // in the log — a blank panel and a panel that was never asked to render
     // look identical on screen.
@@ -93,7 +99,13 @@ void AgentStateWidget::setState(librecelik::agent::PresenceState state, bool any
                       << (state == PresenceState::Ready          ? "Ready"
                           : state == PresenceState::AgentMissing ? "AgentMissing"
                                                                  : "AgentUnavailable")
-                      << "anyReader=" << anyReader << "guidance=" << guidanceName(guidance);
+                      << "guidance=" << guidanceName(guidance);
+    retranslateUi();
+}
+
+void AgentStateWidget::setInstallHelpUrl(const QString& url)
+{
+    installHelpUrl = url;
     retranslateUi();
 }
 
@@ -102,6 +114,11 @@ void AgentStateWidget::setGuidance(librecelik::agent::Guidance value)
     guidance = value;
     qCInfo(lcGeneral) << "AgentStateWidget: guidance=" << guidanceName(guidance);
     retranslateUi();
+}
+
+void AgentStateWidget::setStarting(bool starting)
+{
+    retryButton->setEnabled(!starting);
 }
 
 void AgentStateWidget::changeEvent(QEvent* event)
@@ -136,17 +153,20 @@ void AgentStateWidget::retranslateUi()
         break;
     }
     retryButton->setText(qtTrId("lc-agent-state-retry"));
+    installHelpLabel->setText(
+        QStringLiteral("<a href=\"%1\">%2</a>")
+            .arg(installHelpUrl.toHtmlEscaped(), qtTrId("lc-agent-state-install-help").toHtmlEscaped()));
 
     const bool guided = presenceState != PresenceState::Ready;
     titleLabel->setVisible(guided);
     hintLabel->setVisible(guided && !hintLabel->text().isEmpty());
-    // Retry is offered only where it can work: an unavailable agent may answer
-    // a fresh probe, and a missing one whose host was launched without result
-    // can be brought up by launching the host again. A plain missing agent
-    // does not start because LC asked it to, and an offered button that
-    // cannot work is worse than no button.
-    retryButton->setVisible(presenceState == PresenceState::AgentUnavailable ||
-                            (presenceState == PresenceState::AgentMissing && guidance == Guidance::StillMissing));
+    // Retry is offered in every guided state but the one where a start is
+    // already under way: an unavailable agent may answer or be started, and a
+    // missing one may have been installed since the window last looked — the
+    // client learns that only when asked again, so without the button the
+    // window would keep saying "not installed" until it was restarted.
+    retryButton->setVisible(guided && guidance != Guidance::Starting);
+    installHelpLabel->setVisible(presenceState == PresenceState::AgentMissing && !installHelpUrl.isEmpty());
     setVisible(guided);
 }
 

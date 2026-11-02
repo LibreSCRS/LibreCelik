@@ -3,12 +3,12 @@
 
 #include "fileselectionpage.h"
 
-#include "defaults.h"
 #include "filedropzone.h"
 #include "filelistdelegate.h"
 #include "settings/settingskeys.h"
 #include "tsavalidation.h"
 
+#include <LibreSCRS/AgentClient/ConfigKeys.h>
 #include <QComboBox>
 #include <QEvent>
 #include <QFileDialog>
@@ -161,10 +161,10 @@ FileSelectionPage::FileSelectionPage(QWidget* parent) : QWidget(parent)
     auto* tsaInputRow = new QHBoxLayout;
     tsaLabel = new QLabel(tsaRow);
     tsaCombo = new QComboBox(tsaRow);
+    tsaCombo->setObjectName(QStringLiteral("tsaCombo"));
     tsaCombo->setEditable(false);
-    // The configured authorities are the agent's; applyConfig() merges them in.
-    tsaCombo->addItems(signing::defaultTsaUrls());
-    tsaCombo->setCurrentIndex(0);
+    // The authorities offered are exactly the agent's configured ones;
+    // applyConfig() fills them in.
     tsaInputRow->addWidget(tsaLabel);
     tsaInputRow->addWidget(tsaCombo, 1);
     tsaLayout->addLayout(tsaInputRow);
@@ -271,20 +271,26 @@ void FileSelectionPage::applyConfig(const QVariantMap& config)
         {QStringLiteral("b-lta"), QStringLiteral("B_LTA")},
     };
     const int levelIdx =
-        levelCombo->findData(kUiLevelToken.value(config.value(QStringLiteral("DefaultLevel")).toString()));
+        levelCombo->findData(kUiLevelToken.value(config.value(LibreSCRS::AgentClient::kConfigDefaultLevel).toString()));
     levelCombo->setCurrentIndex(levelIdx >= 0 ? levelIdx : 0);
 
-    // The built-in authorities plus whatever the agent has been configured
-    // with; the preselection is the one the agent last used.
+    // Exactly the authorities the agent is configured with, and the one it last
+    // used — nothing of this build's own. An authority an administrator removed
+    // from the agent's list must not stay on offer here: the document's hash
+    // goes to whichever one is picked. The preselection is the one the agent
+    // last used.
     const QString currentUrl = tsaCombo->currentText();
     tsaCombo->clear();
-    tsaCombo->addItems(signing::defaultTsaUrls());
-    for (const QString& rawUrl : config.value(QStringLiteral("TsaUrls")).toStringList()) {
+    QStringList offered;
+    for (const QString& rawUrl : config.value(LibreSCRS::AgentClient::kConfigTsaUrls).toStringList()) {
         const QString url = rawUrl.trimmed();
-        if (!url.isEmpty() && tsaCombo->findText(url) < 0)
-            tsaCombo->addItem(url);
+        if (!url.isEmpty() && !offered.contains(url))
+            offered.append(url);
     }
-    const QString lastUrl = config.value(QStringLiteral("LastTsaUrl")).toString().trimmed();
+    const QString lastUrl = config.value(LibreSCRS::AgentClient::kConfigLastTsaUrl).toString().trimmed();
+    if (!lastUrl.isEmpty() && !offered.contains(lastUrl))
+        offered.append(lastUrl);
+    tsaCombo->addItems(offered);
     const QString preferred = lastUrl.isEmpty() ? currentUrl : lastUrl;
     const int tsaIdx = preferred.isEmpty() ? 0 : tsaCombo->findText(preferred);
     tsaCombo->setCurrentIndex(tsaIdx < 0 ? 0 : tsaIdx);
@@ -300,7 +306,7 @@ bool FileSelectionPage::isValid() const
     // With no per-request authority to give, the page cannot be blocked by the
     // authority it is not showing — the agent's configured one serves the
     // timestamped levels.
-    bool needsTsa = tsaOverrideAvailable && levelCombo->currentData().toString() != QStringLiteral("B_B");
+    bool needsTsa = offersTsaChoice() && levelCombo->currentData().toString() != QStringLiteral("B_B");
     if (!needsTsa)
         return true;
     // See signing::isValidTsaUrl — rejects empty / non-https / missing
@@ -448,9 +454,16 @@ void FileSelectionPage::updateSequentialNotice()
     sequentialNotice->setVisible(!batchCapable && files.count() > 1);
 }
 
+bool FileSelectionPage::offersTsaChoice() const
+{
+    // Nothing to choose from is the same as no choice to make: the agent's own
+    // configuration serves the timestamped levels.
+    return tsaOverrideAvailable && tsaCombo->count() > 0;
+}
+
 void FileSelectionPage::updateTsaRowVisibility()
 {
-    tsaRow->setVisible(tsaOverrideAvailable && levelCombo->currentData().toString() != QStringLiteral("B_B"));
+    tsaRow->setVisible(offersTsaChoice() && levelCombo->currentData().toString() != QStringLiteral("B_B"));
 }
 
 void FileSelectionPage::dismissFormatCombos()

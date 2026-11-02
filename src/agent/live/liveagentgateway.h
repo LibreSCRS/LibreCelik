@@ -54,6 +54,7 @@ public:
     [[nodiscard]] QString agentVersion() const override;
     [[nodiscard]] bool hasFeature(const QString& token) const override;
     void refresh() override;
+    LibreSCRS::AgentClient::AgentStartResult requestAgentStart() override;
 
     [[nodiscard]] CardController* cardController(const QString& cardId) override;
     [[nodiscard]] SignController* signController(const QString& cardId) override;

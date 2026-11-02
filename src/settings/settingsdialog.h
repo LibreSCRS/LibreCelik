@@ -15,6 +15,7 @@
 #include <optional>
 
 class QComboBox;
+class QDialogButtonBox;
 class QFrame;
 class QGroupBox;
 class QLabel;
@@ -102,6 +103,13 @@ public:
 signals:
     void languageChanged(const QString& locale);
 
+public slots:
+    /// Cancel, Escape and the window's close button. Puts back the language
+    /// the dialog opened with. While a write is in flight it only records the
+    /// request: the write stops before its next key and the dialog closes
+    /// when it has, so nothing is written after the human cancelled.
+    void reject() override;
+
 protected:
     void changeEvent(QEvent* event) override;
     void showEvent(QShowEvent* event) override;
@@ -137,6 +145,12 @@ private:
     bool saveSettings();
     /// `Config1.Reset` for every key of one tab, then a fresh snapshot read.
     void restoreDefaults(const QStringList& keys);
+    /// Take the controls away from the human while the agent is being asked
+    /// something, and give them back after. Each such call can wait for an
+    /// authorization prompt for minutes, and the dialog keeps processing
+    /// events meanwhile: a second OK would start a second series of writes.
+    /// Cancel is left enabled, so the wait can be abandoned.
+    void setBusy(bool busy);
     [[nodiscard]] QStringList tsaUrlsFromList() const;
     [[nodiscard]] QVariantList tslSourcesFromList() const;
     void populateTsaList();
@@ -193,6 +207,9 @@ private:
     /// True while a Save/restore is writing: the `configChanged` each write
     /// announces must not re-read the snapshot into the controls mid-run.
     bool writeInFlight = false;
+    /// Set by reject() while a write is in flight; the write honours it.
+    bool cancelRequested = false;
+    QDialogButtonBox* buttonBox = nullptr;
 
     QTabWidget* tabs = nullptr;
     /// Shown once per profile, to a profile that still carries a 4.2

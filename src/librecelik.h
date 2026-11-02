@@ -4,7 +4,6 @@
 #pragma once
 
 #include "agent/agentgateway.h"
-#include "agent/agentstarter.h"
 #include "config.h"
 #include "plugin/cardwidgetpluginregistry.h"
 #include "utils/readerpages.h"
@@ -49,29 +48,10 @@ public:
     /// The gateway is this window's only card I/O seam, so handing it in is
     /// what lets the composition be exercised at all: the window that ships
     /// and the window under test are then the same code reading a different
-    /// roster. It brings up no agent of its own (the null starter): a window
-    /// under test must never launch anything.
+    /// roster. Starting the agent goes through the gateway too, so a window
+    /// under a scripted gateway never launches anything.
     explicit LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> gateway, QWidget* parent = nullptr);
-    /// @brief Builds the window over @p gateway, with @p starter to bring a
-    ///        missing agent up. Both constructors above delegate here — the
-    ///        default one with the live gateway and the platform's starter.
-    LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> gateway,
-               std::unique_ptr<librecelik::agent::AgentStarter> starter, QWidget* parent = nullptr);
     ~LibreCelik();
-
-signals:
-    /// @brief Emitted for every card that leaves the agent's roster, forwarded
-    /// from `AgentGateway::cardRemoved` BEFORE this window tears the card's
-    /// page down. Page-level consumers that live inside this window's widget
-    /// tree filter by @p cardId and react while the page is still valid.
-    ///
-    /// The payload is the agent's opaque CARD id, not a reader name: the
-    /// gateway keys removal by card, and a reader can outlive the card in it.
-    /// Modal hygiene no longer rides this signal — the wizard and the PIN
-    /// dialog subscribe to `AgentGateway::cardRemoved` themselves, so their
-    /// close-on-removal behaviour lives inside the testable dialogs instead of
-    /// in window glue (Tasks 24/27).
-    void cardRemoved(QString cardId);
 
 protected:
     void changeEvent(QEvent* event) override;
@@ -159,11 +139,9 @@ private:
     /// every card verb, every roster fact and every presence verdict comes
     /// through it, and nothing in this window talks to a card directly.
     std::unique_ptr<librecelik::agent::AgentGateway> gateway;
-    /// The platform's way to start a missing agent; borrowed by `bootstrap`.
-    std::unique_ptr<librecelik::agent::AgentStarter> starter;
     /// Child of this window, but deleted explicitly in the destructor: as a
-    /// QObject child it would otherwise outlive `gateway` and `starter`, which
-    /// it holds by reference.
+    /// QObject child it would otherwise outlive `gateway`, which it holds by
+    /// reference.
     librecelik::agent::AgentBootstrap* bootstrap = nullptr;
     CardWidgetPluginRegistry guiPluginRegistry;
 

@@ -85,25 +85,6 @@ namespace {
                : qtTrId("lc-eid-pin-tries-remaining").arg(*credential.retriesLeft);
 }
 
-/// Holder guidance for one guidance pair, on the error line's known-key rule:
-/// a key THIS build names renders LC's own translated copy, an unknown key
-/// falls through to the agent's authored fallback, and a key that arrives
-/// without a usable fallback renders nothing rather than a guess made here.
-///
-/// The key vocabulary is the agent's and grows independently of this build,
-/// which is exactly why the unknown arm exists and why it is the common one.
-[[nodiscard]] QString guidanceText(const std::optional<QString>& key, const std::optional<QString>& fallback)
-{
-    const QString wireKey = key.value_or(QString());
-    if (wireKey == QLatin1StringView("librescrs.pin.blocked.issuer"))
-        return qtTrId("lc-pin-guidance-blocked-issuer");
-    if (wireKey == QLatin1StringView("librescrs.pin.keyActivation.issuer"))
-        return qtTrId("lc-pin-guidance-key-activation-issuer");
-
-    const QString authored = fallback.value_or(QString());
-    return authored.trimmed().isEmpty() ? QString() : authored;
-}
-
 /// The separator every multi-part line in this dialog joins on — the same
 /// middle dot the token section's rows use.
 [[nodiscard]] QString joinParts(const QStringList& parts)
@@ -151,13 +132,14 @@ ChangePinDlg::ChangePinDlg(const CredentialRecord& record, librecelik::agent::Ag
     guidanceLabel->setWordWrap(true);
     QStringList guidance;
     if (credential.state == CredentialState::Blocked) {
-        if (const QString blocked = guidanceText(credential.blockedGuidanceKey, credential.blockedGuidanceFallback);
+        if (const QString blocked = librecelik::agent::credentialGuidanceText(credential.blockedGuidanceKey,
+                                                                              credential.blockedGuidanceFallback);
             !blocked.isEmpty())
             guidance << blocked;
     }
     if (credential.keyActivationPending) {
-        if (const QString keyActivation =
-                guidanceText(credential.keyActivationGuidanceKey, credential.keyActivationGuidanceFallback);
+        if (const QString keyActivation = librecelik::agent::credentialGuidanceText(
+                credential.keyActivationGuidanceKey, credential.keyActivationGuidanceFallback);
             !keyActivation.isEmpty())
             guidance << keyActivation;
     }

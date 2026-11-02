@@ -12,6 +12,7 @@
 #include <gtest/gtest.h>
 
 #include <QApplication>
+#include <QComboBox>
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
@@ -315,6 +316,34 @@ TEST_F(FileSelectionPageTest, AnAgentWithoutTsaOverrideHidesTheTsaRow)
 {
     FileSelectionPage page;
     page.setCapabilities(/*tsaOverride=*/false, /*batch=*/true);
+
+    auto* tsaRow = page.findChild<QWidget*>(QStringLiteral("tsaRow"));
+    ASSERT_NE(tsaRow, nullptr);
+    EXPECT_FALSE(tsaRow->isVisibleTo(&page));
+}
+
+/// The authorities offered are the agent's configured ones and nothing else:
+/// one an administrator removed from the agent's list must not stay on offer.
+TEST_F(FileSelectionPageTest, TheTsaChoiceIsExactlyTheAgentsConfiguredAuthorities)
+{
+    FileSelectionPage page;
+    page.applyConfig({{QStringLiteral("DefaultLevel"), QStringLiteral("b-t")},
+                      {QStringLiteral("TsaUrls"), QStringList{QStringLiteral("https://tsa.national.example/")}}});
+
+    auto* combo = page.findChild<QComboBox*>(QStringLiteral("tsaCombo"));
+    ASSERT_NE(combo, nullptr);
+    QStringList offered;
+    for (int i = 0; i < combo->count(); ++i)
+        offered << combo->itemText(i);
+    EXPECT_EQ(offered, QStringList{QStringLiteral("https://tsa.national.example/")});
+}
+
+/// No configured authority leaves nothing to choose: the row is not shown.
+TEST_F(FileSelectionPageTest, AnEmptyTsaListHidesTheTsaRow)
+{
+    FileSelectionPage page;
+    page.applyConfig(
+        {{QStringLiteral("DefaultLevel"), QStringLiteral("b-t")}, {QStringLiteral("TsaUrls"), QStringList{}}});
 
     auto* tsaRow = page.findChild<QWidget*>(QStringLiteral("tsaRow"));
     ASSERT_NE(tsaRow, nullptr);

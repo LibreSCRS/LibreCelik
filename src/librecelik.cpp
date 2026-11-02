@@ -104,18 +104,10 @@ constexpr QLatin1StringView kCardTypeFeature{"card-type"};
 
 } // namespace
 
-LibreCelik::LibreCelik(QWidget* parent)
-    : LibreCelik(std::make_unique<librecelik::agent::LiveAgentGateway>(), librecelik::agent::makePlatformAgentStarter(),
-                 parent)
-{}
+LibreCelik::LibreCelik(QWidget* parent) : LibreCelik(std::make_unique<librecelik::agent::LiveAgentGateway>(), parent) {}
 
 LibreCelik::LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> injectedGateway, QWidget* parent)
-    : LibreCelik(std::move(injectedGateway), std::make_unique<librecelik::agent::NullAgentStarter>(), parent)
-{}
-
-LibreCelik::LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> injectedGateway,
-                       std::unique_ptr<librecelik::agent::AgentStarter> injectedStarter, QWidget* parent)
-    : QMainWindow(parent), ui(new Ui::LibreCelik), starter(std::move(injectedStarter))
+    : QMainWindow(parent), ui(new Ui::LibreCelik)
 {
     qCDebug(lcGeneral, "Setting up GUI");
 
@@ -130,26 +122,10 @@ LibreCelik::LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> injected
     ui->setupUi(this);
     uiReady = true;
 
-    // Load the GUI plugins. In deployed packages (deb/rpm, the macOS bundle) they live next
-    // to the executable; fall back to the build-tree path for development.
-    // There is no middleware plugin directory to resolve any more — the agent
-    // owns the card drivers, and LC only renders what they produce.
-    auto resolvePluginDir = [](const QString& subdir, const char* buildFallback) -> QString {
-        QDir appDir(QCoreApplication::applicationDirPath());
-#ifdef Q_OS_MACOS
-        // .app/Contents/MacOS/../PlugIns/<subdir>
-        QDir bundleDir(appDir.filePath("../PlugIns/" + subdir));
-#else
-        // Prefix install: usr/bin/../<libdir>/<subdir> — the same
-        // libdir the install rules and the RPATH use ("lib64" on some
-        // distros), so the resolver walks the tree the install wrote.
-        QDir bundleDir(appDir.filePath(QStringLiteral("../" LIBRECELIK_INSTALL_LIBDIR "/") + subdir));
-#endif
-        if (bundleDir.exists())
-            return bundleDir.absolutePath();
-        return QString::fromUtf8(buildFallback);
-    };
-    guiPluginRegistry.loadPluginsFromDirectory(resolvePluginDir("gui-plugins", LIBRECELIK_GUI_PLUGIN_DIR));
+    // The card pages are linked into this binary; there is nothing to find on
+    // disk. The agent owns the card drivers, and LC only renders what they
+    // produce.
+    guiPluginRegistry.loadStaticPlugins();
 
     ui->stackedWidget->setCurrentIndex(0);
 
@@ -211,6 +187,8 @@ LibreCelik::LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> injected
     });
 
     gateway = std::move(injectedGateway);
+    ui->agentStateWidget->setInstallHelpUrl(
+        LibreSCRS::AgentClient::AgentClient::installHelpUrl(QLocale(locale.isEmpty() ? resolved : locale)));
     connect(gateway.get(), &AgentGateway::presenceChanged, this, &LibreCelik::onPresenceChanged);
     // The banner names the agent's version, which is only knowable while the
     // agent answers — so it is re-rendered on every presence move.
@@ -218,14 +196,11 @@ LibreCelik::LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> injected
     connect(gateway.get(), &AgentGateway::readersChanged, this, &LibreCelik::onReadersChanged);
     connect(gateway.get(), &AgentGateway::cardChanged, this, &LibreCelik::onCardChanged);
     connect(gateway.get(), &AgentGateway::cardRemoved, this, &LibreCelik::onCardRemoved);
-    // StillMissing is the one retry a refresh cannot answer: the agent's host
-    // has to be launched again.
-    connect(ui->agentStateWidget, &librecelik::agent::AgentStateWidget::retryRequested, this, [this]() {
-        if (bootstrap->guidance() == librecelik::agent::Guidance::StillMissing)
-            bootstrap->retry();
-        else
-            gateway->refresh();
-    });
+    // Try again asks for the agent to be started, not merely looked for: an
+    // installed agent nobody started stays stopped however often the window
+    // looks. The library both starts it and re-reads the roster.
+    connect(ui->agentStateWidget, &librecelik::agent::AgentStateWidget::retryRequested, this,
+            [this]() { bootstrap->retry(); });
     // The client resolves presence in its own constructor and emits nothing
     // for the state it starts in, so the first render happens here, after the
     // gateway exists — otherwise a reachable agent's version would stay hidden
@@ -234,11 +209,13 @@ LibreCelik::LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> injected
     onPresenceChanged(gateway->presence());
     onReadersChanged();
 
-    bootstrap = new librecelik::agent::AgentBootstrap(*gateway, *starter, this);
+    bootstrap = new librecelik::agent::AgentBootstrap(*gateway, this);
     connect(bootstrap, &librecelik::agent::AgentBootstrap::guidanceChanged, ui->agentStateWidget,
             &librecelik::agent::AgentStateWidget::setGuidance);
-    // A poll can find the agent no longer missing without the gateway having
-    // signalled the move, so the window re-reads presence itself.
+    connect(bootstrap, &librecelik::agent::AgentBootstrap::startingChanged, ui->agentStateWidget,
+            &librecelik::agent::AgentStateWidget::setStarting);
+    // A start can change what the client knows without the gateway having
+    // signalled a move, so the window re-reads presence itself.
     connect(bootstrap, &librecelik::agent::AgentBootstrap::presenceSettled, this, [this]() {
         onPresenceChanged(gateway->presence());
         updateAboutText();
@@ -307,6 +284,7 @@ void LibreCelik::changeEvent(QEvent* event)
     if (event->type() == QEvent::LanguageChange && uiReady) {
         ui->retranslateUi(this);
         retranslateMenuBar();
+        ui->agentStateWidget->setInstallHelpUrl(LibreSCRS::AgentClient::AgentClient::installHelpUrl(QLocale(locale)));
         updateAboutText();
         // setupUi's retranslate resets the .ui labels to visible; the guided
         // panel's claim over them is state, not text, so it is re-applied.
@@ -324,7 +302,7 @@ void LibreCelik::onPresenceChanged(PresenceState state)
         // already announced each card's removal (the client clears its whole
         // registry with no per-card event, which is exactly the gap the gateway
         // fills), so the pages are gone by now and only the panel is left.
-        ui->agentStateWidget->setState(state, false);
+        ui->agentStateWidget->setState(state);
         updateEmptyState();
         return;
     }
@@ -340,7 +318,7 @@ void LibreCelik::onReadersChanged()
         if (reader.hasCard && !reader.cardId.isEmpty() && !readerPages->contains(reader.cardId))
             onCardChanged(reader.cardId);
     }
-    ui->agentStateWidget->setState(gateway->presence(), !readers.isEmpty());
+    ui->agentStateWidget->setState(gateway->presence());
     updateEmptyState();
 }
 
@@ -369,9 +347,6 @@ void LibreCelik::onCardRemoved(const QString& cardId)
     if (!readerPages->contains(cardId))
         return;
 
-    // Announce BEFORE teardown so page-level consumers inside this window's
-    // widget tree can act while their widgets are still valid.
-    emit cardRemoved(cardId);
     releaseCardPage(cardId);
 }
 
@@ -404,8 +379,14 @@ QString LibreCelik::readerNameForCard(const QString& cardId) const
 void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
 {
     const std::uint32_t caps = controller->capabilityBits();
-    const UiState state = LibreSCRS::AgentClient::resolveCardState(caps, controller->preReadAuth(), /*present=*/true,
-                                                                   /*identityRead=*/false);
+    // The unlock question is asked of the controller as a yes/no, because a
+    // method this build cannot name still needs one; resolveCardState()
+    // answers PreAuthRequired for any method that is not None.
+    const UiState state =
+        controller->preReadUnlockRequired()
+            ? UiState::PreAuthRequired
+            : LibreSCRS::AgentClient::resolveCardState(caps, LibreSCRS::AgentClient::PreReadAuth::None,
+                                                       /*present=*/true, /*identityRead=*/false);
 
     if (librecelik::agent::hasNoCardSurface(state)) {
         // Nothing to read and nothing to retry: the agent matched no driver
@@ -752,21 +733,26 @@ void LibreCelik::attachPkiSection(const QString& cardId, QWidget* container, boo
         // is what serves the raw bytes behind its export action, and the
         // certificate lives in the reader the card sits in.
         //
-        // Parented to the section, not to the window: the section is destroyed
-        // with its card's page, and a modal child of the window would outlive
-        // the data it renders.
+        // On the heap, owned by the window and deleted on close, opened without
+        // a nested loop: pulling the card destroys the card's page, and a
+        // dialog living on this frame's stack or among the page's children was
+        // deleted under its own exec(). It closes itself when its card leaves,
+        // so it never outlives the data it renders.
         //
-        // Queued because the emitter runs inside a stack-allocated QMenu's
-        // exec() loop: a direct connection would open the dialog's nested loop
-        // while that menu is still on the call stack, and a card pulled at that
-        // moment reaps the menu from the section's child list — a free() on a
-        // stack pointer.
+        // Queued because the request is emitted from a context-menu action: the
+        // menu is still delivering the trigger when the signal fires.
         connect(
-            section, &TokenSection::certificateDetailsRequested, section,
-            [this, section, cardId](const CertificateInfo& cert) {
+            section, &TokenSection::certificateDetailsRequested, this,
+            [this, cardId](const CertificateInfo& cert) {
                 CardController* controller = gateway->cardController(cardId);
-                CertificateViewerDlg dlg(cert, gateway.get(), section, controller ? controller->readerId() : QString());
-                dlg.exec();
+                auto* dlg = new CertificateViewerDlg(cert, gateway.get(), this,
+                                                     controller ? controller->readerId() : QString());
+                dlg->setAttribute(Qt::WA_DeleteOnClose);
+                connect(gateway.get(), &AgentGateway::cardRemoved, dlg, [dlg, cardId](const QString& removed) {
+                    if (removed == cardId)
+                        dlg->reject();
+                });
+                dlg->open();
             },
             Qt::QueuedConnection);
 #ifdef LIBRECELIK_SIGNING_ENABLED
@@ -775,7 +761,7 @@ void LibreCelik::attachPkiSection(const QString& cardId, QWidget* container, boo
         // Closing on card removal is the wizard's own gateway subscription.
         //
         // Queued for the same reason as the viewer above: the request is
-        // emitted from inside a stack-allocated QMenu's exec() loop.
+        // emitted from a context-menu action.
         connect(
             section, &TokenSection::signRequested, this,
             [this](const CertificateInfo& cert, const QString& signCardId) {
@@ -792,8 +778,9 @@ void LibreCelik::attachPkiSection(const QString& cardId, QWidget* container, boo
         // subscription.
         //
         // Queued for the same reason as the viewer and the wizard above: the
-        // request is emitted from inside a stack-allocated QMenu's exec() loop,
-        // and a direct connection would open a nested modal loop on top of it.
+        // request is emitted from a context-menu action, and a direct
+        // connection would open a nested modal loop while the menu is still
+        // delivering it.
         connect(
             section, &TokenSection::changePinRequested, this,
             [this, cardId](const LibreSCRS::AgentClient::CredentialRecord& credential) {
@@ -852,7 +839,7 @@ void LibreCelik::showAboutDialog()
 
 LibreCelik::~LibreCelik()
 {
-    // Before the members it borrows (gateway, starter) are destroyed.
+    // Before the gateway it borrows is destroyed.
     delete bootstrap;
     bootstrap = nullptr;
 #ifdef Q_OS_MACOS

@@ -4,6 +4,7 @@
 #include "tokensection.h"
 
 #include "certificate/certfields.h"
+#include "agent/errortext.h"
 #include "certificate/certformat.h"
 
 #include <QBrush>
@@ -25,6 +26,7 @@
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
 
+#include <memory>
 #include <optional>
 
 namespace {
@@ -131,19 +133,6 @@ constexpr int CredentialIndexRole = Qt::UserRole;
     return parts;
 }
 
-/// Holder guidance for a blocked credential.
-///
-/// The known-key/fallback rule of the agent error line: a guidance key this
-/// build named would render LC's own copy first. LC names none — the key
-/// vocabulary belongs to the agent and grows independently of this build — so
-/// the agent's authored fallback is what a holder reads, and a key that
-/// arrives without one renders nothing rather than a guess made on this side.
-[[nodiscard]] QString blockedGuidanceText(const CredentialRecord& cred)
-{
-    const QString fallback = cred.blockedGuidanceFallback.value_or(QString());
-    return fallback.trimmed().isEmpty() ? QString() : fallback;
-}
-
 /// The status column of a credential row: lifecycle badge first, then whatever
 /// counters the card reported.
 [[nodiscard]] QString credentialStatusText(const CredentialRecord& cred)
@@ -152,7 +141,8 @@ constexpr int CredentialIndexRole = Qt::UserRole;
         return qtTrId("lc-eid-pin-transport");
 
     if (cred.state == CredentialState::Blocked) {
-        const QString guidance = blockedGuidanceText(cred);
+        const QString guidance =
+            librecelik::agent::credentialGuidanceText(cred.blockedGuidanceKey, cred.blockedGuidanceFallback);
         return guidance.isEmpty() ? qtTrId("lc-eid-pin-blocked")
                                   : qtTrId("lc-eid-pin-blocked") + QStringLiteral(" · ") + guidance;
     }
@@ -423,7 +413,12 @@ void TokenSection::onContextMenu(const QPoint& pos)
     if (!item)
         return;
 
-    QMenu menu(this);
+    // On the heap and shown with popup(), never exec() on a stack object: the
+    // card can be pulled while the menu is open, which destroys this section
+    // and every child it has — a stack menu among them was a free() of a
+    // stack pointer. Deleted on close; owned by the section until then.
+    auto menu = std::make_unique<QMenu>(this);
+    menu->setAttribute(Qt::WA_DeleteOnClose);
 
     bool isCertItem = (item->parent() == tokenCertsItem);
     bool isCertChild = (item->parent() && item->parent()->parent() == tokenCertsItem);
@@ -432,15 +427,15 @@ void TokenSection::onContextMenu(const QPoint& pos)
         int certIndex = tokenCertsItem->indexOfChild(certItem);
         if (certIndex >= 0 && certIndex < static_cast<int>(certificateList.size())) {
             QAction* viewAction =
-                menu.addAction(qtTrId("lc-eid-menu-view-cert")); // i18n-audit: ignore D2, transient context-menu —
-                                                                 // qtTrId evaluated per right-click; menu discarded
-                                                                 // after exec()
+                menu->addAction(qtTrId("lc-eid-menu-view-cert")); // i18n-audit: ignore D2, transient context-menu —
+                                                                  // qtTrId evaluated per right-click; menu discarded
+                                                                  // on close
             connect(viewAction, &QAction::triggered, this,
                     [this, certIndex]() { emit certificateDetailsRequested(certificateList.at(certIndex)); });
 
 #ifdef LIBRECELIK_SIGNING_ENABLED
             if (certificateList.at(certIndex).signingCapable) {
-                QAction* signAction = menu.addAction(qtTrId("lc-sign-with-cert"));
+                QAction* signAction = menu->addAction(qtTrId("lc-sign-with-cert"));
                 connect(signAction, &QAction::triggered, this,
                         [this, certIndex]() { emit signRequested(certificateList.at(certIndex), cardId); });
             }
@@ -459,7 +454,7 @@ void TokenSection::onContextMenu(const QPoint& pos)
 
         const bool isTransport = (cred.state == CredentialState::Transport);
         QString actionText = isTransport ? qtTrId("lc-eid-menu-initialize-pin") : qtTrId("lc-eid-menu-change-pin");
-        QAction* pinAction = menu.addAction(actionText);
+        QAction* pinAction = menu->addAction(actionText);
 
         // A blocked credential is not changeable, and the dialog would have no
         // verb to offer it from this entry; the row's own status line already
@@ -468,8 +463,8 @@ void TokenSection::onContextMenu(const QPoint& pos)
         connect(pinAction, &QAction::triggered, this, [this, cred]() { emit changePinRequested(cred); });
     }
 
-    if (!menu.isEmpty())
-        menu.exec(treeWidget->viewport()->mapToGlobal(pos));
+    if (!menu->isEmpty())
+        menu.release()->popup(treeWidget->viewport()->mapToGlobal(pos));
 }
 
 #ifdef LIBRECELIK_SIGNING_ENABLED
@@ -489,20 +484,22 @@ void TokenSection::showCertificateDropdown()
     if (certs.empty())
         return;
 
-    QMenu menu(this);
+    // Heap and popup() for the same reason as the context menu above.
+    auto* menu = new QMenu(this);
+    menu->setAttribute(Qt::WA_DeleteOnClose);
     for (const auto& cert : certs) {
         QString text = cert.subject.isEmpty() ? cert.id : cert.subject;
-        QAction* action = menu.addAction(text);
+        QAction* action = menu->addAction(text);
         connect(action, &QAction::triggered, this, [this, cert]() { emit signRequested(cert, cardId); });
     }
-    QSize menuSize = menu.sizeHint();
+    QSize menuSize = menu->sizeHint();
     QPoint pos = signBtn->mapToGlobal(QPoint(signBtn->width() - menuSize.width(), signBtn->height()));
     QRect screenGeo = signBtn->screen()->availableGeometry();
     if (pos.x() < screenGeo.left())
         pos.setX(screenGeo.left());
     if (pos.x() + menuSize.width() > screenGeo.right())
         pos.setX(screenGeo.right() - menuSize.width());
-    menu.exec(pos);
+    menu->popup(pos);
 }
 #endif
 

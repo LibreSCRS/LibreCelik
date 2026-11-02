@@ -3,16 +3,14 @@
 
 #include "agent/live/livesigncontroller.h"
 
-#include "agent/artifactio.h"
 #include "agent/errortext.h"
-#include "agent/live/opwatch.h"
-#include "agent/opstallwatchdog.h"
 #include "agent/signrequest.h"
 
 #include <LibreSCRS/AgentClient/AgentCard.h>
 #include <LibreSCRS/AgentClient/AgentClient.h>
 #include <LibreSCRS/AgentClient/AgentOperation.h>
 #include <LibreSCRS/AgentClient/ClientTimeouts.h>
+#include <LibreSCRS/AgentClient/SignOptions.h> // signedOutputPath
 
 #include <QByteArray>
 #include <QLatin1StringView>
@@ -197,14 +195,10 @@ void LiveSignController::dispatchNextRun()
                                             : card->sign(certId, std::move(documents.front().fd), runOptions);
         inFlight = operation;
         connect(operation, &AgentOperation::phaseChanged, this, &SignController::phaseChanged);
-        const OpWatch watch = armWatchdog(operation);
 
-        connect(operation, &AgentOperation::finished, this, [this, operation, watch, batched, dialled] {
-            // FIRST, always: a normally completed run must never leave a timer
-            // alive to cancel an operation that is already done.
-            watch.dog->stop();
+        connect(operation, &AgentOperation::finished, this, [this, operation, batched, dialled] {
             inFlight.clear();
-            consumeFinished(operation, watch.fired && *watch.fired, batched, dialled);
+            consumeFinished(operation, batched, dialled);
             operation->deleteLater();
         });
         return; // one run in flight at a time
@@ -212,19 +206,15 @@ void LiveSignController::dispatchNextRun()
     finishRequest();
 }
 
-void LiveSignController::consumeFinished(AgentOperation* operation, bool watchdogFired, bool batched,
-                                         const SignRun& run)
+void LiveSignController::consumeFinished(AgentOperation* operation, bool batched, const SignRun& run)
 {
-    // A caller-enforced stall has no wire error of its own — the operation
-    // reports Cancelled with no code — so the agent's own watchdog code is the
-    // honest name for it, and it reads as retryable rather than final.
-    const ErrorCode opError = watchdogFired ? ErrorCode::WatchdogTimeout : operation->errorCode();
+    const ErrorCode opError = operation->errorCode();
     // The richest line available for a run-level failure: only here are the
     // agent-authored message and the transport axis in scope (the pure
-    // consumption below sees the error-code axis alone).
-    const QString opText = watchdogFired ? errorText(ErrorCode::WatchdogTimeout, CallError::None, {}, {})
-                                         : errorText(operation->errorCode(), operation->callError(),
-                                                     operation->messageKey(), operation->messageFallback());
+    // consumption below sees the error-code axis alone). A stalled run is the
+    // client library's to end, with CallError::Timeout, so it lands here too.
+    const QString opText = errorText(operation->errorCode(), operation->callError(), operation->messageKey(),
+                                     operation->messageFallback());
 
     // ALWAYS taken, terminal or not: the wire delivers rows for every document
     // it attempted, including on a Finished(Error).
@@ -256,7 +246,8 @@ void LiveSignController::consumeFinished(AgentOperation* operation, bool watchdo
         RowEmission& emission = outcome.emissions[position];
         const SignRequestItem& item = files.at(emission.sourceIndex);
         if (emission.ok) {
-            const QString written = writeArtifact(item, std::move(emission.artifact));
+            const QString written = writeSignedArtifact(item, emission.artifact.get(), outputFolder);
+            emission.artifact = FdHandle(); // written or not, the descriptor is spent
             if (written.isEmpty()) {
                 lastFailure = artifactWriteFailedText();
                 emitRow(emission.sourceIndex, false, {}, lastFailure);
@@ -297,17 +288,6 @@ void LiveSignController::consumeFinished(AgentOperation* operation, bool watchdo
         return;
     }
     dispatchNextRun();
-}
-
-QString LiveSignController::writeArtifact(const SignRequestItem& item, FdHandle artifact)
-{
-    const QString path = outputPathFor(item, outputFolder);
-    if (path.isEmpty() || !artifact.valid()) {
-        return {};
-    }
-    // The tested consumer (artifactio.h): rewinds the fd the producer left at
-    // EOF, and refuses to commit a zero-byte artifact as a signed file.
-    return librecelik::agent::writeArtifactTo(artifact.get(), path);
 }
 
 void LiveSignController::emitRow(int sourceIndex, bool ok, const QString& outputPath, const QString& message)

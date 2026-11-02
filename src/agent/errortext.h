@@ -9,6 +9,7 @@
 #include <QString>
 
 #include <cstdint>
+#include <optional>
 
 namespace librecelik::agent {
 
@@ -56,37 +57,24 @@ enum class ReadFailureAction : std::uint8_t {
 /// can reach.
 [[nodiscard]] ReadFailureAction readFailureAction(bool pageIsSpinner, LibreSCRS::AgentClient::ErrorCode code);
 
-/// Localized text for a failed operation. Resolution order, first match wins:
+/// Localized text for a failed operation.
 ///
-///   1. a msgKey this build names → LC's catalog string for it;
-///   2. an ErrorCode this build names → LC's catalog string as the HEADLINE;
-///      when the agent's msgFallback says something the headline does not, it
-///      rides below as a detail line — on the classes where one code covers
-///      many distinct failures, that prose is the only specific record of
-///      which one happened, and a coarser localized sentence must not erase
-///      it;
-///   3. an ANSWERED refusal (`InvalidArguments` / `AccessDenied` /
-///      `ProtocolError`) carrying a message → that message;
-///   4. any other engaged CallError → LC's catalog string for the transport
-///      classification, ahead of the raw bus text riding along with it;
-///   5. a non-blank msgFallback → the agent's authored message;
-///   6. otherwise → a localized generic.
-///
-/// LC's own copy leads on both axes it can name, and the agent's msgFallback
-/// is a degraded floor rather than a preference. The agent authors that
-/// fallback in English and nothing translates it on the way here, so
-/// rendering it AHEAD of a string LC already holds in the user's language
-/// puts English into a Serbian session — but where it carries the failure's
-/// specifics, hiding it entirely would trade accuracy for language purity,
-/// hence the headline-plus-detail shape.
-///
-/// Wire-frozen append-only: a code or key this build does not name simply
-/// declines its rule and resolution continues; nothing asserts.
-///
-/// A blank msgFallback counts as no message throughout — it is non-empty to
-/// QString and empty to a reader. The result is never empty.
+/// WHICH of the four facts a user reads is the client library's decision
+/// (`LibreSCRS::AgentClient::describeFailure()`, the same one every client of
+/// the agent makes); this function only supplies LibreCelik's sentences for
+/// it: the catalog entry for a message key, the catalog entry for an error
+/// code as the headline with the agent's own detail below it, the agent's
+/// message, the catalog entry for a transport failure, or the generic line.
+/// The result is never empty.
 [[nodiscard]] QString errorText(LibreSCRS::AgentClient::ErrorCode code, LibreSCRS::AgentClient::CallError call,
                                 const QString& msgKey, const QString& msgFallback);
+/// Holder guidance for a credential (why it is blocked, who activates a key):
+/// LibreCelik's own sentence for a guidance key it names, the agent's authored
+/// fallback for any other key, nothing when neither says anything. The one
+/// rule for every place a credential is shown.
+[[nodiscard]] QString credentialGuidanceText(const std::optional<QString>& key, const std::optional<QString>& fallback);
+/// @brief The line for a verb issued against a card the client has already removed.
+[[nodiscard]] QString cardGoneText();
 [[nodiscard]] QString phaseText(LibreSCRS::AgentClient::OperationPhase phase);
 [[nodiscard]] QString outcomeText(LibreSCRS::AgentClient::CredentialOutcome outcome);
 

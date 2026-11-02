@@ -2,84 +2,103 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 
 /// @file
-/// @brief Brings a missing card agent up through its host application.
+/// @brief Starts the card agent when the window opens without one, and again
+///        when the user asks.
 ///
-/// The coordinator watches the gateway's presence. When the agent is missing
-/// and the platform has a host that can start it, it locates the host, says
-/// what it found, launches it in the background, then polls the gateway: a
-/// host that is running but whose agent job stayed down gets one kick, and an
-/// agent that still has not answered by the deadline is reported as such,
-/// with a retry. All of it runs at most once per session on its own — a retry
-/// is always the user's.
+/// Opening LibreCelik is the user asking for the agent, so the coordinator asks
+/// the client library to start it once, on its own, when the window first
+/// finds it not running; every later attempt is the user's "Try again". How
+/// an agent starts is the library's knowledge, not this window's: on Linux the
+/// session bus activates it and the answer is final, on macOS the library
+/// launches the LibreMac host and the agent arrives later, so the coordinator
+/// polls until it does or a deadline passes.
 ///
-/// Portable on purpose: the platform half is the `AgentStarter` it is handed,
-/// so the whole flow is driven by fakes in the tests.
+/// Portable on purpose: everything platform-specific is behind the gateway, so
+/// the whole flow is driven by the scripted gateway in the tests.
 
 #pragma once
 
 #include "agent/agentgateway.h"
-#include "agent/agentstarter.h"
 
 #include <QElapsedTimer>
 #include <QObject>
 #include <QTimer>
 
 #include <chrono>
-#include <cstdint>
 
 namespace librecelik::agent {
+
+/// What the guided panel tells the user while the agent is missing. Every
+/// value but None names the macOS host application; elsewhere the panel's own
+/// copy covers every case.
+enum class Guidance {
+    None,              ///< the panel's own "not installed" copy
+    Starting,          ///< the host is being launched
+    NotInstalled,      ///< no host anywhere: install from the disk image
+    NotInApplications, ///< host found only outside Applications: move it
+    StillMissing,      ///< launched (or tried), agent never came: retryable
+};
 
 class AgentBootstrap : public QObject
 {
     Q_OBJECT
 public:
-    struct Timing
+    struct Options
     {
-        /// How often the gateway is re-probed after the host launched.
+        /// How often the gateway is re-probed after a start that answers later.
         std::chrono::milliseconds poll{1000};
-        /// How long a launched host gets before its agent job is kicked.
-        std::chrono::milliseconds kickAfter{3000};
-        /// How long after the launch the agent may take before it is reported
-        /// as still missing.
+        /// How long such a start may take before it is reported as failed.
         std::chrono::milliseconds giveUp{15000};
+        /// Whether the agent is started through a host application the guidance
+        /// copy names (LibreMac on macOS).
+#ifdef Q_OS_MACOS
+        bool hostGuidance = true;
+#else
+        bool hostGuidance = false;
+#endif
     };
 
-    /// @param gateway and @p starter are borrowed and must outlive this object.
-    AgentBootstrap(AgentGateway& gateway, AgentStarter& starter, Timing timing, QObject* parent = nullptr);
-    AgentBootstrap(AgentGateway& gateway, AgentStarter& starter, QObject* parent = nullptr);
+    /// @param gateway is borrowed and must outlive this object.
+    AgentBootstrap(AgentGateway& gateway, Options options, QObject* parent = nullptr);
+    explicit AgentBootstrap(AgentGateway& gateway, QObject* parent = nullptr);
 
     /// Reads the initial presence(); call once after wiring. The gateway emits
     /// nothing for the state it starts in.
     void start();
-    /// The StillMissing button: run the launch path again.
+    /// The panel's "Try again": ask for the agent to be started again. Asks
+    /// nothing while a start is still being answered.
     void retry();
     [[nodiscard]] Guidance guidance() const;
+    /// Whether the client library is still answering a start. On Linux it
+    /// waits for the bus to start the agent and runs the event loop meanwhile,
+    /// so the window stays live and its "Try again" can be pressed again.
+    [[nodiscard]] bool isStarting() const;
 
 signals:
     void guidanceChanged(librecelik::agent::Guidance guidance);
-    /// A poll found the agent no longer missing. The live gateway does not
-    /// signal every such move (missing -> unavailable is not a change it
-    /// reports), so the window re-reads presence() on this.
+    /// A start attempt has an answer. The client may have learned the agent's
+    /// state without a presence signal (an agent installed since the window
+    /// opened is "stopped" now, not "missing"), so the window re-reads
+    /// presence() on this.
     void presenceSettled();
+    /// A start was asked for (true) or has its answer (false).
+    void startingChanged(bool starting);
 
 private:
     void onPresence(PresenceState state);
-    void runLaunch();
-    void onLaunched(bool ok);
+    void runStart();
     void onTick();
     void set(Guidance value);
+    /// @p value where the guidance names the host, None everywhere else.
+    void guide(Guidance value);
 
     AgentGateway& gateway;
-    AgentStarter& starter;
-    Timing timing;
+    Options options;
     QTimer pollTimer;
-    QElapsedTimer sinceLaunch;
+    QElapsedTimer sinceStart;
     Guidance current = Guidance::None;
     bool attempted = false;
-    bool kicked = false;
-    /// Bumped by every launch, so a completion that arrives after a retry
-    /// already started a newer one is recognised as stale and dropped.
-    std::uint64_t launchGeneration = 0;
+    bool starting = false;
 };
 
 } // namespace librecelik::agent

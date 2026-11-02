@@ -11,6 +11,8 @@
 #include "utils/buttonbox.h"
 #include "utils/localeresolver.h"
 
+#include <LibreSCRS/AgentClient/ConfigKeys.h>
+#include <LibreSCRS/AgentClient/CscaAnchorKeys.h>
 #include <LibreSCRS/AgentClient/FdHandle.h>
 
 #include <QCheckBox>
@@ -49,35 +51,37 @@ namespace {
 
 using librecelik::agent::PresenceState;
 
-// Config1 keys, in the wire's own spelling. These are the agent's names, not
-// the QSettings paths the same preferences used to live under.
-constexpr QLatin1String kDefaultLevel{"DefaultLevel"};
-constexpr QLatin1String kDefaultReason{"DefaultReason"};
-constexpr QLatin1String kDefaultLocation{"DefaultLocation"};
-constexpr QLatin1String kTsaUrls{"TsaUrls"};
-constexpr QLatin1String kLastTsaUrl{"LastTsaUrl"};
-constexpr QLatin1String kTslSources{"TslSources"};
-constexpr QLatin1String kCscaAnchorState{"CscaAnchorState"};
-
-// The members of the `CscaAnchorState` dictionary, in the wire's own spelling.
-// This dialog reads the DICTIONARY rather than the client's value struct
-// because an optional member the agent did not send arrives as an ABSENT KEY,
-// and the struct would zero it — which is the difference between "the accepted
-// list carried no signing time" and "the list was signed on 1970-01-01".
-constexpr QLatin1String kCscaAnchors{"anchors"};
-constexpr QLatin1String kCscaIssuers{"issuers"};
-constexpr QLatin1String kCscaReplayRefusalActive{"replayRefusalActive"};
-// Present only while the agent follows exactly ONE publisher. A file from the
-// directory export carries a list per country, each with its own publisher and
-// its own signing time, so there is no such thing as THE publisher of what is
-// installed and the agent names none rather than picking one. Its absence
-// beside a non-zero anchor count is therefore a statement in itself: more than
-// one publisher stands behind these anchors. HOW MANY is not on the wire and
-// must not be guessed at -- least of all from the issuer count, which counts
-// the countries whose certificates are held and not the countries whose lists
-// carried them.
-constexpr QLatin1String kCscaSigner{"signer"};
-constexpr QLatin1String kCscaSignedAt{"signedAt"};
+// Config1 keys and the members of the `CscaAnchorState` dictionary, in the
+// wire's own spelling, from the client library: an agent-side rename then
+// breaks this build instead of silently reading an empty value.
+//
+// This dialog reads the anchor-state DICTIONARY rather than the client's value
+// struct because an optional member the agent did not send arrives as an
+// ABSENT KEY, and the struct would zero it — which is the difference between
+// "the accepted list carried no signing time" and "the list was signed on
+// 1970-01-01".
+//
+// `signer` is present only while the agent follows exactly ONE publisher. A
+// file from the directory export carries a list per country, each with its own
+// publisher and its own signing time, so there is no such thing as THE
+// publisher of what is installed and the agent names none rather than picking
+// one. Its absence beside a non-zero anchor count is therefore a statement in
+// itself: more than one publisher stands behind these anchors. HOW MANY is not
+// on the wire and must not be guessed at -- least of all from the issuer
+// count, which counts the countries whose certificates are held and not the
+// countries whose lists carried them.
+using LibreSCRS::AgentClient::kConfigCscaAnchorState;
+using LibreSCRS::AgentClient::kConfigDefaultLevel;
+using LibreSCRS::AgentClient::kConfigDefaultLocation;
+using LibreSCRS::AgentClient::kConfigDefaultReason;
+using LibreSCRS::AgentClient::kConfigLastTsaUrl;
+using LibreSCRS::AgentClient::kConfigTsaUrls;
+using LibreSCRS::AgentClient::kConfigTslSources;
+using LibreSCRS::AgentClient::kCscaAnchorAnchors;
+using LibreSCRS::AgentClient::kCscaAnchorIssuers;
+using LibreSCRS::AgentClient::kCscaAnchorReplayRefusalActive;
+using LibreSCRS::AgentClient::kCscaAnchorSignedAt;
+using LibreSCRS::AgentClient::kCscaAnchorSigner;
 
 // The public download portal for eMRTD country-signing master lists. Verified
 // to serve "the latest collection of eMRTD CSCA ML" behind a terms-and-
@@ -152,13 +156,13 @@ QFrame* makeSeparator(QWidget* parent)
 /// authorisation.
 const QStringList& signingKeys()
 {
-    static const QStringList keys = {kDefaultLevel, kDefaultReason, kDefaultLocation, kTsaUrls};
+    static const QStringList keys = {kConfigDefaultLevel, kConfigDefaultReason, kConfigDefaultLocation, kConfigTsaUrls};
     return keys;
 }
 
 const QStringList& trustKeys()
 {
-    static const QStringList keys = {kTslSources};
+    static const QStringList keys = {kConfigTslSources};
     return keys;
 }
 
@@ -209,18 +213,18 @@ QString uiLevelToken(const QString& wireToken)
 QVariantMap anchorStateAsMap(const LibreSCRS::AgentClient::CscaAnchorState& state)
 {
     QVariantMap map;
-    map.insert(kCscaAnchors, state.anchors);
-    map.insert(kCscaIssuers, state.issuers);
-    map.insert(kCscaReplayRefusalActive, state.replayRefusalActive);
+    map.insert(kCscaAnchorAnchors, state.anchors);
+    map.insert(kCscaAnchorIssuers, state.issuers);
+    map.insert(kCscaAnchorReplayRefusalActive, state.replayRefusalActive);
     // The client's value struct flattens an absent signer to an EMPTY string,
     // and an empty string inserted here would read back as a publisher the
     // agent named -- turning "several publishers" into "one, unnamed" at the
     // one place the two must not be confused.
     if (!state.signer.isEmpty()) {
-        map.insert(kCscaSigner, state.signer);
+        map.insert(kCscaAnchorSigner, state.signer);
     }
     if (state.signedAt.isValid()) {
-        map.insert(kCscaSignedAt, state.signedAt.toSecsSinceEpoch());
+        map.insert(kCscaAnchorSignedAt, state.signedAt.toSecsSinceEpoch());
     }
     return map;
 }
@@ -526,7 +530,7 @@ SettingsDialog::SettingsDialog(librecelik::agent::AgentGateway* agentGateway, QW
     layout->addWidget(statusLabel);
 
     // --- Button box ---
-    auto* buttonBox = new librecelik::ButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    buttonBox = new librecelik::ButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     if (auto* okButton = buttonBox->button(QDialogButtonBox::Ok))
         okButton->setObjectName(QStringLiteral("okButton"));
     if (auto* cancelButton = buttonBox->button(QDialogButtonBox::Cancel))
@@ -540,17 +544,18 @@ SettingsDialog::SettingsDialog(librecelik::agent::AgentGateway* agentGateway, QW
         if (saveSettings())
             accept();
     });
-    connect(buttonBox, &QDialogButtonBox::rejected, this, [this]() {
-        // Restore the original language if the user changed it during live preview
-        QString currentLocale = languageCombo->currentData().toString();
-        if (currentLocale != originalLocale)
-            emit languageChanged(originalLocale);
-        reject();
-    });
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &SettingsDialog::reject);
 
     if (gateway != nullptr) {
-        connect(gateway, &librecelik::agent::AgentGateway::presenceChanged, this,
-                [this](PresenceState) { applyPresence(); });
+        // An agent that becomes reachable after the dialog opened has a
+        // configuration the dialog has never seen: the snapshot taken while it
+        // was away is empty, and writing the differences against an empty map
+        // would replace the agent's lists with whatever the controls hold.
+        connect(gateway, &librecelik::agent::AgentGateway::presenceChanged, this, [this](PresenceState state) {
+            if (state == PresenceState::Ready && !writeInFlight)
+                loadConfig();
+            applyPresence();
+        });
         // The agent's configuration is shared. Another client's write lands
         // here as a fresh snapshot rather than as a stale dialog.
         connect(gateway, &librecelik::agent::AgentGateway::configChanged, this, [this](const QString&) {
@@ -666,10 +671,21 @@ void SettingsDialog::fitWrappedLabelHeight(QLabel* label)
 
 void SettingsDialog::importMasterList(int masterListFd)
 {
-    if (gateway == nullptr || gateway->presence() != PresenceState::Ready)
+    if (writeInFlight || gateway == nullptr || gateway->presence() != PresenceState::Ready)
         return;
 
+    // An import waits for an authorization prompt like a write does, and the
+    // same second click would start a second one.
+    writeInFlight = true;
+    setBusy(true);
     const auto imported = gateway->importCscaMasterList(masterListFd);
+    writeInFlight = false;
+    setBusy(false);
+    if (cancelRequested) {
+        cancelRequested = false;
+        reject();
+        return;
+    }
     if (imported.has_value()) {
         cscaState = anchorStateAsMap(*imported);
         cscaOutcome = CscaImportOutcome::Installed;
@@ -768,10 +784,10 @@ void SettingsDialog::renderCscaState()
         //
         // ANCHORS, never "roots": the count includes CSCA link certificates,
         // which are anchors like any other and are not self-signed roots.
-        if (cscaState.contains(kCscaAnchors)) {
+        if (cscaState.contains(kCscaAnchorAnchors)) {
             lines << qtTrId("lc-settings-csca-state-anchors")
-                         .arg(cscaState.value(kCscaAnchors).toUInt())
-                         .arg(cscaState.value(kCscaIssuers).toUInt());
+                         .arg(cscaState.value(kCscaAnchorAnchors).toUInt())
+                         .arg(cscaState.value(kCscaAnchorIssuers).toUInt());
         }
         // More than one publisher, said out loud. The agent fills `signer` only
         // while it follows exactly one of them, so its absence beside anchors
@@ -780,17 +796,17 @@ void SettingsDialog::renderCscaState()
         // NO NUMBER: how many publishers were taken in is deliberately not on
         // the wire, and the issuer count above is a different quantity that
         // would read as one if it were borrowed for this sentence.
-        if (cscaState.value(kCscaAnchors).toUInt() > 0 && !cscaState.contains(kCscaSigner)) {
+        if (cscaState.value(kCscaAnchorAnchors).toUInt() > 0 && !cscaState.contains(kCscaAnchorSigner)) {
             lines << qtTrId("lc-settings-csca-state-publishers");
         }
-        if (cscaState.contains(kCscaSignedAt)) {
+        if (cscaState.contains(kCscaAnchorSignedAt)) {
             // Only when the accepted list carried one. CMS permits an absent
             // signing time, the agent sends no epoch sentinel for it, and a
             // zero read back as a date would put 1970 on screen as a real
             // stamp. Written as an ISO date in UTC: the stamp belongs to the
             // publisher, and a local-time rendering can move it by a day.
             const QDateTime signedAt =
-                QDateTime::fromSecsSinceEpoch(cscaState.value(kCscaSignedAt).toLongLong(), QTimeZone::UTC);
+                QDateTime::fromSecsSinceEpoch(cscaState.value(kCscaAnchorSignedAt).toLongLong(), QTimeZone::UTC);
             lines << qtTrId("lc-settings-csca-state-signed").arg(signedAt.date().toString(Qt::ISODate));
         }
         // The FALSE is the value worth surfacing: staying silent leaves a
@@ -798,8 +814,8 @@ void SettingsDialog::renderCscaState()
         // refused" from "that cannot be checked at all". An absent member
         // reads as false here, which is the only direction a missing key may
         // move this sentence — it can withhold a guarantee, never invent one.
-        lines << (cscaState.value(kCscaReplayRefusalActive).toBool() ? qtTrId("lc-settings-csca-rollback-on")
-                                                                     : qtTrId("lc-settings-csca-rollback-off"));
+        lines << (cscaState.value(kCscaAnchorReplayRefusalActive).toBool() ? qtTrId("lc-settings-csca-rollback-on")
+                                                                           : qtTrId("lc-settings-csca-rollback-off"));
         cscaSummaryLabel->setText(lines.join(QLatin1Char('\n')));
     }
 
@@ -857,17 +873,17 @@ void SettingsDialog::loadConfig()
 {
     config = gateway != nullptr ? gateway->configSnapshot() : QVariantMap();
 
-    const int levelIdx = defaultLevelCombo->findData(uiLevelToken(config.value(kDefaultLevel).toString()));
+    const int levelIdx = defaultLevelCombo->findData(uiLevelToken(config.value(kConfigDefaultLevel).toString()));
     defaultLevelCombo->setCurrentIndex(levelIdx >= 0 ? levelIdx : 0);
-    defaultReasonEdit->setText(config.value(kDefaultReason).toString());
-    defaultLocationEdit->setText(config.value(kDefaultLocation).toString());
-    lastTsaValue->setText(config.value(kLastTsaUrl).toString());
+    defaultReasonEdit->setText(config.value(kConfigDefaultReason).toString());
+    defaultLocationEdit->setText(config.value(kConfigDefaultLocation).toString());
+    lastTsaValue->setText(config.value(kConfigLastTsaUrl).toString());
 
     // What the agent HOLDS in country-signing anchors, read like any other
     // setting. It is served read-only and without an import having happened,
     // which is what lets the Trust tab account for the anchors on open instead
     // of saying it cannot know.
-    cscaState = config.value(kCscaAnchorState).toMap();
+    cscaState = config.value(kConfigCscaAnchorState).toMap();
 
     populateTsaList();
     populateTlList();
@@ -895,19 +911,51 @@ void SettingsDialog::renderStatus()
     statusLabel->setVisible(true);
 }
 
+void SettingsDialog::reject()
+{
+    if (writeInFlight) {
+        cancelRequested = true;
+        return;
+    }
+    // Put back the language the dialog opened with, if the live preview moved it.
+    const QString currentLocale = languageCombo->currentData().toString();
+    if (currentLocale != originalLocale)
+        emit languageChanged(originalLocale);
+    QDialog::reject();
+}
+
+void SettingsDialog::setBusy(bool busy)
+{
+    // Cancel stays live: it is how the human stops a write that is waiting
+    // for an authorization prompt they do not mean to answer. Everything that
+    // would start another write (OK, and the restore and import buttons on
+    // the tabs) is held.
+    tabs->setEnabled(!busy);
+    if (auto* okButton = buttonBox->button(QDialogButtonBox::Ok))
+        okButton->setEnabled(!busy);
+}
+
 bool SettingsDialog::saveSettings()
 {
-    QSettings settings(settings::kOrganization, settings::kApplication);
-
-    // Language (persisted on OK, live preview was immediate)
-    settings.setValue(settings::kLanguage, languageCombo->currentData().toString());
-    settings.setValue(settings::kSigningDefaultOutputFolder, defaultOutputFolder->text());
+    if (writeInFlight)
+        return false; // a second OK while the first one's writes are under way
 
     lastRefusal.reset();
     renderStatus();
 
-    if (gateway == nullptr || gateway->presence() != PresenceState::Ready)
+    // The local half (language, output folder) is persisted only once the
+    // agent's half has been: a Save that is refused or cancelled half-way must
+    // not leave the language changed for good while the dialog stays open.
+    const auto persistLocal = [this] {
+        QSettings settings(settings::kOrganization, settings::kApplication);
+        settings.setValue(settings::kLanguage, languageCombo->currentData().toString());
+        settings.setValue(settings::kSigningDefaultOutputFolder, defaultOutputFolder->text());
+    };
+
+    if (gateway == nullptr || gateway->presence() != PresenceState::Ready) {
+        persistLocal();
         return true; // the operation-backed tabs are dark; there is nothing to write
+    }
 
     // Collect FIRST, write SECOND: every accepted write announces itself
     // through configChanged, and a snapshot re-read mid-run would drop the
@@ -921,20 +969,23 @@ bool SettingsDialog::saveSettings()
     // represent "absent", and an absent level is the baseline one.
     QList<QPair<QString, QVariant>> pending;
     const QString level = wireLevelToken(defaultLevelCombo->currentData().toString());
-    if (level != wireLevelToken(uiLevelToken(config.value(kDefaultLevel).toString())))
-        pending.append(qMakePair(QString(kDefaultLevel), QVariant(level)));
-    if (defaultReasonEdit->text() != config.value(kDefaultReason).toString())
-        pending.append(qMakePair(QString(kDefaultReason), QVariant(defaultReasonEdit->text())));
-    if (defaultLocationEdit->text() != config.value(kDefaultLocation).toString())
-        pending.append(qMakePair(QString(kDefaultLocation), QVariant(defaultLocationEdit->text())));
-    if (const QStringList urls = tsaUrlsFromList(); urls != config.value(kTsaUrls).toStringList())
-        pending.append(qMakePair(QString(kTsaUrls), QVariant(urls)));
-    if (const QVariantList sources = tslSourcesFromList(); sources != config.value(kTslSources).toList())
-        pending.append(qMakePair(QString(kTslSources), QVariant(sources)));
+    if (level != wireLevelToken(uiLevelToken(config.value(kConfigDefaultLevel).toString())))
+        pending.append(qMakePair(QString(kConfigDefaultLevel), QVariant(level)));
+    if (defaultReasonEdit->text() != config.value(kConfigDefaultReason).toString())
+        pending.append(qMakePair(QString(kConfigDefaultReason), QVariant(defaultReasonEdit->text())));
+    if (defaultLocationEdit->text() != config.value(kConfigDefaultLocation).toString())
+        pending.append(qMakePair(QString(kConfigDefaultLocation), QVariant(defaultLocationEdit->text())));
+    if (const QStringList urls = tsaUrlsFromList(); urls != config.value(kConfigTsaUrls).toStringList())
+        pending.append(qMakePair(QString(kConfigTsaUrls), QVariant(urls)));
+    if (const QVariantList sources = tslSourcesFromList(); sources != config.value(kConfigTslSources).toList())
+        pending.append(qMakePair(QString(kConfigTslSources), QVariant(sources)));
 
     writeInFlight = true;
+    setBusy(true);
     bool accepted = true;
     for (const auto& entry : std::as_const(pending)) {
+        if (cancelRequested)
+            break;
         const auto refusal = gateway->setConfigValue(entry.first, entry.second);
         if (refusal.has_value()) {
             // One refusal ends the Save. Carrying on would mean a SECOND
@@ -946,11 +997,24 @@ bool SettingsDialog::saveSettings()
         }
     }
     writeInFlight = false;
+    setBusy(false);
+
+    if (cancelRequested) {
+        // Cancelled while a write was waiting: the keys already written stay
+        // written (the agent accepted them), nothing after them is, and the
+        // dialog closes the way Cancel always closes it.
+        cancelRequested = false;
+        loadConfig();
+        reject();
+        return false;
+    }
 
     // Only a clean run re-reads: after a refusal the edits stay on screen, so
     // "Save again" still has something to save.
-    if (accepted)
+    if (accepted) {
+        persistLocal();
         loadConfig();
+    }
     renderStatus();
     return accepted;
 }
@@ -960,9 +1024,14 @@ void SettingsDialog::restoreDefaults(const QStringList& keys)
     if (gateway == nullptr)
         return;
 
+    if (writeInFlight)
+        return;
     lastRefusal.reset();
     writeInFlight = true;
+    setBusy(true);
     for (const QString& key : keys) {
+        if (cancelRequested)
+            break;
         const auto refusal = gateway->resetConfigValue(key);
         if (refusal.has_value()) {
             lastRefusal = refusal;
@@ -970,6 +1039,13 @@ void SettingsDialog::restoreDefaults(const QStringList& keys)
         }
     }
     writeInFlight = false;
+    setBusy(false);
+    if (cancelRequested) {
+        cancelRequested = false;
+        loadConfig();
+        reject();
+        return;
+    }
 
     // The agent's defaults are whatever it answers now — LC never re-invents
     // them, so the tab is redrawn from a fresh snapshot rather than from a
@@ -1006,7 +1082,7 @@ void SettingsDialog::populateTsaList()
 {
     tsaList->clear();
 
-    const QStringList rawUrls = config.value(kTsaUrls).toStringList();
+    const QStringList rawUrls = config.value(kConfigTsaUrls).toStringList();
 
     for (const QString& rawUrl : std::as_const(rawUrls)) {
         const QString url = rawUrl.trimmed();
@@ -1057,7 +1133,7 @@ void SettingsDialog::populateTlList()
 {
     tlList->clear();
 
-    const QVariantList entries = config.value(kTslSources).toList();
+    const QVariantList entries = config.value(kConfigTslSources).toList();
 
     for (const QVariant& entry : std::as_const(entries)) {
         // [url, lotl, eager] — the shape both transports normalise to.

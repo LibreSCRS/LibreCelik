@@ -10,8 +10,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets LinguistTools PrintSupport)
-find_package(Qt6 REQUIRED COMPONENTS Widgets LinguistTools PrintSupport)
+find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets LinguistTools PrintSupport Network)
+find_package(Qt6 REQUIRED COMPONENTS Widgets LinguistTools PrintSupport Network)
 
 # Before configure_file: config.h bakes CMAKE_INSTALL_LIBDIR so ONE value
 # drives the install rules, the $ORIGIN RPATH and the runtime plugin
@@ -45,12 +45,9 @@ set(PROJECT_SOURCES
         agent/errortext.cpp
         agent/fieldmerge.h
         agent/fieldmerge.cpp
-        agent/opstallwatchdog.h
-        agent/opstallwatchdog.cpp
         agent/optionalsections.h
         agent/agentstatewidget.h
         agent/agentstatewidget.cpp
-        agent/agentstarter.h
         agent/agentbootstrap.h
         agent/agentbootstrap.cpp
         agent/cardstatuspage.h
@@ -84,26 +81,20 @@ set(PROJECT_SOURCES
         certificate/certificateviewerwidget.ui
         certificate/certificateviewerdlg.h
         certificate/certificateviewerdlg.cpp
-        utils/collapsiblesection.h
-        utils/collapsiblesection.cpp
-        utils/cardheadercard.h
-        utils/cardheadercard.cpp
         utils/localeresolver.h
         utils/localeresolver.cpp
         utils/buttonbox.h
         utils/buttonbox.cpp
         utils/dialogs.h
         utils/dialogs.cpp
-        utils/fieldsectionbuilder.h
-        utils/fieldsectionbuilder.cpp
         utils/listitemdelegate.h
         utils/listitemdelegate.cpp
         utils/messageline.h
         utils/messageline.cpp
-        utils/pluginwidgetbase.h
-        utils/pluginwidgetbase.cpp
         utils/spinnerpage.h
         utils/spinnerpage.cpp
+        utils/singleinstance.h
+        utils/singleinstance.cpp
         utils/translations_catalog.cpp
         plugin/cardwidgetplugin.h
         plugin/cardwidgetpluginregistry.h
@@ -118,12 +109,10 @@ set(PROJECT_SOURCES
         settings/settingskeys.h
         signing/tsaitemdelegate.h
         signing/tsaitemdelegate.cpp
-        signing/defaults.h
 )
 
 if(APPLE)
-    list(APPEND PROJECT_SOURCES utils/macos_menu.h utils/macos_menu.mm
-        agent/macagentstarter.h agent/macagentstarter.mm)
+    list(APPEND PROJECT_SOURCES utils/macos_menu.h utils/macos_menu.mm)
 endif()
 
 if(LIBRECELIK_SIGNING_ENABLED)
@@ -216,6 +205,34 @@ set_source_files_properties(${APP_ICON_MACOS} PROPERTIES MACOSX_PACKAGE_LOCATION
 
 add_subdirectory(document/printing)
 
+# The widget code the card pages share with the window. One library, compiled
+# once: every card page used to compile its own copy of these files into its
+# own module, and each copy exported the same symbols.
+add_library(LibreCelikWidgets STATIC
+    utils/collapsiblesection.h
+    utils/collapsiblesection.cpp
+    utils/cardheadercard.h
+    utils/cardheadercard.cpp
+    utils/fieldsectionbuilder.h
+    utils/fieldsectionbuilder.cpp
+    utils/pluginwidgetbase.h
+    utils/pluginwidgetbase.cpp
+    utils/securitystatuswidget.h
+    utils/securitystatuswidget.cpp
+)
+target_include_directories(LibreCelikWidgets PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(LibreCelikWidgets PUBLIC
+    Qt6::Widgets
+    LibreCelikPrinting
+    LibreAgent::ClientQt)
+set_target_properties(LibreCelikWidgets PROPERTIES
+    AUTOMOC ON
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN ON)
+librecelik_warnings_as_errors(LibreCelikWidgets)
+
 # ── Application object library ────────────────────────────────────────────
 # Everything except main.cpp compiles here so a test binary can link the SAME
 # objects the executable ships. Until this library existed, a test that wanted
@@ -240,8 +257,18 @@ add_library(librecelik_app OBJECT ${APP_SOURCES})
 target_link_libraries(librecelik_app PUBLIC
     Qt6::Widgets
     Qt6::PrintSupport
+    Qt6::Network
     LibreCelikPrinting
-    LibreAgent::ClientQt)
+    LibreCelikWidgets
+    LibreAgent::ClientQt
+    # The card pages (plugins/). Linking a static Qt plugin target imports it
+    # (Qt generates the import for qt_add_plugin), so every binary linking this
+    # library has the same pages the shipped one does.
+    rs-eid-gui-plugin
+    eu-vrc-gui-plugin
+    rs-health-gui-plugin
+    token-gui-plugin
+    emrtd-gui-plugin)
 target_include_directories(librecelik_app PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR})

@@ -2,13 +2,13 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 
 /// @file
-/// @brief The missing-agent coordinator, driven by the scripted gateway and a
-///        recording starter.
+/// @brief The agent-start coordinator, driven by the scripted gateway.
 ///
-/// The starter's completion is held, not answered: each case decides when (and
-/// whether) the host "finished launching", because the ordering of that
-/// completion against the agent's own arrival is exactly what the flow has to
-/// get right.
+/// The gateway answers `requestAgentStart()` with a scripted result, the way
+/// the client library answers it on each platform: final on Linux (the bus
+/// started the agent or could not), "requested" on macOS (the host app is
+/// launching and the agent arrives later). Host guidance is switched on or off
+/// per case, so both platforms' flows run here.
 
 #include "agent/agentbootstrap.h"
 #include "fake_gateway/fakeagentgateway.h"
@@ -19,51 +19,32 @@
 
 #include <gtest/gtest.h>
 
-#include <functional>
+#include <stdexcept>
 
 using librecelik::agent::AgentBootstrap;
-using librecelik::agent::AgentStarter;
 using librecelik::agent::Guidance;
-using librecelik::agent::HostLocation;
-using librecelik::agent::NullAgentStarter;
 using librecelik::agent::PresenceState;
 using librecelik::test::agent::FakeAgentGateway;
+using LibreSCRS::AgentClient::AgentStartResult;
 
 namespace {
 
-struct FakeStarter : AgentStarter
+/// A short poll, but a deadline a hundred polls away: a loaded runner may stall
+/// the event loop for tens of milliseconds, and a deadline that a stall can
+/// reach turns "the poll noticed" into "the poll gave up".
+AgentBootstrap::Options options(bool hostGuidance)
 {
-    HostLocation where = HostLocation::Installed;
-    int launches = 0;
-    int kicks = 0;
-    std::function<void(bool)> pending;
-
-    HostLocation locate() override
-    {
-        return where;
-    }
-    void launchHost(std::function<void(bool)> done) override
-    {
-        ++launches;
-        pending = std::move(done);
-    }
-    void kickAgent() override
-    {
-        ++kicks;
-    }
-};
-
-/// Short poll and kick, but a deadline a hundred polls away: a loaded runner
-/// may stall the event loop for tens of milliseconds, and a deadline that a
-/// stall can reach turns "the poll noticed" into "the poll gave up".
-constexpr AgentBootstrap::Timing fast{std::chrono::milliseconds(10), std::chrono::milliseconds(30),
-                                      std::chrono::milliseconds(1000)};
-/// Every positive wait: well above `fast.giveUp`, so even the deadline case
-/// has room on a slow machine. A passing wait returns as soon as it holds.
+    AgentBootstrap::Options o;
+    o.poll = std::chrono::milliseconds(10);
+    o.giveUp = std::chrono::milliseconds(1000);
+    o.hostGuidance = hostGuidance;
+    return o;
+}
+/// Every positive wait: well above the deadline. A passing wait returns as
+/// soon as it holds.
 constexpr int kWaitMs = 5000;
 
-/// The coordinator's completion hop and its poll timer both need a live
-/// application object and event dispatcher.
+/// The poll timer needs a live application object and event dispatcher.
 class AgentBootstrapTest : public ::testing::Test
 {
 protected:
@@ -77,8 +58,11 @@ protected:
     static QCoreApplication* app;
 
     FakeAgentGateway gateway;
-    FakeStarter starter;
 
+    int starts() const
+    {
+        return static_cast<int>(gateway.callLog.count(QStringLiteral("requestAgentStart")));
+    }
     int refreshes() const
     {
         return static_cast<int>(gateway.callLog.count(QStringLiteral("refresh")));
@@ -88,202 +72,189 @@ QCoreApplication* AgentBootstrapTest::app = nullptr;
 
 } // namespace
 
-TEST_F(AgentBootstrapTest, NotFoundGuidesToInstallAndLaunchesNothing)
-{
-    gateway.scriptedPresence = PresenceState::AgentMissing;
-    starter.where = HostLocation::NotFound;
-    AgentBootstrap boot(gateway, starter, fast);
-    boot.start();
-    EXPECT_EQ(boot.guidance(), Guidance::NotInstalled);
-    EXPECT_EQ(starter.launches, 0);
-}
-
-TEST_F(AgentBootstrapTest, ElsewhereOnlyGuidesToApplications)
-{
-    gateway.scriptedPresence = PresenceState::AgentMissing;
-    starter.where = HostLocation::ElsewhereOnly;
-    AgentBootstrap boot(gateway, starter, fast);
-    boot.start();
-    EXPECT_EQ(boot.guidance(), Guidance::NotInApplications);
-    EXPECT_EQ(starter.launches, 0);
-}
-
-TEST_F(AgentBootstrapTest, InstalledLaunchesOnceAndShowsStarting)
-{
-    gateway.scriptedPresence = PresenceState::AgentMissing;
-    AgentBootstrap boot(gateway, starter, fast);
-    QSignalSpy spy(&boot, &AgentBootstrap::guidanceChanged);
-    boot.start();
-    EXPECT_EQ(boot.guidance(), Guidance::Starting);
-    EXPECT_EQ(starter.launches, 1);
-    ASSERT_EQ(spy.count(), 1);
-    EXPECT_EQ(spy.at(0).at(0).value<Guidance>(), Guidance::Starting);
-    // A second missing verdict in the same session launches nothing more.
-    gateway.setPresence(PresenceState::AgentUnavailable);
-    gateway.setPresence(PresenceState::AgentMissing);
-    EXPECT_EQ(starter.launches, 1);
-}
-
-TEST_F(AgentBootstrapTest, KicksTheAgentAfterTheLaunchCompletes)
-{
-    gateway.scriptedPresence = PresenceState::AgentMissing;
-    AgentBootstrap boot(gateway, starter, fast);
-    boot.start();
-    ASSERT_TRUE(starter.pending);
-    // No completion yet: the kick clock has not started, whatever the wall
-    // clock says.
-    QTest::qWait(60);
-    EXPECT_EQ(starter.kicks, 0);
-    EXPECT_EQ(refreshes(), 0);
-
-    starter.pending(true);
-    EXPECT_TRUE(QTest::qWaitFor([&] { return starter.kicks == 1; }, kWaitMs));
-    // One kick per launch, however long the agent then takes.
-    EXPECT_TRUE(QTest::qWaitFor([&] { return boot.guidance() == Guidance::StillMissing; }, kWaitMs));
-    EXPECT_EQ(starter.kicks, 1);
-}
-
-TEST_F(AgentBootstrapTest, ReadyBeforeTheDeadlineClearsGuidanceAndStopsPolling)
-{
-    gateway.scriptedPresence = PresenceState::AgentMissing;
-    AgentBootstrap boot(gateway, starter, fast);
-    boot.start();
-    starter.pending(true);
-    ASSERT_TRUE(QTest::qWaitFor([&] { return refreshes() > 0; }, kWaitMs));
-    gateway.setPresence(PresenceState::Ready);
-    EXPECT_EQ(boot.guidance(), Guidance::None);
-    const int seen = refreshes();
-    QTest::qWait(100);
-    EXPECT_EQ(refreshes(), seen);
-}
-
-TEST_F(AgentBootstrapTest, DeadlineWithoutAgentIsStillMissing)
-{
-    gateway.scriptedPresence = PresenceState::AgentMissing;
-    AgentBootstrap boot(gateway, starter, fast);
-    boot.start();
-    starter.pending(true);
-    EXPECT_TRUE(QTest::qWaitFor([&] { return boot.guidance() == Guidance::StillMissing; }, kWaitMs));
-    EXPECT_GE(refreshes(), 3);
-    const int seen = refreshes();
-    QTest::qWait(60);
-    EXPECT_EQ(refreshes(), seen) << "polling must stop at the deadline";
-}
-
-TEST_F(AgentBootstrapTest, LaunchFailureIsStillMissingAtOnce)
-{
-    gateway.scriptedPresence = PresenceState::AgentMissing;
-    AgentBootstrap boot(gateway, starter, fast);
-    boot.start();
-    starter.pending(false);
-    EXPECT_TRUE(QTest::qWaitFor([&] { return boot.guidance() == Guidance::StillMissing; }, kWaitMs));
-    QTest::qWait(60);
-    EXPECT_EQ(starter.kicks, 0);
-    EXPECT_EQ(refreshes(), 0);
-}
-
-TEST_F(AgentBootstrapTest, RetryLaunchesAgain)
-{
-    gateway.scriptedPresence = PresenceState::AgentMissing;
-    AgentBootstrap boot(gateway, starter, fast);
-    boot.start();
-    starter.pending(false);
-    ASSERT_TRUE(QTest::qWaitFor([&] { return boot.guidance() == Guidance::StillMissing; }, kWaitMs));
-    boot.retry();
-    EXPECT_EQ(starter.launches, 2);
-    EXPECT_EQ(boot.guidance(), Guidance::Starting);
-}
-
-TEST_F(AgentBootstrapTest, InitialMissingWithoutASignalStartsTheFlow)
-{
-    gateway.scriptedPresence = PresenceState::AgentMissing;
-    AgentBootstrap boot(gateway, starter, fast);
-    EXPECT_EQ(starter.launches, 0) << "construction alone must not launch";
-    boot.start();
-    EXPECT_EQ(starter.launches, 1);
-}
-
-TEST_F(AgentBootstrapTest, NullStarterChangesNothing)
-{
-    gateway.scriptedPresence = PresenceState::AgentMissing;
-    NullAgentStarter null;
-    AgentBootstrap boot(gateway, null, fast);
-    boot.start();
-    gateway.setPresence(PresenceState::AgentUnavailable);
-    gateway.setPresence(PresenceState::AgentMissing);
-    QTest::qWait(30);
-    EXPECT_EQ(boot.guidance(), Guidance::None);
-    EXPECT_EQ(refreshes(), 0);
-}
-
-TEST_F(AgentBootstrapTest, AgentUnavailableIsNotOurCase)
+/// The Linux cold start: the agent is installed but nothing has started it.
+/// Opening the window is the user asking for it, so the window starts it — a
+/// window that only looked would sit on "not responding" for good.
+TEST_F(AgentBootstrapTest, AStoppedAgentIsStartedWhenTheWindowOpens)
 {
     gateway.scriptedPresence = PresenceState::AgentUnavailable;
-    AgentBootstrap boot(gateway, starter, fast);
-    boot.start();
-    EXPECT_EQ(boot.guidance(), Guidance::None);
-    EXPECT_EQ(starter.launches, 0);
-}
+    gateway.scriptedStartResult = AgentStartResult::Running;
+    AgentBootstrap bootstrap(gateway, options(false));
+    QSignalSpy settled(&bootstrap, &AgentBootstrap::presenceSettled);
 
-TEST_F(AgentBootstrapTest, CallbackAfterReadyDoesNotPoll)
-{
-    gateway.scriptedPresence = PresenceState::AgentMissing;
-    AgentBootstrap boot(gateway, starter, fast);
-    boot.start();
-    gateway.setPresence(PresenceState::Ready);
-    EXPECT_EQ(boot.guidance(), Guidance::None);
-    starter.pending(true);
-    QTest::qWait(60);
-    EXPECT_EQ(refreshes(), 0);
-    EXPECT_EQ(starter.kicks, 0);
-    EXPECT_EQ(boot.guidance(), Guidance::None);
-}
+    bootstrap.start();
 
-TEST_F(AgentBootstrapTest, AgentUnavailableDuringPollingStopsAndSettles)
-{
-    gateway.scriptedPresence = PresenceState::AgentMissing;
-    AgentBootstrap boot(gateway, starter, fast);
-    QSignalSpy settled(&boot, &AgentBootstrap::presenceSettled);
-    boot.start();
-    starter.pending(true);
-    ASSERT_TRUE(QTest::qWaitFor([&] { return refreshes() > 0; }, kWaitMs));
-    // The live gateway reports no missing -> unavailable move, so the poll is
-    // the only thing that can notice it: no signal here on purpose.
-    gateway.scriptedPresence = PresenceState::AgentUnavailable;
-    EXPECT_TRUE(QTest::qWaitFor([&] { return settled.count() == 1; }, kWaitMs));
-    EXPECT_EQ(boot.guidance(), Guidance::None);
-    const int seen = refreshes();
-    QTest::qWait(60);
-    EXPECT_EQ(refreshes(), seen) << "polling must stop once the agent is no longer missing";
+    EXPECT_EQ(starts(), 1);
+    EXPECT_EQ(gateway.presence(), PresenceState::Ready);
+    EXPECT_EQ(bootstrap.guidance(), Guidance::None);
     EXPECT_EQ(settled.count(), 1);
 }
 
-TEST_F(AgentBootstrapTest, MissingAgainAfterReadyOffersRetry)
+TEST_F(AgentBootstrapTest, AReadyAgentIsNotStartedAgain)
 {
-    gateway.scriptedPresence = PresenceState::AgentMissing;
-    AgentBootstrap boot(gateway, starter, fast);
-    boot.start();
-    starter.pending(true);
-    gateway.setPresence(PresenceState::Ready);
-    ASSERT_EQ(boot.guidance(), Guidance::None);
-    gateway.setPresence(PresenceState::AgentMissing);
-    EXPECT_EQ(boot.guidance(), Guidance::StillMissing);
-    EXPECT_EQ(starter.launches, 1) << "a second launch is the user's, not ours";
-    boot.retry();
-    EXPECT_EQ(starter.launches, 2);
-    EXPECT_EQ(boot.guidance(), Guidance::Starting);
+    gateway.scriptedPresence = PresenceState::Ready;
+    AgentBootstrap bootstrap(gateway, options(true));
+    bootstrap.start();
+    EXPECT_EQ(starts(), 0);
 }
 
-TEST_F(AgentBootstrapTest, StaleCompletionAfterRetryIsIgnored)
+TEST_F(AgentBootstrapTest, ConstructionAloneStartsNothing)
 {
     gateway.scriptedPresence = PresenceState::AgentMissing;
-    AgentBootstrap boot(gateway, starter, fast);
-    boot.start();
-    auto first = starter.pending;
-    boot.retry();
-    // The first launch reports failure only now, after the retry started a
-    // second one: it must not turn the fresh "Starting" into "StillMissing".
-    first(false);
-    QTest::qWait(30);
-    EXPECT_EQ(boot.guidance(), Guidance::Starting);
+    AgentBootstrap bootstrap(gateway, options(true));
+    EXPECT_EQ(starts(), 0);
+}
+
+TEST_F(AgentBootstrapTest, NoHostAnywhereGuidesToInstall)
+{
+    gateway.scriptedPresence = PresenceState::AgentMissing;
+    gateway.scriptedStartResult = AgentStartResult::NotInstalled;
+    AgentBootstrap bootstrap(gateway, options(true));
+    bootstrap.start();
+    EXPECT_EQ(bootstrap.guidance(), Guidance::NotInstalled);
+}
+
+/// The guidance copy names the macOS host; elsewhere the panel's own
+/// "not installed" copy and its installation link are the answer.
+TEST_F(AgentBootstrapTest, WithoutAHostTheGuidanceStaysThePanelsOwn)
+{
+    gateway.scriptedPresence = PresenceState::AgentMissing;
+    gateway.scriptedStartResult = AgentStartResult::NotInstalled;
+    AgentBootstrap bootstrap(gateway, options(false));
+    QSignalSpy settled(&bootstrap, &AgentBootstrap::presenceSettled);
+    bootstrap.start();
+    EXPECT_EQ(bootstrap.guidance(), Guidance::None);
+    EXPECT_EQ(settled.count(), 1);
+}
+
+TEST_F(AgentBootstrapTest, AHostOutsideApplicationsGuidesToMoveIt)
+{
+    gateway.scriptedPresence = PresenceState::AgentMissing;
+    gateway.scriptedStartResult = AgentStartResult::NotInApplications;
+    AgentBootstrap bootstrap(gateway, options(true));
+    bootstrap.start();
+    EXPECT_EQ(bootstrap.guidance(), Guidance::NotInApplications);
+}
+
+TEST_F(AgentBootstrapTest, AFailedStartIsStillMissing)
+{
+    gateway.scriptedPresence = PresenceState::AgentMissing;
+    gateway.scriptedStartResult = AgentStartResult::Failed;
+    AgentBootstrap bootstrap(gateway, options(true));
+    bootstrap.start();
+    EXPECT_EQ(bootstrap.guidance(), Guidance::StillMissing);
+}
+
+/// macOS: the host is launching and the agent arrives later. The coordinator
+/// says so and polls until the agent answers.
+TEST_F(AgentBootstrapTest, ARequestedStartPollsUntilTheAgentAnswers)
+{
+    gateway.scriptedPresence = PresenceState::AgentMissing;
+    gateway.scriptedStartResult = AgentStartResult::Requested;
+    AgentBootstrap bootstrap(gateway, options(true));
+    QSignalSpy settled(&bootstrap, &AgentBootstrap::presenceSettled);
+    bootstrap.start();
+    EXPECT_EQ(bootstrap.guidance(), Guidance::Starting);
+
+    ASSERT_TRUE(QTest::qWaitFor([this] { return refreshes() >= 2; }, kWaitMs));
+    gateway.scriptedPresence = PresenceState::Ready; // no signal: the poll must notice
+    ASSERT_TRUE(QTest::qWaitFor([&] { return settled.count() == 1; }, kWaitMs));
+    EXPECT_EQ(bootstrap.guidance(), Guidance::None);
+    const int afterSettle = refreshes();
+    QTest::qWait(50);
+    EXPECT_EQ(refreshes(), afterSettle) << "polling must stop once the agent answers";
+    EXPECT_EQ(starts(), 1);
+}
+
+TEST_F(AgentBootstrapTest, ARequestedStartWithoutAnAgentByTheDeadlineIsStillMissing)
+{
+    gateway.scriptedPresence = PresenceState::AgentMissing;
+    gateway.scriptedStartResult = AgentStartResult::Requested;
+    AgentBootstrap bootstrap(gateway, options(true));
+    bootstrap.start();
+    ASSERT_TRUE(QTest::qWaitFor([&] { return bootstrap.guidance() == Guidance::StillMissing; }, kWaitMs));
+}
+
+TEST_F(AgentBootstrapTest, TryAgainStartsAgain)
+{
+    gateway.scriptedPresence = PresenceState::AgentUnavailable;
+    gateway.scriptedStartResult = AgentStartResult::Failed;
+    AgentBootstrap bootstrap(gateway, options(false));
+    bootstrap.start();
+    ASSERT_EQ(starts(), 1);
+
+    gateway.scriptedStartResult = AgentStartResult::Running;
+    bootstrap.retry();
+    EXPECT_EQ(starts(), 2);
+    EXPECT_EQ(gateway.presence(), PresenceState::Ready);
+}
+
+/// On Linux the client answers a start only once the bus has started the agent,
+/// and runs the event loop meanwhile, so "Try again" can be pressed again while
+/// the first press is still being answered. That press asks for nothing more.
+TEST_F(AgentBootstrapTest, ATryAgainWhileAStartIsAnsweredAsksForNothingMore)
+{
+    gateway.scriptedPresence = PresenceState::AgentUnavailable;
+    gateway.scriptedStartResult = AgentStartResult::Failed;
+    AgentBootstrap bootstrap(gateway, options(false));
+    bootstrap.start();
+    ASSERT_EQ(starts(), 1);
+    ASSERT_FALSE(bootstrap.isStarting());
+
+    QSignalSpy starting(&bootstrap, &AgentBootstrap::startingChanged);
+    bool startingDuringTheCall = false;
+    int pressesDuringTheCall = 0;
+    gateway.duringAgentStart = [&] {
+        startingDuringTheCall = bootstrap.isStarting();
+        if (pressesDuringTheCall++ == 0)
+            bootstrap.retry();
+    };
+    gateway.scriptedStartResult = AgentStartResult::Running;
+    bootstrap.retry();
+
+    EXPECT_EQ(starts(), 2);
+    EXPECT_TRUE(startingDuringTheCall);
+    EXPECT_FALSE(bootstrap.isStarting());
+    EXPECT_EQ(gateway.presence(), PresenceState::Ready);
+    ASSERT_EQ(starting.count(), 2);
+    EXPECT_TRUE(starting.at(0).at(0).toBool());
+    EXPECT_FALSE(starting.at(1).at(0).toBool());
+}
+
+/// A start that throws ends like any other: it is no longer in flight, so the
+/// next "Try again" reaches the agent rather than being held for it forever.
+TEST_F(AgentBootstrapTest, AStartThatThrowsIsNoLongerInFlight)
+{
+    gateway.scriptedPresence = PresenceState::AgentUnavailable;
+    gateway.scriptedStartResult = AgentStartResult::Failed;
+    AgentBootstrap bootstrap(gateway, options(false));
+    bootstrap.start();
+    ASSERT_EQ(starts(), 1);
+
+    QSignalSpy starting(&bootstrap, &AgentBootstrap::startingChanged);
+    gateway.duringAgentStart = [] { throw std::runtime_error("transport failed"); };
+    EXPECT_THROW(bootstrap.retry(), std::runtime_error);
+
+    EXPECT_FALSE(bootstrap.isStarting());
+    ASSERT_EQ(starting.count(), 2);
+    EXPECT_FALSE(starting.at(1).at(0).toBool());
+
+    gateway.duringAgentStart = nullptr;
+    bootstrap.retry();
+    EXPECT_EQ(starts(), 3);
+}
+
+/// Once per session on its own: an agent that came and went again is not
+/// restarted behind the user's back — they are offered the retry.
+TEST_F(AgentBootstrapTest, AnAgentThatLeavesLaterIsOfferedTheRetryNotRestarted)
+{
+    gateway.scriptedPresence = PresenceState::AgentMissing;
+    gateway.scriptedStartResult = AgentStartResult::Running;
+    AgentBootstrap bootstrap(gateway, options(true));
+    bootstrap.start();
+    ASSERT_EQ(starts(), 1);
+
+    gateway.setPresence(PresenceState::AgentMissing);
+    EXPECT_EQ(starts(), 1);
+    EXPECT_EQ(bootstrap.guidance(), Guidance::StillMissing);
 }

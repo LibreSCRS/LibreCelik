@@ -1702,6 +1702,10 @@
         <source>Try again</source>
         <translation>Pokušaj ponovo</translation>
     </message>
+    <message id="lc-agent-state-install-help">
+        <source>How to install the card agent</source>
+        <translation>Kako se instalira agent za kartice</translation>
+    </message>
     <message id="lc-agent-guidance-starting">
         <source>Starting LibreMac…</source>
         <translation>Pokrećem LibreMac…</translation>
@@ -2093,98 +2097,6 @@
     <message id="lc-emrtd-custody-info">
         <source>Custody Information</source>
         <translation>Podaci o starateljstvu</translation>
-    </message>
-    <message id="lc-piv-widget-title">
-        <source>PIV (NIST SP 800-73)</source>
-        <translation>PIV kartica (NIST SP 800-73)</translation>
-    </message>
-    <message id="lc-piv-print-title">
-        <source>Print PIV Card</source>
-        <translation>Štampaj PIV karticu</translation>
-    </message>
-    <message id="lc-piv-doc-title">
-        <source>PIV Card</source>
-        <translation>PIV kartica</translation>
-    </message>
-    <message id="lc-piv-doc-printing-date">
-        <source>Printing date</source>
-        <translation>Datum štampanja</translation>
-    </message>
-    <message id="lc-piv-section-chuid">
-        <source>CHUID</source>
-        <translation>CHUID</translation>
-    </message>
-    <message id="lc-piv-section-ccc">
-        <source>CCC</source>
-        <translation>CCC</translation>
-    </message>
-    <message id="lc-piv-section-printed">
-        <source>Printed Information</source>
-        <translation>Odštampane informacije</translation>
-    </message>
-    <message id="lc-piv-section-discovery">
-        <source>Discovery</source>
-        <translation>Otkrivanje</translation>
-    </message>
-    <message id="lc-piv-section-keyhistory">
-        <source>Key History</source>
-        <translation>Istorija ključeva</translation>
-    </message>
-    <message id="lc-piv-field-guid">
-        <source>GUID</source>
-        <translation>GUID</translation>
-    </message>
-    <message id="lc-piv-field-fascn">
-        <source>FASC-N</source>
-        <translation>FASC-N</translation>
-    </message>
-    <message id="lc-piv-field-expiration">
-        <source>Expiration Date</source>
-        <translation>Datum isteka</translation>
-    </message>
-    <message id="lc-piv-field-cardid">
-        <source>Card Identifier</source>
-        <translation>Identifikator kartice</translation>
-    </message>
-    <message id="lc-piv-field-name">
-        <source>Name</source>
-        <translation>Ime</translation>
-    </message>
-    <message id="lc-piv-field-affiliation">
-        <source>Employee Affiliation</source>
-        <translation>Pripadnost zaposlenog</translation>
-    </message>
-    <message id="lc-piv-field-org1">
-        <source>Organization (Line 1)</source>
-        <translation>Organizacija (Red 1)</translation>
-    </message>
-    <message id="lc-piv-field-org2">
-        <source>Organization (Line 2)</source>
-        <translation>Organizacija (Red 2)</translation>
-    </message>
-    <message id="lc-piv-field-serial">
-        <source>Agency Serial Number</source>
-        <translation>Serijski broj agencije</translation>
-    </message>
-    <message id="lc-piv-field-issuer">
-        <source>Issuer Identification</source>
-        <translation>Identifikacija izdavaoca</translation>
-    </message>
-    <message id="lc-piv-field-pinpolicy">
-        <source>PIN Policy</source>
-        <translation>PIN politika</translation>
-    </message>
-    <message id="lc-piv-field-oncardcerts">
-        <source>On-Card Certificates</source>
-        <translation>Sertifikati na kartici</translation>
-    </message>
-    <message id="lc-piv-field-offcardcerts">
-        <source>Off-Card Certificates</source>
-        <translation>Sertifikati van kartice</translation>
-    </message>
-    <message id="lc-piv-field-offcardurl">
-        <source>Off-Card URL</source>
-        <translation>URL van kartice</translation>
     </message>
     <message id="lc-sign-formats-desc">
         <source>Formats: %1</source>

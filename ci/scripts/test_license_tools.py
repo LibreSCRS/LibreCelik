@@ -47,7 +47,6 @@ def _man(tmp_path, sha=LICENCE_SHA):
     (lic / "curl.txt").write_bytes(LICENCE)
     text = "resources/licenses/curl.txt"
     return {
-        "internal_sonames": ["libLibreSCRS_*.so"],
         "exclude_not_bundled": ["libpcsclite.so"],
         "carve_out": [],
         "components": [
@@ -146,22 +145,29 @@ def test_platform_scope(platforms, current, applies):
     assert (checker.match_component("libx.so", [c], current) is c) is applies
 
 
-def test_internal_globs_cover_both_extensions():
-    manifest = json.loads(
-        (pathlib.Path(__file__).resolve().parents[2] / "licenses" / "manifest.json")
-        .read_text()
-    )
-    internal = manifest["internal_sonames"]
-    for name in ("librescrs-pkcs11.dylib", "libLibreSCRS_SmartCard.dylib",
-                 "libid-card-plugin.dylib", "piv-gui-plugin.dylib",
-                 "piv-gui-plugin.so", "libresign-core.dylib"):
-        assert checker.is_internal(name, internal), name
-    assert not checker.is_internal("libcurl.so", internal)
+REPO = pathlib.Path(__file__).resolve().parents[2]
+
+
+@pytest.mark.parametrize("platform, names", [
+    ("linux", ["libLibreSCRS_SmartCard.so.5", "libid-card-plugin.so", "libresign-core.so.5"]),
+    ("macos", ["libLibreSCRS_SmartCard.5.dylib", "libid-card-plugin.dylib", "libresign-core.5.dylib"]),
+])
+def test_the_manifest_lets_no_object_through_unlicensed(tmp_path, platform, names):
+    # The application bundles no LibreSCRS library but the agent client, and
+    # that one is a licensed component like any other. A card-stack library
+    # or plugin turning up in the bundle is a packaging mistake, so the check
+    # and the bill both refuse it rather than waving it through by its name.
+    manifest = json.loads((REPO / "licenses" / "manifest.json").read_text())
+    for name in names:
+        (tmp_path / name).mkdir()
+        root = _staged(tmp_path / name, [name])
+        assert checker.run_check(root, manifest, str(REPO), platform) != 0, name
+        doc, rc = checker.emit_sbom(root, manifest, platform, "LibreCelik", "5.0.0")
+        assert doc is None and rc == 1, name
 
 
 def test_emit_candidates_lists_only_the_unmapped(tmp_path):
-    for n in ("libcurl.so.4", "libQt6Core.so.6", "libLibreSCRS_Core.so",
-              "libpcsclite.so.1", "libjpeg.so.8"):
+    for n in ("libcurl.so.4", "libQt6Core.so.6", "libpcsclite.so.1", "libjpeg.so.8"):
         (tmp_path / n).write_bytes(b"")
     m = _man(tmp_path)
     m["components"] = [c for c in m["components"] if c["match"] != "libcurl.so"]
@@ -181,7 +187,7 @@ def test_emit_candidates_lists_only_the_unmapped(tmp_path):
 
 @pytest.mark.parametrize("files, sha, ok", [
     (["libcurl.so.4"], LICENCE_SHA, True),
-    (["libcurl.so.4", "libLibreSCRS_Core.so", "libpcsclite.so.1"], LICENCE_SHA, True),
+    (["libcurl.so.4", "libpcsclite.so.1"], LICENCE_SHA, True),
     (["libmystery.so.1"], LICENCE_SHA, False),
     (["libcurl.so.4"], "deadbeef", False),
     # The vacuum: a walk over nothing once reported "0 errors" and rc 0.
@@ -202,7 +208,7 @@ def _write_manifest(tmp_path, manifest):
 
 def test_check_refuses_without_a_platform_before_walking(tmp_path, capsys):
     root = _staged(tmp_path, ["libunmapped.so.1"])
-    man = _write_manifest(tmp_path, {"internal_sonames": [], "components": []})
+    man = _write_manifest(tmp_path, {"components": []})
     # Control: with a platform the walk runs and fails on the library.
     assert checker.main(["--check", root, "--manifest", man, "--platform", "linux"]) != 0
     assert "::error::" in capsys.readouterr().out
@@ -302,23 +308,6 @@ def test_sbom_refusals_are_told_apart(tmp_path, capsys):
     assert doc is None and rc == 2
     doc, rc = _sbom(tmp_path, _staged(tmp_path, ["libmystery.so.1"]))
     assert doc is None and rc == 1
-
-
-def test_sbom_names_our_own_objects_by_soname_without_a_licence(tmp_path):
-    m = _man(tmp_path)
-    m["internal_sonames"] = ["libLibreSCRS_*.so", "librescrs-pkcs11.so", "libresign*.so"]
-    root = _staged(tmp_path, ["libcurl.so.4", "librescrs-pkcs11.so",
-                              "libresign.so.5.0.0", "libLibreSCRS_Core.so.5.0.0"])
-    doc, rc = _sbom(tmp_path, root, m)
-    assert rc == 0
-    by = {c["name"]: c for c in doc["components"]}
-    # The ecosystem "lib" strip applied to our names would bill "rescrs-pkcs11".
-    assert by["librescrs-pkcs11"]["purl"] == "pkg:generic/librescrs-pkcs11@5.0.0"
-    assert by["libresign"]["purl"] == "pkg:generic/libresign@5.0.0"
-    assert by["curl"]["purl"] == "pkg:generic/curl@4"
-    internal = [c for c in doc["components"]
-                if {"name": "librescrs:internal", "value": "true"} in c["properties"]]
-    assert internal and all("licenses" not in c for c in internal)
 
 
 def test_sbom_framework_version_and_hash_come_from_the_bundle(tmp_path):

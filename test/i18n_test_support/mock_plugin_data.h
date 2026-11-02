@@ -200,41 +200,4 @@ inline QList<LibreSCRS::AgentClient::FieldGroup> makeEuVrcMock()
     return groups;
 }
 
-inline QList<LibreSCRS::AgentClient::FieldGroup> makePivMock()
-{
-    using namespace detail;
-    QList<LibreSCRS::AgentClient::FieldGroup> groups;
-    // CHUID keys per pivwidget.cpp::chuidTranslationMap().
-    groups.append(group(
-        QStringLiteral("chuid"),
-        {
-            textField(QStringLiteral("guid"), QStringLiteral("GUID"),
-                      QStringLiteral("00112233445566778899AABBCCDDEEFF")),
-            textField(QStringLiteral("fascn"), QStringLiteral("FASC-N"), QStringLiteral("1234567890ABCDEF")),
-            dateField(QStringLiteral("expirationDate"), QStringLiteral("Expiration"), QStringLiteral("2030-01-01")),
-        }));
-    // CCC keys per pivwidget.cpp::cccTranslationMap().
-    groups.append(group(QStringLiteral("ccc"), {
-                                                   textField(QStringLiteral("cardIdentifier"),
-                                                             QStringLiteral("Card ID"), QStringLiteral("0102030405")),
-                                               }));
-    // Printed keys per pivwidget.cpp::printedTranslationMap().
-    groups.append(
-        group(QStringLiteral("printed"),
-              {
-                  textField(QStringLiteral("name"), QStringLiteral("Name"), QStringLiteral("Test User")),
-                  textField(QStringLiteral("serialNumber"), QStringLiteral("Serial"), QStringLiteral("123456")),
-                  textField(QStringLiteral("issuerId"), QStringLiteral("Issuer"), QStringLiteral("01234")),
-              }));
-    // Discovery keys per pivwidget.cpp::discoveryTranslationMap(). Without
-    // this group the retranslate test never builds the discovery section, so
-    // its title and field label sit outside every snapshot.
-    groups.append(group(
-        QStringLiteral("discovery"),
-        {
-            textField(QStringLiteral("pinPolicy"), QStringLiteral("PIN policy"), QStringLiteral("App PIN preferred")),
-        }));
-    return groups;
-}
-
 } // namespace librecelik::test::i18n::mock

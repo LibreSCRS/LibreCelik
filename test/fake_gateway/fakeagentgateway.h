@@ -25,6 +25,7 @@
 #include <QVariantMap>
 
 #include <expected>
+#include <functional>
 #include <optional>
 
 namespace librecelik::test::agent {
@@ -53,12 +54,24 @@ public:
     QList<librecelik::agent::ReaderInfo> scriptedReaders;
     QStringList scriptedFeatures;
     QString scriptedVersion;
+    /// What `requestAgentStart()` answers. `Running` also moves the scripted
+    /// presence to Ready, as a started agent's arrival does.
+    LibreSCRS::AgentClient::AgentStartResult scriptedStartResult =
+        LibreSCRS::AgentClient::AgentStartResult::NotInstalled;
     /// The snapshot `configSnapshot()` returns.
     QVariantMap config;
     /// Engaged => the next `setConfigValue`/`resetConfigValue` refuses with it
     /// (the call is still recorded — a refusal is an attempt, and the
     /// "exactly one attempt, no retry loop" assertions need the record).
     std::optional<LibreSCRS::AgentClient::SyncError> nextRefusal;
+    /// Run inside every `setConfigValue`, after it is recorded and before it
+    /// answers: what the human can do while a real write waits for an
+    /// authorization prompt in the client's nested event loop.
+    std::function<void()> duringConfigWrite;
+    /// Run inside every `requestAgentStart`, after it is recorded and before
+    /// it answers: what the human can do while the client waits for the bus
+    /// to start the agent in its nested event loop.
+    std::function<void()> duringAgentStart;
     /// The `layoutVisualSignature()` reply; `nullopt` (the default) is the
     /// feature-absent shape a preview degrades on.
     std::optional<LibreSCRS::AgentClient::LayoutResult> scriptedLayout;
@@ -100,6 +113,7 @@ public:
     [[nodiscard]] QString agentVersion() const override;
     [[nodiscard]] bool hasFeature(const QString& token) const override;
     void refresh() override;
+    LibreSCRS::AgentClient::AgentStartResult requestAgentStart() override;
 
     [[nodiscard]] librecelik::agent::CardController* cardController(const QString& cardId) override;
     [[nodiscard]] librecelik::agent::SignController* signController(const QString& cardId) override;

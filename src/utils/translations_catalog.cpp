@@ -56,6 +56,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-agent-state-unavailable");
     //% "Try again"
     QT_TRID_NOOP("lc-agent-state-retry");
+    //% "How to install the card agent"
+    QT_TRID_NOOP("lc-agent-state-install-help");
     //% "Starting LibreMac…"
     QT_TRID_NOOP("lc-agent-guidance-starting");
     //% "Install LibreSCRS for macOS: drag LibreMac and LibreCelik from the same disk image into Applications."
@@ -977,54 +979,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     //% "Value"
     QT_TRID_NOOP("lc-emrtd-national-value");
 
-    // --- PIV ---
-    //% "PIV (NIST SP 800-73)"
-    QT_TRID_NOOP("lc-piv-widget-title");
-    //% "Print PIV Card"
-    QT_TRID_NOOP("lc-piv-print-title");
-    //% "PIV Card"
-    QT_TRID_NOOP("lc-piv-doc-title");
-    //% "Printing date"
-    QT_TRID_NOOP("lc-piv-doc-printing-date");
-    //% "CHUID"
-    QT_TRID_NOOP("lc-piv-section-chuid");
-    //% "CCC"
-    QT_TRID_NOOP("lc-piv-section-ccc");
-    //% "Printed Information"
-    QT_TRID_NOOP("lc-piv-section-printed");
-    //% "Discovery"
-    QT_TRID_NOOP("lc-piv-section-discovery");
-    //% "Key History"
-    QT_TRID_NOOP("lc-piv-section-keyhistory");
-    //% "GUID"
-    QT_TRID_NOOP("lc-piv-field-guid");
-    //% "FASC-N"
-    QT_TRID_NOOP("lc-piv-field-fascn");
-    //% "Expiration Date"
-    QT_TRID_NOOP("lc-piv-field-expiration");
-    //% "Card Identifier"
-    QT_TRID_NOOP("lc-piv-field-cardid");
-    //% "Name"
-    QT_TRID_NOOP("lc-piv-field-name");
-    //% "Employee Affiliation"
-    QT_TRID_NOOP("lc-piv-field-affiliation");
-    //% "Organization (Line 1)"
-    QT_TRID_NOOP("lc-piv-field-org1");
-    //% "Organization (Line 2)"
-    QT_TRID_NOOP("lc-piv-field-org2");
-    //% "Agency Serial Number"
-    QT_TRID_NOOP("lc-piv-field-serial");
-    //% "Issuer Identification"
-    QT_TRID_NOOP("lc-piv-field-issuer");
-    //% "PIN Policy"
-    QT_TRID_NOOP("lc-piv-field-pinpolicy");
-    //% "On-Card Certificates"
-    QT_TRID_NOOP("lc-piv-field-oncardcerts");
-    //% "Off-Card Certificates"
-    QT_TRID_NOOP("lc-piv-field-offcardcerts");
-    //% "Off-Card URL"
-    QT_TRID_NOOP("lc-piv-field-offcardurl");
-
     // --- Signing UI ---
     //% "Sign"
     QT_TRID_NOOP("lc-sign-button");
@@ -1393,8 +1347,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     // vocabulary travels with an error code the taxonomy above already phrases
     // more precisely, and a coarser key would displace that; the rest travel
     // with prose that carries a specific reason no fixed string can restate.
-    // See errortext.cpp's knownMsgKeyText for the rule and the resolution order
-    // it feeds.
+    // Which keys get a sentence is the client library's list
+    // (FailureCopy.h, kLocalizedMessageKeys); errortext.cpp holds the copy.
     //% "The operation was cancelled."
     QT_TRID_NOOP("lc-agent-msg-cancelled");
 

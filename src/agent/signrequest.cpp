@@ -6,7 +6,7 @@
 #include "agent/errortext.h"
 
 #include <QCoreApplication>
-#include <QDir>
+#include <QDebug>
 #include <QFile>
 #include <QFileInfo>
 #include <QLatin1StringView>
@@ -225,53 +225,39 @@ FdHandle openDocumentFd(const QString& filePath)
     return FdHandle{::open(QFile::encodeName(filePath).constData(), O_RDONLY | O_CLOEXEC)};
 }
 
-QString outputPathFor(const SignRequestItem& item, const QString& outputFolder)
+namespace {
+
+const char* signedFileErrorName(LibreSCRS::AgentClient::SignedFileError error)
 {
-    const QFileInfo source(item.filePath);
-    const QDir folder(outputFolder);
-
-    QString path;
-    switch (item.format) {
-    case SignatureFormat::PAdES:
-        path = folder.filePath(source.completeBaseName() + QStringLiteral("-signed.pdf"));
-        break;
-    case SignatureFormat::XAdES:
-        // Detached XAdES keeps the full source name and adds its own suffix:
-        // the signature is a SECOND file that must stay recognisable next to
-        // the document it belongs to.
-        path = item.packaging == Packaging::Enveloped
-                   ? folder.filePath(source.completeBaseName() + QStringLiteral("-signed.xml"))
-                   : folder.filePath(source.fileName() + QStringLiteral(".xsig"));
-        break;
-    case SignatureFormat::ASiCe:
-        path = folder.filePath(source.completeBaseName() + QStringLiteral(".asice"));
-        break;
-    case SignatureFormat::CAdES:
-        path = folder.filePath(source.fileName() + QStringLiteral(".p7s"));
-        break;
-    case SignatureFormat::JAdES:
-        path = folder.filePath(source.fileName() + QStringLiteral(".jose"));
-        break;
+    using LibreSCRS::AgentClient::SignedFileError;
+    switch (error) {
+    case SignedFileError::UnreadableArtifact:
+        return "the artifact could not be read";
+    case SignedFileError::EmptyArtifact:
+        return "the artifact is empty";
+    case SignedFileError::NoFreeName:
+        return "no free file name";
+    case SignedFileError::WriteFailed:
+        return "the folder or disk refused the file";
     }
-    if (path.isEmpty() || !QFile::exists(path)) {
-        return path;
-    }
+    return "unknown reason";
+}
 
-    // Never overwrite: today's numbered-sibling search, with today's cap. A
-    // user who somehow has 10 000 numbered siblings gets an empty path, and
-    // the caller's open-for-write failure surfaces a normal error rather than
-    // this loop spinning forever.
-    const QFileInfo taken(path);
-    const QString base = taken.completeBaseName();
-    const QString suffix = taken.suffix();
-    const QString directory = taken.absolutePath();
-    constexpr int kMaxSuffixAttempts = 10000;
-    int counter = 2;
-    do {
-        path = QDir(directory).filePath(QStringLiteral("%1(%2).%3").arg(base).arg(counter).arg(suffix));
-        ++counter;
-    } while (QFile::exists(path) && counter <= kMaxSuffixAttempts);
-    return QFile::exists(path) ? QString() : path;
+} // namespace
+
+QString writeSignedArtifact(const SignRequestItem& item, int artifactFd, const QString& outputFolder)
+{
+    const auto written = LibreSCRS::AgentClient::writeSignedFile(artifactFd, [&item, &outputFolder] {
+        return LibreSCRS::AgentClient::signedOutputPath(item.filePath, item.format, item.packaging, outputFolder);
+    });
+    if (written)
+        return *written;
+    // The user sees one sentence for every reason; the reason itself is what
+    // tells a full disk from a folder with no free name, so it goes to the log.
+    // Plain qWarning, not a category: this TU is compiled into test targets
+    // that do not carry the logging TU.
+    qWarning().noquote() << "signed file not written:" << signedFileErrorName(written.error());
+    return {};
 }
 
 QString artifactWriteFailedText()

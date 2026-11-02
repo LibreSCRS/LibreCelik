@@ -7,25 +7,24 @@
 
 #include <QList>
 #include <QMap>
-#include <QPluginLoader>
 #include <QString>
 
-/// @brief Loads CardWidgetPlugin shared modules from a directory and looks
-/// them up by the card type they declare.
+/// @brief Registers the card pages linked into this binary and looks them up
+/// by the card type they declare.
 class CardWidgetPluginRegistry
 {
 public:
     CardWidgetPluginRegistry() = default;
-    ~CardWidgetPluginRegistry();
 
     CardWidgetPluginRegistry(const CardWidgetPluginRegistry&) = delete;
     CardWidgetPluginRegistry& operator=(const CardWidgetPluginRegistry&) = delete;
 
-    void loadPluginsFromDirectory(const QString& dir);
+    /// Register every card page linked into this binary (the static Qt
+    /// plugins its build imported) that implements `CardWidgetPlugin`.
+    void loadStaticPlugins();
     CardWidgetPlugin* findByCardType(const QString& cardType) const;
     QList<CardWidgetPlugin*> plugins() const;
 
 private:
-    QList<QPluginLoader*> loaders;
     QMap<QString, CardWidgetPlugin*> pluginMap;
 };

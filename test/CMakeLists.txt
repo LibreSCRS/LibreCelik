@@ -6,19 +6,15 @@ project(LibreCelikTests)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Core Widgets Test PrintSupport)
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Test PrintSupport)
+find_package(QT NAMES Qt6 Core Widgets Test PrintSupport Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Test PrintSupport Network)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-include(FetchContent)
-# googletest's own install rules default ON and would leak libgtest*.a and
-# include/gtest/ into the production prefix; it is a test dependency, not a
-# shipped artefact.
-set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(googletest URL https://github.com/google/googletest/archive/refs/tags/v1.16.0.zip DOWNLOAD_EXTRACT_TIMESTAMP ON)
-FetchContent_MakeAvailable(googletest)
+# The system's GoogleTest, the same way every LibreSCRS repository gets it: a
+# test dependency the build environment provides, never a download.
+find_package(GTest REQUIRED)
 
 # enable_testing() is safe to call again here even though the root
 # CMakeLists.txt already calls it before add_subdirectory(test). Keeping this
@@ -88,16 +84,13 @@ target_link_libraries(CardWidgetPluginRegistryTests
     Qt6::Widgets
     # cardwidgetplugin.h now speaks the client's field-group types.
     LibreAgent::ClientQt
+    mock-widget-plugin
 )
 target_sources(CardWidgetPluginRegistryTests PRIVATE
     ${CMAKE_SOURCE_DIR}/src/plugin/cardwidgetpluginregistry.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/libreceliklog.cpp
 )
-target_compile_definitions(CardWidgetPluginRegistryTests PRIVATE
-    MOCK_WIDGET_PLUGIN_DIR="$<TARGET_FILE_DIR:mock-widget-plugin>"
-)
 set_target_properties(CardWidgetPluginRegistryTests PROPERTIES AUTOMOC ON)
-add_dependencies(CardWidgetPluginRegistryTests mock-widget-plugin)
 gtest_discover_tests(CardWidgetPluginRegistryTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # The field-group successor of the middleware card-data helpers, which left
@@ -246,32 +239,6 @@ target_link_libraries(EIdTextDocumentTests
 )
 set_target_properties(EIdTextDocumentTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(EIdTextDocumentTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
-
-# Compiles a plugin source directly — the piv family speaks the field-group
-# plugin interface, so this suite guards that formatter's re-type.
-add_executable(PIVTextDocumentTests
-    pivtextdocument_test.cpp
-    ../plugins/piv/pivtextdocument.h
-    ../plugins/piv/pivtextdocument.cpp
-    ../src/utils/libreceliklog.h
-    ../src/utils/libreceliklog.cpp
-    ${CMAKE_SOURCE_DIR}/resources/librecelik.qrc
-)
-target_include_directories(PIVTextDocumentTests PRIVATE
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/document/printing
-    ${CMAKE_SOURCE_DIR}/plugins/piv
-    ${PROJECT_BINARY_DIR}/../src
-)
-target_link_libraries(PIVTextDocumentTests
-    GTest::gtest
-    LibreAgent::ClientQt
-    LibreCelikPrinting
-    Qt6::Widgets
-    Qt6::PrintSupport
-)
-set_target_properties(PIVTextDocumentTests PROPERTIES AUTOMOC ON)
-gtest_discover_tests(PIVTextDocumentTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # The travel-document PRINT formatter. It renders the same security read the
 # on-screen pane does, so it compiles the shared pane sources too: the reason
@@ -563,7 +530,6 @@ add_executable(i18n_plugin_retranslate_test
     ${CMAKE_SOURCE_DIR}/plugins/rs-health/healthwidget.cpp
     ${CMAKE_SOURCE_DIR}/plugins/emrtd/emrtdwidget.cpp
     ${CMAKE_SOURCE_DIR}/plugins/eu-vrc/euvrcwidget.cpp
-    ${CMAKE_SOURCE_DIR}/plugins/piv/pivwidget.cpp
     # Shared widget utilities used by every plugin.
     ${CMAKE_SOURCE_DIR}/src/utils/collapsiblesection.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/cardheadercard.cpp
@@ -646,7 +612,6 @@ if(LIBRECELIK_SIGNING_ENABLED)
         ${CMAKE_SOURCE_DIR}/src/agent/signcontroller.cpp
         ${CMAKE_SOURCE_DIR}/src/agent/errortext.cpp
         ${CMAKE_SOURCE_DIR}/src/agent/fieldmerge.cpp
-        ${CMAKE_SOURCE_DIR}/src/agent/opstallwatchdog.cpp
         ${CMAKE_SOURCE_DIR}/src/agent/signrequest.cpp
         ${CMAKE_SOURCE_DIR}/src/agent/live/liveagentgateway.cpp
         ${CMAKE_SOURCE_DIR}/src/agent/live/livecardcontroller.cpp
@@ -773,6 +738,7 @@ endif()
 add_executable(TokenSectionTests
     tokensection_placeholder_test.cpp
     ${CMAKE_SOURCE_DIR}/src/document/tokensection.cpp
+    ${CMAKE_SOURCE_DIR}/src/agent/errortext.cpp
     ${CMAKE_SOURCE_DIR}/src/certificate/certformat.cpp
     ${CMAKE_SOURCE_DIR}/src/certificate/certificateviewerdlg.cpp
     ${CMAKE_SOURCE_DIR}/src/certificate/certificateviewerwidget.cpp
@@ -845,11 +811,9 @@ gtest_discover_tests(TokenSectionTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=o
 add_executable(AgentLayerTests
     agentlayer_test_main.cpp
     agent_presence_test.cpp
-    agent_artifactio_test.cpp
     agent_errortext_test.cpp
     agent_errortext_coverage_test.cpp
     agent_fieldmerge_test.cpp
-    agent_opstallwatchdog_test.cpp
     agent_signrequest_test.cpp
     agent_liveagentgateway_test.cpp
     fake_gateway_selftest.cpp
@@ -861,7 +825,6 @@ add_executable(AgentLayerTests
     ${CMAKE_SOURCE_DIR}/src/agent/signcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/errortext.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/fieldmerge.cpp
-    ${CMAKE_SOURCE_DIR}/src/agent/opstallwatchdog.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/signrequest.cpp
     ${CMAKE_SOURCE_DIR}/src/agent/live/liveagentgateway.cpp
     # The live gateway MINTS these two, so the suite that
@@ -1027,6 +990,17 @@ target_link_libraries(ReaderPagesTests PRIVATE
 )
 set_target_properties(ReaderPagesTests PROPERTIES AUTOMOC ON)
 gtest_discover_tests(ReaderPagesTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+# One LibreCelik per user: the guard is a local socket, exercised with two
+# instances over one socket path of the test's own.
+add_executable(SingleInstanceTests
+    singleinstance_test.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/singleinstance.cpp
+)
+target_include_directories(SingleInstanceTests PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(SingleInstanceTests PRIVATE GTest::gtest_main Qt6::Network Qt6::Test)
+set_target_properties(SingleInstanceTests PROPERTIES AUTOMOC ON)
+gtest_discover_tests(SingleInstanceTests)
 
 # The i18n audit ran only in CI while a documented lupdate run could quietly
 # strip the Serbian plural forms on a developer machine — the numerus guard

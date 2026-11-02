@@ -19,6 +19,12 @@ set(PROJECT_VERSION_PATCH ${GIT_VERSION_PATCH})
 set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH})
 
 project(LibreCelik VERSION ${PROJECT_VERSION} LANGUAGES CXX)
+# The agent client built from source starts the agent on macOS through AppKit
+# (Objective-C++). A language a subproject enables is not visible to the
+# generator here, so it is enabled at the top level.
+if(APPLE)
+    enable_language(OBJCXX)
+endif()
 
 # project(VERSION X.Y.Z) accepts only a numeric triple, so PROJECT_VERSION can
 # never be more than that. The full string — commit distance, hash, dirty

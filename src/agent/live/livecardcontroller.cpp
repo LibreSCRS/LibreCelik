@@ -11,7 +11,6 @@
 #include <LibreSCRS/AgentClient/AgentCard.h>
 #include <LibreSCRS/AgentClient/AgentClient.h>
 #include <LibreSCRS/AgentClient/AgentOperation.h>
-#include <LibreSCRS/AgentClient/ClientTimeouts.h>
 
 #include <QLatin1StringView>
 
@@ -106,7 +105,6 @@ bool LiveCardController::preReadUnlockRequired() const
 
 void LiveCardController::startRead()
 {
-    Q_EMIT readingStarted();
     if (card.isNull()) {
         failRead(cardGoneText(), ErrorCode::CardRemoved);
         return;
@@ -178,13 +176,11 @@ void LiveCardController::finishRead(const QList<FieldGroup>& groups, bool photoM
         }
     }
     Q_EMIT identityReady(groups);
-    Q_EMIT readingFinished();
 }
 
 void LiveCardController::failRead(const QString& message, ErrorCode code)
 {
     Q_EMIT errorOccurred(message, code);
-    Q_EMIT readingFinished();
 }
 
 void LiveCardController::requestCertificates()
@@ -363,24 +359,6 @@ void LiveCardController::managePin(const QString& pinId, LibreSCRS::AgentClient:
         Q_EMIT pinResultReady(result);
         // Mandatory re-list: a mutation may have changed a counter, a state,
         // or the credential set itself, and no other event announces that.
-        requestCredentials();
-    });
-}
-
-void LiveCardController::activateSigningKey()
-{
-    if (card.isNull()) {
-        Q_EMIT errorOccurred(cardGoneText(), ErrorCode::CardRemoved);
-        return;
-    }
-    AgentOperation* operation = card->activateSigningKey();
-    track(operation);
-    connect(operation, &AgentOperation::phaseChanged, this, &CardController::pinPhaseChanged); // as managePin
-
-    connect(operation, &AgentOperation::finished, this, [this, operation] {
-        forget(operation);
-        Q_EMIT pinResultReady(operation->pinResult()); // same always-delivered shape as managePin
-        operation->deleteLater();
         requestCredentials();
     });
 }

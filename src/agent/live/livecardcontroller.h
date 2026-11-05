@@ -53,7 +53,6 @@ public:
     void requestCredentials() override;
     void managePin(const QString& pinId, LibreSCRS::AgentClient::PinVerb verb,
                    const LibreSCRS::AgentClient::ManagePinOptions& options = {}) override;
-    void activateSigningKey() override;
     void cancel() override;
 
 private:

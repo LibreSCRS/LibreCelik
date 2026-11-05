@@ -36,7 +36,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build python3-jsonschema libgtest-dev
+          sudo apt-get install -y cmake ninja-build libgtest-dev
 
       - name: Install Qt 6.10.3
         uses: jurplel/install-qt-action@a9c63c7c123f3069cff414e7e482d95dfa9d8125  # v4.4.1
@@ -47,9 +47,6 @@ jobs:
           arch: linux_gcc_64
           modules: 'qtpdf'
           cache: true
-
-      - name: Install jsonschema into Qt's Python
-        run: python3 -m pip install --break-system-packages --user jsonschema
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2  # v4.38.2

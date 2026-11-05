@@ -57,8 +57,7 @@ Cap parallel jobs to `-j4` to avoid system saturation.
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for code-formatting expectations
-(clang-format-21 pin), commit conventions, and the optional pre-commit
-hook.
+(clang-format-21 pin) and commit conventions.
 
 ## License
 

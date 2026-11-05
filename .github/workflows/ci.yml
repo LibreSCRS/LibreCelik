@@ -47,7 +47,7 @@ jobs:
       # in the sources, the version surfaces, deps.lock's form, reachability
       # and diamond, and the Arch recipe building this repository's signed tag.
       - name: Shared gates
-        uses: LibreSCRS/ci/actions/gates@d68f5d781a665759eaba63c67ef0e6eb1f738063
+        uses: LibreSCRS/ci/actions/gates@a6efbfe4072c3ef31aaf928fcfc64e6673658a7a
         with:
           gates: check-workflows check-skip-reasons check-version deps-lock check-recipe
 
@@ -132,7 +132,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build python3-jsonschema libgtest-dev
+          sudo apt-get install -y cmake ninja-build libgtest-dev
 
       # One exact Qt release in every workflow: a patch release on the day of a
       # tag must not build something the branch never did. Moved deliberately.
@@ -145,13 +145,6 @@ jobs:
           arch: linux_gcc_64
           modules: 'qtpdf'
           cache: true
-
-      - name: Install jsonschema into Qt's Python
-        # aqtinstall puts its own Python on PATH; the apt-installed
-        # python3-jsonschema package is invisible to it. Install
-        # jsonschema again via pip targeting the post-Qt-setup
-        # `python3` so manifest2header.py codegen succeeds.
-        run: python3 -m pip install --break-system-packages --user jsonschema
 
       - name: Configure (Release, warnings as errors)
         # Release matches what users receive — same `-O2 -DNDEBUG` code
@@ -182,7 +175,7 @@ jobs:
       # property, not what the configure printed), and every test binary
       # still registers at least the tests ci/test-floor.txt counts.
       - name: Shared gates after the build
-        uses: LibreSCRS/ci/actions/gates@d68f5d781a665759eaba63c67ef0e6eb1f738063
+        uses: LibreSCRS/ci/actions/gates@a6efbfe4072c3ef31aaf928fcfc64e6673658a7a
         with:
           gates: deps-lock-build test-floor
           build-dir: build
@@ -208,7 +201,7 @@ jobs:
           persist-credentials: false
 
       - name: Select Xcode
-        uses: LibreSCRS/ci/actions/select-xcode@d68f5d781a665759eaba63c67ef0e6eb1f738063
+        uses: LibreSCRS/ci/actions/select-xcode@a6efbfe4072c3ef31aaf928fcfc64e6673658a7a
 
       - name: Install build tools
         # Ninja, and GoogleTest for the test suite. The agent client library
@@ -224,12 +217,6 @@ jobs:
           arch: clang_64
           modules: 'qtimageformats qtpdf'
           cache: true
-
-      - name: Install jsonschema into Qt's Python
-        # aqtinstall puts its own Python on PATH; install jsonschema
-        # AFTER Qt setup so it lands in the python3 that cmake will
-        # invoke for manifest2header.py codegen.
-        run: python3 -m pip install --break-system-packages --user jsonschema
 
       - name: Configure (Release)
         # Both Linux and macOS CI build Release — matches what users

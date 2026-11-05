@@ -10,7 +10,6 @@
 #include <LibreSCRS/AgentClient/AgentClient.h>
 #include <LibreSCRS/AgentClient/AgentOperation.h>
 #include <LibreSCRS/AgentClient/AgentReader.h>
-#include <LibreSCRS/AgentClient/ClientTimeouts.h>
 #include <LibreSCRS/AgentClient/SealedPayload.h> // readBoundedPayload
 #include <LibreSCRS/AgentClient/SharedAgentClient.h>
 

@@ -23,9 +23,9 @@
 # the find_package components: without them the lookup probes every component,
 # and on a machine that also has the Qt client installed that runs its
 # find_dependency(Qt6) for a dependency the repository never asked for. On the
-# source path each named component, and what it needs (ClientQt and
-# Pkcs11SocketClient need Wire, the socket client needs Pkcs11Facade, the Qt
-# client's doubles need the Qt client), is switched on and every other one off,
+# source path each named component, and what it needs (the socket client needs
+# Pkcs11Facade, the Qt client's doubles need the Qt client), is switched on and
+# every other one off (Wire is always built, so it has no switch),
 # BEFORE the subproject is configured: option() does not overwrite a cache
 # variable that already exists, so a switch seeded afterwards does nothing.
 #
@@ -99,13 +99,10 @@ function(librescrs_use_libreagent)
     if("ClientQtTestSupport" IN_LIST _lua_on)
         list(APPEND _lua_on ClientQt)
     endif()
-    if("ClientQt" IN_LIST _lua_on OR "Pkcs11SocketClient" IN_LIST _lua_on)
-        list(APPEND _lua_on Wire)
-    endif()
     if("Pkcs11SocketClient" IN_LIST _lua_on)
         list(APPEND _lua_on Pkcs11Facade)
     endif()
-    foreach(_lua_pair IN ITEMS Core:CORE Wire:WIRE ClientQt:CLIENT_QT ClientQtTestSupport:CLIENT_QT_TEST_SUPPORT
+    foreach(_lua_pair IN ITEMS Core:CORE ClientQt:CLIENT_QT ClientQtTestSupport:CLIENT_QT_TEST_SUPPORT
                                Pkcs11Facade:PKCS11_FACADE Pkcs11SocketClient:PKCS11_SOCKET_CLIENT
                                TestSupport:TEST_SUPPORT)
         string(REPLACE ":" ";" _lua_pair "${_lua_pair}")

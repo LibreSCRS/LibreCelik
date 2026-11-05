@@ -10,6 +10,12 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased] — 5.0.0
 
+### Added
+
+- Settings → Trust now says whether the publisher of the installed country
+  master list was established or only seen, shows the fingerprint to recognise
+  an unestablished one by, and shows when the list was accepted.
+
 ### Fixed
 
 - Removing a card while its certificate details, or a certificate's menu,
@@ -145,6 +151,18 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 - **`.apiboundary-allow.txt`** — the API-boundary exception list. It said it
   should be empty by the end of 4.0; it was, two majors later, so the exception
   mechanism went with the file rather than waiting to be used by accident.
+- **Unused images** — the flags, logos, printer and status icons that were
+  compiled into the application but never shown.
+- **Card-page plugin metadata files** — the JSON beside each card page was
+  embedded in the plugin and never read; the plugins are recognised by their
+  interface identifier alone.
+- **The `ENABLE_SIGNING` build option.** The signing interface is always
+  built; turning it off left a window with no way to sign and nothing to gain.
+- **The optional contributor hook scripts** (`pre-commit-clang-format.sh`,
+  `pre-commit-i18n.sh`) and the macOS icon generator script. CI runs the same
+  format and translation checks on every change.
+- **The `coverage` CMake preset and `gcovr.cfg`.** No CI job or script
+  measured coverage through them.
 
 ### Added
 

@@ -24,9 +24,7 @@
 
 #include <LibreSCRS/AgentClient/AgentCapabilities.h>
 
-#ifdef LIBRECELIK_SIGNING_ENABLED
 #include "signing/signingwizard.h"
-#endif
 
 #ifdef Q_OS_MACOS
 #include "utils/macos_menu.h"
@@ -720,83 +718,76 @@ void LibreCelik::attachPkiSection(const QString& cardId, QWidget* container, boo
     if (containerLayout == nullptr || container->findChild<TokenSection*>() != nullptr)
         return;
 
-    CardWidgetPlugin* plugin = pluginFor(cardId);
-    QWidget* pkiWidget = plugin ? plugin->createPKIWidget(container) : nullptr;
-    if (pkiWidget == nullptr) {
-        auto* section = new TokenSection(container);
-        section->setHeaderColor(QColor(230, 135, 60));
-        section->setHeaderHeight(56);
-        section->setExpanded(!collapsed);
-        section->setCardId(cardId);
+    auto* section = new TokenSection(container);
+    section->setHeaderColor(QColor(230, 135, 60));
+    section->setHeaderHeight(56);
+    section->setExpanded(!collapsed);
+    section->setCardId(cardId);
 
-        // The certificate viewer renders the record it is handed; the gateway
-        // is what serves the raw bytes behind its export action, and the
-        // certificate lives in the reader the card sits in.
-        //
-        // On the heap, owned by the window and deleted on close, opened without
-        // a nested loop: pulling the card destroys the card's page, and a
-        // dialog living on this frame's stack or among the page's children was
-        // deleted under its own exec(). It closes itself when its card leaves,
-        // so it never outlives the data it renders.
-        //
-        // Queued because the request is emitted from a context-menu action: the
-        // menu is still delivering the trigger when the signal fires.
-        connect(
-            section, &TokenSection::certificateDetailsRequested, this,
-            [this, cardId](const CertificateInfo& cert) {
-                CardController* controller = gateway->cardController(cardId);
-                auto* dlg = new CertificateViewerDlg(cert, gateway.get(), this,
-                                                     controller ? controller->readerId() : QString());
-                dlg->setAttribute(Qt::WA_DeleteOnClose);
-                connect(gateway.get(), &AgentGateway::cardRemoved, dlg, [dlg, cardId](const QString& removed) {
-                    if (removed == cardId)
-                        dlg->reject();
-                });
-                dlg->open();
-            },
-            Qt::QueuedConnection);
-#ifdef LIBRECELIK_SIGNING_ENABLED
-        // No session, no plugin, no signing service to juggle: the agent owns
-        // the card, and the wizard asks the gateway for everything it needs.
-        // Closing on card removal is the wizard's own gateway subscription.
-        //
-        // Queued for the same reason as the viewer above: the request is
-        // emitted from a context-menu action.
-        connect(
-            section, &TokenSection::signRequested, this,
-            [this](const CertificateInfo& cert, const QString& signCardId) {
-                SigningWizard wizard(cert, signCardId, gateway.get(), this);
-                wizard.exec();
-            },
-            Qt::QueuedConnection);
-#endif
-        // The credential dialog is a verb launcher over the agent's prompter:
-        // it collects no secret, so this window carries none either. The
-        // controller's mutation results and phase stream go straight to it,
-        // and the re-listing after every mutation comes from the controller
-        // itself. Closing on card removal is the dialog's own gateway
-        // subscription.
-        //
-        // Queued for the same reason as the viewer and the wizard above: the
-        // request is emitted from a context-menu action, and a direct
-        // connection would open a nested modal loop while the menu is still
-        // delivering it.
-        connect(
-            section, &TokenSection::changePinRequested, this,
-            [this, cardId](const LibreSCRS::AgentClient::CredentialRecord& credential) {
-                auto* ctrl = gateway->cardController(cardId);
-                if (!ctrl)
-                    return;
-                ChangePinDlg dlg(credential, gateway.get(), cardId, this);
-                connect(&dlg, &ChangePinDlg::verbRequested, ctrl, &librecelik::agent::CardController::managePin);
-                connect(ctrl, &librecelik::agent::CardController::pinResultReady, &dlg, &ChangePinDlg::onPinResult);
-                connect(ctrl, &librecelik::agent::CardController::pinPhaseChanged, &dlg, &ChangePinDlg::onPhase);
-                dlg.exec();
-            },
-            Qt::QueuedConnection);
-        pkiWidget = section;
-    }
-    containerLayout->addWidget(pkiWidget);
+    // The certificate viewer renders the record it is handed; the gateway
+    // is what serves the raw bytes behind its export action, and the
+    // certificate lives in the reader the card sits in.
+    //
+    // On the heap, owned by the window and deleted on close, opened without
+    // a nested loop: pulling the card destroys the card's page, and a
+    // dialog living on this frame's stack or among the page's children was
+    // deleted under its own exec(). It closes itself when its card leaves,
+    // so it never outlives the data it renders.
+    //
+    // Queued because the request is emitted from a context-menu action: the
+    // menu is still delivering the trigger when the signal fires.
+    connect(
+        section, &TokenSection::certificateDetailsRequested, this,
+        [this, cardId](const CertificateInfo& cert) {
+            CardController* controller = gateway->cardController(cardId);
+            auto* dlg =
+                new CertificateViewerDlg(cert, gateway.get(), this, controller ? controller->readerId() : QString());
+            dlg->setAttribute(Qt::WA_DeleteOnClose);
+            connect(gateway.get(), &AgentGateway::cardRemoved, dlg, [dlg, cardId](const QString& removed) {
+                if (removed == cardId)
+                    dlg->reject();
+            });
+            dlg->open();
+        },
+        Qt::QueuedConnection);
+    // No session, no plugin, no signing service to juggle: the agent owns
+    // the card, and the wizard asks the gateway for everything it needs.
+    // Closing on card removal is the wizard's own gateway subscription.
+    //
+    // Queued for the same reason as the viewer above: the request is
+    // emitted from a context-menu action.
+    connect(
+        section, &TokenSection::signRequested, this,
+        [this](const CertificateInfo& cert, const QString& signCardId) {
+            SigningWizard wizard(cert, signCardId, gateway.get(), this);
+            wizard.exec();
+        },
+        Qt::QueuedConnection);
+    // The credential dialog is a verb launcher over the agent's prompter:
+    // it collects no secret, so this window carries none either. The
+    // controller's mutation results and phase stream go straight to it,
+    // and the re-listing after every mutation comes from the controller
+    // itself. Closing on card removal is the dialog's own gateway
+    // subscription.
+    //
+    // Queued for the same reason as the viewer and the wizard above: the
+    // request is emitted from a context-menu action, and a direct
+    // connection would open a nested modal loop while the menu is still
+    // delivering it.
+    connect(
+        section, &TokenSection::changePinRequested, this,
+        [this, cardId](const LibreSCRS::AgentClient::CredentialRecord& credential) {
+            auto* ctrl = gateway->cardController(cardId);
+            if (!ctrl)
+                return;
+            ChangePinDlg dlg(credential, gateway.get(), cardId, this);
+            connect(&dlg, &ChangePinDlg::verbRequested, ctrl, &librecelik::agent::CardController::managePin);
+            connect(ctrl, &librecelik::agent::CardController::pinResultReady, &dlg, &ChangePinDlg::onPinResult);
+            connect(ctrl, &librecelik::agent::CardController::pinPhaseChanged, &dlg, &ChangePinDlg::onPhase);
+            dlg.exec();
+        },
+        Qt::QueuedConnection);
+    containerLayout->addWidget(section);
     applyPendingPki(cardId);
 }
 

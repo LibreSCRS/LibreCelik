@@ -38,24 +38,22 @@ public:
     virtual void requestCredentials() = 0;
     virtual void managePin(const QString& pinId, LibreSCRS::AgentClient::PinVerb verb,
                            const LibreSCRS::AgentClient::ManagePinOptions& options = {}) = 0;
-    virtual void activateSigningKey() = 0;
     virtual void cancel() = 0;
 
 signals:
-    void readingStarted();
     void groupReady(const LibreSCRS::AgentClient::FieldGroup& group);
     void identityReady(const QList<LibreSCRS::AgentClient::FieldGroup>& groups);
     void certificatesReady(const QList<LibreSCRS::AgentClient::CertificateInfo>& certs);
     void tokenInfoReady(const LibreSCRS::AgentClient::FieldGroup& tokenGroup);
     void credentialsReady(const LibreSCRS::AgentClient::CredentialList& credentials);
     void pinResultReady(const LibreSCRS::AgentClient::PinResult& result);
-    /// Progress of a MUTATION only — `managePin` and `activateSigningKey`.
+    /// Progress of a MUTATION only — `managePin`.
     /// The credential dialog is the sole consumer and it renders one phase
     /// row, so the read/certificate/token verbs deliberately stay silent here:
     /// a card read repainting that row would say the dialog is doing something
     /// it is not. The operation's own phase stream still feeds the watchdog on
     /// every verb; this signal is the slice of it a human is shown.
-    void pinPhaseChanged(LibreSCRS::AgentClient::OperationPhase phase, double progress);
+    void pinPhaseChanged(LibreSCRS::AgentClient::OperationPhase phase);
     void cardTypeResolved(const QString& cardType);
     /// @p code is the agent's taxonomy value behind @p localizedMessage. The
     /// window needs it to tell a failure a holder can retry (an entry window
@@ -64,7 +62,6 @@ signals:
     /// brings it back.
     void errorOccurred(const QString& localizedMessage,
                        LibreSCRS::AgentClient::ErrorCode code); // via errortext
-    void readingFinished();
 };
 
 } // namespace librecelik::agent

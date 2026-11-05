@@ -12,12 +12,12 @@ FieldValueTests 12
 HealthTextDocumentTests 1
 LibreCelik 1
 LibreCelikI18nFixtureSelfTest 7
-LibreCelikTests 35
+LibreCelikTests 33
 LocaleResolverTests 9
 MainWindowTests 7
 PdfPreviewWidgetTests 6
 ReaderPagesTests 7
-SettingsConfig1Tests 45
+SettingsConfig1Tests 48
 SigningUnitTests 26
 SigningWizardE2ETests 12
 SigningWizardFakeTests 11

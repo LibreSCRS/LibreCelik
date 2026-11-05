@@ -9,7 +9,6 @@
 #include <LibreSCRS/AgentClient/AgentCard.h>
 #include <LibreSCRS/AgentClient/AgentClient.h>
 #include <LibreSCRS/AgentClient/AgentOperation.h>
-#include <LibreSCRS/AgentClient/ClientTimeouts.h>
 #include <LibreSCRS/AgentClient/SignOptions.h> // signedOutputPath
 
 #include <QByteArray>

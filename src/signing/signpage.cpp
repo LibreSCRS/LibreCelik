@@ -27,7 +27,6 @@
 #include <QProgressBar>
 #include <QVBoxLayout>
 
-#include <algorithm>
 #include <utility>
 
 namespace {
@@ -358,7 +357,7 @@ void SignPage::startSigning()
     controller->start(certificate.id, items, options, outputDir);
 }
 
-void SignPage::onPhaseChanged(OperationPhase phase, double progress)
+void SignPage::onPhaseChanged(OperationPhase phase)
 {
     progressWidget->setVisible(true);
     progressLabel->setText(librecelik::agent::phaseText(phase));
@@ -370,7 +369,7 @@ void SignPage::onPhaseChanged(OperationPhase phase, double progress)
         return;
     }
     progressBar->setRange(0, 100);
-    progressBar->setValue(static_cast<int>(std::clamp(progress, 0.0, 1.0) * 100.0));
+    progressBar->setValue(0);
 }
 
 void SignPage::onRowFinished(int index, const librecelik::agent::SignRowResult& result)

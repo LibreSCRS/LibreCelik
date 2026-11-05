@@ -52,7 +52,7 @@ public:
     virtual void cancel() = 0;
 
 signals:
-    void phaseChanged(LibreSCRS::AgentClient::OperationPhase phase, double progress);
+    void phaseChanged(LibreSCRS::AgentClient::OperationPhase phase);
     void rowFinished(int index, const librecelik::agent::SignRowResult& result);
     void finished(int succeeded, int failed);
 };

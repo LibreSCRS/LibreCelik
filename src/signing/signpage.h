@@ -97,7 +97,7 @@ private:
     /// batches, one per file when it does not.
     [[nodiscard]] int ceremonyCount() const;
     void updateConsentHint();
-    void onPhaseChanged(LibreSCRS::AgentClient::OperationPhase phase, double progress);
+    void onPhaseChanged(LibreSCRS::AgentClient::OperationPhase phase);
     void onRowFinished(int index, const librecelik::agent::SignRowResult& result);
     void onFinished(int succeeded, int failed);
 

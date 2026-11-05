@@ -1518,6 +1518,30 @@
         <source>These anchors come from more than one publisher, so no single publisher or signing date is shown.</source>
         <translation>These anchors come from more than one publisher, so no single publisher or signing date is shown.</translation>
     </message>
+    <message id="lc-settings-csca-state-pinned">
+        <source>The publisher&apos;s identity was established.</source>
+        <translation>The publisher&apos;s identity was established.</translation>
+    </message>
+    <message id="lc-settings-csca-state-unpinned">
+        <source>The publisher&apos;s identity was seen but not established: the list vouches only for itself. Recognise it by the fingerprint, do not take it as verified.</source>
+        <translation>The publisher&apos;s identity was seen but not established: the list vouches only for itself. Recognise it by the fingerprint, do not take it as verified.</translation>
+    </message>
+    <message id="lc-settings-csca-state-pinned-all">
+        <source>The identity of every publisher was established.</source>
+        <translation>The identity of every publisher was established.</translation>
+    </message>
+    <message id="lc-settings-csca-state-unpinned-some">
+        <source>The identity of at least one publisher was not established: these lists vouch only for themselves, do not take them as verified.</source>
+        <translation>The identity of at least one publisher was not established: these lists vouch only for themselves, do not take them as verified.</translation>
+    </message>
+    <message id="lc-settings-csca-state-fingerprint">
+        <source>Publisher fingerprint (SHA-256): %1</source>
+        <translation>Publisher fingerprint (SHA-256): %1</translation>
+    </message>
+    <message id="lc-settings-csca-state-accepted">
+        <source>List accepted: %1</source>
+        <translation>List accepted: %1</translation>
+    </message>
     <message id="lc-settings-csca-state-signed">
         <source>List signed: %1</source>
         <translation>List signed: %1</translation>

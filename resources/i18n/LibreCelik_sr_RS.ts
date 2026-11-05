@@ -1518,6 +1518,30 @@
         <source>These anchors come from more than one publisher, so no single publisher or signing date is shown.</source>
         <translation>Ова сидра потичу од више објављивача, па се не приказују ни појединачни објављивач ни датум потписа.</translation>
     </message>
+    <message id="lc-settings-csca-state-pinned">
+        <source>The publisher&apos;s identity was established.</source>
+        <translation>Идентитет објављивача је утврђен.</translation>
+    </message>
+    <message id="lc-settings-csca-state-unpinned">
+        <source>The publisher&apos;s identity was seen but not established: the list vouches only for itself. Recognise it by the fingerprint, do not take it as verified.</source>
+        <translation>Идентитет објављивача је виђен, али није утврђен: листа јамчи само за себе. Препознајте је по отиску, немојте је сматрати провереном.</translation>
+    </message>
+    <message id="lc-settings-csca-state-pinned-all">
+        <source>The identity of every publisher was established.</source>
+        <translation>Идентитет свих објављивача је утврђен.</translation>
+    </message>
+    <message id="lc-settings-csca-state-unpinned-some">
+        <source>The identity of at least one publisher was not established: these lists vouch only for themselves, do not take them as verified.</source>
+        <translation>Идентитет бар једног објављивача није утврђен: ове листе јамче само саме за себе, немојте их сматрати проверенима.</translation>
+    </message>
+    <message id="lc-settings-csca-state-fingerprint">
+        <source>Publisher fingerprint (SHA-256): %1</source>
+        <translation>Отисак објављивача (SHA-256): %1</translation>
+    </message>
+    <message id="lc-settings-csca-state-accepted">
+        <source>List accepted: %1</source>
+        <translation>Листа прихваћена: %1</translation>
+    </message>
     <message id="lc-settings-csca-state-signed">
         <source>List signed: %1</source>
         <translation>Листа потписана: %1</translation>

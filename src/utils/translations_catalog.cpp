@@ -1186,6 +1186,18 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-settings-csca-state-anchors");
     //% "These anchors come from more than one publisher, so no single publisher or signing date is shown."
     QT_TRID_NOOP("lc-settings-csca-state-publishers");
+    //% "The publisher's identity was established."
+    QT_TRID_NOOP("lc-settings-csca-state-pinned");
+    //% "The publisher's identity was seen but not established: the list vouches only for itself. Recognise it by the fingerprint, do not take it as verified."
+    QT_TRID_NOOP("lc-settings-csca-state-unpinned");
+    //% "The identity of every publisher was established."
+    QT_TRID_NOOP("lc-settings-csca-state-pinned-all");
+    //% "The identity of at least one publisher was not established: these lists vouch only for themselves, do not take them as verified."
+    QT_TRID_NOOP("lc-settings-csca-state-unpinned-some");
+    //% "Publisher fingerprint (SHA-256): %1"
+    QT_TRID_NOOP("lc-settings-csca-state-fingerprint");
+    //% "List accepted: %1"
+    QT_TRID_NOOP("lc-settings-csca-state-accepted");
     //% "List signed: %1"
     QT_TRID_NOOP("lc-settings-csca-state-signed");
     //% "A later list that is not newer than this one will be refused."

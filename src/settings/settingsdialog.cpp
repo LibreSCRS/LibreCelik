@@ -77,11 +77,13 @@ using LibreSCRS::AgentClient::kConfigDefaultReason;
 using LibreSCRS::AgentClient::kConfigLastTsaUrl;
 using LibreSCRS::AgentClient::kConfigTsaUrls;
 using LibreSCRS::AgentClient::kConfigTslSources;
+using LibreSCRS::AgentClient::kCscaAnchorAcceptedAt;
 using LibreSCRS::AgentClient::kCscaAnchorAnchors;
 using LibreSCRS::AgentClient::kCscaAnchorIssuers;
 using LibreSCRS::AgentClient::kCscaAnchorReplayRefusalActive;
 using LibreSCRS::AgentClient::kCscaAnchorSignedAt;
 using LibreSCRS::AgentClient::kCscaAnchorSigner;
+using LibreSCRS::AgentClient::kCscaAnchorSignerPinned;
 
 // The public download portal for eMRTD country-signing master lists. Verified
 // to serve "the latest collection of eMRTD CSCA ML" behind a terms-and-
@@ -222,6 +224,13 @@ QVariantMap anchorStateAsMap(const LibreSCRS::AgentClient::CscaAnchorState& stat
     // one place the two must not be confused.
     if (!state.signer.isEmpty()) {
         map.insert(kCscaAnchorSigner, state.signer);
+    }
+    // The import reply always states whether the publisher was established, so
+    // the value is carried as sent; only a stored state from an agent that
+    // omitted it arrives without the key.
+    map.insert(kCscaAnchorSignerPinned, state.signerPinned);
+    if (state.acceptedAt.isValid()) {
+        map.insert(kCscaAnchorAcceptedAt, state.acceptedAt.toSecsSinceEpoch());
     }
     if (state.signedAt.isValid()) {
         map.insert(kCscaAnchorSignedAt, state.signedAt.toSecsSinceEpoch());
@@ -798,6 +807,33 @@ void SettingsDialog::renderCscaState()
         // would read as one if it were borrowed for this sentence.
         if (cscaState.value(kCscaAnchorAnchors).toUInt() > 0 && !cscaState.contains(kCscaAnchorSigner)) {
             lines << qtTrId("lc-settings-csca-state-publishers");
+        }
+        // Whether the publisher's identity was ESTABLISHED, said only where the
+        // agent said it (an absent member is not a "no"). When it was not, the
+        // list vouches for itself and nothing else, so the fingerprint is
+        // printed to recognise it by and nothing here may read as verified.
+        // Without `signer` the flag speaks for every publisher at once, so the
+        // sentences are about the set and no single fingerprint exists to print.
+        if (cscaState.contains(kCscaAnchorSignerPinned)) {
+            const bool pinned = cscaState.value(kCscaAnchorSignerPinned).toBool();
+            if (!cscaState.contains(kCscaAnchorSigner)) {
+                lines << qtTrId(pinned ? "lc-settings-csca-state-pinned-all" : "lc-settings-csca-state-unpinned-some");
+            } else if (pinned) {
+                lines << qtTrId("lc-settings-csca-state-pinned");
+            } else {
+                lines << qtTrId("lc-settings-csca-state-unpinned");
+                lines
+                    << qtTrId("lc-settings-csca-state-fingerprint").arg(cscaState.value(kCscaAnchorSigner).toString());
+            }
+        }
+        // When this computer's agent took the list in: under nobody else's
+        // control, and distinct from the signing date below. Local time.
+        if (cscaState.contains(kCscaAnchorAcceptedAt)) {
+            const QDateTime acceptedAt =
+                QDateTime::fromSecsSinceEpoch(cscaState.value(kCscaAnchorAcceptedAt).toLongLong(), QTimeZone::UTC)
+                    .toLocalTime();
+            lines << qtTrId("lc-settings-csca-state-accepted")
+                         .arg(acceptedAt.toString(QStringLiteral("yyyy-MM-dd HH:mm")));
         }
         if (cscaState.contains(kCscaAnchorSignedAt)) {
             // Only when the accepted list carried one. CMS permits an absent

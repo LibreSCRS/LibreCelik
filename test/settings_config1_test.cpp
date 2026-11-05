@@ -498,6 +498,91 @@ TEST_F(SettingsConfig1Test, TheDialogSaysWhatTheAgentAlreadyHoldsBeforeAnyImport
     EXPECT_TRUE(cscaStatusText(dlg).isEmpty()) << "reading a state is not an import outcome";
 }
 
+// `signerPinned == false` means the publisher was established by nothing but
+// the list itself. The summary must say so, show the fingerprint to recognise
+// it by, and never use the sentence that says the identity was established.
+TEST_F(SettingsConfig1Test, AnUnestablishedPublisherIsNeverShownAsEstablished)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    QVariantMap state;
+    state[QStringLiteral("anchors")] = QVariant::fromValue<quint32>(5);
+    state[QStringLiteral("issuers")] = QVariant::fromValue<quint32>(2);
+    state[QStringLiteral("replayRefusalActive")] = true;
+    state[QStringLiteral("signer")] =
+        QStringLiteral("aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899");
+    state[QStringLiteral("signerPinned")] = false;
+    state[QStringLiteral("acceptedAt")] =
+        QVariant::fromValue<qint64>(QDateTime(QDate(2026, 11, 2), QTime(12, 0), QTimeZone::UTC).toSecsSinceEpoch());
+    gw.config[QStringLiteral("CscaAnchorState")] = state;
+
+    SettingsDialog dlg(&gw);
+    const QString summary = cscaSummaryText(dlg);
+    ASSERT_NE(qtTrId("lc-settings-csca-state-unpinned"), QStringLiteral("lc-settings-csca-state-unpinned"))
+        << "the catalogue did not load";
+    EXPECT_TRUE(summary.contains(qtTrId("lc-settings-csca-state-unpinned"))) << qPrintable(summary);
+    EXPECT_FALSE(summary.contains(qtTrId("lc-settings-csca-state-pinned"))) << qPrintable(summary);
+    EXPECT_TRUE(summary.contains(QStringLiteral("aabbccddeeff0011"))) << "fingerprint to recognise it by";
+    EXPECT_TRUE(summary.contains(QStringLiteral("2026-11-0"))) << "when the agent accepted it: " << qPrintable(summary);
+}
+
+// With several publishers there is no `signer`, and `signerPinned == false`
+// means at least one of them is not established. The summary must speak of the
+// set, not of "the publisher", and must not promise a fingerprint it omits.
+TEST_F(SettingsConfig1Test, UnestablishedPublishersOfACollectionAreDescribedAsASet)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    QVariantMap state;
+    state[QStringLiteral("anchors")] = QVariant::fromValue<quint32>(903);
+    state[QStringLiteral("issuers")] = QVariant::fromValue<quint32>(146);
+    state[QStringLiteral("replayRefusalActive")] = true;
+    state[QStringLiteral("signerPinned")] = false;
+    gw.config[QStringLiteral("CscaAnchorState")] = state;
+
+    SettingsDialog dlg(&gw);
+    const QString summary = cscaSummaryText(dlg);
+    ASSERT_NE(qtTrId("lc-settings-csca-state-unpinned-some"), QStringLiteral("lc-settings-csca-state-unpinned-some"))
+        << "the catalogue did not load";
+    EXPECT_TRUE(summary.contains(qtTrId("lc-settings-csca-state-unpinned-some"))) << qPrintable(summary);
+    EXPECT_FALSE(summary.contains(qtTrId("lc-settings-csca-state-unpinned"))) << qPrintable(summary);
+    EXPECT_FALSE(summary.contains(qtTrId("lc-settings-csca-state-pinned-all"))) << qPrintable(summary);
+
+    state[QStringLiteral("signerPinned")] = true;
+    gw.config[QStringLiteral("CscaAnchorState")] = state;
+    SettingsDialog dlg2(&gw);
+    const QString established = cscaSummaryText(dlg2);
+    EXPECT_TRUE(established.contains(qtTrId("lc-settings-csca-state-pinned-all"))) << qPrintable(established);
+    EXPECT_FALSE(established.contains(qtTrId("lc-settings-csca-state-pinned"))) << qPrintable(established);
+}
+
+TEST_F(SettingsConfig1Test, AnEstablishedPublisherIsSaidSoAndAnAbsentMemberSaysNothing)
+{
+    FakeAgentGateway gw;
+    gw.setPresence(librecelik::agent::PresenceState::Ready);
+    QVariantMap state;
+    state[QStringLiteral("anchors")] = QVariant::fromValue<quint32>(5);
+    state[QStringLiteral("issuers")] = QVariant::fromValue<quint32>(2);
+    state[QStringLiteral("replayRefusalActive")] = true;
+    state[QStringLiteral("signer")] =
+        QStringLiteral("aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899");
+    state[QStringLiteral("signerPinned")] = true;
+    gw.config[QStringLiteral("CscaAnchorState")] = state;
+    {
+        SettingsDialog dlg(&gw);
+        const QString summary = cscaSummaryText(dlg);
+        EXPECT_TRUE(summary.contains(qtTrId("lc-settings-csca-state-pinned"))) << qPrintable(summary);
+        EXPECT_FALSE(summary.contains(qtTrId("lc-settings-csca-state-unpinned")));
+        EXPECT_FALSE(summary.contains(QStringLiteral("aabbccdd"))) << "no fingerprint needed once established";
+    }
+    state.remove(QStringLiteral("signerPinned"));
+    gw.config[QStringLiteral("CscaAnchorState")] = state;
+    SettingsDialog dlg(&gw);
+    const QString summary = cscaSummaryText(dlg);
+    EXPECT_FALSE(summary.contains(qtTrId("lc-settings-csca-state-pinned"))) << qPrintable(summary);
+    EXPECT_FALSE(summary.contains(qtTrId("lc-settings-csca-state-unpinned"))) << qPrintable(summary);
+}
+
 // An optional key the agent did not send is ABSENT, never zero. `signedAt`
 // absent means the accepted list carried no CMS signing time -- so there is no
 // date to print, and no later list can be checked for rolling the anchors
@@ -573,6 +658,9 @@ TEST_F(SettingsConfig1Test, AnUndatedListSaysRollbackCannotBeChecked)
     gw.scriptedAnchorState.issuers = 3;
     gw.scriptedAnchorState.replayRefusalActive = false; // and signedAt stays invalid
     gw.scriptedAnchorState.signer = QStringLiteral("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+    // Established, so the one extra line is the short identity sentence and
+    // the count below still measures only the absent date.
+    gw.scriptedAnchorState.signerPinned = true;
 
     const int fd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
     ASSERT_GE(fd, 0);
@@ -584,8 +672,9 @@ TEST_F(SettingsConfig1Test, AnUndatedListSaysRollbackCannotBeChecked)
     EXPECT_TRUE(summary.contains(qtTrId("lc-settings-csca-rollback-off"))) << qPrintable(summary);
     EXPECT_FALSE(summary.contains(qtTrId("lc-settings-csca-rollback-on")));
     // An undated list contributes no date line -- never an epoch-valued
-    // stand-in, which would read as a real signing time.
-    EXPECT_EQ(summary.count(QLatin1Char('\n')), 1)
+    // stand-in, which would read as a real signing time. Three lines: counts,
+    // identity, rollback.
+    EXPECT_EQ(summary.count(QLatin1Char('\n')), 2)
         << "an undated list must not grow a date line: " << qPrintable(summary);
 }
 

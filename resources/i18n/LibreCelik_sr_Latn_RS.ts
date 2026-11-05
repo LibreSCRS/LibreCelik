@@ -1518,6 +1518,30 @@
         <source>These anchors come from more than one publisher, so no single publisher or signing date is shown.</source>
         <translation>Ova sidra potiču od više objavljivača, pa se ne prikazuju ni pojedinačni objavljivač ni datum potpisa.</translation>
     </message>
+    <message id="lc-settings-csca-state-pinned">
+        <source>The publisher&apos;s identity was established.</source>
+        <translation>Identitet objavljivača je utvrđen.</translation>
+    </message>
+    <message id="lc-settings-csca-state-unpinned">
+        <source>The publisher&apos;s identity was seen but not established: the list vouches only for itself. Recognise it by the fingerprint, do not take it as verified.</source>
+        <translation>Identitet objavljivača je viđen, ali nije utvrđen: lista jamči samo za sebe. Prepoznajte je po otisku, nemojte je smatrati proverenom.</translation>
+    </message>
+    <message id="lc-settings-csca-state-pinned-all">
+        <source>The identity of every publisher was established.</source>
+        <translation>Identitet svih objavljivača je utvrđen.</translation>
+    </message>
+    <message id="lc-settings-csca-state-unpinned-some">
+        <source>The identity of at least one publisher was not established: these lists vouch only for themselves, do not take them as verified.</source>
+        <translation>Identitet bar jednog objavljivača nije utvrđen: ove liste jamče samo same za sebe, nemojte ih smatrati proverenima.</translation>
+    </message>
+    <message id="lc-settings-csca-state-fingerprint">
+        <source>Publisher fingerprint (SHA-256): %1</source>
+        <translation>Otisak objavljivača (SHA-256): %1</translation>
+    </message>
+    <message id="lc-settings-csca-state-accepted">
+        <source>List accepted: %1</source>
+        <translation>Lista prihvaćena: %1</translation>
+    </message>
     <message id="lc-settings-csca-state-signed">
         <source>List signed: %1</source>
         <translation>Lista potpisana: %1</translation>

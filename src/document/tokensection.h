@@ -3,7 +3,6 @@
 
 #pragma once
 
-
 #include <LibreSCRS/AgentClient/CredentialTypes.h>
 #include <LibreSCRS/AgentClient/Types.h>
 

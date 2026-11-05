@@ -10,7 +10,7 @@
 class RsEidWidgetPlugin : public QObject, public CardWidgetPlugin
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.librescrs.CardWidgetPlugin/2.0" FILE "rs-eid.json")
+    Q_PLUGIN_METADATA(IID "org.librescrs.CardWidgetPlugin/2.0")
     Q_INTERFACES(CardWidgetPlugin)
 
 public:
@@ -29,5 +29,7 @@ public:
     {
         return true;
     }
-    void print(const QList<LibreSCRS::AgentClient::FieldGroup>& groups) const override;
+
+private:
+    void print(const QList<LibreSCRS::AgentClient::FieldGroup>& groups) const;
 };

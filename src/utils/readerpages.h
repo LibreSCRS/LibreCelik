@@ -31,7 +31,7 @@ class QWidget;
 /// no plugins — two widgets and a map — so it is exercised directly.
 ///
 /// @par Invariant
-/// Selector row @c i, stack index @c i and @c cardIds()[i] name the same card,
+/// Selector row @c i, stack index @c i and position @c i of the card order name the same card,
 /// at every observable point. Every mutator restores it before returning.
 class ReaderPages : public QObject
 {
@@ -65,9 +65,6 @@ public:
 
     /// @brief Card whose page is on screen, or empty when there is none.
     [[nodiscard]] QString currentCardId() const;
-
-    /// @brief Cards in selector/stack order. Position @c i is selector row @c i.
-    [[nodiscard]] QStringList cardIds() const;
 
 Q_SIGNALS:
     /// @brief The user navigated AWAY from @p cardId, whose read must stop.

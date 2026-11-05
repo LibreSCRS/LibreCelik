@@ -95,12 +95,6 @@ QMessageBox::StandardButton runMessageBox(QMessageBox::Icon icon, QWidget* paren
 
 } // namespace
 
-QMessageBox::StandardButton information(QWidget* parent, const QString& title, const QString& text,
-                                        QMessageBox::StandardButtons buttons, QMessageBox::StandardButton defaultButton)
-{
-    return runMessageBox(QMessageBox::Information, parent, title, text, buttons, defaultButton);
-}
-
 QMessageBox::StandardButton warning(QWidget* parent, const QString& title, const QString& text,
                                     QMessageBox::StandardButtons buttons, QMessageBox::StandardButton defaultButton)
 {
@@ -111,12 +105,6 @@ QMessageBox::StandardButton critical(QWidget* parent, const QString& title, cons
                                      QMessageBox::StandardButtons buttons, QMessageBox::StandardButton defaultButton)
 {
     return runMessageBox(QMessageBox::Critical, parent, title, text, buttons, defaultButton);
-}
-
-QMessageBox::StandardButton question(QWidget* parent, const QString& title, const QString& text,
-                                     QMessageBox::StandardButtons buttons, QMessageBox::StandardButton defaultButton)
-{
-    return runMessageBox(QMessageBox::Question, parent, title, text, buttons, defaultButton);
 }
 
 QString getText(QWidget* parent, const QString& title, const QString& label, QLineEdit::EchoMode echoMode,

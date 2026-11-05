@@ -45,10 +45,9 @@ public:
     LibreSCRS::AgentClient::FieldGroup scriptedTokenInfo;
     LibreSCRS::AgentClient::CredentialList scriptedCredentials;
     LibreSCRS::AgentClient::PinResult scriptedPinResult;
-    /// Replayed as `pinPhaseChanged` emissions from `managePin()` and
-    /// `activateSigningKey()`, in order, BEFORE the result — the same slice of
-    /// the operation phase stream the live controller forwards from those two
-    /// verbs and from no others.
+    /// Replayed as `pinPhaseChanged` emissions from `managePin()`, in order,
+    /// BEFORE the result — the same slice of the operation phase stream the
+    /// live controller forwards from that verb and from no other.
     QList<LibreSCRS::AgentClient::OperationPhase> scriptedPinPhases;
     /// The localized line a failed read surfaces. Scripted by the caller from
     /// `librecelik::agent::errorText`, so a GUI suite asserts the SAME text the
@@ -60,13 +59,13 @@ public:
     LibreSCRS::AgentClient::ErrorCode scriptedErrorCode = LibreSCRS::AgentClient::ErrorCode::CommunicationError;
     /// Engaged => the NEXT `startRead()` fails instead of reading (one-shot,
     /// as the name says — it clears itself). The failure replays the live
-    /// controller's shape exactly: `readingStarted`, then `errorOccurred`, then
-    /// `readingFinished`, and NEVER `identityReady` — a read that failed
-    /// produced no model, and the shared contract's expectError arm pins that.
+    /// controller's shape exactly: `errorOccurred` and NEVER `identityReady` —
+    /// a read that failed produced no model, and the shared contract's
+    /// expectError arm pins that.
     bool failNextRead = false;
-    /// Engaged => `startRead()` records the call and emits only
-    /// `readingStarted`: a read still in flight, so the page that announced it
-    /// is still on screen to be asserted.
+    /// Engaged => `startRead()` records the call and emits nothing: a read
+    /// still in flight, so the page that announced it is still on screen to be
+    /// asserted.
     bool holdRead = false;
     /// Records verb calls for assertions.
     QStringList callLog;
@@ -85,11 +84,10 @@ public:
     void requestCredentials() override;
     void managePin(const QString& pinId, LibreSCRS::AgentClient::PinVerb verb,
                    const LibreSCRS::AgentClient::ManagePinOptions& options = {}) override;
-    void activateSigningKey() override;
     void cancel() override;
 
 private:
-    /// Replay @ref scriptedPinPhases; shared by both mutation verbs.
+    /// Replay @ref scriptedPinPhases for the mutation verb.
     void replayPinPhases();
 };
 

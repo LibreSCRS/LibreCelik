@@ -246,13 +246,11 @@ void ChangePinDlg::requestVerb(PinVerb verb)
     emit verbRequested(credential.id, verb, options);
 }
 
-void ChangePinDlg::onPhase(OperationPhase phase, double progress)
+void ChangePinDlg::onPhase(OperationPhase phase)
 {
     // The phase is the whole progress story a credential mutation has to tell:
-    // its steps are not measurable in units, and the numeric fraction the
-    // operation carries alongside them would put a moving bar on a wait whose
-    // length is decided by a human at the prompter.
-    Q_UNUSED(progress)
+    // its steps are not measurable in units, and a moving bar would sit on a
+    // wait whose length is decided by a human at the prompter.
     phaseLabel->setText(librecelik::agent::phaseText(phase));
     phaseLabel->setVisible(true);
 }

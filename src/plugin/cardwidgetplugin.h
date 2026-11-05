@@ -5,7 +5,6 @@
 
 #include <LibreSCRS/AgentClient/Types.h>
 
-#include <QIcon>
 #include <QString>
 #include <QStringList>
 #include <QWidget>
@@ -23,10 +22,6 @@ public:
     // card types).
     virtual QString cardType() const = 0;
     virtual QString displayName() const = 0;
-    virtual QIcon icon() const
-    {
-        return {};
-    }
     virtual QStringList additionalCardTypes() const
     {
         return {};
@@ -51,21 +46,10 @@ public:
         Q_UNUSED(widget);
     }
 
-    // PKI UI override — return nullptr to use default TokenSection.
-    // Caller takes ownership if non-null.
-    virtual QWidget* createPKIWidget(QWidget* /*parent*/) const
-    {
-        return nullptr;
-    }
-
     // Printing — existing HTML/CSS templates stay temporarily inside plugins.
     virtual bool supportsPrinting() const
     {
         return false;
-    }
-    virtual void print(const QList<LibreSCRS::AgentClient::FieldGroup>& groups) const
-    {
-        Q_UNUSED(groups);
     }
 
     // Called when card data streaming completed with no visible field groups.

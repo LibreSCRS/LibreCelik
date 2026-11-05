@@ -115,33 +115,31 @@ if(APPLE)
     list(APPEND PROJECT_SOURCES utils/macos_menu.h utils/macos_menu.mm)
 endif()
 
-if(LIBRECELIK_SIGNING_ENABLED)
-    find_package(Qt6 REQUIRED COMPONENTS PdfWidgets)
-    list(APPEND PROJECT_SOURCES
-        signing/signingwizard.h
-        signing/signingwizard.cpp
-        signing/fileselectionpage.h
-        signing/fileselectionpage.cpp
-        signing/signatureplacementpage.h
-        signing/signatureplacementpage.cpp
-        signing/signpage.h
-        signing/signpage.cpp
-        signing/slotlabelformatter.h
-        signing/slotlabelformatter.cpp
-        signing/pdfpreviewwidget.h
-        signing/pdfpreviewwidget.cpp
-        signing/filedropzone.h
-        signing/filedropzone.cpp
-        signing/tsavalidation.h
-        signing/wizardheaderwidget.h
-        signing/wizardheaderwidget.cpp
-        signing/filelistdelegate.h
-        signing/filelistdelegate.cpp
-        signing/resultdelegate.h
-        signing/resultdelegate.cpp
-        signing/signingcolors.h
-    )
-endif()
+find_package(Qt6 REQUIRED COMPONENTS PdfWidgets)
+list(APPEND PROJECT_SOURCES
+    signing/signingwizard.h
+    signing/signingwizard.cpp
+    signing/fileselectionpage.h
+    signing/fileselectionpage.cpp
+    signing/signatureplacementpage.h
+    signing/signatureplacementpage.cpp
+    signing/signpage.h
+    signing/signpage.cpp
+    signing/slotlabelformatter.h
+    signing/slotlabelformatter.cpp
+    signing/pdfpreviewwidget.h
+    signing/pdfpreviewwidget.cpp
+    signing/filedropzone.h
+    signing/filedropzone.cpp
+    signing/tsavalidation.h
+    signing/wizardheaderwidget.h
+    signing/wizardheaderwidget.cpp
+    signing/filelistdelegate.h
+    signing/filelistdelegate.cpp
+    signing/resultdelegate.h
+    signing/resultdelegate.cpp
+    signing/signingcolors.h
+)
 
 # Produce THIRD-PARTY-LICENSES.txt in this directory scope so the rule is
 # visible to the LibreCelik target's rcc dependency (cross-directory custom
@@ -272,9 +270,7 @@ target_link_libraries(librecelik_app PUBLIC
 target_include_directories(librecelik_app PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR})
-if(LIBRECELIK_SIGNING_ENABLED)
-    target_link_libraries(librecelik_app PUBLIC Qt6::PdfWidgets)
-endif()
+target_link_libraries(librecelik_app PUBLIC Qt6::PdfWidgets)
 
 # The warning gate has to sit where the code compiles. Left on the executable
 # alone it would now cover main.cpp and nothing else.
@@ -319,9 +315,7 @@ if(APPLE)
     target_link_libraries(${PROJECT_NAME} PRIVATE "-framework AppKit")
 endif()
 
-if(LIBRECELIK_SIGNING_ENABLED)
-    target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::PdfWidgets)
-endif()
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::PdfWidgets)
 
 librecelik_warnings_as_errors(${PROJECT_NAME})
 

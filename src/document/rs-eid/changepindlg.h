@@ -47,7 +47,7 @@ signals:
                        const LibreSCRS::AgentClient::ManagePinOptions& options);
 
 public slots:
-    void onPhase(LibreSCRS::AgentClient::OperationPhase phase, double progress);
+    void onPhase(LibreSCRS::AgentClient::OperationPhase phase);
     void onPinResult(const LibreSCRS::AgentClient::PinResult& result);
 
 private:

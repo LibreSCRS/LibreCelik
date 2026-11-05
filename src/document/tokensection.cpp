@@ -207,7 +207,6 @@ TokenSection::TokenSection(QWidget* parent) : CollapsibleSection(QString(), pare
 
     connect(treeWidget, &QTreeWidget::customContextMenuRequested, this, &TokenSection::onContextMenu);
 
-#ifdef LIBRECELIK_SIGNING_ENABLED
     {
         signBtn = new QToolButton(this);
         signBtn->setIcon(QIcon(QStringLiteral(":/images/sign-icon.svg")));
@@ -228,7 +227,6 @@ TokenSection::TokenSection(QWidget* parent) : CollapsibleSection(QString(), pare
                 showCertificateDropdown();
         });
     }
-#endif
 
     setExpanded(false);
 
@@ -353,7 +351,6 @@ void TokenSection::setCertificates(const QList<LibreSCRS::AgentClient::Certifica
             addRow(qtTrId("lc-token-key-private-key"), "✓");
     }
 
-#ifdef LIBRECELIK_SIGNING_ENABLED
     // The button is live exactly when this card offers a certificate that can
     // sign; dimmed and disabled otherwise, never hidden.
     const bool canSign = !signingCertificates().empty();
@@ -366,7 +363,6 @@ void TokenSection::setCertificates(const QList<LibreSCRS::AgentClient::Certifica
         signBtn->setGraphicsEffect(dimEffect);
     }
     signBtn->setEnabled(canSign);
-#endif
 
     updateTreeMinimumHeight();
 }
@@ -433,13 +429,11 @@ void TokenSection::onContextMenu(const QPoint& pos)
             connect(viewAction, &QAction::triggered, this,
                     [this, certIndex]() { emit certificateDetailsRequested(certificateList.at(certIndex)); });
 
-#ifdef LIBRECELIK_SIGNING_ENABLED
             if (certificateList.at(certIndex).signingCapable) {
                 QAction* signAction = menu->addAction(qtTrId("lc-sign-with-cert"));
                 connect(signAction, &QAction::triggered, this,
                         [this, certIndex]() { emit signRequested(certificateList.at(certIndex), cardId); });
             }
-#endif
         }
     }
 
@@ -467,7 +461,6 @@ void TokenSection::onContextMenu(const QPoint& pos)
         menu.release()->popup(treeWidget->viewport()->mapToGlobal(pos));
 }
 
-#ifdef LIBRECELIK_SIGNING_ENABLED
 QList<LibreSCRS::AgentClient::CertificateInfo> TokenSection::signingCertificates() const
 {
     QList<LibreSCRS::AgentClient::CertificateInfo> result;
@@ -501,7 +494,6 @@ void TokenSection::showCertificateDropdown()
         pos.setX(screenGeo.right() - menuSize.width());
     menu->popup(pos);
 }
-#endif
 
 void TokenSection::applyTreeStyleSheet()
 {
@@ -536,10 +528,8 @@ void TokenSection::retranslateUi()
     if (tokenPinItem)
         tokenPinItem->setText(0, qtTrId("lc-eid-tree-pin"));
 
-#ifdef LIBRECELIK_SIGNING_ENABLED
     if (signBtn)
         signBtn->setToolTip(qtTrId("lc-sign-button"));
-#endif
 
     if (hasTokenGroup)
         setTokenInfo(tokenGroup);

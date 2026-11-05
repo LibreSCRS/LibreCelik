@@ -36,8 +36,3 @@ CardWidgetPlugin* CardWidgetPluginRegistry::findByCardType(const QString& cardTy
 {
     return pluginMap.value(cardType, nullptr);
 }
-
-QList<CardWidgetPlugin*> CardWidgetPluginRegistry::plugins() const
-{
-    return pluginMap.values();
-}

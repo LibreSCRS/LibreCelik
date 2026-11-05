@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "config.h"
 
 #include <LibreSCRS/AgentClient/CredentialTypes.h>
 #include <LibreSCRS/AgentClient/Types.h>
@@ -53,9 +52,7 @@ public slots:
 
 signals:
     void changePinRequested(const LibreSCRS::AgentClient::CredentialRecord& credential);
-#ifdef LIBRECELIK_SIGNING_ENABLED
     void signRequested(const LibreSCRS::AgentClient::CertificateInfo& cert, const QString& cardId);
-#endif
     void certificateDetailsRequested(const LibreSCRS::AgentClient::CertificateInfo& cert);
 
 private slots:
@@ -68,10 +65,8 @@ private:
     void retranslateUi();
     void applyTreeStyleSheet();
     void updateTreeMinimumHeight();
-#ifdef LIBRECELIK_SIGNING_ENABLED
     QList<LibreSCRS::AgentClient::CertificateInfo> signingCertificates() const;
     void showCertificateDropdown();
-#endif
 
     QList<LibreSCRS::AgentClient::CertificateInfo> certificateList;
     LibreSCRS::AgentClient::CredentialList credentialList;
@@ -88,7 +83,5 @@ private:
     QTreeWidgetItem* tokenCertsItem = nullptr;
     QTreeWidgetItem* tokenPinItem = nullptr;
 
-#ifdef LIBRECELIK_SIGNING_ENABLED
     QToolButton* signBtn = nullptr;
-#endif
 };

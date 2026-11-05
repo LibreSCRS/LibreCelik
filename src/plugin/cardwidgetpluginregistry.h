@@ -23,7 +23,6 @@ public:
     /// plugins its build imported) that implements `CardWidgetPlugin`.
     void loadStaticPlugins();
     CardWidgetPlugin* findByCardType(const QString& cardType) const;
-    QList<CardWidgetPlugin*> plugins() const;
 
 private:
     QMap<QString, CardWidgetPlugin*> pluginMap;

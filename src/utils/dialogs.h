@@ -26,20 +26,12 @@ namespace librecelik::dialogs {
 ///
 /// @par Thread-safety  Single-threaded (Qt main thread only). All
 ///                     wrappers internally call `exec()` and block.
-QMessageBox::StandardButton information(QWidget* parent, const QString& title, const QString& text,
-                                        QMessageBox::StandardButtons buttons = QMessageBox::Ok,
-                                        QMessageBox::StandardButton defaultButton = QMessageBox::NoButton);
-
 QMessageBox::StandardButton warning(QWidget* parent, const QString& title, const QString& text,
                                     QMessageBox::StandardButtons buttons = QMessageBox::Ok,
                                     QMessageBox::StandardButton defaultButton = QMessageBox::NoButton);
 
 QMessageBox::StandardButton critical(QWidget* parent, const QString& title, const QString& text,
                                      QMessageBox::StandardButtons buttons = QMessageBox::Ok,
-                                     QMessageBox::StandardButton defaultButton = QMessageBox::NoButton);
-
-QMessageBox::StandardButton question(QWidget* parent, const QString& title, const QString& text,
-                                     QMessageBox::StandardButtons buttons = QMessageBox::Yes | QMessageBox::No,
                                      QMessageBox::StandardButton defaultButton = QMessageBox::NoButton);
 
 /// Mirrors `QInputDialog::getText`. Returns the entered text on accept;

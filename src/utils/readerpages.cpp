@@ -136,11 +136,6 @@ QString ReaderPages::currentCardId() const
     return m_order.at(index);
 }
 
-QStringList ReaderPages::cardIds() const
-{
-    return m_order;
-}
-
 void ReaderPages::onSelectorChanged(int index)
 {
     // Reached only for a genuine selection change: every mutator above blocks

@@ -88,7 +88,7 @@ TEST(FakeGateway, ScriptedReadStreamsGroupsThenFinishes)
     QStringList seen;
     QObject::connect(&c, &librecelik::agent::CardController::groupReady, [&](const auto& grp) { seen << grp.key; });
     bool finished = false;
-    QObject::connect(&c, &librecelik::agent::CardController::readingFinished, [&] { finished = true; });
+    QObject::connect(&c, &librecelik::agent::CardController::identityReady, [&](const auto&) { finished = true; });
     c.startRead();
     EXPECT_EQ(seen, QStringList{QStringLiteral("personal")});
     EXPECT_TRUE(finished);
@@ -192,16 +192,15 @@ TEST(FakeGateway, EveryCardVerbIsLoggedAndRepliesWithItsScript)
     c.requestTokenInfo();
     c.requestCredentials();
     c.managePin(QStringLiteral("pin-1"), LibreSCRS::AgentClient::PinVerb::Change);
-    c.activateSigningKey();
     c.cancel();
 
     EXPECT_EQ(certs, 1);
     EXPECT_EQ(tokens, 1);
     EXPECT_EQ(creds, 1);
-    EXPECT_EQ(pins, 2);
+    EXPECT_EQ(pins, 1);
     EXPECT_EQ(c.callLog, (QStringList{QStringLiteral("requestCertificates"), QStringLiteral("requestTokenInfo"),
                                       QStringLiteral("requestCredentials"), QStringLiteral("managePin:pin-1"),
-                                      QStringLiteral("activateSigningKey"), QStringLiteral("cancel")}));
+                                      QStringLiteral("cancel")}));
 }
 
 TEST(FakeGateway, RegisteredControllersAreReturnedPerCardIdAndUnknownIdsAreNull)

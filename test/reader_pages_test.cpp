@@ -22,7 +22,7 @@
 
 namespace {
 
-// Selector row i, stack index i and cardIds()[i] must name the same card. Every
+// Selector row i, stack index i and position i of the card order must name the same card. Every
 // assertion below leans on this, so check it as a unit.
 void expectLockstep(const ReaderPages& pages, const QComboBox& selector, const QStackedWidget& stack)
 {

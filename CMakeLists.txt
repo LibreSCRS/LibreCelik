@@ -78,12 +78,6 @@ set(LIBRESCRS_AGENT_FROM_SOURCE_DEFAULT ON)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindOrUseLibreAgent.cmake)
 librescrs_use_libreagent(COMPONENTS ClientQt)
 
-# Digital signing UI. Nothing in this build produces signatures in-process
-# any more, so the switch is a pure user-interface choice with no dependency
-# to satisfy.
-option(ENABLE_SIGNING "Enable digital signing UI" ON)
-set(LIBRECELIK_SIGNING_ENABLED ${ENABLE_SIGNING})
-
 # Two placement invariants, both load-bearing:
 #
 # AFTER the dependency include above -- enable_testing() switches testing on

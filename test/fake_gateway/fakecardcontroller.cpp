@@ -47,18 +47,16 @@ bool FakeCardController::preReadUnlockRequired() const
 void FakeCardController::startRead()
 {
     callLog << QStringLiteral("startRead");
-    Q_EMIT readingStarted();
     if (holdRead) {
         return;
     }
     if (failNextRead) {
-        // Mirrors the live controller's failed-read shape (errorOccurred then
-        // readingFinished, no identityReady). One-shot: a fake that stayed
+        // Mirrors the live controller's failed-read shape (errorOccurred, no
+        // identityReady). One-shot: a fake that stayed
         // failed would make a later success in the same case impossible to
         // script.
         failNextRead = false;
         Q_EMIT errorOccurred(scriptedError, scriptedErrorCode);
-        Q_EMIT readingFinished();
         return;
     }
     if (!scriptedCardType.isEmpty()) {
@@ -75,7 +73,6 @@ void FakeCardController::startRead()
         Q_EMIT groupReady(*scriptedPhotoGroup);
     }
     Q_EMIT identityReady(groups);
-    Q_EMIT readingFinished();
 }
 
 void FakeCardController::requestCertificates()
@@ -106,13 +103,6 @@ void FakeCardController::managePin(const QString& pinId, LibreSCRS::AgentClient:
     Q_EMIT pinResultReady(scriptedPinResult);
 }
 
-void FakeCardController::activateSigningKey()
-{
-    callLog << QStringLiteral("activateSigningKey");
-    replayPinPhases();
-    Q_EMIT pinResultReady(scriptedPinResult);
-}
-
 void FakeCardController::cancel()
 {
     callLog << QStringLiteral("cancel");
@@ -123,7 +113,7 @@ void FakeCardController::replayPinPhases()
     // Before the result, as the live controller's stream arrives: what the
     // mutation is doing is said while it is still doing it.
     for (const LibreSCRS::AgentClient::OperationPhase phase : std::as_const(scriptedPinPhases)) {
-        Q_EMIT pinPhaseChanged(phase, 0.0);
+        Q_EMIT pinPhaseChanged(phase);
     }
 }
 

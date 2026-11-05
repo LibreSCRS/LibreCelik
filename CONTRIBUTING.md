@@ -34,21 +34,6 @@ If your local `clang-format` is a different major version, please install
 version 21 specifically; do not commit a layout produced by another version
 of the tool.
 
-### Optional pre-commit hook
-
-`scripts/pre-commit-clang-format.sh` runs `clang-format-21 --dry-run --Werror`
-against every staged C/C++ file and rejects the commit if any file is not
-formatted. Activate via:
-
-```bash
-# Per-clone (simplest):
-ln -s ../../scripts/pre-commit-clang-format.sh .git/hooks/pre-commit
-```
-
-The hook respects `$CLANG_FORMAT`, otherwise tries `clang-format-21` on
-PATH then `~/.local/bin/clang-format-21`. Skip a single commit with
-`--no-verify`; CI will still enforce on every PR.
-
 A repo-root `.editorconfig` documents the indent / EOL / charset
 conventions for editors that support EditorConfig.
 
@@ -140,20 +125,6 @@ this list requires PR review — every new entry is a tacit promise
 that the term is universally understood. Prefer to *translate*
 instead of allowlisting whenever the receiving audience may not
 recognise the English form.
-
-### Optional pre-commit i18n hook
-
-`scripts/pre-commit-i18n.sh` runs the audit in `--diff-since=HEAD`
-mode (only files staged for commit). Activate via:
-
-```bash
-# Per-clone (simplest):
-ln -s ../../scripts/pre-commit-i18n.sh .git/hooks/pre-commit-i18n
-```
-
-…then chain it from your existing `pre-commit` hook, or set
-`core.hooksPath` to a directory containing both
-`pre-commit-clang-format.sh` and `pre-commit-i18n.sh`.
 
 ## Build and test
 

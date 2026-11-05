@@ -21,7 +21,7 @@ TEST(CardWidgetPluginRegistryTest, RegistersTheLinkedInCardPage)
 {
     CardWidgetPluginRegistry registry;
     registry.loadStaticPlugins();
-    EXPECT_EQ(registry.plugins().size(), 1);
+    EXPECT_NE(registry.findByCardType(QStringLiteral("mock")), nullptr);
 }
 
 TEST(CardWidgetPluginRegistryTest, FindByCardType)

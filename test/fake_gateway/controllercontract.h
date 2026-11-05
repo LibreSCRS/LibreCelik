@@ -118,10 +118,10 @@ struct SignContractExpectation
 
 /// @brief Assert the READ emission contract on @p controller.
 ///
-/// `readingStarted` -> zero-or-more `groupReady` -> (when the script carries a
-/// photo) a FINAL `groupReady` whose group key is "photo", which
-/// `identityReady` then contains -> `identityReady` -> `readingFinished`; and
-/// `errorOccurred` implies NO `identityReady`.
+/// zero-or-more `groupReady` -> (when the script carries a photo) a FINAL
+/// `groupReady` whose group key is "photo", which `identityReady` then
+/// contains -> `identityReady`, which ends the read; and `errorOccurred`, the
+/// other ending, implies NO `identityReady`.
 ///
 /// `expectation.expectError` picks the side and BINDS BOTH WAYS: false means
 /// the read must not have errored at all, so the success-path clauses below
@@ -133,16 +133,9 @@ inline void assertReadEmissionContract(librecelik::agent::CardController& contro
     QStringList groupKeys;    // groupReady keys, in order
     QStringList identityKeys; // the keys identityReady carried
     int identityCount = 0;
-    int startedCount = 0;
-    int finishedCount = 0;
     int errorCount = 0;
 
     // 1. connections FIRST — before the verb, so a synchronous fake is caught.
-    const QMetaObject::Connection startedConn =
-        QObject::connect(&controller, &librecelik::agent::CardController::readingStarted, [&] {
-            ++startedCount;
-            order << QStringLiteral("started");
-        });
     const QMetaObject::Connection groupConn =
         QObject::connect(&controller, &librecelik::agent::CardController::groupReady,
                          [&](const LibreSCRS::AgentClient::FieldGroup& group) {
@@ -164,32 +157,20 @@ inline void assertReadEmissionContract(librecelik::agent::CardController& contro
             ++errorCount;
             order << QStringLiteral("error");
         });
-    const QMetaObject::Connection finishedConn =
-        QObject::connect(&controller, &librecelik::agent::CardController::readingFinished, [&] {
-            ++finishedCount;
-            order << QStringLiteral("finished");
-        });
 
     // 2. the verb itself, 3. pump until the completion predicate holds.
     controller.startRead();
-    const bool completed = waitFor([&] { return finishedCount > 0 || errorCount > 0; }, expectation.waitMs);
+    const bool completed = waitFor([&] { return identityCount > 0 || errorCount > 0; }, expectation.waitMs);
 
-    QObject::disconnect(startedConn);
     QObject::disconnect(groupConn);
     QObject::disconnect(identityConn);
     QObject::disconnect(errorConn);
-    QObject::disconnect(finishedConn);
 
     // 4. assertions.
     if (!completed) {
         ADD_FAILURE() << "read never completed within " << expectation.waitMs
                       << " ms; emissions so far: " << qPrintable(order.join(QLatin1Char(',')));
         return;
-    }
-
-    EXPECT_EQ(startedCount, 1) << "readingStarted must fire exactly once";
-    if (!order.isEmpty()) {
-        EXPECT_EQ(order.first(), QStringLiteral("started")) << "readingStarted must be the FIRST emission";
     }
 
     if (expectation.expectError) {
@@ -208,14 +189,9 @@ inline void assertReadEmissionContract(librecelik::agent::CardController& contro
     }
 
     EXPECT_EQ(identityCount, 1) << "identityReady must fire exactly once on a successful read";
-    EXPECT_EQ(finishedCount, 1) << "readingFinished must fire exactly once";
 
     const int identityAt = order.indexOf(QStringLiteral("identity"));
-    const int finishedAt = order.indexOf(QStringLiteral("finished"));
     const int lastGroupAt = order.lastIndexOf(QStringLiteral("group"));
-    if (identityAt >= 0 && finishedAt >= 0) {
-        EXPECT_LT(identityAt, finishedAt) << "identityReady must precede readingFinished";
-    }
     if (lastGroupAt >= 0 && identityAt >= 0) {
         EXPECT_LT(lastGroupAt, identityAt) << "every groupReady must precede identityReady";
     }
@@ -263,14 +239,13 @@ inline void assertSignEmissionContract(librecelik::agent::SignController& contro
     bool phaseAfterFinished = false;
 
     // 1. connections FIRST.
-    const QMetaObject::Connection phaseConn =
-        QObject::connect(&controller, &librecelik::agent::SignController::phaseChanged,
-                         [&](LibreSCRS::AgentClient::OperationPhase, double) {
-                             ++phaseCount;
-                             if (finishedCount > 0) {
-                                 phaseAfterFinished = true;
-                             }
-                         });
+    const QMetaObject::Connection phaseConn = QObject::connect(
+        &controller, &librecelik::agent::SignController::phaseChanged, [&](LibreSCRS::AgentClient::OperationPhase) {
+            ++phaseCount;
+            if (finishedCount > 0) {
+                phaseAfterFinished = true;
+            }
+        });
     const QMetaObject::Connection rowConn =
         QObject::connect(&controller, &librecelik::agent::SignController::rowFinished,
                          [&](int index, const librecelik::agent::SignRowResult& result) {

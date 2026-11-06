@@ -167,15 +167,17 @@ jobs:
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja -DLIBRESCRS_WERROR=ON
 
       - name: Build
-        env:
-          QT_QPA_PLATFORM: offscreen
         run: cmake --build build
 
       # The agent tree this configure fetched is the deps.lock commit (the
       # property, not what the configure printed), and every test binary
       # still registers at least the tests ci/test-floor.txt counts.
+      # Discovery is PRE_TEST, so listing runs the Qt test binaries, which
+      # need the offscreen platform plugin.
       - name: Shared gates after the build
         uses: LibreSCRS/ci/actions/gates@2d5d8c63e77bf90a9ca5b0354028b9396093bd79
+        env:
+          QT_QPA_PLATFORM: offscreen
         with:
           gates: deps-lock-build test-floor
           build-dir: build

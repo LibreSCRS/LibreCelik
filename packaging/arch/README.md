@@ -8,8 +8,8 @@ LibreCelik is a **thin D-Bus client** of the LibreSCRS agent — it opens no car
 itself and links no LibreMiddleware target. It depends on **`librelinux`**
 (`librescrs-agent`) and on **`librescrs-agent-client-qt`**, the Qt client
 library built from the agent library's own repository. The agent is a hard
-dependency, as it is for `librekde`: without it LibreCelik starts and finds no
-card, and pacman installs no `optdepends` on its own.
+dependency in every package format (deb, rpm and Arch), as it is for
+`librekde`: without it LibreCelik starts and finds no card.
 
 The `PKGBUILD` is **release-shaped**: it builds the signed release tag of this
 repository (`git+https://…#tag=$pkgver?signed`), and makepkg checks the tag's

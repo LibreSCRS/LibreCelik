@@ -24,11 +24,9 @@ pkgdesc="Reader and signer for LibreSCRS smart cards: Serbian eID, vehicle and h
 arch=('x86_64')
 url="https://github.com/LibreSCRS/LibreCelik"
 license=('GPL-3.0-or-later')
-# The agent is a hard dependency here and a Recommends in the deb and rpm
-# recipes, for the same outcome: apt and dnf install a recommended package by
-# default, pacman never installs an optional one. LibreCelik reads no card
-# without the agent, so on Arch only a hard dependency installs it with the
-# application the way the other two formats do.
+# The agent is a hard dependency in every package format (deb Depends, rpm
+# Requires, and here): LibreCelik reads no card without it, and a weak
+# dependency can be skipped silently by the package manager.
 depends=(
     'librescrs-agent'            # the D-Bus agent that owns the card
     'librescrs-agent-client-qt'  # LibreAgent::ClientQt (find_package(LibreAgent CONFIG))

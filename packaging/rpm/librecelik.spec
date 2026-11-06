@@ -42,7 +42,7 @@ BuildRequires:  desktop-file-utils
 BuildRequires:  libappstream-glib
 
 Requires:       librescrs-agent-client-qt%{?_isa} = %{agentclient_evr}
-Recommends:     librescrs-agent >= 5.0
+Requires:       librescrs-agent >= 5.0
 
 %description
 LibreCelik reads Serbian government smart cards -- identity, vehicle and health

@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 # Runs INSIDE a fresh container. /pkg holds this repository's package,
 # /pkg-<Repo> the upstream ones.
+#
+# FAMILY is deb, rpm or arch; anything else is refused rather than read as
+# one of them.
 set -uo pipefail
 fail=0
 check() { if [ "$2" -eq 0 ]; then echo "PASS $1"; else echo "FAIL $1"; fail=1; fi; }
@@ -26,7 +29,12 @@ if [ "${PKG_MANAGER:-}" = zypper ]; then
   }
 fi
 
-if [ "${FAMILY:-deb}" = deb ]; then
+# The agent is a hard dependency of the package, so its user packages (the
+# agent and the prompter it requires) go into the same install as the rest.
+# Development packages are left out: nobody installs those to run the
+# application.
+case "${FAMILY:-deb}" in
+deb)
   export DEBIAN_FRONTEND=noninteractive
   # The base container is not a machine. Ubuntu's image ships
   # /etc/dpkg/dpkg.cfg.d/excludes with path-exclude=/usr/share/locale/*/LC_MESSAGES/*.mo
@@ -38,23 +46,47 @@ if [ "${FAMILY:-deb}" = deb ]; then
   apt-get install -y -qq appstream >/dev/null
   apt-get install -y --no-install-recommends \
       /pkg-LibreMiddleware/liblibrescrs5_*.deb /pkg-LibreMiddleware/librescrs-card-plugins_*.deb \
-      /pkg-LibreAgent/liblibrescrs-agentclient-qt5_*.deb /pkg/*.deb >/dev/null
+      /pkg-LibreAgent/liblibrescrs-agentclient-qt5_*.deb \
+      /pkg-LibreLinux/librescrs-agent_*.deb /pkg-LibreLinux/librescrs-pinentry-kde_*.deb \
+      /pkg/*.deb >/dev/null
   check "V1 install with upstreams" $?
   LIBGLOB="/usr/lib/*"
   installed_list() { dpkg-query -W -f='${Package}\n'; }
   remove_ours() { apt-get purge -y $(installed_list | grep -E 'librescrs|liblibrescrs|librecelik') >/dev/null; }
   validate_meta() { appstreamcli validate --no-net /usr/share/metainfo/org.librescrs.librecelik.metainfo.xml; }
-else
+  ;;
+rpm)
   dnf -y -q install libappstream-glib >/dev/null
   dnf -y -q install /pkg-LibreMiddleware/librescrs-middleware-5*.rpm \
       /pkg-LibreMiddleware/librescrs-card-plugins-5*.rpm \
-      /pkg-LibreAgent/librescrs-agent-client-qt-5*.rpm /pkg/*.rpm >/dev/null
+      /pkg-LibreAgent/librescrs-agent-client-qt-5*.rpm \
+      /pkg-LibreLinux/librescrs-agent-5*.rpm /pkg-LibreLinux/librescrs-pinentry-kde-5*.rpm \
+      /pkg/*.rpm >/dev/null
   check "V1 install with upstreams" $?
   LIBGLOB="/usr/lib64"
   installed_list() { rpm -qa --qf '%{NAME}\n'; }
   remove_ours() { dnf -y -q remove $(installed_list | grep -E '^(librescrs|liblibrescrs|librecelik)') >/dev/null; }
   validate_meta() { appstream-util validate-relax --nonet /usr/share/metainfo/org.librescrs.librecelik.metainfo.xml; }
-fi
+  ;;
+arch)
+  pacman -S --noconfirm --needed appstream >/dev/null
+  # Only the runtime packages: the application links the Qt client library of
+  # the agent library's recipe, not its core or common packages.
+  pacman -U --noconfirm /pkg-LibreMiddleware/librescrs-middleware-5*.pkg.tar.zst \
+      /pkg-LibreAgent/librescrs-agent-client-qt-5*.pkg.tar.zst \
+      /pkg-LibreLinux/librescrs-agent-5*.pkg.tar.zst /pkg-LibreLinux/librescrs-pinentry-kde-5*.pkg.tar.zst \
+      /pkg/*.pkg.tar.zst >/dev/null
+  check "V1 install with upstreams" $?
+  LIBGLOB="/usr/lib"
+  installed_list() { pacman -Qq; }
+  remove_ours() { pacman -Rns --noconfirm $(installed_list | grep -E '^(librescrs|liblibrescrs|librecelik)') >/dev/null; }
+  validate_meta() { appstreamcli validate --no-net /usr/share/metainfo/org.librescrs.librecelik.metainfo.xml; }
+  ;;
+*)
+  echo "FAIL FAMILY='${FAMILY:-}' is not deb, rpm or arch"
+  exit 2
+  ;;
+esac
 
 test -x /usr/bin/LibreCelik; check "V2 the application is on PATH" $?
 test -f /usr/share/applications/librecelik.desktop; check "V2b desktop entry" $?

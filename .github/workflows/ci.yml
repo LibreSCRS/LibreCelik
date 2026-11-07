@@ -47,7 +47,7 @@ jobs:
       # in the sources, the version surfaces, deps.lock's form, reachability
       # and diamond, and the Arch recipe building this repository's signed tag.
       - name: Shared gates
-        uses: LibreSCRS/ci/actions/gates@2d5d8c63e77bf90a9ca5b0354028b9396093bd79
+        uses: LibreSCRS/ci/actions/gates@298d83a67de5e7349aad840ad9f8d972bb9168fb
         with:
           gates: check-workflows check-skip-reasons check-version deps-lock check-recipe
 
@@ -175,7 +175,7 @@ jobs:
       # Discovery is PRE_TEST, so listing runs the Qt test binaries, which
       # need the offscreen platform plugin.
       - name: Shared gates after the build
-        uses: LibreSCRS/ci/actions/gates@2d5d8c63e77bf90a9ca5b0354028b9396093bd79
+        uses: LibreSCRS/ci/actions/gates@298d83a67de5e7349aad840ad9f8d972bb9168fb
         env:
           QT_QPA_PLATFORM: offscreen
         with:
@@ -203,7 +203,7 @@ jobs:
           persist-credentials: false
 
       - name: Select Xcode
-        uses: LibreSCRS/ci/actions/select-xcode@2d5d8c63e77bf90a9ca5b0354028b9396093bd79
+        uses: LibreSCRS/ci/actions/select-xcode@298d83a67de5e7349aad840ad9f8d972bb9168fb
 
       - name: Install build tools
         # Ninja, and GoogleTest for the test suite. The agent client library

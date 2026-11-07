@@ -64,7 +64,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - id: pre
-        uses: LibreSCRS/ci/actions/release-preflight@2d5d8c63e77bf90a9ca5b0354028b9396093bd79
+        uses: LibreSCRS/ci/actions/release-preflight@298d83a67de5e7349aad840ad9f8d972bb9168fb
         with:
           # A tag push publishes; a branch push and a dispatch default to
           # rehearse (a dispatch may ask for publish, refused off a tag).
@@ -92,7 +92,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           repository: LibreSCRS/ci
-          ref: 2d5d8c63e77bf90a9ca5b0354028b9396093bd79
+          ref: 298d83a67de5e7349aad840ad9f8d972bb9168fb
           path: .ci
           persist-credentials: false
 
@@ -130,13 +130,13 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: LibreSCRS/ci/actions/pkg-build@2d5d8c63e77bf90a9ca5b0354028b9396093bd79
+      - uses: LibreSCRS/ci/actions/pkg-build@298d83a67de5e7349aad840ad9f8d972bb9168fb
         id: build
         with:
           slug: ${{ matrix.slug }}
           upstream: ${{ github.ref_type == 'tag' && 'release' || 'source' }}
           version: ${{ github.ref_type == 'tag' && needs.preflight.outputs.version || '' }}
-      - uses: LibreSCRS/ci/actions/pkg-verify@2d5d8c63e77bf90a9ca5b0354028b9396093bd79
+      - uses: LibreSCRS/ci/actions/pkg-verify@298d83a67de5e7349aad840ad9f8d972bb9168fb
         with:
           slug: ${{ matrix.slug }}
           packages: ${{ steps.build.outputs.art }}/${{ matrix.slug }}
@@ -166,7 +166,7 @@ jobs:
           pattern: 'packages-*'
           merge-multiple: true
           path: signed
-      - uses: LibreSCRS/ci/actions/pkg-sign@2d5d8c63e77bf90a9ca5b0354028b9396093bd79
+      - uses: LibreSCRS/ci/actions/pkg-sign@298d83a67de5e7349aad840ad9f8d972bb9168fb
         with:
           mode: ${{ needs.preflight.outputs.mode }}
           packages: signed
@@ -200,7 +200,7 @@ jobs:
           name: signed-packages
           path: artifacts
 
-      - uses: LibreSCRS/ci/actions/release-seal@2d5d8c63e77bf90a9ca5b0354028b9396093bd79
+      - uses: LibreSCRS/ci/actions/release-seal@298d83a67de5e7349aad840ad9f8d972bb9168fb
         with:
           mode: ${{ needs.preflight.outputs.mode }}
           version: ${{ needs.preflight.outputs.version }}
@@ -226,7 +226,7 @@ jobs:
         with:
           name: sealed
           path: artifacts
-      - uses: LibreSCRS/ci/actions/release-publish@2d5d8c63e77bf90a9ca5b0354028b9396093bd79
+      - uses: LibreSCRS/ci/actions/release-publish@298d83a67de5e7349aad840ad9f8d972bb9168fb
         with:
           mode: ${{ needs.preflight.outputs.mode }}
           version: ${{ needs.preflight.outputs.version }}

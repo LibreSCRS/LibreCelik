@@ -840,14 +840,14 @@ TEST_F(SettingsConfig1Test, CommunicationFailureDuringImportIsNotSaidAsRefused)
     EXPECT_NE(cscaStatusText(dlg), qtTrId("lc-settings-csca-refused"));
 }
 
-// Every "this file is not a usable master list" refusal the agent names is
-// outside the closed error vocabulary and arrives generically. One sentence
-// covers them, and it offers the only move that helps: a different file.
+// Every "this file is not a usable master list" refusal arrives from the agent
+// as InvalidRequest. One sentence covers them, and it offers the only move that
+// helps: a different file.
 TEST_F(SettingsConfig1Test, AFileTheAgentWillNotInstallOffersADifferentFile)
 {
     FakeAgentGateway gw;
     gw.setPresence(librecelik::agent::PresenceState::Ready);
-    gw.nextImportRefusal = LibreSCRS::AgentClient::SyncError::UnknownConfigKey;
+    gw.nextImportRefusal = LibreSCRS::AgentClient::SyncError::InvalidRequest;
 
     const int fd = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
     ASSERT_GE(fd, 0);
@@ -1092,7 +1092,7 @@ TEST_F(SettingsConfig1Test, AnLdifCarryingNoSignedObjectIsTheAgentsRefusalToMake
 {
     FakeAgentGateway gw;
     gw.setPresence(librecelik::agent::PresenceState::Ready);
-    gw.nextImportRefusal = LibreSCRS::AgentClient::SyncError::UnknownConfigKey;
+    gw.nextImportRefusal = LibreSCRS::AgentClient::SyncError::InvalidRequest;
 
     QTemporaryDir dir(QStringLiteral("/var/tmp/lc-csca-XXXXXX"));
     ASSERT_TRUE(dir.isValid());

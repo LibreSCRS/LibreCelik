@@ -717,9 +717,11 @@ void SettingsDialog::importMasterList(int masterListFd)
             // reading would still be a verdict the agent never issued.
             cscaOutcome = CscaImportOutcome::Undecided;
             break;
+        case LibreSCRS::AgentClient::SyncError::InvalidRequest:
+            // The agent's one name for "this file will not do": not a master
+            // list, empty, unreadable, a bad signature or a publisher it does
+            // not follow. One sentence covers them all.
         default:
-            // Every "this file is not a usable master list" refusal the agent
-            // names is outside the closed error vocabulary and arrives here.
             cscaOutcome = CscaImportOutcome::Refused;
             break;
         }

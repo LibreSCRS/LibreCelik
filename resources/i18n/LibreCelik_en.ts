@@ -1607,8 +1607,8 @@
         <translation>Invalid URL</translation>
     </message>
     <message id="lc-settings-invalid-url-msg">
-        <source>Please enter a valid URL.</source>
-        <translation>Please enter a valid URL.</translation>
+        <source>Please enter a valid https address.</source>
+        <translation>Please enter a valid https address.</translation>
     </message>
     <message id="lc-btn-ok">
         <source>OK</source>

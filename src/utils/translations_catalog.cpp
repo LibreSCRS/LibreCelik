@@ -1242,7 +1242,7 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-settings-legacy-import-dropped");
     //% "Invalid URL"
     QT_TRID_NOOP("lc-settings-invalid-url-title");
-    //% "Please enter a valid URL."
+    //% "Please enter a valid https address."
     QT_TRID_NOOP("lc-settings-invalid-url-msg");
 
     // Standard QDialogButtonBox button labels — registered to override KDE

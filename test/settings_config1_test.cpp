@@ -301,6 +301,40 @@ TEST_F(SettingsConfig1Test, CancelWhileWritingStopsTheRunAndKeepsNothingAfterIt)
     EXPECT_NE(stored.value(settings::kLanguage).toString(), previewed);
 }
 
+// The agent keeps only https addresses (lower-case scheme, a non-empty
+// authority not starting with '/') for timestamp and trusted-list sources, so
+// the dialog must not offer http and have the agent refuse it afterwards.
+TEST_F(SettingsConfig1Test, OnlyAnHttpsAddressIsAValidServiceUrl)
+{
+    EXPECT_TRUE(SettingsDialog::isValidServiceUrl(QStringLiteral("https://tsa.example/tsa")));
+    EXPECT_TRUE(SettingsDialog::isValidServiceUrl(QStringLiteral("https://tsa.example")));
+
+    EXPECT_FALSE(SettingsDialog::isValidServiceUrl(QStringLiteral("http://tsa.example")));
+    EXPECT_FALSE(SettingsDialog::isValidServiceUrl(QStringLiteral("HTTPS://tsa.example")))
+        << "the agent compares the scheme as written";
+    EXPECT_FALSE(SettingsDialog::isValidServiceUrl(QStringLiteral("https://")));
+    EXPECT_FALSE(SettingsDialog::isValidServiceUrl(QStringLiteral("https:///path")));
+    EXPECT_FALSE(SettingsDialog::isValidServiceUrl(QStringLiteral("ftp://tsa.example")));
+    EXPECT_FALSE(SettingsDialog::isValidServiceUrl(QString()));
+}
+
+// A plain-http entry another writer left in the shared store is not shown: the
+// agent would not have kept it either.
+TEST_F(SettingsConfig1Test, AnHttpTimestampAddressInTheStoreIsNotListed)
+{
+    FakeAgentGateway gw;
+    gw.config[QStringLiteral("TsaUrls")] =
+        QStringList{QStringLiteral("http://plain.example/"), QStringLiteral("https://tsa.example/")};
+    SettingsDialog dlg(&gw);
+    auto* list = dlg.findChild<QListWidget*>(QStringLiteral("tsaList"));
+    ASSERT_NE(list, nullptr);
+    QStringList shown;
+    for (int row = 0; row < list->count(); ++row)
+        shown << list->item(row)->text();
+    EXPECT_TRUE(shown.contains(QStringLiteral("https://tsa.example/")));
+    EXPECT_FALSE(shown.contains(QStringLiteral("http://plain.example/")));
+}
+
 TEST_F(SettingsConfig1Test, TslCacheDirControlIsGone)
 {
     FakeAgentGateway gw;

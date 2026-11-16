@@ -100,6 +100,9 @@ public:
     /// ceremony on a file that was never read.
     void importMasterListFile(const QString& path);
 
+    /// Whether @p url may be added as a timestamp or trusted-list address.
+    static bool isValidServiceUrl(const QString& url);
+
 signals:
     void languageChanged(const QString& locale);
 

@@ -40,7 +40,6 @@
 #include <QSizePolicy>
 #include <QTabWidget>
 #include <QTimeZone>
-#include <QUrl>
 #include <QVBoxLayout>
 
 #include <fcntl.h>
@@ -166,15 +165,6 @@ const QStringList& trustKeys()
 {
     static const QStringList keys = {kConfigTslSources};
     return keys;
-}
-
-bool isValidServiceUrl(const QString& url)
-{
-    QUrl parsed(url);
-    if (!parsed.isValid() || parsed.host().isEmpty())
-        return false;
-    const QString scheme = parsed.scheme();
-    return scheme == QStringLiteral("https") || scheme == QStringLiteral("http");
 }
 
 /// The combo carries the UI tokens the level widgets have always used; the
@@ -642,6 +632,19 @@ bool SettingsDialog::eventFilter(QObject* watched, QEvent* event)
             fitWrappedLabelHeight(label);
     }
     return QDialog::eventFilter(watched, event);
+}
+
+bool SettingsDialog::isValidServiceUrl(const QString& url)
+{
+    // The agent's own rule for every address its configuration keeps: the
+    // scheme `https` as written, then a non-empty authority that does not
+    // start with '/'. Looser and the agent refuses after the entry; stricter
+    // and an address it would keep is refused here.
+    const QLatin1StringView scheme("https://");
+    if (!url.startsWith(scheme, Qt::CaseSensitive))
+        return false;
+    const QStringView authority = QStringView(url).mid(scheme.size());
+    return !authority.isEmpty() && authority.front() != QLatin1Char('/');
 }
 
 void SettingsDialog::fitWrappedLabelHeight(QLabel* label)
@@ -1149,7 +1152,7 @@ void SettingsDialog::onTsaAddRequested()
     url = url.trimmed();
     if (url.isEmpty())
         return;
-    if (!url.startsWith(QStringLiteral("https://")) && !url.startsWith(QStringLiteral("http://")))
+    if (!url.contains(QStringLiteral("://")))
         url.prepend(QStringLiteral("https://"));
     if (!isValidServiceUrl(url)) {
         librecelik::dialogs::warning(this, qtTrId("lc-settings-invalid-url-title"),
@@ -1282,7 +1285,7 @@ void SettingsDialog::onTlAddRequested()
     QString url = urlEdit->text().trimmed();
     if (url.isEmpty())
         return;
-    if (!url.startsWith(QStringLiteral("https://")) && !url.startsWith(QStringLiteral("http://")))
+    if (!url.contains(QStringLiteral("://")))
         url.prepend(QStringLiteral("https://"));
     if (!isValidServiceUrl(url)) {
         librecelik::dialogs::warning(this, qtTrId("lc-settings-invalid-url-title"),

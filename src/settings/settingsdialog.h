@@ -103,6 +103,11 @@ public:
     /// Whether @p url may be added as a timestamp or trusted-list address.
     static bool isValidServiceUrl(const QString& url);
 
+    /// @p typed with `https://` in front unless it already starts with a URI
+    /// scheme. Only a leading scheme counts: a `://` further in belongs to a
+    /// path or query of an address typed without one.
+    static QString withHttpsScheme(const QString& typed);
+
 signals:
     void languageChanged(const QString& locale);
 

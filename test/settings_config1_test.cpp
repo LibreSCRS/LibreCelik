@@ -318,6 +318,31 @@ TEST_F(SettingsConfig1Test, OnlyAnHttpsAddressIsAValidServiceUrl)
     EXPECT_FALSE(SettingsDialog::isValidServiceUrl(QString()));
 }
 
+// Whether to put `https://` in front looks at the start of the text only: an
+// address typed without a scheme may carry `://` in its path or query.
+TEST_F(SettingsConfig1Test, HttpsIsPrependedUnlessTheTextStartsWithAScheme)
+{
+    EXPECT_EQ(SettingsDialog::withHttpsScheme(QStringLiteral("tsa.example/tsa")),
+              QStringLiteral("https://tsa.example/tsa"));
+    EXPECT_EQ(SettingsDialog::withHttpsScheme(QStringLiteral("tsa.example/x?u=https://y")),
+              QStringLiteral("https://tsa.example/x?u=https://y"));
+    EXPECT_EQ(SettingsDialog::withHttpsScheme(QStringLiteral("tsa.example/a://b")),
+              QStringLiteral("https://tsa.example/a://b"));
+
+    // Any scheme as typed is kept, so http and ftp reach the validator and are
+    // refused there, as before.
+    EXPECT_EQ(SettingsDialog::withHttpsScheme(QStringLiteral("https://tsa.example")),
+              QStringLiteral("https://tsa.example"));
+    EXPECT_EQ(SettingsDialog::withHttpsScheme(QStringLiteral("http://tsa.example")),
+              QStringLiteral("http://tsa.example"));
+    EXPECT_EQ(SettingsDialog::withHttpsScheme(QStringLiteral("ftp://tsa.example")),
+              QStringLiteral("ftp://tsa.example"));
+    EXPECT_EQ(SettingsDialog::withHttpsScheme(QStringLiteral("a+b-c.d://x")), QStringLiteral("a+b-c.d://x"));
+    // A scheme begins with a letter.
+    EXPECT_EQ(SettingsDialog::withHttpsScheme(QStringLiteral("1a://x")), QStringLiteral("https://1a://x"));
+    EXPECT_EQ(SettingsDialog::withHttpsScheme(QStringLiteral("://x")), QStringLiteral("https://://x"));
+}
+
 // A plain-http entry another writer left in the shared store is not shown: the
 // agent would not have kept it either.
 TEST_F(SettingsConfig1Test, AnHttpTimestampAddressInTheStoreIsNotListed)

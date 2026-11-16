@@ -36,6 +36,7 @@
 #include <QPalette>
 #include <QPair>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QSettings>
 #include <QSizePolicy>
 #include <QTabWidget>
@@ -647,6 +648,14 @@ bool SettingsDialog::isValidServiceUrl(const QString& url)
     return !authority.isEmpty() && authority.front() != QLatin1Char('/');
 }
 
+QString SettingsDialog::withHttpsScheme(const QString& typed)
+{
+    static const QRegularExpression startsWithScheme(QStringLiteral("^[A-Za-z][A-Za-z0-9+.-]*://"));
+    if (startsWithScheme.match(typed).hasMatch())
+        return typed;
+    return QStringLiteral("https://") + typed;
+}
+
 void SettingsDialog::fitWrappedLabelHeight(QLabel* label)
 {
     // A word-wrapped QLabel answers a layout with ONE LINE when it is asked for
@@ -1152,8 +1161,7 @@ void SettingsDialog::onTsaAddRequested()
     url = url.trimmed();
     if (url.isEmpty())
         return;
-    if (!url.contains(QStringLiteral("://")))
-        url.prepend(QStringLiteral("https://"));
+    url = withHttpsScheme(url);
     if (!isValidServiceUrl(url)) {
         librecelik::dialogs::warning(this, qtTrId("lc-settings-invalid-url-title"),
                                      qtTrId("lc-settings-invalid-url-msg"));
@@ -1285,8 +1293,7 @@ void SettingsDialog::onTlAddRequested()
     QString url = urlEdit->text().trimmed();
     if (url.isEmpty())
         return;
-    if (!url.contains(QStringLiteral("://")))
-        url.prepend(QStringLiteral("https://"));
+    url = withHttpsScheme(url);
     if (!isValidServiceUrl(url)) {
         librecelik::dialogs::warning(this, qtTrId("lc-settings-invalid-url-title"),
                                      qtTrId("lc-settings-invalid-url-msg"));

@@ -17,7 +17,7 @@ LocaleResolverTests 9
 MainWindowTests 7
 PdfPreviewWidgetTests 6
 ReaderPagesTests 7
-SettingsConfig1Tests 50
+SettingsConfig1Tests 51
 SigningUnitTests 26
 SigningWizardE2ETests 12
 SigningWizardFakeTests 11

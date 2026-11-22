@@ -357,3 +357,39 @@ TEST_F(EmrtdTextDocumentTest, TheClosedScreenBlockStillPrintsEveryCheck)
     EXPECT_TRUE(printed.contains(QStringLiteral("Chip Authentication")))
         << "a check the screen collapsed stopped printing";
 }
+
+// --- a read that stopped early ------------------------------------------------
+
+// The printed record is what gets kept as evidence, and its verdicts speak only
+// for the groups that were read. It has to say the rest were not. The English
+// literals are deliberate: with no catalogue entry qtTrId() answers with the
+// bare id, and a comparison against qtTrId() would pass on it.
+TEST_F(EmrtdTextDocumentTest, InterruptedReadPrintsWhatWasNotRead)
+{
+    // One structured check, as every real read carries: a group with none is
+    // read in the older joined shape, where every key is a check of its own.
+    TestableEMRTDTextDocument doc(
+        readWith(QList<Field>{textField(QStringLiteral("overall_integrity"), QStringLiteral("NOT_PERFORMED")),
+                              textField(QStringLiteral("read_interrupted"), QStringLiteral("true")),
+                              textField(QStringLiteral("read_interrupted_reason"), QStringLiteral("read.card-removed")),
+                              textField(QStringLiteral("read_interrupted_groups"), QStringLiteral("DG11, DG12")),
+                              textField(QStringLiteral("annex_skipped"), QStringLiteral("true"))} +
+                 check(0, QStringLiteral("passive_auth"), QStringLiteral("data_authenticity"), QStringLiteral("PASSED"),
+                       QStringLiteral("Passive Authentication"))));
+
+    const QString printed = doc.text();
+    EXPECT_TRUE(printed.contains(QStringLiteral("Read interrupted: the document was removed from the reader")))
+        << "printed: " << qPrintable(printed);
+    EXPECT_TRUE(printed.contains(QStringLiteral("Data groups not read: DG11, DG12")));
+    EXPECT_TRUE(printed.contains(QStringLiteral("National annex skipped")));
+    EXPECT_FALSE(printed.contains(QStringLiteral("read.card-removed"))) << "the wire key reached the page raw";
+    EXPECT_FALSE(printed.contains(QStringLiteral("lc-emrtd-read-"))) << "a catalogue id reached the page";
+}
+
+TEST_F(EmrtdTextDocumentTest, CompleteReadPrintsNoInterruption)
+{
+    TestableEMRTDTextDocument doc(readWith({textField(QStringLiteral("overall_integrity"), QStringLiteral("PASSED"))}));
+
+    EXPECT_FALSE(doc.text().contains(QStringLiteral("Read interrupted")));
+    EXPECT_FALSE(doc.text().contains(QStringLiteral("${"))) << "a template placeholder was left on the page";
+}

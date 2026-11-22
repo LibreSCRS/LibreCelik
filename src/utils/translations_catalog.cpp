@@ -914,6 +914,22 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-emrtd-security-not-performed");
     //% "Detailed Checks"
     QT_TRID_NOOP("lc-emrtd-security-details");
+    // A read that stopped before the end. The reason texts finish the
+    // sentence after "Read interrupted: ".
+    //% "Read interrupted: %1"
+    QT_TRID_NOOP("lc-emrtd-read-interrupted");
+    //% "Read interrupted"
+    QT_TRID_NOOP("lc-emrtd-read-interrupted-no-reason");
+    //% "Data groups not read: %1"
+    QT_TRID_NOOP("lc-emrtd-read-unread-groups");
+    //% "National annex skipped"
+    QT_TRID_NOOP("lc-emrtd-read-annex-skipped");
+    //% "the secure channel to the document failed"
+    QT_TRID_NOOP("lc-emrtd-read-channel-failed");
+    //% "the document was removed from the reader"
+    QT_TRID_NOOP("lc-emrtd-read-card-removed");
+    //% "the reader was disconnected"
+    QT_TRID_NOOP("lc-emrtd-read-reader-lost");
 
     // --- why the travel document's signer was or was not trusted ---
     //

@@ -433,3 +433,47 @@ TEST_F(SecurityStatusWidgetTest, RebuildingTheRowsReplacesThemRatherThanStacking
     EXPECT_EQ(block->findChildren<QLabel*>(QStringLiteral("checkLabel")).size(), first)
         << "the rows from the previous build stayed behind";
 }
+
+// --- a read that stopped early ------------------------------------------------
+
+// The single funnel both the pane and the printed record go through has to
+// carry the interruption the client library separated, key and all.
+TEST_F(SecurityStatusWidgetTest, ModelCarriesTheInterruptionOfAVerdict)
+{
+    LibreSCRS::AgentClient::SecurityVerdict verdict;
+    LibreSCRS::AgentClient::ReadInterruption interruption;
+    interruption.reason = QStringLiteral("read.card-removed");
+    interruption.unreadGroups = {QStringLiteral("DG11"), QStringLiteral("DG12")};
+    interruption.annexSkipped = true;
+    verdict.interruption = interruption;
+
+    const SecurityStatusModel model = librecelik::utils::securityModelFrom(verdict);
+    ASSERT_TRUE(model.interruption.has_value());
+    EXPECT_EQ(model.interruption->reason, QStringLiteral("read.card-removed"));
+    EXPECT_EQ(model.interruption->unreadGroups, (QStringList{QStringLiteral("DG11"), QStringLiteral("DG12")}));
+    EXPECT_TRUE(model.interruption->annexSkipped);
+}
+
+TEST_F(SecurityStatusWidgetTest, ModelHasNoInterruptionForACompleteRead)
+{
+    EXPECT_FALSE(librecelik::utils::securityModelFrom(LibreSCRS::AgentClient::SecurityVerdict{}).interruption);
+}
+
+// The row is a grey statement, not a red verdict, and it follows the status:
+// a second read that completed must not leave the first one's row behind.
+TEST_F(SecurityStatusWidgetTest, InterruptionRowAppearsAndGoesWithTheStatus)
+{
+    SecurityStatusWidget widget;
+    SecurityStatusModel status;
+    status.interruption =
+        LibreSCRS::AgentClient::ReadInterruption{QStringLiteral("read.reader-lost"), {QStringLiteral("DG2")}, false};
+    widget.setSecurityStatus(status);
+
+    const QList<QLabel*> rows = widget.findChildren<QLabel*>(QStringLiteral("interruptionText"));
+    ASSERT_EQ(rows.size(), 2) << "one line for the interruption, one for the unread groups (no annex line)";
+    EXPECT_FALSE(widget.findChild<QWidget*>(QStringLiteral("interruptionBox"))->isHidden());
+
+    widget.setSecurityStatus(SecurityStatusModel{});
+    EXPECT_TRUE(widget.findChildren<QLabel*>(QStringLiteral("interruptionText")).isEmpty());
+    EXPECT_TRUE(widget.findChild<QWidget*>(QStringLiteral("interruptionBox"))->isHidden());
+}

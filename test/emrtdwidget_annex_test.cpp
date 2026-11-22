@@ -761,3 +761,65 @@ TEST_F(EmrtdAnnexTest, AnnexVerdictSeparatesItsChecksFromTheWireKeys)
                             [](const QString& s) { return s.startsWith(QStringLiteral("Data Integrity")); }))
         << "the annex aggregate verdict was consumed as a check; rendered: " << qPrintable(rendered.join(u" | "));
 }
+
+// --- a read that stopped early says so, in words ------------------------------
+
+namespace {
+
+/// The travel document's security group for a read that stopped early.
+///
+/// Carries one structured check, as every real read does: the client library
+/// reads a group with no `check_<N>_*` field in the older joined shape, where
+/// each key is a check of its own.
+FieldGroup interruptedRead(const QString& reasonKey)
+{
+    FieldGroup read = signerCheck(QStringLiteral("NOT_PERFORMED"), QString());
+    read.fields.append(
+        {textField(QStringLiteral("read_interrupted"), QStringLiteral("x"), QStringLiteral("true")),
+         textField(QStringLiteral("read_interrupted_reason"), QStringLiteral("x"), reasonKey),
+         textField(QStringLiteral("read_interrupted_groups"), QStringLiteral("x"), QStringLiteral("DG11, DG12")),
+         textField(QStringLiteral("annex_skipped"), QStringLiteral("x"), QStringLiteral("true"))});
+    return read;
+}
+
+} // namespace
+
+// The three reasons the reader can give, each as the sentence a holder reads,
+// with the unread groups and the skipped annex beside it. The English literals
+// are deliberate: qtTrId() answers with the bare id when an entry is missing,
+// so comparing against qtTrId() would pass on a build with no translation.
+TEST_F(EmrtdAnnexTest, InterruptedReadShowsItsReasonGroupsAndSkippedAnnex)
+{
+    const std::vector<std::pair<QString, QString>> cases{
+        {QStringLiteral("read.channel-failed"),
+         QStringLiteral("Read interrupted: the secure channel to the document failed")},
+        {QStringLiteral("read.card-removed"),
+         QStringLiteral("Read interrupted: the document was removed from the reader")},
+        {QStringLiteral("read.reader-lost"), QStringLiteral("Read interrupted: the reader was disconnected")},
+    };
+    for (const auto& [reasonKey, expected] : cases) {
+        EMRTDWidget widget(nullptr);
+        widget.addGroup(interruptedRead(reasonKey));
+
+        const QStringList text = paneTextFor(widget);
+        EXPECT_TRUE(text.contains(expected))
+            << "reason " << qPrintable(reasonKey) << " not shown; rendered: " << qPrintable(text.join(u" | "));
+        EXPECT_TRUE(text.contains(QStringLiteral("Data groups not read: DG11, DG12")))
+            << "rendered: " << qPrintable(text.join(u" | "));
+        EXPECT_TRUE(text.contains(QStringLiteral("National annex skipped")))
+            << "rendered: " << qPrintable(text.join(u" | "));
+        EXPECT_FALSE(text.join(u'\n').contains(QStringLiteral("lc-emrtd-read-")))
+            << "a catalogue id reached the holder";
+        EXPECT_FALSE(text.join(u'\n').contains(reasonKey)) << "the wire key reached the holder";
+    }
+}
+
+// The ordinary read has no such row: a pane that always showed one would tell
+// every holder their document was cut short.
+TEST_F(EmrtdAnnexTest, CompleteReadShowsNoInterruption)
+{
+    EMRTDWidget widget(nullptr);
+    widget.addGroup(signerCheck(QStringLiteral("PASSED"), QString()));
+
+    EXPECT_FALSE(paneTextFor(widget).join(u'\n').contains(QStringLiteral("Read interrupted")));
+}

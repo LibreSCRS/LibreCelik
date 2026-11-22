@@ -73,6 +73,27 @@ QString securityCheckRows(const QList<SecurityCheck>& checks)
     return rows.join(u'\n');
 }
 
+/// The printed record's statement that the read stopped early, as table rows.
+///
+/// The verdicts above it speak only for the groups that were read, and a page
+/// kept as evidence must say so. Grey like every check that did not run.
+QString interruptionRows(const LibreSCRS::AgentClient::ReadInterruption& interruption)
+{
+    const QStringList lines = librecelik::utils::interruptionLines(interruption);
+    const QString color = librecelik::utils::statusColorHex(SecurityCheck::Status::NotPerformed);
+    QStringList rows;
+    for (qsizetype i = 0; i < lines.size(); ++i) {
+        const QString dot =
+            i == 0 ? QStringLiteral("<span class=\"security-dot\" style=\"background:%1;\">&#x25CF;</span> ").arg(color)
+                   : QString();
+        rows << QStringLiteral("        <tr>\n"
+                               "            <td class=\"security-interruption\">%1%2</td>\n"
+                               "        </tr>")
+                    .arg(dot, lines.at(i).toHtmlEscaped());
+    }
+    return rows.join(u'\n');
+}
+
 } // namespace
 
 EMRTDTextDocument::EMRTDTextDocument(const QList<FieldGroup>& groups, QString documentPath, QString cssPath)
@@ -170,6 +191,12 @@ void EMRTDTextDocument::prepareDocumentData(QString& html, const QList<FieldGrou
         html.replace("${security_genuineness_color}", librecelik::utils::statusColorHex(security.overallGenuineness));
         html.replace("${security_genuineness_value}",
                      librecelik::utils::localizedStatusText(security.overallGenuineness));
+
+        if (security.interruption) {
+            html.replace("${security_interruption_rows}", interruptionRows(*security.interruption));
+        } else {
+            removeConditionalBlock(html, "SECURITY_INTERRUPTION");
+        }
 
         // The per-check rows, and the heading over them, only when the read
         // actually named a check.

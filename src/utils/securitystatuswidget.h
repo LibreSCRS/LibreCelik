@@ -7,6 +7,7 @@
 #include <QEvent>
 #include <QList>
 #include <QString>
+#include <QStringList>
 #include <QStringView>
 #include <QWidget>
 
@@ -62,6 +63,9 @@ struct SecurityStatusModel
     SecurityCheck::Status overallIntegrity = SecurityCheck::Status::NotPerformed;    ///< DataIntegrity verdict.
     SecurityCheck::Status overallAuthenticity = SecurityCheck::Status::NotPerformed; ///< Authenticity verdict.
     SecurityCheck::Status overallGenuineness = SecurityCheck::Status::NotPerformed;  ///< Genuineness verdict.
+    /// @brief Set when the read stopped before the end. The verdicts above then
+    ///        speak only for what was read, and this says what was not.
+    std::optional<LibreSCRS::AgentClient::ReadInterruption> interruption;
 };
 
 // The two decoders moved into the client library, which is the one reader of
@@ -100,6 +104,15 @@ using LibreSCRS::AgentClient::statusFromString;
 /// token a support report can act on for a word that says nothing. Same rule
 /// the field grid already applies to a label key it does not recognise.
 [[nodiscard]] QString localizedReasonText(const QString& reasonKey);
+
+/// @brief The lines that tell the reader a read stopped early, in the reader's
+///        language: the interruption with its reason, the data groups not
+///        read, and, when set, the national annex that was skipped.
+///
+/// One function for the pane and the printed record, so the two cannot come to
+/// word the same interruption differently. The group line is absent when no
+/// group is named.
+[[nodiscard]] QStringList interruptionLines(const LibreSCRS::AgentClient::ReadInterruption& interruption);
 
 /// @brief One compact "label: status" row with a coloured dot.
 ///
@@ -168,6 +181,7 @@ private:
     void retranslateUi();
     void refreshSummaryRows();
     void rebuildDetailRows();
+    void rebuildInterruptionRows();
     void applyDetailChecksState();
     QWidget* createStatusRow(const QString& label, librecelik::utils::SecurityCheck::Status status);
     QString statusColor(librecelik::utils::SecurityCheck::Status status) const;
@@ -181,6 +195,7 @@ private:
     QLabel* authenticityLabel = nullptr;
     QLabel* genuinenessIcon = nullptr;
     QLabel* genuinenessLabel = nullptr;
+    QWidget* interruptionBox = nullptr;
     CollapsibleSection* detailSection = nullptr;
     // Cached for retranslate-on-language-change. hasStatus distinguishes
     // "never set" (initial NotPerformed display) from "real status applied".

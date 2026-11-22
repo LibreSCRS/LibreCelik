@@ -6,13 +6,13 @@ AgentLayerTests 64
 AgentMainFlowTests 29
 CardWidgetPluginRegistryTests 4
 EIdTextDocumentTests 2
-EMRTDTextDocumentTests 9
+EMRTDTextDocumentTests 11
 EuVrcTextDocumentTests 8
 FieldValueTests 12
 HealthTextDocumentTests 1
 LibreCelik 1
 LibreCelikI18nFixtureSelfTest 7
-LibreCelikTests 33
+LibreCelikTests 36
 LocaleResolverTests 9
 MainWindowTests 7
 PdfPreviewWidgetTests 6
@@ -26,7 +26,7 @@ SlotLabelFormatterTests 5
 StringUtilsTests 7
 TokenSectionTests 9
 eidwidget_test 2
-emrtdwidget_annex_test 22
+emrtdwidget_annex_test 24
 i18n_audit.py 1
 i18n_plugin_retranslate_test 4
 i18n_settings_state_test 3

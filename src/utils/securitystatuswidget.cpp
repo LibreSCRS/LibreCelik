@@ -51,9 +51,32 @@ QString localizedReasonText(const QString& reasonKey)
         return qtTrId("lc-emrtd-csca-no-anchor-for-issuer");
     if (reasonKey == QLatin1StringView("csca.chain-failed"))
         return qtTrId("lc-emrtd-csca-chain-failed");
+    // Why a read stopped early. Not a verdict on the document: the card was
+    // taken away or the link broke, and nothing was proven either way.
+    if (reasonKey == QLatin1StringView("read.channel-failed"))
+        return qtTrId("lc-emrtd-read-channel-failed");
+    if (reasonKey == QLatin1StringView("read.card-removed"))
+        return qtTrId("lc-emrtd-read-card-removed");
+    if (reasonKey == QLatin1StringView("read.reader-lost"))
+        return qtTrId("lc-emrtd-read-reader-lost");
     // Append-only vocabulary: an unnamed key declines every arm above and
     // falls through as itself. Nothing asserts, and the row keeps its line.
     return reasonKey;
+}
+
+QStringList interruptionLines(const LibreSCRS::AgentClient::ReadInterruption& interruption)
+{
+    QStringList lines;
+    const QString reason = localizedReasonText(interruption.reason);
+    lines << (reason.isEmpty() ? qtTrId("lc-emrtd-read-interrupted-no-reason")
+                               : qtTrId("lc-emrtd-read-interrupted").arg(reason));
+    if (!interruption.unreadGroups.isEmpty()) {
+        lines << qtTrId("lc-emrtd-read-unread-groups").arg(interruption.unreadGroups.join(QStringLiteral(", ")));
+    }
+    if (interruption.annexSkipped) {
+        lines << qtTrId("lc-emrtd-read-annex-skipped");
+    }
+    return lines;
 }
 
 QString statusColorHex(SecurityCheck::Status status)
@@ -94,6 +117,9 @@ SecurityStatusModel securityModelFrom(const LibreSCRS::AgentClient::SecurityVerd
         // reach a different surface, and a key from a later agent has no row
         // here that would mean anything.
     }
+
+    // Carried as the library separated it, the reason still a key.
+    model.interruption = verdict.interruption;
 
     model.checks.reserve(verdict.checks.size());
     for (const LibreSCRS::AgentClient::SecurityCheckEntry& entry : verdict.checks) {
@@ -212,6 +238,17 @@ void SecurityStatusWidget::buildLayout()
     genuinenessLabel = genuinenessRow->findChildren<QLabel*>("text").value(0);
     contentLayout->addWidget(genuinenessRow);
 
+    // Why the read stopped early, when it did. Under the verdicts it qualifies
+    // and above the per-check block; hidden until a status names an
+    // interruption. Filled by rebuildInterruptionRows().
+    interruptionBox = new QWidget(section);
+    interruptionBox->setObjectName(QStringLiteral("interruptionBox"));
+    auto* interruptionLayout = new QVBoxLayout(interruptionBox);
+    interruptionLayout->setContentsMargins(0, 0, 0, 0);
+    interruptionLayout->setSpacing(2);
+    interruptionBox->setVisible(false);
+    contentLayout->addWidget(interruptionBox);
+
     // The per-check block — a section of its own, built with the same component
     // every neighbouring block in this pane uses, so there is exactly one thing
     // on the pane that knows how to collapse. It sits BELOW the three roll-ups
@@ -278,7 +315,54 @@ void SecurityStatusWidget::setSecurityStatus(const librecelik::utils::SecuritySt
     hasStatus = true;
 
     refreshSummaryRows();
+    rebuildInterruptionRows();
     rebuildDetailRows();
+}
+
+void SecurityStatusWidget::rebuildInterruptionRows()
+{
+    // Rebuilt from cachedStatus, as the detail rows are, so a language change
+    // re-words it. The rows are the box's direct children.
+    qDeleteAll(interruptionBox->findChildren<QWidget*>(Qt::FindDirectChildrenOnly));
+
+    if (!hasStatus || !cachedStatus.interruption) {
+        interruptionBox->setVisible(false);
+        return;
+    }
+
+    // Grey, like every check that did not run: an interruption says the
+    // document was not fully read, not that anything in it failed.
+    const QStringList lines = librecelik::utils::interruptionLines(*cachedStatus.interruption);
+    auto* boxLayout = qobject_cast<QVBoxLayout*>(interruptionBox->layout());
+    for (qsizetype i = 0; i < lines.size(); ++i) {
+        auto* row = new QWidget(interruptionBox);
+        auto* rowLayout = new QHBoxLayout(row);
+        rowLayout->setContentsMargins(4, 2, 4, 2);
+        rowLayout->setSpacing(8);
+
+        // Only the first line carries the dot; the others get an empty cell
+        // of the same width so their text lines up under it.
+        auto* icon = new QLabel(row);
+        icon->setFixedSize(16, 16);
+        if (i == 0) {
+            icon->setStyleSheet(
+                QStringLiteral("background: %1; border-radius: 8px;")
+                    .arg(librecelik::utils::statusColorHex(librecelik::utils::SecurityCheck::Status::NotPerformed)));
+        }
+
+        auto* text = new QLabel(lines.at(i), row);
+        text->setObjectName(QStringLiteral("interruptionText"));
+        text->setTextFormat(Qt::PlainText);
+        text->setWordWrap(true);
+        text->setStyleSheet(
+            QStringLiteral("font-size: 12px;%1").arg(i == 0 ? QStringLiteral(" font-weight: bold;") : QString()));
+        text->setAccessibleName(lines.at(i));
+
+        rowLayout->addWidget(icon);
+        rowLayout->addWidget(text, 1);
+        boxLayout->addWidget(row);
+    }
+    interruptionBox->setVisible(true);
 }
 
 void SecurityStatusWidget::rebuildDetailRows()
@@ -410,5 +494,6 @@ void SecurityStatusWidget::retranslateUi()
     section->setTitle(qtTrId("lc-emrtd-security-status-travel-doc"));
     detailSection->setTitle(qtTrId("lc-emrtd-security-details"));
     refreshSummaryRows();
+    rebuildInterruptionRows();
     rebuildDetailRows();
 }

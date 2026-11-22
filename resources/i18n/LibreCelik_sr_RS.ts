@@ -1113,6 +1113,34 @@
         <source>Detailed Checks</source>
         <translation>Детаљне провере</translation>
     </message>
+    <message id="lc-emrtd-read-interrupted">
+        <source>Read interrupted: %1</source>
+        <translation>Читање прекинуто: %1</translation>
+    </message>
+    <message id="lc-emrtd-read-interrupted-no-reason">
+        <source>Read interrupted</source>
+        <translation>Читање прекинуто</translation>
+    </message>
+    <message id="lc-emrtd-read-unread-groups">
+        <source>Data groups not read: %1</source>
+        <translation>Групе података које нису прочитане: %1</translation>
+    </message>
+    <message id="lc-emrtd-read-annex-skipped">
+        <source>National annex skipped</source>
+        <translation>Национални анекс прескочен</translation>
+    </message>
+    <message id="lc-emrtd-read-channel-failed">
+        <source>the secure channel to the document failed</source>
+        <translation>сигуран канал ка документу је отказао</translation>
+    </message>
+    <message id="lc-emrtd-read-card-removed">
+        <source>the document was removed from the reader</source>
+        <translation>документ је уклоњен са читача</translation>
+    </message>
+    <message id="lc-emrtd-read-reader-lost">
+        <source>the reader was disconnected</source>
+        <translation>читач је искључен</translation>
+    </message>
     <message id="lc-emrtd-csca-not-configured">
         <source>No country signing certificates have been imported. Import a master list in Settings → Trust, then read the document again.</source>
         <oldsource>No country signing certificates have been imported. Import a master list, then read the document again.</oldsource>

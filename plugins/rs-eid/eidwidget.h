@@ -41,11 +41,14 @@ protected:
     void retranslateUi() override;
 
 private:
-    bool isForeigner() const;
+    // "ID" / "IF" / "RP" / "EL"; an unknown or absent card_type is the citizen layout.
+    QString documentCode() const;
+    bool isForeignerLayout() const;
     QPixmap loadPhoto() const;
     CollapsibleSection* buildAddressSection(QWidget* parent) const;
     CollapsibleSection* buildDocumentSection(QWidget* parent) const;
     CollapsibleSection* buildPersonalSection(QWidget* parent) const;
+    CollapsibleSection* buildServiceSection(QWidget* parent) const;
     void addVerificationBadges(CollapsibleSection* section, const LibreSCRS::AgentClient::FieldGroup* source = nullptr);
     void applyVerificationFromMeta();
 

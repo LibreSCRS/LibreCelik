@@ -25,6 +25,18 @@
         <source>ELECTRONIC ID CARD READER: DATA PRINTING</source>
         <translation>ELECTRONIC ID CARD READER: DATA PRINTING</translation>
     </message>
+    <message id="lc-eid-doc-title-foreigner">
+        <source>Identity Card for Foreigners</source>
+        <translation>Identity Card for Foreigners</translation>
+    </message>
+    <message id="lc-eid-doc-title-residence-permit">
+        <source>Residence Permit</source>
+        <translation>Residence Permit</translation>
+    </message>
+    <message id="lc-eid-doc-title-service-id">
+        <source>Official Service ID</source>
+        <translation>Official Service ID</translation>
+    </message>
     <message id="lc-eid-doc-foreigner-id">
         <source>Foreigner id</source>
         <translation>Foreigner id</translation>
@@ -125,10 +137,6 @@
         <source>Serbian eID</source>
         <translation>Serbian eID</translation>
     </message>
-    <message id="lc-eid-title-foreigner">
-        <source>Serbian eID (Foreigner)</source>
-        <translation>Serbian eID (Foreigner)</translation>
-    </message>
     <message id="lc-eid-label-ebs">
         <source>EBS</source>
         <translation>EBS</translation>
@@ -192,6 +200,98 @@
     <message id="lc-eid-label-expiry-date">
         <source>Expiry Date</source>
         <translation>Expiry Date</translation>
+    </message>
+    <message id="lc-eid-label-document-name">
+        <source>Document Name</source>
+        <translation>Document Name</translation>
+    </message>
+    <message id="lc-eid-label-purpose-of-stay">
+        <source>Purpose of Stay</source>
+        <translation>Purpose of Stay</translation>
+    </message>
+    <message id="lc-eid-label-note">
+        <source>Note</source>
+        <translation>Note</translation>
+    </message>
+    <message id="lc-eid-label-card-number">
+        <source>Card Number</source>
+        <translation>Card Number</translation>
+    </message>
+    <message id="lc-eid-label-blood-group">
+        <source>Blood Group</source>
+        <translation>Blood Group</translation>
+    </message>
+    <message id="lc-eid-label-status">
+        <source>Status</source>
+        <translation>Status</translation>
+    </message>
+    <message id="lc-eid-label-badge-number">
+        <source>Badge Number</source>
+        <translation>Badge Number</translation>
+    </message>
+    <message id="lc-eid-label-rank">
+        <source>Rank</source>
+        <translation>Rank</translation>
+    </message>
+    <message id="lc-eid-label-organisational-unit">
+        <source>Organisational Unit</source>
+        <translation>Organisational Unit</translation>
+    </message>
+    <message id="lc-eid-label-position">
+        <source>Position</source>
+        <translation>Position</translation>
+    </message>
+    <message id="lc-eid-label-service-address">
+        <source>Service Address</source>
+        <translation>Service Address</translation>
+    </message>
+    <message id="lc-eid-service-title">
+        <source>Service</source>
+        <translation>Service</translation>
+    </message>
+    <message id="lc-eid-doc-document-name">
+        <source>Document Name</source>
+        <translation>Document Name</translation>
+    </message>
+    <message id="lc-eid-doc-purpose-of-stay">
+        <source>Purpose of Stay</source>
+        <translation>Purpose of Stay</translation>
+    </message>
+    <message id="lc-eid-doc-note">
+        <source>Note</source>
+        <translation>Note</translation>
+    </message>
+    <message id="lc-eid-doc-card-number">
+        <source>Card Number</source>
+        <translation>Card Number</translation>
+    </message>
+    <message id="lc-eid-doc-blood-group">
+        <source>Blood Group</source>
+        <translation>Blood Group</translation>
+    </message>
+    <message id="lc-eid-doc-status">
+        <source>Status</source>
+        <translation>Status</translation>
+    </message>
+    <message id="lc-eid-doc-badge-number">
+        <source>Badge Number</source>
+        <translation>Badge Number</translation>
+    </message>
+    <message id="lc-eid-doc-rank">
+        <source>Rank</source>
+        <translation>Rank</translation>
+    </message>
+    <message id="lc-eid-doc-organisational-unit">
+        <source>Organisational Unit</source>
+        <translation>Organisational Unit</translation>
+    </message>
+    <message id="lc-eid-doc-position">
+        <source>Position</source>
+        <translation>Position</translation>
+    </message>
+    <message id="lc-eid-doc-service-address">
+        <source>Service Address</source>
+        <translation>Service Address</translation>
     </message>
     <message id="lc-eid-label-card-verification">
         <source>Card Certificate</source>

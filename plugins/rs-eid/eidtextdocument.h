@@ -17,8 +17,11 @@ public:
                              QString cssPath = {});
 
 private:
+    const char* titleId() const;
     void translateDocumentData(QString& data) const;
     void prepareDocumentData(QString& html, const QList<LibreSCRS::AgentClient::FieldGroup>& groups) const;
 
+    // "ID" / "IF" / "RP" / "EL"; anything else prints as the citizen card.
+    QString code;
     bool isForeigner = false;
 };

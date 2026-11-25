@@ -65,10 +65,10 @@ inline QList<LibreSCRS::AgentClient::FieldGroup> makeEidMock()
     using namespace detail;
     QList<LibreSCRS::AgentClient::FieldGroup> groups;
     // EidWidget reads "meta" first to build the outer section.
-    groups.append(group(QStringLiteral("meta"), {
-                                                    textField(QStringLiteral("card_type"), QStringLiteral("Card type"),
-                                                              QStringLiteral("Citizen2014")),
-                                                }));
+    groups.append(group(QStringLiteral("meta"),
+                        {
+                            textField(QStringLiteral("card_type"), QStringLiteral("Card type"), QStringLiteral("ID")),
+                        }));
     // Personal group keys per eidwidget.cpp::buildPersonalSection().
     groups.append(group(
         QStringLiteral("personal"),

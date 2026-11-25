@@ -127,6 +127,12 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     // --- eID print document field labels ---
     //% "ELECTRONIC ID CARD READER: DATA PRINTING"
     QT_TRID_NOOP("lc-eid-doc-title");
+    //% "Identity Card for Foreigners"
+    QT_TRID_NOOP("lc-eid-doc-title-foreigner");
+    //% "Residence Permit"
+    QT_TRID_NOOP("lc-eid-doc-title-residence-permit");
+    //% "Official Service ID"
+    QT_TRID_NOOP("lc-eid-doc-title-service-id");
     //% "Foreigner id"
     QT_TRID_NOOP("lc-eid-doc-foreigner-id");
     //% "Printing date"
@@ -173,8 +179,6 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-eid-title-serbian");
     //% "Serbian eID"
     QT_TRID_NOOP("lc-eid-title");
-    //% "Serbian eID (Foreigner)"
-    QT_TRID_NOOP("lc-eid-title-foreigner");
     //% "JMBG"
     QT_TRID_NOOP("lc-eid-label-jmbg");
     //% "EBS"
@@ -213,6 +217,52 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-eid-label-issuing-date");
     //% "Expiry Date"
     QT_TRID_NOOP("lc-eid-label-expiry-date");
+    //% "Document Name"
+    QT_TRID_NOOP("lc-eid-label-document-name");
+    //% "Purpose of Stay"
+    QT_TRID_NOOP("lc-eid-label-purpose-of-stay");
+    //% "Note"
+    QT_TRID_NOOP("lc-eid-label-note");
+    //% "Card Number"
+    QT_TRID_NOOP("lc-eid-label-card-number");
+    //% "Blood Group"
+    QT_TRID_NOOP("lc-eid-label-blood-group");
+    //% "Status"
+    QT_TRID_NOOP("lc-eid-label-status");
+    //% "Badge Number"
+    QT_TRID_NOOP("lc-eid-label-badge-number");
+    //% "Rank"
+    QT_TRID_NOOP("lc-eid-label-rank");
+    //% "Organisational Unit"
+    QT_TRID_NOOP("lc-eid-label-organisational-unit");
+    //% "Position"
+    QT_TRID_NOOP("lc-eid-label-position");
+    //% "Service Address"
+    QT_TRID_NOOP("lc-eid-label-service-address");
+    //% "Service"
+    QT_TRID_NOOP("lc-eid-service-title");
+    //% "Document Name"
+    QT_TRID_NOOP("lc-eid-doc-document-name");
+    //% "Purpose of Stay"
+    QT_TRID_NOOP("lc-eid-doc-purpose-of-stay");
+    //% "Note"
+    QT_TRID_NOOP("lc-eid-doc-note");
+    //% "Card Number"
+    QT_TRID_NOOP("lc-eid-doc-card-number");
+    //% "Blood Group"
+    QT_TRID_NOOP("lc-eid-doc-blood-group");
+    //% "Status"
+    QT_TRID_NOOP("lc-eid-doc-status");
+    //% "Badge Number"
+    QT_TRID_NOOP("lc-eid-doc-badge-number");
+    //% "Rank"
+    QT_TRID_NOOP("lc-eid-doc-rank");
+    //% "Organisational Unit"
+    QT_TRID_NOOP("lc-eid-doc-organisational-unit");
+    //% "Position"
+    QT_TRID_NOOP("lc-eid-doc-position");
+    //% "Service Address"
+    QT_TRID_NOOP("lc-eid-doc-service-address");
     //% "Card Certificate"
     QT_TRID_NOOP("lc-eid-label-card-verification");
     //% "Fixed Data"

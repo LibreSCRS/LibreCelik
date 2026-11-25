@@ -3,6 +3,7 @@
 
 #include "eidwidget.h"
 
+#include "documentcode.h"
 #include "utils/cardheadercard.h"
 #include "utils/collapsiblesection.h"
 #include "utils/fieldsectionbuilder.h"
@@ -33,7 +34,7 @@ EidWidget::EidWidget(const QList<FieldGroup>& cardGroups, QWidget* parent) : Eid
     // hangs the photo row and the badge host off it) and the final wire
     // model's order is delivery-dependent (see stagedForBuild).
     for (const auto& group : librecelik::plugin::stagedForBuild(
-             cardGroups, {u"meta", u"personal", u"address", u"document", u"photo", u"verification"}))
+             cardGroups, {u"meta", u"personal", u"address", u"service", u"document", u"photo", u"verification"}))
         addGroup(group);
     applyVerificationFromMeta();
 }
@@ -63,8 +64,7 @@ void EidWidget::addGroup(const FieldGroup& group)
     const QString key = group.key;
 
     if (key == QLatin1String("meta")) {
-        bool foreigner = isForeigner();
-        outerSection = new CollapsibleSection(foreigner ? qtTrId("lc-eid-title-foreigner") : qtTrId("lc-eid-title"),
+        outerSection = new CollapsibleSection(qtTrId(librecelik::rseid::documentNameId(documentCode())),
                                               QColor(34, 86, 117), this);
         outerSection->setHeaderHeight(56);
 
@@ -107,9 +107,15 @@ void EidWidget::addGroup(const FieldGroup& group)
         sectionLayout->addLayout(photoRow);
 
     } else if (key == QLatin1String("address")) {
-        if (!sectionLayout)
+        // The service ID has no address; a stray group is not shown.
+        if (!sectionLayout || documentCode() == QLatin1String("EL"))
             return;
         sectionLayout->addWidget(buildAddressSection(outerSection));
+
+    } else if (key == QLatin1String("service")) {
+        if (!sectionLayout)
+            return;
+        sectionLayout->addWidget(buildServiceSection(outerSection));
 
     } else if (key == QLatin1String("document")) {
         if (!sectionLayout)
@@ -137,9 +143,15 @@ void EidWidget::enablePrintButton()
     }
 }
 
-bool EidWidget::isForeigner() const
+QString EidWidget::documentCode() const
 {
-    return fieldValue(groups, u"card_type") == QLatin1String("ForeignerIF2020");
+    return librecelik::rseid::documentCode(groups);
+}
+
+bool EidWidget::isForeignerLayout() const
+{
+    const QString code = documentCode();
+    return code == QLatin1String("IF") || code == QLatin1String("RP");
 }
 
 QPixmap EidWidget::loadPhoto() const
@@ -162,7 +174,8 @@ CollapsibleSection* EidWidget::buildPersonalSection(QWidget* parent) const
         return section;
     }
 
-    bool foreigner = isForeigner();
+    const bool foreigner = isForeignerLayout();
+    const bool service = documentCode() == QLatin1String("EL");
 
     std::map<QString, QString> translationMap = {
         {QStringLiteral("given_name"), qtTrId("lc-eid-label-given-name")},
@@ -170,15 +183,28 @@ CollapsibleSection* EidWidget::buildPersonalSection(QWidget* parent) const
         {QStringLiteral("date_of_birth"), qtTrId("lc-eid-label-date-of-birth")},
         {QStringLiteral("personal_number"), foreigner ? qtTrId("lc-eid-label-ebs") : qtTrId("lc-eid-label-jmbg")},
         {QStringLiteral("sex"), qtTrId("lc-eid-label-sex")},
+        {QStringLiteral("blood_group"), qtTrId("lc-eid-label-blood-group")},
+        {QStringLiteral("purpose_of_stay"), qtTrId("lc-eid-label-purpose-of-stay")},
+        {QStringLiteral("note"), qtTrId("lc-eid-label-note")},
     };
 
     std::set<QString> hiddenFields = {
         QStringLiteral("place_of_birth"),
         QStringLiteral("community_of_birth"),
         QStringLiteral("state_of_birth"),
+        QStringLiteral("state_of_birth_code"),
     };
 
-    if (foreigner) {
+    if (documentCode() != QLatin1String("RP")) {
+        hiddenFields.insert(QStringLiteral("purpose_of_stay"));
+        hiddenFields.insert(QStringLiteral("note"));
+    }
+
+    if (service) {
+        hiddenFields.insert(QStringLiteral("parent_given_name"));
+        hiddenFields.insert(QStringLiteral("nationality"));
+        hiddenFields.insert(QStringLiteral("status_of_foreigner"));
+    } else if (foreigner) {
         translationMap[QStringLiteral("nationality")] = qtTrId("lc-eid-label-nationality");
         translationMap[QStringLiteral("status_of_foreigner")] = qtTrId("lc-eid-label-status-of-foreigner");
         hiddenFields.insert(QStringLiteral("parent_given_name"));
@@ -288,7 +314,7 @@ CollapsibleSection* EidWidget::buildAddressSection(QWidget* parent) const
 {
     // Build address fields with composite assembly (same logic as original)
     auto* section = new CollapsibleSection(
-        isForeigner() ? qtTrId("lc-eid-label-address-foreigner") : qtTrId("lc-eid-label-address"), parent);
+        isForeignerLayout() ? qtTrId("lc-eid-label-address-foreigner") : qtTrId("lc-eid-label-address"), parent);
 
     auto* grid = new QGridLayout();
     grid->setSpacing(4);
@@ -335,6 +361,24 @@ CollapsibleSection* EidWidget::buildAddressSection(QWidget* parent) const
     return section;
 }
 
+CollapsibleSection* EidWidget::buildServiceSection(QWidget* parent) const
+{
+    const FieldGroup* serviceGroup = findGroup(groups, u"service");
+    if (!serviceGroup)
+        return new CollapsibleSection(qtTrId("lc-eid-service-title"), parent);
+
+    const std::map<QString, QString> translationMap = {
+        {QStringLiteral("status"), qtTrId("lc-eid-label-status")},
+        {QStringLiteral("badge_number"), qtTrId("lc-eid-label-badge-number")},
+        {QStringLiteral("rank"), qtTrId("lc-eid-label-rank")},
+        {QStringLiteral("organisational_unit"), qtTrId("lc-eid-label-organisational-unit")},
+        {QStringLiteral("position"), qtTrId("lc-eid-label-position")},
+        {QStringLiteral("service_address"), qtTrId("lc-eid-label-service-address")},
+    };
+    return librecelik::utils::FieldSectionBuilder::build(qtTrId("lc-eid-service-title"), *serviceGroup, translationMap,
+                                                         {}, parent);
+}
+
 CollapsibleSection* EidWidget::buildDocumentSection(QWidget* parent) const
 {
     const FieldGroup* docGroup = findGroup(groups, u"document");
@@ -346,12 +390,16 @@ CollapsibleSection* EidWidget::buildDocumentSection(QWidget* parent) const
         {QStringLiteral("doc_reg_no"), qtTrId("lc-eid-label-doc-reg-no")},
         {QStringLiteral("issuing_date"), qtTrId("lc-eid-label-issuing-date")},
         {QStringLiteral("expiry_date"), qtTrId("lc-eid-label-expiry-date")},
+        {QStringLiteral("document_name"), qtTrId("lc-eid-label-document-name")},
+        {QStringLiteral("card_number"), qtTrId("lc-eid-label-card-number")},
     };
 
     // Fields not relevant for display in the document section
-    const std::set<QString> hiddenFields = {
+    std::set<QString> hiddenFields = {
         QStringLiteral("card_type"),
     };
+    if (documentCode() != QLatin1String("RP"))
+        hiddenFields.insert(QStringLiteral("document_name"));
 
     if (!docGroup) {
         // Return empty section if no document group

@@ -15,7 +15,11 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 - An operation waiting behind another one on the same card shows "Waiting for
   another operation on this card...", and it is no longer reported as "the
   LibreSCRS card agent is not responding" while it waits.
-
+- The Serbian eID plugin shows and prints every document type the middleware
+  reads: identity card, identity card for foreigners, residence permit
+  (document name, purpose of stay, note, card number) and official service ID
+  (blood group, a Service section, no address or expiry date). Unknown document
+  types render as the identity card.
 - Settings → Trust now says whether the publisher of the installed country
   master list was established or only seen, shows the fingerprint to recognise
   an unestablished one by, and shows when the list was accepted.

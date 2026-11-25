@@ -25,6 +25,18 @@
         <source>ELECTRONIC ID CARD READER: DATA PRINTING</source>
         <translation>ČITAČ ELEKTRONSKE LIČNE KARTE: ŠTAMPA PODATAKA</translation>
     </message>
+    <message id="lc-eid-doc-title-foreigner">
+        <source>Identity Card for Foreigners</source>
+        <translation>Lična karta za stranca</translation>
+    </message>
+    <message id="lc-eid-doc-title-residence-permit">
+        <source>Residence Permit</source>
+        <translation>Boravišna dozvola</translation>
+    </message>
+    <message id="lc-eid-doc-title-service-id">
+        <source>Official Service ID</source>
+        <translation>Službena legitimacija</translation>
+    </message>
     <message id="lc-eid-doc-foreigner-id">
         <source>Foreigner id</source>
         <translation>Evidencijski broj stranca</translation>
@@ -125,10 +137,6 @@
         <source>Serbian eID</source>
         <translation>Srpska elektronska lična karta</translation>
     </message>
-    <message id="lc-eid-title-foreigner">
-        <source>Serbian eID (Foreigner)</source>
-        <translation>Lična karta za strance</translation>
-    </message>
     <message id="lc-eid-label-ebs">
         <source>EBS</source>
         <translation>EBS</translation>
@@ -192,6 +200,98 @@
     <message id="lc-eid-label-expiry-date">
         <source>Expiry Date</source>
         <translation>Datum isteka</translation>
+    </message>
+    <message id="lc-eid-label-document-name">
+        <source>Document Name</source>
+        <translation>Naziv dokumenta</translation>
+    </message>
+    <message id="lc-eid-label-purpose-of-stay">
+        <source>Purpose of Stay</source>
+        <translation>Svrha boravka</translation>
+    </message>
+    <message id="lc-eid-label-note">
+        <source>Note</source>
+        <translation>Napomena</translation>
+    </message>
+    <message id="lc-eid-label-card-number">
+        <source>Card Number</source>
+        <translation>Broj kartice</translation>
+    </message>
+    <message id="lc-eid-label-blood-group">
+        <source>Blood Group</source>
+        <translation>Krvna grupa</translation>
+    </message>
+    <message id="lc-eid-label-status">
+        <source>Status</source>
+        <translation>Status</translation>
+    </message>
+    <message id="lc-eid-label-badge-number">
+        <source>Badge Number</source>
+        <translation>Broj službene značke</translation>
+    </message>
+    <message id="lc-eid-label-rank">
+        <source>Rank</source>
+        <translation>Zvanje</translation>
+    </message>
+    <message id="lc-eid-label-organisational-unit">
+        <source>Organisational Unit</source>
+        <translation>Organizaciona jedinica</translation>
+    </message>
+    <message id="lc-eid-label-position">
+        <source>Position</source>
+        <translation>Radno mesto</translation>
+    </message>
+    <message id="lc-eid-label-service-address">
+        <source>Service Address</source>
+        <translation>Adresa službe</translation>
+    </message>
+    <message id="lc-eid-service-title">
+        <source>Service</source>
+        <translation>Služba</translation>
+    </message>
+    <message id="lc-eid-doc-document-name">
+        <source>Document Name</source>
+        <translation>Naziv dokumenta</translation>
+    </message>
+    <message id="lc-eid-doc-purpose-of-stay">
+        <source>Purpose of Stay</source>
+        <translation>Svrha boravka</translation>
+    </message>
+    <message id="lc-eid-doc-note">
+        <source>Note</source>
+        <translation>Napomena</translation>
+    </message>
+    <message id="lc-eid-doc-card-number">
+        <source>Card Number</source>
+        <translation>Broj kartice</translation>
+    </message>
+    <message id="lc-eid-doc-blood-group">
+        <source>Blood Group</source>
+        <translation>Krvna grupa</translation>
+    </message>
+    <message id="lc-eid-doc-status">
+        <source>Status</source>
+        <translation>Status</translation>
+    </message>
+    <message id="lc-eid-doc-badge-number">
+        <source>Badge Number</source>
+        <translation>Broj službene značke</translation>
+    </message>
+    <message id="lc-eid-doc-rank">
+        <source>Rank</source>
+        <translation>Zvanje</translation>
+    </message>
+    <message id="lc-eid-doc-organisational-unit">
+        <source>Organisational Unit</source>
+        <translation>Organizaciona jedinica</translation>
+    </message>
+    <message id="lc-eid-doc-position">
+        <source>Position</source>
+        <translation>Radno mesto</translation>
+    </message>
+    <message id="lc-eid-doc-service-address">
+        <source>Service Address</source>
+        <translation>Adresa službe</translation>
     </message>
     <message id="lc-eid-label-card-verification">
         <source>Card Certificate</source>

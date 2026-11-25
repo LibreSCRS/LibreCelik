@@ -247,6 +247,10 @@ target_link_libraries(EIdTextDocumentTests
     Qt6::PrintSupport
 )
 set_target_properties(EIdTextDocumentTests PROPERTIES AUTOMOC ON)
+# Labels are asserted translated; with no catalogue qtTrId() returns bare ids.
+target_compile_definitions(EIdTextDocumentTests PRIVATE
+    LIBRECELIK_TRANSLATIONS_DIR_DEFAULT="${CMAKE_BINARY_DIR}/src")
+add_dependencies(EIdTextDocumentTests LibreCelik_lrelease)
 gtest_discover_tests(EIdTextDocumentTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 # The travel-document PRINT formatter. It renders the same security read the

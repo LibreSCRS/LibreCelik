@@ -5,7 +5,7 @@ AgentBootstrapTests 13
 AgentLayerTests 65
 AgentMainFlowTests 32
 CardWidgetPluginRegistryTests 4
-EIdTextDocumentTests 2
+EIdTextDocumentTests 4
 EMRTDTextDocumentTests 11
 EuVrcTextDocumentTests 8
 FieldValueTests 12
@@ -25,7 +25,7 @@ SingleInstanceTests 2
 SlotLabelFormatterTests 5
 StringUtilsTests 7
 TokenSectionTests 9
-eidwidget_test 2
+eidwidget_test 4
 emrtdwidget_annex_test 24
 i18n_audit.py 1
 i18n_plugin_retranslate_test 4

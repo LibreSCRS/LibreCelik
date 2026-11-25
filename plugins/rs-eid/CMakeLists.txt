@@ -6,6 +6,7 @@ librecelik_add_gui_plugin(rs-eid-gui-plugin
     SOURCES
         rseidwidgetplugin.h
         rseidwidgetplugin.cpp
+        documentcode.h
         eidwidget.h
         eidwidget.cpp
         eidtextdocument.h

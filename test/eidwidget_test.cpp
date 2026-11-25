@@ -26,7 +26,9 @@
 #include <QByteArray>
 #include <QImage>
 #include <QLabel>
+#include <QLineEdit>
 #include <QList>
+#include <QSet>
 #include <QSize>
 #include <QString>
 #include <QStringList>
@@ -170,4 +172,169 @@ TEST_F(EidWidgetTest, FinalModelInReversedStageOrderRendersEverySection)
     EidWidget widget(modelInOrder({QStringLiteral("verification"), QStringLiteral("photo"), QStringLiteral("document"),
                                    QStringLiteral("address"), QStringLiteral("personal"), QStringLiteral("meta")}));
     expectFullyRendered(widget);
+}
+
+namespace {
+
+FieldGroup metaGroup(const QString& code)
+{
+    return group(QStringLiteral("meta"), {textField(QStringLiteral("card_type"), QStringLiteral("Type"), code)});
+}
+
+FieldGroup fieldsGroup(const QString& key, const QList<QPair<QString, QString>>& fields)
+{
+    QList<Field> built;
+    for (const auto& [fieldKey, value] : fields)
+        built.append(textField(fieldKey, fieldKey, value));
+    return group(key, built);
+}
+
+/// Without a catalogue qtTrId() hands back the bare id, so the section
+/// titles and the visible row labels read as the literal ids under test.
+struct Visible
+{
+    QSet<QString> titles;
+    QSet<QString> labels;
+    QSet<QString> values;
+};
+
+Visible visibleIn(EidWidget& widget)
+{
+    Visible out;
+    for (const CollapsibleSection* section : widget.findChildren<CollapsibleSection*>())
+        out.titles.insert(section->title());
+    for (const QLabel* label : widget.findChildren<QLabel*>()) {
+        if (label->text().startsWith(QLatin1String("lc-eid-label-")))
+            out.labels.insert(label->text());
+    }
+    for (const QLineEdit* edit : widget.findChildren<QLineEdit*>())
+        out.values.insert(edit->text());
+    return out;
+}
+
+QList<FieldGroup> personalDocumentModel(const QString& code, const QList<QPair<QString, QString>>& personal,
+                                        const QList<QPair<QString, QString>>& document)
+{
+    return {metaGroup(code), fieldsGroup(QStringLiteral("personal"), personal),
+            fieldsGroup(QStringLiteral("document"), document)};
+}
+
+} // namespace
+
+TEST_F(EidWidgetTest, SectionsPerDocument)
+{
+    using P = QPair<QString, QString>;
+    const QList<P> address = {{QStringLiteral("place"), QStringLiteral("Beograd")}};
+
+    // ID: citizen layout, parent name and JMBG, address present.
+    {
+        auto groups = personalDocumentModel(QStringLiteral("ID"),
+                                            {{QStringLiteral("surname"), QStringLiteral("PETROVIĆ")},
+                                             {QStringLiteral("parent_given_name"), QStringLiteral("IVAN")},
+                                             {QStringLiteral("personal_number"), QStringLiteral("0101990710123")},
+                                             {QStringLiteral("state_of_birth_code"), QStringLiteral("SRB")}},
+                                            {{QStringLiteral("doc_reg_no"), QStringLiteral("006953897")}});
+        groups.append(fieldsGroup(QStringLiteral("address"), address));
+        EidWidget widget(groups);
+        const Visible v = visibleIn(widget);
+        EXPECT_TRUE(v.titles.contains(QStringLiteral("lc-eid-title")));
+        EXPECT_TRUE(v.titles.contains(QStringLiteral("lc-eid-label-address")));
+        EXPECT_FALSE(v.titles.contains(QStringLiteral("lc-eid-service-title")));
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-parent-name")));
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-jmbg")));
+        EXPECT_FALSE(v.values.contains(QStringLiteral("SRB"))) << "state_of_birth_code is never shown";
+    }
+    // IF: foreigner layout, card number, no permit fields.
+    {
+        auto groups = personalDocumentModel(QStringLiteral("IF"),
+                                            {{QStringLiteral("personal_number"), QStringLiteral("1234567")},
+                                             {QStringLiteral("nationality"), QStringLiteral("UTOPIJA")},
+                                             {QStringLiteral("state_of_birth_code"), QStringLiteral("UTO")}},
+                                            {{QStringLiteral("card_number"), QStringLiteral("LS00036515")}});
+        groups.append(fieldsGroup(QStringLiteral("address"), address));
+        EidWidget widget(groups);
+        const Visible v = visibleIn(widget);
+        EXPECT_TRUE(v.titles.contains(QStringLiteral("lc-eid-doc-title-foreigner")));
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-ebs")));
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-nationality")));
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-card-number")));
+        EXPECT_FALSE(v.labels.contains(QStringLiteral("lc-eid-label-parent-name")));
+        EXPECT_FALSE(v.labels.contains(QStringLiteral("lc-eid-label-purpose-of-stay")))
+            << "permit fields belong to the RP layout, whatever the card sends";
+        EXPECT_FALSE(v.values.contains(QStringLiteral("STRAY PURPOSE")));
+        EXPECT_FALSE(v.values.contains(QStringLiteral("UTO")));
+    }
+    // RP: foreigner layout plus permit name, purpose, note and card number.
+    {
+        auto groups = personalDocumentModel(
+            QStringLiteral("RP"),
+            {{QStringLiteral("personal_number"), QStringLiteral("1234567")},
+             {QStringLiteral("purpose_of_stay"), QStringLiteral("KRETANJE U OKVIRU PRIVREDNOG DRUŠTVA")},
+             {QStringLiteral("note"), QStringLiteral("JEDINSTVENA DOZVOLA")}},
+            {{QStringLiteral("document_name"), QStringLiteral("DOZVOLA ZA PRIVREMENI BORAVAK I RAD")},
+             {QStringLiteral("card_number"), QStringLiteral("BD00169609")}});
+        groups.append(fieldsGroup(QStringLiteral("address"), address));
+        EidWidget widget(groups);
+        const Visible v = visibleIn(widget);
+        EXPECT_TRUE(v.titles.contains(QStringLiteral("lc-eid-doc-title-residence-permit")));
+        EXPECT_FALSE(v.titles.contains(QStringLiteral("lc-eid-title")));
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-ebs")));
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-purpose-of-stay")));
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-note")));
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-document-name")));
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-card-number")));
+        EXPECT_TRUE(v.values.contains(QStringLiteral("JEDINSTVENA DOZVOLA")));
+    }
+    // EL: blood group, service section, no address section.
+    {
+        auto groups = personalDocumentModel(QStringLiteral("EL"),
+                                            {{QStringLiteral("personal_number"), QStringLiteral("3107972777016")},
+                                             {QStringLiteral("blood_group"), QStringLiteral("A-")}},
+                                            {{QStringLiteral("doc_reg_no"), QStringLiteral("400000097")}});
+        groups.append(fieldsGroup(QStringLiteral("service"), {{QStringLiteral("status"), QStringLiteral("1")},
+                                                              {QStringLiteral("badge_number"), QStringLiteral("97")},
+                                                              {QStringLiteral("rank"), QStringLiteral("Načelnik")}}));
+        EidWidget widget(groups);
+        const Visible v = visibleIn(widget);
+        EXPECT_TRUE(v.titles.contains(QStringLiteral("lc-eid-doc-title-service-id")));
+        EXPECT_FALSE(v.titles.contains(QStringLiteral("lc-eid-title")));
+        EXPECT_TRUE(v.titles.contains(QStringLiteral("lc-eid-service-title")));
+        EXPECT_FALSE(v.titles.contains(QStringLiteral("lc-eid-label-address")));
+        EXPECT_FALSE(v.titles.contains(QStringLiteral("lc-eid-label-address-foreigner")));
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-blood-group")));
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-status")));
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-badge-number")));
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-rank")));
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-jmbg")));
+        EXPECT_FALSE(v.labels.contains(QStringLiteral("lc-eid-label-parent-name")));
+    }
+    // EL given an address group anyway: the layout has no address block.
+    {
+        auto groups =
+            personalDocumentModel(QStringLiteral("EL"), {{QStringLiteral("blood_group"), QStringLiteral("A-")}},
+                                  {{QStringLiteral("doc_reg_no"), QStringLiteral("400000097")}});
+        groups.append(fieldsGroup(QStringLiteral("address"), address));
+        EidWidget widget(groups);
+        const Visible v = visibleIn(widget);
+        EXPECT_FALSE(v.titles.contains(QStringLiteral("lc-eid-label-address")));
+        EXPECT_FALSE(v.values.contains(QStringLiteral("Beograd")));
+    }
+}
+
+TEST_F(EidWidgetTest, UnknownCodeFallsBackToCitizenLayout)
+{
+    for (const QString code : {QStringLiteral("XX"), QStringLiteral("Citizen2014"), QString()}) {
+        auto groups = personalDocumentModel(code,
+                                            {{QStringLiteral("parent_given_name"), QStringLiteral("IVAN")},
+                                             {QStringLiteral("personal_number"), QStringLiteral("0101990710123")},
+                                             {QStringLiteral("nationality"), QStringLiteral("UTOPIJA")}},
+                                            {{QStringLiteral("doc_reg_no"), QStringLiteral("006953897")}});
+        EidWidget widget(groups);
+        const Visible v = visibleIn(widget);
+        EXPECT_TRUE(v.titles.contains(QStringLiteral("lc-eid-title"))) << code.toStdString();
+        EXPECT_FALSE(v.titles.contains(QStringLiteral("lc-eid-doc-title-foreigner"))) << code.toStdString();
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-parent-name"))) << code.toStdString();
+        EXPECT_TRUE(v.labels.contains(QStringLiteral("lc-eid-label-jmbg"))) << code.toStdString();
+        EXPECT_FALSE(v.labels.contains(QStringLiteral("lc-eid-label-nationality"))) << code.toStdString();
+    }
 }

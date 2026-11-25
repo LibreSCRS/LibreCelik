@@ -4,6 +4,7 @@
 #include <QCoreApplication>
 #include <QDate>
 #include "eidtextdocument.h"
+#include "documentcode.h"
 #include <plugin/fieldvalue.h>
 
 using librecelik::plugin::fieldValue;
@@ -14,11 +15,19 @@ namespace {} // namespace
 
 EIdTextDocument::EIdTextDocument(const QList<FieldGroup>& groups, QString documentPath, QString cssPath)
 {
-    // Foreigner detection — matches EidWidget::isForeigner()
-    isForeigner = fieldValue(groups, u"card_type") == QLatin1String("ForeignerIF2020");
+    code = librecelik::rseid::documentCode(groups);
+    isForeigner = code == QLatin1String("IF") || code == QLatin1String("RP");
 
-    if (documentPath.isEmpty())
-        documentPath = isForeigner ? QStringLiteral(":/html/idcardIF2020.html") : QStringLiteral(":/html/idcard.html");
+    if (documentPath.isEmpty()) {
+        if (code == QLatin1String("IF"))
+            documentPath = QStringLiteral(":/html/idcardIF2020.html");
+        else if (code == QLatin1String("RP"))
+            documentPath = QStringLiteral(":/html/idcardRP.html");
+        else if (code == QLatin1String("EL"))
+            documentPath = QStringLiteral(":/html/idcardEL.html");
+        else
+            documentPath = QStringLiteral(":/html/idcard.html");
+    }
     if (cssPath.isEmpty())
         cssPath = QStringLiteral(":/html/idcard.css");
 
@@ -30,11 +39,18 @@ EIdTextDocument::EIdTextDocument(const QList<FieldGroup>& groups, QString docume
     setupDocument(data, cssPath);
 }
 
+const char* EIdTextDocument::titleId() const
+{
+    // The citizen card prints the application banner; the other types print
+    // the document's own name, the same one the on-screen header shows.
+    return code == QLatin1String("ID") ? "lc-eid-doc-title" : librecelik::rseid::documentNameId(code);
+}
+
 void EIdTextDocument::translateDocumentData(QString& data) const
 {
-    data.replace(
-        "${title}",
-        qtTrId("lc-eid-doc-title")); // i18n-audit: ignore D1, PDF print formatter — fresh QTextDocument per print run
+    const QString title =
+        qtTrId(titleId()); // i18n-audit: ignore D1, PDF print formatter — fresh QTextDocument per print run
+    data.replace("${title}", title);
     data.replace("${foreigner_id}", qtTrId("lc-eid-doc-foreigner-id"));
     data.replace("${printing_date}", qtTrId("lc-eid-doc-printing-date"));
     data.replace("${printing_date_value}", QDate::currentDate().toString("dd.MM.yyyy"));
@@ -63,6 +79,20 @@ void EIdTextDocument::translateDocumentData(QString& data) const
     data.replace("${document_number}", qtTrId("lc-eid-doc-number"));
     data.replace("${issuance_date}", qtTrId("lc-eid-doc-issuance-date"));
     data.replace("${validity_date}", qtTrId("lc-eid-doc-valid-to"));
+
+    data.replace("${personal_data}", qtTrId("lc-personal-data-title"));
+    data.replace("${service_data}", qtTrId("lc-eid-service-title"));
+    data.replace("${document_name}", qtTrId("lc-eid-doc-document-name"));
+    data.replace("${purpose_of_stay}", qtTrId("lc-eid-doc-purpose-of-stay"));
+    data.replace("${note}", qtTrId("lc-eid-doc-note"));
+    data.replace("${card_number}", qtTrId("lc-eid-doc-card-number"));
+    data.replace("${blood_group}", qtTrId("lc-eid-doc-blood-group"));
+    data.replace("${status}", qtTrId("lc-eid-doc-status"));
+    data.replace("${badge_number}", qtTrId("lc-eid-doc-badge-number"));
+    data.replace("${rank}", qtTrId("lc-eid-doc-rank"));
+    data.replace("${organisational_unit}", qtTrId("lc-eid-doc-organisational-unit"));
+    data.replace("${position}", qtTrId("lc-eid-doc-position"));
+    data.replace("${service_address}", qtTrId("lc-eid-doc-service-address"));
 }
 
 void EIdTextDocument::prepareDocumentData(QString& html, const QList<FieldGroup>& groups) const
@@ -110,6 +140,18 @@ void EIdTextDocument::prepareDocumentData(QString& html, const QList<FieldGroup>
     html.replace("${document_number_value}", getPreparedValue(fieldValue(groups, u"doc_reg_no")));
     html.replace("${issuance_date_value}", getPreparedValue(fieldValue(groups, u"issuing_date")));
     html.replace("${validity_date_value}", getPreparedValue(fieldValue(groups, u"expiry_date")));
+
+    html.replace("${document_name_value}", getPreparedValue(fieldValue(groups, u"document_name")));
+    html.replace("${purpose_of_stay_value}", getPreparedValue(fieldValue(groups, u"purpose_of_stay")));
+    html.replace("${note_value}", getPreparedValue(fieldValue(groups, u"note")));
+    html.replace("${card_number_value}", getPreparedValue(fieldValue(groups, u"card_number")));
+    html.replace("${blood_group_value}", getPreparedValue(fieldValue(groups, u"blood_group")));
+    html.replace("${status_value}", getPreparedValue(fieldValue(groups, u"status")));
+    html.replace("${badge_number_value}", getPreparedValue(fieldValue(groups, u"badge_number")));
+    html.replace("${rank_value}", getPreparedValue(fieldValue(groups, u"rank")));
+    html.replace("${organisational_unit_value}", getPreparedValue(fieldValue(groups, u"organisational_unit")));
+    html.replace("${position_value}", getPreparedValue(fieldValue(groups, u"position")));
+    html.replace("${service_address_value}", getPreparedValue(fieldValue(groups, u"service_address")));
 
     // Photo — raw bytes to base64 data URI
     const QByteArray raw = photoBytes(groups);

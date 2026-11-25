@@ -3,7 +3,7 @@
 # raised with the tests.
 AgentBootstrapTests 13
 AgentLayerTests 64
-AgentMainFlowTests 29
+AgentMainFlowTests 32
 CardWidgetPluginRegistryTests 4
 EIdTextDocumentTests 2
 EMRTDTextDocumentTests 11

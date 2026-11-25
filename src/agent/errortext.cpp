@@ -144,13 +144,17 @@ bool isRetryableReadFailure(ErrorCode code)
     }
 }
 
-ReadFailureAction readFailureAction(bool pageIsSpinner, ErrorCode code)
+ReadFailureAction readFailureAction(bool pageIsSpinner, ErrorCode code, bool canRenderWithoutIdentity)
 {
     if (!pageIsSpinner) {
         // Groups already streamed onto the page. A failure arriving now costs
         // the holder data they can already read; leave it standing.
         return ReadFailureAction::LeaveAlone;
     }
+    // The agent refused the identity verb for this card; if it has another
+    // surface here, that surface is the whole card, not a failure.
+    if (code == ErrorCode::UnsupportedCard && canRenderWithoutIdentity)
+        return ReadFailureAction::ShowWithoutIdentity;
     return isRetryableReadFailure(code) ? ReadFailureAction::OfferRetry : ReadFailureAction::LatchAndDrop;
 }
 

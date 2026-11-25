@@ -54,6 +54,33 @@ inline constexpr QLatin1StringView kGenericTokenCardType{"token"};
     return typeCanStillResolve ? QString() : QString(kGenericTokenCardType);
 }
 
+/// The capability bits a card's page is drawn from.
+///
+/// When the agent refused the identity read the card has no identity model to
+/// show, so it is drawn as if the IdentityData bit were absent: the one rule
+/// the key decision and the add-time verdict both read, so they cannot
+/// disagree about what the card is.
+[[nodiscard]] constexpr std::uint32_t renderCapabilities(std::uint32_t capabilityBits, bool identityRefused) noexcept
+{
+    return identityRefused ? (capabilityBits & ~LibreSCRS::AgentClient::Cap::IdentityData) : capabilityBits;
+}
+
+/// Whether a card whose identity read was refused still has a page to draw.
+///
+/// True only when the key resolved without IdentityData is non-empty AND
+/// @p hasPlugin accepts it: a key this build has no plugin for would leave the
+/// card on the spinner forever, so it must count as nothing to render.
+/// @p hasPlugin is a predicate over the key (the window asks its plugin
+/// registry; tests pass a fake).
+template <typename HasPlugin>
+[[nodiscard]] bool canRenderWithoutIdentity(bool agentAdvertisesCardType, std::uint32_t capabilityBits,
+                                            const QString& resolvedCardType, HasPlugin&& hasPlugin)
+{
+    const QString key =
+        effectiveGuiPluginKey(agentAdvertisesCardType, renderCapabilities(capabilityBits, true), resolvedCardType);
+    return !key.isEmpty() && static_cast<bool>(hasPlugin(key));
+}
+
 /// Whether a LATE type resolution must start the identity read the add-time
 /// decision skipped.
 ///

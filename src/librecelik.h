@@ -87,6 +87,9 @@ private:
         /// lateResolutionStartsRead), and must never double-start one that is
         /// already running.
         bool identityReadStarted = false;
+        /// The agent refused the identity read for this card, which is then
+        /// drawn as if it carried no IdentityData (see renderCapabilities).
+        bool identityRefused = false;
         /// PKI payloads that arrived before the token section was built (the
         /// section is created when the identity read completes; the optional
         /// sections are dispatched with the read).
@@ -115,6 +118,9 @@ private:
     void onCardTypeResolved(const QString& cardId);
     void attachPkiSection(const QString& cardId, QWidget* container, bool collapsed);
     void applyPendingPki(const QString& cardId);
+    /// Whether @p cardId could be drawn if its identity read were unavailable
+    /// and this build has a plugin for that rendering.
+    [[nodiscard]] bool canRenderWithoutIdentity(const QString& cardId) const;
     /// The GUI plugin for @p cardId's currently resolved card type, or nullptr
     /// while the agent has resolved none (or none is installed for it).
     [[nodiscard]] CardWidgetPlugin* pluginFor(const QString& cardId) const;

@@ -605,18 +605,75 @@ TEST_F(MainFlowTest, AReadThatProducedNothingAndCanBeRetriedOffersRetry)
     using librecelik::agent::readFailureAction;
 
     // Still the spinner: nothing was rendered, and the holder can clear these.
-    EXPECT_EQ(readFailureAction(true, ErrorCode::EntryExpired), ReadFailureAction::OfferRetry);
-    EXPECT_EQ(readFailureAction(true, ErrorCode::CredentialWrong), ReadFailureAction::OfferRetry);
-    EXPECT_EQ(readFailureAction(true, ErrorCode::PrompterError), ReadFailureAction::OfferRetry);
+    EXPECT_EQ(readFailureAction(true, ErrorCode::EntryExpired, false), ReadFailureAction::OfferRetry);
+    EXPECT_EQ(readFailureAction(true, ErrorCode::CredentialWrong, false), ReadFailureAction::OfferRetry);
+    EXPECT_EQ(readFailureAction(true, ErrorCode::PrompterError, false), ReadFailureAction::OfferRetry);
 
     // Still the spinner, but repeating cannot help: the retry-storm guard holds.
-    EXPECT_EQ(readFailureAction(true, ErrorCode::UnsupportedCard), ReadFailureAction::LatchAndDrop);
-    EXPECT_EQ(readFailureAction(true, ErrorCode::ParseError), ReadFailureAction::LatchAndDrop);
-    EXPECT_EQ(readFailureAction(true, ErrorCode::CommunicationError), ReadFailureAction::LatchAndDrop);
+    EXPECT_EQ(readFailureAction(true, ErrorCode::UnsupportedCard, false), ReadFailureAction::LatchAndDrop);
+    EXPECT_EQ(readFailureAction(true, ErrorCode::ParseError, false), ReadFailureAction::LatchAndDrop);
+    EXPECT_EQ(readFailureAction(true, ErrorCode::CommunicationError, false), ReadFailureAction::LatchAndDrop);
 
     // A code this build cannot name stays latched: the guard opens only when
     // someone classifies a failure deliberately.
-    EXPECT_EQ(readFailureAction(true, static_cast<ErrorCode>(9999)), ReadFailureAction::LatchAndDrop);
+    EXPECT_EQ(readFailureAction(true, static_cast<ErrorCode>(9999), false), ReadFailureAction::LatchAndDrop);
+}
+
+TEST_F(MainFlowTest, ARefusedIdentityReadOnACardWithAnotherSurfaceShowsItWithoutIdentity)
+{
+    using namespace LibreSCRS::AgentClient;
+    using librecelik::agent::ReadFailureAction;
+    using librecelik::agent::readFailureAction;
+
+    // The agent said the identity verb does not exist for this card and this
+    // build has a page for what it does have: draw that, do not drop the card.
+    EXPECT_EQ(readFailureAction(true, ErrorCode::UnsupportedCard, true), ReadFailureAction::ShowWithoutIdentity);
+    // No page to draw: the card has no surface here, so it is still dropped.
+    EXPECT_EQ(readFailureAction(true, ErrorCode::UnsupportedCard, false), ReadFailureAction::LatchAndDrop);
+    // Rendered data is never torn down, whatever the helper says.
+    EXPECT_EQ(readFailureAction(false, ErrorCode::UnsupportedCard, true), ReadFailureAction::LeaveAlone);
+    // Only the refusal opens this path; other failures keep their outcome.
+    EXPECT_EQ(readFailureAction(true, ErrorCode::EntryExpired, true), ReadFailureAction::OfferRetry);
+    EXPECT_EQ(readFailureAction(true, ErrorCode::ParseError, true), ReadFailureAction::LatchAndDrop);
+    EXPECT_EQ(readFailureAction(true, ErrorCode::CommunicationError, true), ReadFailureAction::LatchAndDrop);
+}
+
+TEST_F(MainFlowTest, RenderCapabilitiesDropsOnlyIdentityDataWhenRefused)
+{
+    namespace Cap = LibreSCRS::AgentClient::Cap;
+    using librecelik::agent::renderCapabilities;
+
+    const std::uint32_t all = Cap::Pki | Cap::IdentityData | Cap::EmrtdCrypto | Cap::PinManagement;
+    EXPECT_EQ(renderCapabilities(all, true), Cap::Pki | Cap::EmrtdCrypto | Cap::PinManagement);
+    EXPECT_EQ(renderCapabilities(all, false), all);
+    EXPECT_EQ(renderCapabilities(Cap::Pki, true), Cap::Pki);
+    EXPECT_EQ(renderCapabilities(Cap::None, true), Cap::None);
+}
+
+TEST_F(MainFlowTest, CanRenderWithoutIdentityNeedsASurfaceAndAPluginForIt)
+{
+    namespace Cap = LibreSCRS::AgentClient::Cap;
+    using librecelik::agent::canRenderWithoutIdentity;
+    const auto any = [](const QString&) { return true; };
+    const auto none = [](const QString&) { return false; };
+
+    // (a) Untyped card with PKI and IdentityData: once the identity read is
+    // refused it is a PKI surface, drawn by the generic token page.
+    EXPECT_TRUE(canRenderWithoutIdentity(true, Cap::Pki | Cap::IdentityData, QString(), any));
+    // (b) A typed card renders through its own plugin.
+    EXPECT_TRUE(canRenderWithoutIdentity(true, Cap::IdentityData, QStringLiteral("rs-eid"), any));
+    // (c) No PKI and no type: nothing to draw.
+    EXPECT_FALSE(canRenderWithoutIdentity(true, Cap::IdentityData, QString(), any));
+    // (d) A key exists but this build has no plugin for it: not renderable.
+    EXPECT_FALSE(canRenderWithoutIdentity(true, Cap::Pki | Cap::IdentityData, QString(), none));
+    EXPECT_FALSE(canRenderWithoutIdentity(true, Cap::Pki, QStringLiteral("unknown"), none));
+    // The predicate sees the resolved key, not the card type.
+    QString seen;
+    EXPECT_TRUE(canRenderWithoutIdentity(true, Cap::Pki | Cap::IdentityData, QString(), [&](const QString& key) {
+        seen = key;
+        return true;
+    }));
+    EXPECT_EQ(seen, QString(librecelik::agent::kGenericTokenCardType));
 }
 
 TEST_F(MainFlowTest, AFailureArrivingOverRenderedDataLeavesThePageStanding)
@@ -628,7 +685,7 @@ TEST_F(MainFlowTest, AFailureArrivingOverRenderedDataLeavesThePageStanding)
     // Groups already streamed. Whatever the code, tearing the page down now
     // would cost the holder data they can already read.
     for (const ErrorCode code : {ErrorCode::EntryExpired, ErrorCode::UnsupportedCard, ErrorCode::CommunicationError}) {
-        EXPECT_EQ(readFailureAction(false, code), ReadFailureAction::LeaveAlone) << static_cast<int>(code);
+        EXPECT_EQ(readFailureAction(false, code, false), ReadFailureAction::LeaveAlone) << static_cast<int>(code);
     }
 }
 

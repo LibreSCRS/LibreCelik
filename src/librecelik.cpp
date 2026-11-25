@@ -453,13 +453,25 @@ void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
             [this, cardId](const QString& message, LibreSCRS::AgentClient::ErrorCode code) {
                 if (readerPages->page(cardId) == nullptr)
                     return; // a stale terminal for a card whose page is already gone
-                ui->statusbar->show();
-                ui->statusbar->showMessage(message);
-                // The three-way decision lives in the tested helper, not here:
+                // The decision lives in the tested helper, not here:
                 // no test binary links this file, so a rule written inline is a
                 // rule no gate can reach (the requestOptionalSections pattern).
-                switch (librecelik::agent::readFailureAction(isSpinner(readerPages->page(cardId)), code)) {
+                const auto action = librecelik::agent::readFailureAction(isSpinner(readerPages->page(cardId)), code,
+                                                                         canRenderWithoutIdentity(cardId));
+                // The card is about to be drawn, so "card not supported" on the
+                // status bar would contradict the page.
+                if (action != librecelik::agent::ReadFailureAction::ShowWithoutIdentity) {
+                    ui->statusbar->show();
+                    ui->statusbar->showMessage(message);
+                }
+                switch (action) {
                 case librecelik::agent::ReadFailureAction::LeaveAlone:
+                    break;
+                case librecelik::agent::ReadFailureAction::ShowWithoutIdentity:
+                    // Not latched: the card has a surface, it just has no identity.
+                    if (auto entry = cardState.find(cardId); entry != cardState.end())
+                        entry->second.identityRefused = true;
+                    onIdentityReady(cardId, {});
                     break;
                 case librecelik::agent::ReadFailureAction::LatchAndDrop:
                     // Nothing was rendered and repeating cannot help. The page
@@ -566,6 +578,16 @@ void LibreCelik::replaceCardWidget(const QString& cardId, QWidget* newWidget)
     readerPages->replace(cardId, newWidget);
 }
 
+bool LibreCelik::canRenderWithoutIdentity(const QString& cardId) const
+{
+    CardController* controller = gateway->cardController(cardId);
+    if (controller == nullptr)
+        return false;
+    return librecelik::agent::canRenderWithoutIdentity(
+        gateway->hasFeature(kCardTypeFeature), controller->capabilityBits(), controller->cardType(),
+        [this](const QString& key) { return guiPluginRegistry.findByCardType(key) != nullptr; });
+}
+
 CardWidgetPlugin* LibreCelik::pluginFor(const QString& cardId) const
 {
     CardController* controller = gateway->cardController(cardId);
@@ -579,8 +601,11 @@ CardWidgetPlugin* LibreCelik::pluginFor(const QString& cardId) const
     // completed identity/photo read, so without the bit waiting is provably
     // unbounded); empty → wait (cardTypeResolved replays what streamed) or
     // nothing to render at all.
-    const QString key = librecelik::agent::effectiveGuiPluginKey(gateway->hasFeature(kCardTypeFeature),
-                                                                 controller->capabilityBits(), controller->cardType());
+    const auto state = cardState.find(cardId);
+    const bool identityRefused = state != cardState.end() && state->second.identityRefused;
+    const QString key = librecelik::agent::effectiveGuiPluginKey(
+        gateway->hasFeature(kCardTypeFeature),
+        librecelik::agent::renderCapabilities(controller->capabilityBits(), identityRefused), controller->cardType());
     return key.isEmpty() ? nullptr : guiPluginRegistry.findByCardType(key);
 }
 

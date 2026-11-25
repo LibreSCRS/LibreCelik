@@ -18,6 +18,9 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- A card the agent will not read identity data from, but that has certificates
+  or keys, is now shown (with its certificates, or as a generic token page)
+  instead of vanishing from the window with a "card not supported" notice.
 - Removing a card while its certificate details, or a certificate's menu,
   were open no longer crashes LibreCelik.
 - On Linux, opening LibreCelik — and **Try again** — now starts the card agent

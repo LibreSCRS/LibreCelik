@@ -31,7 +31,7 @@ namespace librecelik::agent {
 
 /// @brief What the window does with a card whose read just failed.
 ///
-/// Three outcomes, because two were not enough. The window used to choose
+/// Four outcomes, because two were not enough. The window used to choose
 /// between dropping the card's page (right for a failure repeating cannot fix:
 /// it stops one failure becoming a retry storm) and doing NOTHING — and every
 /// failure the holder could actually clear fell into "nothing", leaving the
@@ -42,20 +42,28 @@ namespace librecelik::agent {
 /// So a recoverable failure now gets its own outcome: stop the spinner and
 /// stand there with a button.
 enum class ReadFailureAction : std::uint8_t {
-    LeaveAlone,   ///< The page already shows real card data; a late failure must not tear it down.
-    LatchAndDrop, ///< Nothing was rendered and repeating cannot help: drop the page, remember the card.
-    OfferRetry,   ///< Nothing was rendered but the holder can clear this: offer to read again.
+    LeaveAlone,          ///< The page already shows real card data; a late failure must not tear it down.
+    LatchAndDrop,        ///< Nothing was rendered and repeating cannot help: drop the page, remember the card.
+    OfferRetry,          ///< Nothing was rendered but the holder can clear this: offer to read again.
+    ShowWithoutIdentity, ///< The agent refused the identity read but the card has another surface: render it without.
 };
 
 /// @param pageIsSpinner Whether the card's page is still the read-in-progress
 ///                      placeholder — i.e. the read produced nothing to show.
 /// @param code          The agent's taxonomy value for the failure.
+/// @param canRenderWithoutIdentity Whether this build has a page for the card
+///                      when the identity read is treated as unavailable (see
+///                      `canRenderWithoutIdentity`). Only an `UnsupportedCard`
+///                      refusal reads it: the agent said the verb does not
+///                      exist for this card, so the card's other surface is
+///                      all there is to show.
 ///
 /// Lives here rather than inside the window's signal handler for the reason
 /// `requestOptionalSections` and `effectiveGuiPluginKey` do: no test binary
 /// links the window, so a decision left in that handler is a decision no gate
 /// can reach.
-[[nodiscard]] ReadFailureAction readFailureAction(bool pageIsSpinner, LibreSCRS::AgentClient::ErrorCode code);
+[[nodiscard]] ReadFailureAction readFailureAction(bool pageIsSpinner, LibreSCRS::AgentClient::ErrorCode code,
+                                                  bool canRenderWithoutIdentity);
 
 /// Localized text for a failed operation.
 ///

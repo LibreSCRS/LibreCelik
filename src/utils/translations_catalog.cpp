@@ -1412,6 +1412,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-agent-phase-timestamping");
     //% "Finished"
     QT_TRID_NOOP("lc-agent-phase-done");
+    //% "Waiting for another operation on this card..."
+    QT_TRID_NOOP("lc-agent-phase-queued");
 
     // Credential mutation outcomes.
     //% "No result was reported."

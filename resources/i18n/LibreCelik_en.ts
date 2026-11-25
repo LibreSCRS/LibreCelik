@@ -2444,6 +2444,10 @@
         <source>Finished</source>
         <translation>Finished</translation>
     </message>
+    <message id="lc-agent-phase-queued">
+        <source>Waiting for another operation on this card...</source>
+        <translation>Waiting for another operation on this card...</translation>
+    </message>
     <message id="lc-agent-phase-created">
         <source>Preparing...</source>
         <translation>Preparing...</translation>

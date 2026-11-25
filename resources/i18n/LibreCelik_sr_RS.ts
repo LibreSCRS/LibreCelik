@@ -2446,6 +2446,10 @@
         <source>Finished</source>
         <translation>Завршено</translation>
     </message>
+    <message id="lc-agent-phase-queued">
+        <source>Waiting for another operation on this card...</source>
+        <translation>Чекање на другу операцију на картици...</translation>
+    </message>
     <message id="lc-agent-phase-created">
         <source>Preparing...</source>
         <translation>Припрема...</translation>

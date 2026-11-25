@@ -85,9 +85,16 @@ TEST(PhaseText, EveryEnumeratorIncludingCreatedHasText)
     // future unknown value falls to the same created/preparing text.
     for (auto p : {OperationPhase::Created, OperationPhase::Connecting, OperationPhase::AwaitingConsent,
                    OperationPhase::Authenticating, OperationPhase::Reading, OperationPhase::Signing,
-                   OperationPhase::Timestamping, OperationPhase::Done})
+                   OperationPhase::Timestamping, OperationPhase::Done, OperationPhase::Queued})
         EXPECT_FALSE(librecelik::agent::phaseText(p).isEmpty());
     EXPECT_FALSE(librecelik::agent::phaseText(static_cast<OperationPhase>(99)).isEmpty());
+}
+TEST(PhaseText, AQueuedOperationIsNotShownAsPreparing)
+{
+    // Waiting behind another operation on the same card is its own state; the
+    // "preparing" line of a phase this build cannot name would hide it.
+    EXPECT_NE(librecelik::agent::phaseText(OperationPhase::Queued),
+              librecelik::agent::phaseText(OperationPhase::Created));
 }
 TEST(OutcomeText, UnspecifiedRendersItsOwnText)
 {

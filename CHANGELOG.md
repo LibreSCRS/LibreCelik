@@ -12,6 +12,10 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- An operation waiting behind another one on the same card shows "Waiting for
+  another operation on this card...", and it is no longer reported as "the
+  LibreSCRS card agent is not responding" while it waits.
+
 - Settings → Trust now says whether the publisher of the installed country
   master list was established or only seen, shows the fingerprint to recognise
   an unestablished one by, and shows when the list was accepted.

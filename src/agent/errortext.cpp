@@ -220,6 +220,8 @@ QString phaseText(OperationPhase phase)
         return qtTrId("lc-agent-phase-timestamping");
     case OperationPhase::Done:
         return qtTrId("lc-agent-phase-done");
+    case OperationPhase::Queued:
+        return qtTrId("lc-agent-phase-queued");
     case OperationPhase::Created:
     default:
         // Created is a REAL value, not a sentinel: an operation reports it

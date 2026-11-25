@@ -2,7 +2,7 @@
 # <test program> <tests it registers, at least> -- the census of a build,
 # raised with the tests.
 AgentBootstrapTests 13
-AgentLayerTests 64
+AgentLayerTests 65
 AgentMainFlowTests 32
 CardWidgetPluginRegistryTests 4
 EIdTextDocumentTests 2

@@ -26,6 +26,11 @@ LibreCelik versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- Choosing another reader while a card is still being read no longer cancels
+  that read: the card's page gets all of its data, photo included, and the
+  status bar no longer says the operation was cancelled.
+- A read that succeeds after **Try again** clears the reason the failed
+  attempt left on the status bar.
 - A card the agent will not read identity data from, but that has certificates
   or keys, is now shown (with its certificates, or as a generic token page)
   instead of vanishing from the window with a "card not supported" notice.

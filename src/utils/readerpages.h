@@ -17,11 +17,10 @@ class QWidget;
 /// four places, with the card-to-page mapping held in a separate container and
 /// the correspondence between the three maintained by hand. Two defects lived
 /// in the gaps between them, and neither was reachable by any test, because the
-/// window is deliberately excluded from every test binary:
+/// window was then excluded from every test binary:
 ///
 ///   * removing a card emitted a selector change whose handler read the STACK's
-///     index — not yet updated — and so cancelled the in-flight read of a
-///     DIFFERENT reader's card;
+///     index — not yet updated — and so acted on a DIFFERENT reader's card;
 ///   * replacing a page (which happens on the first streamed group of every
 ///     read) switched the stack unconditionally while the selector stayed
 ///     where it was, so the window showed one reader and the selector named
@@ -43,13 +42,12 @@ public:
     ReaderPages(QComboBox* selector, QStackedWidget* stack, QObject* parent = nullptr);
 
     /// @brief Add a card's page. Takes ownership through the stack.
-    /// @note Selects the new page ONLY when it is the first: selecting on every
-    ///       insert made a second reader's card abort the first reader's read,
-    ///       because leaving a page cancels its read.
+    /// @note Selects the new page ONLY when it is the first: a second reader's
+    ///       card must not take the view from the reader the user is looking at.
     void add(const QString& cardId, const QString& readerLabel, QWidget* page);
 
-    /// @brief Drop a card's page. Emits no @ref leftCard — teardown is not
-    ///        navigation, and the caller cancels the departing card itself.
+    /// @brief Drop a card's page. Teardown, not navigation: the caller cancels
+    ///        the departing card itself.
     void remove(const QString& cardId);
 
     /// @brief Swap a card's page in place, keeping its position.
@@ -65,11 +63,6 @@ public:
 
     /// @brief Card whose page is on screen, or empty when there is none.
     [[nodiscard]] QString currentCardId() const;
-
-Q_SIGNALS:
-    /// @brief The user navigated AWAY from @p cardId, whose read must stop.
-    /// Emitted only for a real selection change, never for add or remove.
-    void leftCard(const QString& cardId);
 
 private:
     void onSelectorChanged(int index);

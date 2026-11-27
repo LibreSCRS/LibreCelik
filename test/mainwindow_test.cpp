@@ -15,12 +15,14 @@
 
 #include "agent/agentgateway.h"
 #include "agent/agentstatewidget.h"
+#include "agent/cardretrypage.h"
 #include "certificate/certificateviewerdlg.h"
 #include "document/tokensection.h"
 #include "fake_gateway/fakeagentgateway.h"
 #include "fake_gateway/fakecardcontroller.h"
 
 #include <QApplication>
+#include <QComboBox>
 #include <QCoreApplication>
 #include <QEvent>
 #include <QMenu>
@@ -29,6 +31,7 @@
 #include <QTreeWidget>
 #include <QLabel>
 #include <QPushButton>
+#include <QStatusBar>
 #include <QString>
 
 #include <gtest/gtest.h>
@@ -301,4 +304,133 @@ TEST_F(MainWindowTest, PullingTheCardWithTheCertificateMenuOpenTearsDownCleanly)
 
     EXPECT_TRUE(menu.isNull());
     EXPECT_EQ(fixture.window->findChild<TokenSection*>(), nullptr);
+}
+
+namespace {
+
+/// A reader holding a card the window reads: identity first, then the generic
+/// token page (the scripted gateway advertises no card type, so the PKI bit
+/// alone picks the page).
+FakeCardController* addReadableCard(FakeAgentGateway& gateway, const QString& readerId, const QString& readerName,
+                                    const QString& cardId)
+{
+    gateway.scriptedReaders.append({readerId, readerName, true, cardId});
+    auto* controller = new FakeCardController(&gateway);
+    controller->scriptedCardId = cardId;
+    controller->scriptedReaderId = readerId;
+    controller->scriptedCaps = LibreSCRS::AgentClient::Cap::IdentityData | LibreSCRS::AgentClient::Cap::Pki;
+    gateway.registerCardController(cardId, controller);
+    return controller;
+}
+
+} // namespace
+
+/// Choosing another reader while the first card is still being read lets that
+/// read finish: the agent serves each reader on its own worker, so nothing
+/// waits on the card the holder looked away from, and cancelling it left the
+/// page without its last group (the photo) and the status bar saying the
+/// operation was cancelled.
+TEST_F(MainWindowTest, ChoosingAnotherReaderLetsTheReadLeftBehindFinish)
+{
+    auto gateway = std::make_unique<FakeAgentGateway>();
+    FakeAgentGateway* scripted = gateway.get();
+    scripted->scriptedPresence = PresenceState::Ready;
+    FakeCardController* first =
+        addReadableCard(*scripted, QStringLiteral("r1"), QStringLiteral("Reader One"), QStringLiteral("c1"));
+    FakeCardController* second =
+        addReadableCard(*scripted, QStringLiteral("r2"), QStringLiteral("Reader Two"), QStringLiteral("c2"));
+    first->holdRead = true;
+    second->holdRead = true;
+
+    LibreCelik window(std::move(gateway));
+    auto* selector = window.findChild<QComboBox*>(QStringLiteral("readerComboBox"));
+    ASSERT_NE(selector, nullptr);
+    ASSERT_EQ(selector->count(), 2);
+    ASSERT_EQ(selector->currentIndex(), 0);
+
+    selector->setCurrentIndex(1);
+    emit first->identityReady({});
+
+    EXPECT_FALSE(first->callLog.contains(QStringLiteral("cancel"))) << "leaving a reader cancelled its read";
+    EXPECT_TRUE(first->callLog.contains(QStringLiteral("requestCertificates")))
+        << "the read left behind did not reach its page";
+    EXPECT_EQ(selector->currentIndex(), 1) << "the finished read pulled the view back";
+}
+
+/// A read that failed (here: the access-number window was dismissed) leaves its
+/// reason on the status bar; when the retry of the SAME card then succeeds,
+/// that reason is stale and must go.
+TEST_F(MainWindowTest, ASuccessfulRetryClearsTheReasonTheFailedAttemptLeft)
+{
+    auto gateway = std::make_unique<FakeAgentGateway>();
+    FakeAgentGateway* scripted = gateway.get();
+    scripted->scriptedPresence = PresenceState::Ready;
+    FakeCardController* card =
+        addReadableCard(*scripted, QStringLiteral("r1"), QStringLiteral("Reader One"), QStringLiteral("c1"));
+    card->failNextRead = true;
+    card->scriptedError = QStringLiteral("operation cancelled");
+    card->scriptedErrorCode = LibreSCRS::AgentClient::ErrorCode::PrompterError;
+
+    LibreCelik window(std::move(gateway));
+    ASSERT_EQ(window.statusBar()->currentMessage(), QStringLiteral("operation cancelled"));
+    auto* retryPage = window.findChild<librecelik::agent::CardRetryPage*>();
+    ASSERT_NE(retryPage, nullptr);
+    auto* retry = retryPage->findChild<QPushButton*>();
+    ASSERT_NE(retry, nullptr);
+
+    retry->click();
+
+    EXPECT_TRUE(card->callLog.contains(QStringLiteral("requestCertificates"))) << "the retried read did not succeed";
+    EXPECT_TRUE(window.statusBar()->currentMessage().isEmpty())
+        << "a successful read left the failed attempt's reason on screen";
+}
+
+/// The same rule without the button: a read of that card can also succeed
+/// because the window started it on its own (a late card-type resolution
+/// does), and its success makes the failed attempt's reason just as stale.
+TEST_F(MainWindowTest, ASuccessWithoutTheRetryButtonClearsTheCardsOwnReason)
+{
+    auto gateway = std::make_unique<FakeAgentGateway>();
+    FakeAgentGateway* scripted = gateway.get();
+    scripted->scriptedPresence = PresenceState::Ready;
+    FakeCardController* card =
+        addReadableCard(*scripted, QStringLiteral("r1"), QStringLiteral("Reader One"), QStringLiteral("c1"));
+    card->failNextRead = true;
+    card->scriptedError = QStringLiteral("operation cancelled");
+    card->scriptedErrorCode = LibreSCRS::AgentClient::ErrorCode::PrompterError;
+
+    LibreCelik window(std::move(gateway));
+    ASSERT_EQ(window.statusBar()->currentMessage(), QStringLiteral("operation cancelled"));
+
+    emit card->identityReady({});
+
+    ASSERT_TRUE(card->callLog.contains(QStringLiteral("requestCertificates")));
+    EXPECT_TRUE(window.statusBar()->currentMessage().isEmpty())
+        << "a successful read left the failed attempt's reason on screen";
+}
+
+/// The status bar is one line for the whole window: another card's success
+/// says nothing about the card that failed, so its reason stays.
+TEST_F(MainWindowTest, AnotherCardsSuccessLeavesTheFailedCardsReason)
+{
+    auto gateway = std::make_unique<FakeAgentGateway>();
+    FakeAgentGateway* scripted = gateway.get();
+    scripted->scriptedPresence = PresenceState::Ready;
+    FakeCardController* reading =
+        addReadableCard(*scripted, QStringLiteral("r1"), QStringLiteral("Reader One"), QStringLiteral("c1"));
+    FakeCardController* failing =
+        addReadableCard(*scripted, QStringLiteral("r2"), QStringLiteral("Reader Two"), QStringLiteral("c2"));
+    reading->holdRead = true;
+    failing->failNextRead = true;
+    failing->scriptedError = QStringLiteral("operation cancelled");
+    failing->scriptedErrorCode = LibreSCRS::AgentClient::ErrorCode::PrompterError;
+
+    LibreCelik window(std::move(gateway));
+    ASSERT_EQ(window.statusBar()->currentMessage(), QStringLiteral("operation cancelled"));
+
+    emit reading->identityReady({});
+
+    ASSERT_TRUE(reading->callLog.contains(QStringLiteral("requestCertificates")));
+    EXPECT_EQ(window.statusBar()->currentMessage(), QStringLiteral("operation cancelled"))
+        << "one card's success cleared another card's reason";
 }

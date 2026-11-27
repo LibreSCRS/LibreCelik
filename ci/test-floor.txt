@@ -14,7 +14,7 @@ LibreCelik 1
 LibreCelikI18nFixtureSelfTest 7
 LibreCelikTests 36
 LocaleResolverTests 9
-MainWindowTests 7
+MainWindowTests 11
 PdfPreviewWidgetTests 6
 ReaderPagesTests 7
 SettingsConfig1Tests 51

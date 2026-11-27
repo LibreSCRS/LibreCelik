@@ -2,13 +2,11 @@
 // SPDX-FileCopyrightText: 2026 hirashix0
 //
 // The reader selector and the page stack, and the two defects that lived in
-// the gap between them while this logic sat inside the window — where no test
-// binary could reach it (test/CMakeLists.txt excludes librecelik.cpp
-// deliberately, and agent_mainflow_test.cpp says so at the top).
+// the gap between them while this logic sat inside the window — which no test
+// binary could reach at the time.
 //
 // Both scenarios below are two-reader ones, because both defects need a
-// bystander: a second card whose read is in flight while something happens to
-// the first.
+// bystander: a second card on screen while something happens to the first.
 
 #include "utils/readerpages.h"
 
@@ -65,43 +63,34 @@ protected:
 QApplication* ReaderPagesTest::app = nullptr;
 
 // The defect: registering a page called setCurrentIndex() unconditionally, so
-// inserting a second card moved the view off the first — and leaving a page
-// cancels its read, so the first reader's in-flight read died.
+// inserting a second card moved the view off the reader the user was looking at.
 TEST_F(ReaderPagesTest, ASecondCardDoesNotTakeTheViewFromTheFirst)
 {
     Fixture f;
     f.addCard("card-A", "Reader A");
-    QSignalSpy left(&f.pages, &ReaderPages::leftCard);
 
     f.addCard("card-B", "Reader B");
 
     EXPECT_EQ(f.pages.currentCardId(), QString("card-A")) << "inserting a second card moved the view";
-    EXPECT_EQ(left.count(), 0) << "inserting a card cancelled another reader's read";
     expectLockstep(f.pages, f.selector, f.stack);
 }
 
-// The defect this file exists for. Removing a card whose selector row sits
-// BELOW the current one renumbers the current row, QComboBox emits
-// currentIndexChanged, and the old handler read the stack — not yet updated —
-// concluded the user had navigated away from the OTHER card, and cancelled that
-// card's read. The user pulls card A and card B's read dies.
-TEST_F(ReaderPagesTest, RemovingACardDoesNotCancelAnotherReadersRead)
+// Removing a card whose selector row sits BELOW the current one renumbers the
+// current row, and QComboBox emits currentIndexChanged while the stack still
+// has the old layout. The handler must not act on that half-updated state: the
+// card the user is looking at stays on screen.
+TEST_F(ReaderPagesTest, RemovingACardKeepsAnotherReadersPageOnScreen)
 {
     Fixture f;
     f.addCard("card-A", "Reader A");
     f.addCard("card-B", "Reader B");
 
-    // The user is looking at B, whose read is in flight.
+    // The user is looking at B.
     f.selector.setCurrentIndex(1);
     ASSERT_EQ(f.pages.currentCardId(), QString("card-B"));
 
-    QSignalSpy left(&f.pages, &ReaderPages::leftCard);
     f.pages.remove("card-A");
 
-    for (int i = 0; i < left.count(); ++i) {
-        EXPECT_NE(left.at(i).at(0).toString(), QString("card-B"))
-            << "removing card A cancelled card B's in-flight read";
-    }
     EXPECT_EQ(f.pages.currentCardId(), QString("card-B")) << "the surviving card's page must stay on screen";
     expectLockstep(f.pages, f.selector, f.stack);
 }
@@ -139,20 +128,18 @@ TEST_F(ReaderPagesTest, ReplacingTheVisiblePageKeepsItVisible)
     expectLockstep(f.pages, f.selector, f.stack);
 }
 
-// Navigating away deliberately MUST still cancel — that is the behaviour the
-// removal path was accidentally borrowing, and it has to survive the fix.
-TEST_F(ReaderPagesTest, ChoosingAnotherReaderCancelsTheOneLeftBehind)
+// Choosing a reader shows its page; the card left behind keeps its page (and,
+// in the window, its read) untouched.
+TEST_F(ReaderPagesTest, ChoosingAnotherReaderShowsItsPage)
 {
     Fixture f;
-    f.addCard("card-A", "Reader A");
+    QWidget* pageA = f.addCard("card-A", "Reader A");
     f.addCard("card-B", "Reader B");
-    QSignalSpy left(&f.pages, &ReaderPages::leftCard);
 
     f.selector.setCurrentIndex(1);
 
-    ASSERT_EQ(left.count(), 1) << "leaving a reader must stop its read";
-    EXPECT_EQ(left.at(0).at(0).toString(), QString("card-A"));
     EXPECT_EQ(f.pages.currentCardId(), QString("card-B"));
+    EXPECT_EQ(f.pages.page("card-A"), pageA) << "leaving a reader must not touch its page";
     expectLockstep(f.pages, f.selector, f.stack);
 }
 

@@ -127,20 +127,10 @@ LibreCelik::LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> injected
 
     ui->stackedWidget->setCurrentIndex(0);
 
-    // Reader selection: cancel the read of the card being navigated away from
-    // before the switch. A page the user has left must not keep its card busy —
-    // this is what the middleware path's per-reader stop source used to do.
+    // Choosing another reader leaves the first card's read running: the agent
+    // serves each reader on its own worker, so nothing waits on it, and
+    // cancelling it cost the page its last group (the photo).
     readerPages = new ReaderPages(ui->readerComboBox, ui->readerStackedWidget, this);
-    // Reader selection: cancel the read of the card being navigated away from.
-    // A page the user has left must not keep its card busy — this is what the
-    // middleware path's per-reader stop source used to do. ReaderPages raises
-    // this ONLY for a real selection change: adding and removing a page repair
-    // the selector themselves, and used to reach here with a stale index and
-    // cancel a bystander's read.
-    connect(readerPages, &ReaderPages::leftCard, this, [this](const QString& cardId) {
-        if (auto* controller = gateway->cardController(cardId))
-            controller->cancel();
-    });
 
     ui->statusbar->hide();
     // Menu bar. On macOS the Edit menu is omitted entirely — LC has no edit
@@ -179,7 +169,10 @@ LibreCelik::LibreCelik(std::unique_ptr<librecelik::agent::AgentGateway> injected
 
     // Auto-hide the status bar once its message is cleared (e.g. after showMessage timeout
     // or explicit clearMessage). This keeps the bar invisible except when in use.
+    // Any change of the line ends a card's claim on it; showCardStatus() claims
+    // it again after its own change.
     connect(ui->statusbar, &QStatusBar::messageChanged, this, [this](const QString& msg) {
+        statusCardId.clear();
         if (msg.isEmpty())
             ui->statusbar->hide();
     });
@@ -372,6 +365,20 @@ QString LibreCelik::readerNameForCard(const QString& cardId) const
     return cardId;
 }
 
+void LibreCelik::showCardStatus(const QString& cardId, const QString& message)
+{
+    ui->statusbar->show();
+    ui->statusbar->showMessage(message);
+    // After showMessage: its messageChanged drops any earlier claim.
+    statusCardId = cardId;
+}
+
+void LibreCelik::clearCardStatus(const QString& cardId)
+{
+    if (statusCardId == cardId)
+        ui->statusbar->clearMessage();
+}
+
 // ---- per-card pages ------------------------------------------------------
 
 void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
@@ -460,10 +467,8 @@ void LibreCelik::addCardPage(const QString& cardId, CardController* controller)
                                                                          canRenderWithoutIdentity(cardId));
                 // The card is about to be drawn, so "card not supported" on the
                 // status bar would contradict the page.
-                if (action != librecelik::agent::ReadFailureAction::ShowWithoutIdentity) {
-                    ui->statusbar->show();
-                    ui->statusbar->showMessage(message);
-                }
+                if (action != librecelik::agent::ReadFailureAction::ShowWithoutIdentity)
+                    showCardStatus(cardId, message);
                 switch (action) {
                 case librecelik::agent::ReadFailureAction::LeaveAlone:
                     break;
@@ -528,6 +533,8 @@ void LibreCelik::offerCardReadRetry(const QString& cardId, const QString& messag
         // point; it preserves the stale buffer with it.
         if (auto entry = cardState.find(cardId); entry != cardState.end())
             entry->second.bufferedGroups.clear();
+        // The failed attempt's reason is about to be stale.
+        clearCardStatus(cardId);
 
         // Spinner FIRST, then the read. The controller may answer synchronously,
         // and a second failure arriving before the spinner is up would find the
@@ -560,8 +567,8 @@ void LibreCelik::releaseCardPage(const QString& cardId)
     // Teardown-cancel: a page that is going away must not leave its card busy.
     // On the removal path the gateway has already released the controller (and
     // the client sweeps a vanished card's operations with it), so this reaches
-    // a controller only on the paths where one still exists — a navigated-away
-    // read, or a read that failed before it could build a page.
+    // a controller only where one still exists: a read that failed before it
+    // could build a page.
     if (auto* controller = gateway->cardController(cardId))
         controller->cancel();
 
@@ -703,10 +710,11 @@ void LibreCelik::onIdentityReady(const QString& cardId, const QList<FieldGroup>&
     if (plugin == nullptr) {
         // No GUI plugin for the card type the agent resolved: the read
         // succeeded but this build cannot render it.
-        ui->statusbar->show();
-        ui->statusbar->showMessage(qtTrId("lc-reader-unsupported-card"));
+        showCardStatus(cardId, qtTrId("lc-reader-unsupported-card"));
         return;
     }
+    // A reason an earlier attempt of this card left behind no longer holds.
+    clearCardStatus(cardId);
 
     const bool visible = hasVisibleData(groups);
 

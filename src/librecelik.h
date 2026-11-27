@@ -131,6 +131,10 @@ private:
     /// panel's claim over the window's own "insert a card" copy.
     void updateEmptyState();
     [[nodiscard]] QString readerNameForCard(const QString& cardId) const;
+    /// Put a card's message on the window's one status line, as that card's.
+    void showCardStatus(const QString& cardId, const QString& message);
+    /// Clear the status line only while it still carries @p cardId's message.
+    void clearCardStatus(const QString& cardId);
 
     bool loadLanguage(const QString& locale);
     void updateAboutText();
@@ -163,6 +167,9 @@ private:
     /// event would re-add them and re-run the read that just failed. Cleared
     /// when the card actually leaves — a re-insertion is a fresh read.
     std::set<QString> failedReads;
+    /// The card whose message the status line shows, or empty for none or a
+    /// message that belongs to no card.
+    QString statusCardId;
 
     QTranslator translator;
     QTranslator qtTranslator;

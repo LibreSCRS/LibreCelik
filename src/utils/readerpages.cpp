@@ -49,7 +49,7 @@ void ReaderPages::remove(const QString& cardId)
     // Teardown, not navigation. Removing a selector row below the current one
     // renumbers it and makes QComboBox emit currentIndexChanged; the handler
     // would then read a stack index that still refers to the pre-removal
-    // layout and cancel a bystander's read. Block the selector across the whole
+    // layout and show the wrong page. Block the selector across the whole
     // teardown and reconcile the selection deliberately afterwards.
     {
         const QSignalBlocker block(m_selector);
@@ -140,9 +140,5 @@ void ReaderPages::onSelectorChanged(int index)
 {
     // Reached only for a genuine selection change: every mutator above blocks
     // this while it is repairing the correspondence.
-    const int leaving = m_stack->currentIndex();
-    if (leaving >= 0 && leaving != index && leaving < m_order.size()) {
-        Q_EMIT leftCard(m_order.at(leaving));
-    }
     m_stack->setCurrentIndex(index);
 }

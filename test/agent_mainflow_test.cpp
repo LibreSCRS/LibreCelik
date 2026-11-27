@@ -571,6 +571,21 @@ TEST_F(CardStatusPageTest, ALanguageChangeRebuildsThePageFromItsOwnInputs)
     EXPECT_TRUE(labelText(page, "cardStatusTitle").contains(QStringLiteral("3B 81 80 01 80 80")));
 }
 
+// The reader's name can reach the window after the card; renaming redraws the
+// reader line and leaves the rest of the page as it was.
+TEST_F(CardStatusPageTest, RenamingTheReaderRedrawsItsLine)
+{
+    using LibreSCRS::AgentClient::UiState;
+    librecelik::agent::CardStatusPage page(UiState::UnknownCard, QStringLiteral("Card reader"),
+                                           QStringLiteral("3B818001808012"), nullptr);
+
+    page.setReaderName(QStringLiteral("Reader 7"));
+
+    EXPECT_TRUE(labelText(page, "cardStatusReader").contains(QStringLiteral("Reader 7")));
+    EXPECT_FALSE(labelText(page, "cardStatusReader").contains(QStringLiteral("Card reader")));
+    EXPECT_TRUE(labelText(page, "cardStatusTitle").contains(QStringLiteral("3B 81 80 01 80 80")));
+}
+
 TEST_F(CardStatusPageTest, TheAtrIsShownAsLeadingBytesWithTheRestMarked)
 {
     // The agent hands the ATR over as a flat hex string; the display form is a
@@ -709,6 +724,19 @@ TEST_F(CardRetryPageTest, TheRetryPageRendersItsReasonAndAsksForAnotherRead)
     QSignalSpy asked(&page, &librecelik::agent::CardRetryPage::retryRequested);
     button->click();
     EXPECT_EQ(asked.count(), 1);
+}
+
+// Same as the unreadable-card page: a rename redraws the reader line and keeps
+// the reason.
+TEST_F(CardRetryPageTest, RenamingTheReaderRedrawsItsLine)
+{
+    librecelik::agent::CardRetryPage page(QStringLiteral("The entry window expired."), QStringLiteral("Card reader"));
+
+    page.setReaderName(QStringLiteral("Reader <One>"));
+
+    EXPECT_TRUE(labelText(page, "cardRetryReader").contains(QStringLiteral("Reader <One>")));
+    EXPECT_FALSE(labelText(page, "cardRetryReader").contains(QStringLiteral("Card reader")));
+    EXPECT_EQ(labelText(page, "cardRetryReason"), QStringLiteral("The entry window expired."));
 }
 
 // The page must not answer to isSpinner(): the streamed-group path replaces

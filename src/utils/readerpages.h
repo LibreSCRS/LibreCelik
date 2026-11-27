@@ -55,6 +55,10 @@ public:
     ///       screen. A background reader streaming its first group must not
     ///       pull the view off the reader the user is looking at.
     void replace(const QString& cardId, QWidget* newPage);
+    /// @brief Rename a card's row in the selector; no effect for an unknown card.
+    /// @note The reader's name can arrive after the card's page, so the window
+    ///       renames every row whenever the readers change.
+    void setLabel(const QString& cardId, const QString& readerLabel);
 
     [[nodiscard]] bool contains(const QString& cardId) const;
     [[nodiscard]] QWidget* page(const QString& cardId) const;

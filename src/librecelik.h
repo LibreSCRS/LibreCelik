@@ -130,7 +130,11 @@ private:
     /// Page 0 vs page 1, the reader selector's visibility, and the guided
     /// panel's claim over the window's own "insert a card" copy.
     void updateEmptyState();
+    /// The name of the reader holding @p cardId; a generic "card reader" while no
+    /// reader names the card, never an id.
     [[nodiscard]] QString readerNameForCard(const QString& cardId) const;
+    /// Re-resolve every page's reader name (selector row, status and retry page).
+    void relabelCardPages();
     /// Put a card's message on the window's one status line, as that card's.
     void showCardStatus(const QString& cardId, const QString& message);
     /// Clear the status line only while it still carries @p cardId's message.

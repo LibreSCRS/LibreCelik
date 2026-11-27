@@ -1478,6 +1478,10 @@
         <source>Quit LibreCelik</source>
         <translation>Затвори Слободни Челик</translation>
     </message>
+    <message id="lc-reader-unnamed">
+        <source>Card reader</source>
+        <translation>Читач картица</translation>
+    </message>
     <message id="lc-about-title">
         <source>About LibreCelik</source>
         <translation>О Слободном Челику</translation>

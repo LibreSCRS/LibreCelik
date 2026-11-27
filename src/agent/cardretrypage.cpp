@@ -47,6 +47,12 @@ CardRetryPage::CardRetryPage(QString failure, QString reader, QWidget* parent)
     retranslateUi();
 }
 
+void CardRetryPage::setReaderName(QString reader)
+{
+    readerName = std::move(reader);
+    retranslateUi();
+}
+
 void CardRetryPage::changeEvent(QEvent* event)
 {
     if (event->type() == QEvent::LanguageChange) {

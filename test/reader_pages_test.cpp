@@ -143,6 +143,26 @@ TEST_F(ReaderPagesTest, ChoosingAnotherReaderShowsItsPage)
     expectLockstep(f.pages, f.selector, f.stack);
 }
 
+// A reader's name can arrive after its card's page: the label is renamed in
+// place, without moving the view or touching any other row.
+TEST_F(ReaderPagesTest, RelabellingARowKeepsTheViewAndTheOtherRows)
+{
+    Fixture f;
+    f.addCard("card-A", "Reader A");
+    f.addCard("card-B", "Card reader");
+    f.selector.setCurrentIndex(1);
+    QSignalSpy changed(&f.selector, &QComboBox::currentIndexChanged);
+
+    f.pages.setLabel("card-B", "Reader B");
+    f.pages.setLabel("card-unknown", "Reader X");
+
+    EXPECT_EQ(f.selector.itemText(0), QString("Reader A"));
+    EXPECT_EQ(f.selector.itemText(1), QString("Reader B"));
+    EXPECT_EQ(f.pages.currentCardId(), QString("card-B"));
+    EXPECT_EQ(changed.count(), 0) << "a rename announced a selection change";
+    expectLockstep(f.pages, f.selector, f.stack);
+}
+
 // Removing the card being looked at has to leave something coherent on screen.
 TEST_F(ReaderPagesTest, RemovingTheVisibleCardFallsBackToASurvivor)
 {

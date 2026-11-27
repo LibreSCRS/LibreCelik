@@ -3,7 +3,7 @@
 # raised with the tests.
 AgentBootstrapTests 13
 AgentLayerTests 65
-AgentMainFlowTests 32
+AgentMainFlowTests 34
 CardWidgetPluginRegistryTests 4
 EIdTextDocumentTests 4
 EMRTDTextDocumentTests 11
@@ -14,9 +14,9 @@ LibreCelik 1
 LibreCelikI18nFixtureSelfTest 7
 LibreCelikTests 36
 LocaleResolverTests 9
-MainWindowTests 11
+MainWindowTests 14
 PdfPreviewWidgetTests 6
-ReaderPagesTests 7
+ReaderPagesTests 8
 SettingsConfig1Tests 51
 SigningUnitTests 26
 SigningWizardE2ETests 12

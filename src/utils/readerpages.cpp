@@ -107,6 +107,14 @@ void ReaderPages::replace(const QString& cardId, QWidget* newPage)
     m_pages.insert(cardId, newPage);
 }
 
+void ReaderPages::setLabel(const QString& cardId, const QString& readerLabel)
+{
+    const int pos = m_order.indexOf(cardId);
+    if (pos >= 0) {
+        m_selector->setItemText(pos, readerLabel);
+    }
+}
+
 bool ReaderPages::contains(const QString& cardId) const
 {
     return m_pages.contains(cardId);

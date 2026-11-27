@@ -47,6 +47,10 @@ public:
     /// @param reader  The reader's display name, as the window resolves it.
     CardRetryPage(QString failure, QString reader, QWidget* parent = nullptr);
 
+    /// Rename the reader this page names: its name can reach the window after the
+    /// card does.
+    void setReaderName(QString reader);
+
 signals:
     /// The holder asked for another read of this card.
     void retryRequested();

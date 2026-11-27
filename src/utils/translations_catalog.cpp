@@ -36,6 +36,8 @@ QT_WARNING_DISABLE_GCC("-Wunused-value")
     QT_TRID_NOOP("lc-reader-unsupported-card-with-atr");
     //% "In reader: %1"
     QT_TRID_NOOP("lc-card-unsupported-reader");
+    //% "Card reader"
+    QT_TRID_NOOP("lc-reader-unnamed");
     //% "The card was not read"
     QT_TRID_NOOP("lc-card-retry-title");
     //% "Read the card again"

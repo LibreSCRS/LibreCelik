@@ -280,6 +280,8 @@ void LibreCelik::changeEvent(QEvent* event)
         // setupUi's retranslate resets the .ui labels to visible; the guided
         // panel's claim over them is state, not text, so it is re-applied.
         updateEmptyState();
+        // The fallback reader name is catalog text.
+        relabelCardPages();
     }
     QMainWindow::changeEvent(event);
 }
@@ -309,6 +311,7 @@ void LibreCelik::onReadersChanged()
         if (reader.hasCard && !reader.cardId.isEmpty() && !readerPages->contains(reader.cardId))
             onCardChanged(reader.cardId);
     }
+    relabelCardPages();
     ui->agentStateWidget->setState(gateway->presence());
     updateEmptyState();
 }
@@ -359,10 +362,25 @@ QString LibreCelik::readerNameForCard(const QString& cardId) const
 {
     const QList<librecelik::agent::ReaderInfo> readers = gateway->readers();
     for (const librecelik::agent::ReaderInfo& reader : readers) {
-        if (reader.cardId == cardId)
-            return reader.name.isEmpty() ? reader.id : reader.name;
+        if (reader.cardId == cardId && !reader.name.isEmpty())
+            return reader.name;
     }
-    return cardId;
+    // Never an id: the card can be announced before its reader names it, and
+    // both ids are opaque tokens no holder can act on.
+    return qtTrId("lc-reader-unnamed");
+}
+
+void LibreCelik::relabelCardPages()
+{
+    for (const auto& [cardId, state] : cardState) {
+        const QString name = readerNameForCard(cardId);
+        readerPages->setLabel(cardId, name);
+        QWidget* page = readerPages->page(cardId);
+        if (auto* retry = qobject_cast<librecelik::agent::CardRetryPage*>(page))
+            retry->setReaderName(name);
+        else if (auto* status = qobject_cast<librecelik::agent::CardStatusPage*>(page))
+            status->setReaderName(name);
+    }
 }
 
 void LibreCelik::showCardStatus(const QString& cardId, const QString& message)

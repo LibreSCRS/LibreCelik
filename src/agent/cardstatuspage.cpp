@@ -56,6 +56,12 @@ CardStatusPage::CardStatusPage(LibreSCRS::AgentClient::UiState state, QString re
     retranslateUi();
 }
 
+void CardStatusPage::setReaderName(QString reader)
+{
+    readerName = std::move(reader);
+    retranslateUi();
+}
+
 void CardStatusPage::changeEvent(QEvent* event)
 {
     if (event->type() == QEvent::LanguageChange)

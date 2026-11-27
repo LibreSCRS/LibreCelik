@@ -1060,5 +1060,10 @@ target_link_libraries(MainWindowTests PRIVATE
     Qt6::Test
     librecelik_app)
 set_target_properties(MainWindowTests PROPERTIES AUTOMOC ON)
+# Build-tree .qm directory, for the case that needs a reader name substituted
+# into a translated template (as AgentMainFlowTests does).
+target_compile_definitions(MainWindowTests PRIVATE
+    LIBRECELIK_TRANSLATIONS_DIR_DEFAULT="${CMAKE_BINARY_DIR}/src")
+add_dependencies(MainWindowTests LibreCelik_lrelease)
 gtest_discover_tests(MainWindowTests)
 

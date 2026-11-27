@@ -28,6 +28,7 @@
 #include <QMenu>
 #include <QPointer>
 #include <QTimer>
+#include <QTranslator>
 #include <QTreeWidget>
 #include <QLabel>
 #include <QPushButton>
@@ -433,4 +434,128 @@ TEST_F(MainWindowTest, AnotherCardsSuccessLeavesTheFailedCardsReason)
     ASSERT_TRUE(reading->callLog.contains(QStringLiteral("requestCertificates")));
     EXPECT_EQ(window.statusBar()->currentMessage(), QStringLiteral("operation cancelled"))
         << "one card's success cleared another card's reason";
+}
+
+/// The card can be announced before any reader names it as its own (after a
+/// replug or a wake the readers are rebuilt). The selector must then show a
+/// plain "card reader", never the card's object id, and take the reader's name
+/// once the reader catches up.
+TEST_F(MainWindowTest, TheReaderLabelNeverShowsTheObjectIdAndCatchesUpWithTheReader)
+{
+    auto gateway = std::make_unique<FakeAgentGateway>();
+    FakeAgentGateway* scripted = gateway.get();
+    scripted->scriptedPresence = PresenceState::Ready;
+    FakeCardController* first =
+        addReadableCard(*scripted, QStringLiteral("r1"), QStringLiteral("Reader One"), QStringLiteral("c1"));
+    first->holdRead = true;
+    auto* early = new FakeCardController(scripted);
+    early->scriptedCardId = QStringLiteral("obj/9");
+    early->scriptedReaderId = QStringLiteral("r2");
+    early->scriptedCaps = LibreSCRS::AgentClient::Cap::IdentityData | LibreSCRS::AgentClient::Cap::Pki;
+    early->holdRead = true;
+    scripted->registerCardController(QStringLiteral("obj/9"), early);
+    // The reader exists but does not hold the card yet.
+    scripted->scriptedReaders.append({QStringLiteral("r2"), QStringLiteral("Reader Two"), false, QString()});
+
+    LibreCelik window(std::move(gateway));
+    auto* selector = window.findChild<QComboBox*>(QStringLiteral("readerComboBox"));
+    ASSERT_NE(selector, nullptr);
+
+    emit scripted->cardChanged(QStringLiteral("obj/9"));
+    ASSERT_EQ(selector->count(), 2);
+    EXPECT_EQ(selector->itemText(1), QStringLiteral("lc-reader-unnamed")) << "the selector showed the object id";
+
+    scripted->scriptedReaders[1] = {QStringLiteral("r2"), QStringLiteral("Reader Two"), true, QStringLiteral("obj/9")};
+    emit scripted->readersChanged();
+
+    EXPECT_EQ(selector->itemText(1), QStringLiteral("Reader Two")) << "the label did not follow the reader";
+    EXPECT_EQ(selector->itemText(0), QStringLiteral("Reader One"));
+}
+
+namespace {
+
+/// The English catalog, installed for one case: the reader line substitutes
+/// the name into a translated template, and the bare id has no place for it.
+struct EnglishCatalog
+{
+    QTranslator translator;
+    bool loaded = false;
+
+    EnglishCatalog()
+    {
+        loaded = translator.load(QStringLiteral("LibreCelik_en"), QStringLiteral(LIBRECELIK_TRANSLATIONS_DIR_DEFAULT));
+        if (loaded)
+            QCoreApplication::installTranslator(&translator);
+    }
+    ~EnglishCatalog()
+    {
+        QCoreApplication::removeTranslator(&translator);
+    }
+    EnglishCatalog(const EnglishCatalog&) = delete;
+    EnglishCatalog& operator=(const EnglishCatalog&) = delete;
+};
+
+} // namespace
+
+/// The retry page names its reader too (the selector is hidden while there is
+/// only one page); that line follows the reader just as the selector does.
+TEST_F(MainWindowTest, TheRetryPageNamesTheReaderOnceTheReaderCatchesUp)
+{
+    EnglishCatalog english;
+    ASSERT_TRUE(english.loaded);
+
+    auto gateway = std::make_unique<FakeAgentGateway>();
+    FakeAgentGateway* scripted = gateway.get();
+    scripted->scriptedPresence = PresenceState::Ready;
+    auto* early = new FakeCardController(scripted);
+    early->scriptedCardId = QStringLiteral("obj/9");
+    early->scriptedReaderId = QStringLiteral("r1");
+    early->scriptedCaps = LibreSCRS::AgentClient::Cap::IdentityData | LibreSCRS::AgentClient::Cap::Pki;
+    early->failNextRead = true;
+    early->scriptedError = QStringLiteral("operation cancelled");
+    early->scriptedErrorCode = LibreSCRS::AgentClient::ErrorCode::PrompterError;
+    scripted->registerCardController(QStringLiteral("obj/9"), early);
+    scripted->scriptedReaders = {{QStringLiteral("r1"), QStringLiteral("Reader One"), false, QString()}};
+
+    LibreCelik window(std::move(gateway));
+    emit scripted->cardChanged(QStringLiteral("obj/9"));
+    auto* readerLine = window.findChild<QLabel*>(QStringLiteral("cardRetryReader"));
+    ASSERT_NE(readerLine, nullptr);
+    EXPECT_TRUE(readerLine->text().contains(QStringLiteral("Card reader"))) << readerLine->text().toStdString();
+    EXPECT_FALSE(readerLine->text().contains(QStringLiteral("obj/9"))) << "the retry page showed the object id";
+
+    scripted->scriptedReaders = {{QStringLiteral("r1"), QStringLiteral("Reader One"), true, QStringLiteral("obj/9")}};
+    emit scripted->readersChanged();
+
+    EXPECT_TRUE(readerLine->text().contains(QStringLiteral("Reader One"))) << readerLine->text().toStdString();
+}
+
+/// The same for a card no driver matched: its page is the only thing the window
+/// shows for it, and it names the reader.
+TEST_F(MainWindowTest, TheUnreadableCardPageNamesTheReaderOnceTheReaderCatchesUp)
+{
+    EnglishCatalog english;
+    ASSERT_TRUE(english.loaded);
+
+    auto gateway = std::make_unique<FakeAgentGateway>();
+    FakeAgentGateway* scripted = gateway.get();
+    scripted->scriptedPresence = PresenceState::Ready;
+    auto* early = new FakeCardController(scripted);
+    early->scriptedCardId = QStringLiteral("obj/9");
+    early->scriptedReaderId = QStringLiteral("r1");
+    early->scriptedAtr = QStringLiteral("3B818001808012");
+    scripted->registerCardController(QStringLiteral("obj/9"), early);
+    scripted->scriptedReaders = {{QStringLiteral("r1"), QStringLiteral("Reader One"), false, QString()}};
+
+    LibreCelik window(std::move(gateway));
+    emit scripted->cardChanged(QStringLiteral("obj/9"));
+    auto* readerLine = window.findChild<QLabel*>(QStringLiteral("cardStatusReader"));
+    ASSERT_NE(readerLine, nullptr);
+    EXPECT_TRUE(readerLine->text().contains(QStringLiteral("Card reader"))) << readerLine->text().toStdString();
+    EXPECT_FALSE(readerLine->text().contains(QStringLiteral("obj/9"))) << "the page showed the object id";
+
+    scripted->scriptedReaders = {{QStringLiteral("r1"), QStringLiteral("Reader One"), true, QStringLiteral("obj/9")}};
+    emit scripted->readersChanged();
+
+    EXPECT_TRUE(readerLine->text().contains(QStringLiteral("Reader One"))) << readerLine->text().toStdString();
 }

@@ -74,6 +74,10 @@ public:
     /// @param atr    The card's ATR as flat hex, reported for `UnknownCard`.
     CardStatusPage(LibreSCRS::AgentClient::UiState state, QString reader, QString atr, QWidget* parent = nullptr);
 
+    /// Rename the reader this page names: its name can reach the window after the
+    /// card does.
+    void setReaderName(QString reader);
+
 protected:
     void changeEvent(QEvent* event) override; // retranslate
 
